@@ -1,6 +1,13 @@
 import { Value } from './types'
 import * as C from '@cardano-sdk/core'
 
+/**
+ * Merges two Value objects into a single Value object by combining their coins and multiassets.
+ * 
+ * @param {Value} a - The first Value object.
+ * @param {Value} b - The second Value object.
+ * @returns {Value} - The resulting Value object after merging.
+ */
 export function merge(a: Value, b: Value): Value {
   let ma: C.Cardano.TokenMap | undefined
   if (!a.multiasset()) {
@@ -23,6 +30,12 @@ export function merge(a: Value, b: Value): Value {
   return new Value(a.coin() + b.coin(), ma)
 }
 
+/**
+ * Negates the coin and multiasset values of a Value object.
+ * 
+ * @param {Value} v - The Value object to negate.
+ * @returns {Value} - The resulting Value object after negation.
+ */
 export function negate(v: Value): Value {
   let entries = v.multiasset()?.entries()
   let tokenMap: C.Cardano.TokenMap = new Map()
@@ -34,10 +47,24 @@ export function negate(v: Value): Value {
   return new Value(-v.coin(), tokenMap)
 }
 
+/**
+ * Subtracts the values of one Value object from another.
+ * 
+ * @param {Value} a - The Value object to subtract from.
+ * @param {Value} b - The Value object to subtract.
+ * @returns {Value} - The resulting Value object after subtraction.
+ */
 export function sub(a: Value, b: Value): Value {
   return merge(a, negate(b))
 }
 
+/**
+ * Determines the intersection of assets between two Value objects.
+ * 
+ * @param {Value} a - The first Value object.
+ * @param {Value} b - The second Value object.
+ * @returns {number} - The count of intersecting assets.
+ */
 export function intersect(a: Value, b: Value): number {
   let count = a.coin() != 0n && b.coin() != 0n ? 1 : 0
   let multiAssetA = a.multiasset()
@@ -52,6 +79,12 @@ export function intersect(a: Value, b: Value): number {
   return count
 }
 
+/**
+ * Filters out the positive coin and multiasset values from a Value object.
+ * 
+ * @param {Value} v - The Value object to filter.
+ * @returns {Value} - A new Value object containing only positive values.
+ */
 export function positives(v: Value): Value {
   let entries = v.multiasset()?.entries()
   let coin = v.coin() > 0n ? v.coin() : 0n
@@ -66,6 +99,12 @@ export function positives(v: Value): Value {
   return new Value(coin, tokenMap)
 }
 
+/**
+ * Filters out the negative coin and multiasset values from a Value object.
+ * 
+ * @param {Value} v - The Value object to filter.
+ * @returns {Value} - A new Value object containing only negative values.
+ */
 export function negatives(v: Value): Value {
     let entries = v.multiasset()?.entries()
     let coin = v.coin() < 0n ? v.coin() : 0n
@@ -80,6 +119,12 @@ export function negatives(v: Value): Value {
     return new Value(coin, tokenMap)
 }
 
+/**
+ * Lists all assets (including 'lovelace' if present) in a Value object.
+ * 
+ * @param {Value} v - The Value object to inspect.
+ * @returns {(C.Cardano.AssetId | 'lovelace')[]} - An array of asset identifiers.
+ */
 export function assets(v: Value): (C.Cardano.AssetId | 'lovelace')[] {
   const assets: (C.Cardano.AssetId | 'lovelace')[] =
     v.coin() == 0n ? [] : ['lovelace']
@@ -92,6 +137,12 @@ export function assets(v: Value): (C.Cardano.AssetId | 'lovelace')[] {
   return assets
 }
 
+/**
+ * Counts the number of distinct asset types in a Value object.
+ * 
+ * @param {Value} v - The Value object to count asset types in.
+ * @returns {number} - The count of distinct asset types.
+ */
 export function assetTypes(v: Value): number {
   let count = v.coin() == 0n ? 0 : 1
   let entries = v.multiasset()?.entries()
@@ -103,6 +154,14 @@ export function assetTypes(v: Value): number {
   return count
 }
 
+/**
+ * Determines if a Value object is empty (no coin and no multiassets).
+ * 
+ * @param {Value} v - The Value object to check.
+ * @returns {boolean} - True if the Value object is empty, false otherwise.
+ */
 export function empty(v: Value): boolean {
   return assetTypes(v) == 0
 }
+
+export const zero = new Value(0n)

@@ -1,36 +1,29 @@
 {
-  "name": "translucent-cardano",
+  "name": "translucent-core",
   "module": "index.ts",
-  "version": "0.0.6",
   "scripts": {
-    "build:wasm": "cd ./uplc && ./build.sh && rm pkg-node/.gitignore && rm pkg-web/.gitignore && cd .. && npm i"
+    "docs": "typedoc ./src/tx.ts"
   },
   "devDependencies": {
+    "@cardano-ogmios/schema": "^6.0.0-rc6",
     "@types/jest": "^29.5.5",
     "@types/sha256": "^0.2.2",
+    "better-docs": "^2.7.3",
     "bun-types": "latest",
     "eslint": "^8.50.0",
     "jest": "^29.7.0",
+    "jsdoc": "^4.0.2",
     "ts-jest": "^29.1.1",
-    "typescript": "^5.3.3",
-    "@cardano-ogmios/schema": "^6.0.0-rc6"
+    "typedoc": "^0.25.13",
+    "typescript": "^5.3.3"
   },
   "dependencies": {
     "@cardano-sdk/core": "^0.30.0",
-    "@dcspark/cardano-multiplatform-lib-browser": "^5.2.0",
-    "@dcspark/cardano-multiplatform-lib-nodejs": "^3.1.2",
-    "@emurgo/cardano-message-signing-browser": "^1.0.1",
-    "@emurgo/cardano-message-signing-nodejs": "^1.0.1",
     "@sinclair/typebox": "^0.31.28",
-    "fast-check": "^3.14.0",
-    "prettier": "^3.1.1",
-    "sha256": "^0.2.0",
     "uplc-node": "^0.0.3",
     "uplc-web": "^0.0.3"
   },
   "browser": {
-    "@dcspark/cardano-multiplatform-lib-nodejs": "@dcspark/cardano-multiplatform-lib-browser",
-    "@emurgo/cardano-message-signing-nodejs": "@emurgo/cardano-message-signing-browser",
     "uplc-node": "uplc-web"
   },
   "peerDependencies": {
