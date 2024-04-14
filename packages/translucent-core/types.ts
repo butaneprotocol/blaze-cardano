@@ -64,6 +64,9 @@ export type ScriptHash = Crypto.Hash28ByteBase16;
 export const Address = C.Cardano.Address;
 export type Address = C.Cardano.Address;
 
+export const RewardAddress = C.Cardano.RewardAddress;
+export type RewardAddress = C.Cardano.RewardAddress;
+
 export const PaymentAddress = C.Cardano.PaymentAddress;
 export type PaymentAddress = C.Cardano.PaymentAddress;
 
@@ -122,3 +125,9 @@ export const DatumHash = Crypto.Hash32ByteBase16;
 export type DatumHash = Crypto.Hash32ByteBase16;
 
 export type CostModels = C.Cardano.CostModels;
+
+export enum NetworkId {
+  Mainnet = 0,
+  Testnet = 1,
+  Other = 2,
+}
