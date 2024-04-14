@@ -1,6 +1,22 @@
 import * as C from './core'
 import { HexBlob } from '@cardano-sdk/util'
-import { PolicyId, Hash28ByteBase16, Ed25519PublicKeyHex } from './types'
+import { PolicyId, Hash28ByteBase16, Ed25519PublicKeyHex, Address, PaymentAddress } from './types'
+
+/**
+ * Converts an Address to a PaymentAddress.
+ * @param {Address} address - The address to be converted.
+ * @returns {PaymentAddress} The converted address in PaymentAddress format.
+ * @throws {Error} If a reward account is passed in.
+ */
+export function getPaymentAddress(address: Address): PaymentAddress {
+  const bech = address.toBech32()
+
+  if (bech.__opaqueString == 'RewardAccount') {
+    throw new Error('getPaymentAddress: failed because a reward account was passed in!')
+  }
+
+  return bech
+}
 
 /**
  * Converts a PolicyId to a Hash28ByteBase16 format.

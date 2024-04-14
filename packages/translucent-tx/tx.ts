@@ -42,6 +42,7 @@ import {
   PolicyIdToHash,
   toHex,
   fromHex,
+  ProtocolParameters,
 } from '../translucent-core'
 import * as value from './value'
 import { micahsSelector } from './coinSelection'
@@ -91,24 +92,6 @@ constraints:
     mustProduceAtLeast
 */
 
-export const TxParams = {
-  minFeeA: 44n,
-  minFeeB: 155381n,
-  poolDeposit: 500000000n,
-  keyDeposit: 2000000n,
-  maxValueSize: 5000n,
-  maxTxSize: 16384n,
-  maxTxExMem: 14000000n,
-  maxTxExSteps: 10000000000n,
-  coinsPerUtxoByte: 4310n,
-  priceMem: 577 / 10000,
-  priceStep: 721 / 10_000_000,
-  //ex_unit_prices: ExUnitPrices,
-  //costMdls: Costmdls,
-  collateralPercentage: 1.5,
-  maxCollateralInputs: 3,
-}
-
 const SLOT_CONFIG_NETWORK = {
   Mainnet: { zeroTime: 1596059091000, zeroSlot: 4492800, slotLength: 1000 }, // Starting at Shelley era
   Preview: { zeroTime: 1666656000000, zeroSlot: 0, slotLength: 1000 }, // Starting at Shelley era
@@ -121,12 +104,11 @@ const SLOT_CONFIG_NETWORK = {
   Custom: { zeroTime: 0, zeroSlot: 0, slotLength: 0 },
 }
 
-const dummySignature = Ed25519SignatureHex('0'.repeat(128))
-
 /**
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
  */
 export class TxBuilder {
+  readonly params: ProtocolParameters
   body: TransactionBody // The main body of the transaction containing inputs, outputs, etc.
   inputs: TransactionInputSet = CborSet.fromCore([], TransactionInput.fromCore) // A set of transaction inputs.
   private redeemers: Redeemers = Redeemers.fromCore([]) // A collection of redeemers for script validation.
@@ -153,12 +135,14 @@ export class TxBuilder {
   private fee: bigint = 0n // The fee for the transaction.
   private overEstimateSteps = 1.2 // A multiplier to overestimate the execution steps for Plutus scripts.
   private overEstimateMem = 1.05 // A multiplier to overestimate the memory usage for Plutus scripts.
+  private additionalSigners = 0;
 
   /**
    * Constructs a new instance of the TxBuilder class.
    * Initializes a new transaction body with an empty set of inputs, outputs, and no fee.
    */
-  constructor() {
+  constructor(params: ProtocolParameters) {
+    this.params = params
     this.body = new TransactionBody(this.inputs, [], 0n, undefined)
   }
 
@@ -167,9 +151,23 @@ export class TxBuilder {
    * This address will receive any remaining funds not allocated to outputs or fees.
    *
    * @param {Address} address - The address to receive the change.
+   * @returns {TxBuilder} The same transaction builder
    */
   setChangeAddress(address: Address) {
     this.changeAddress = address
+    return this
+  }
+
+  /**
+   * The additional signers field is used to add additional signing counts for fee calculation.
+   * These will be included in the signing phase at a later stage.
+   * This is needed due to native scripts signees being non-deterministic.
+   * @param {number} amount - The amount of additional signers
+   * @returns {TxBuilder} The same transaction builder
+   */
+  addAdditionalSigners(amount: number){
+    this.additionalSigners += amount
+    return this
   }
 
   /**
@@ -178,6 +176,7 @@ export class TxBuilder {
    * checking the state of a datum without consuming the UTxO that holds it.
    *
    * @param {TransactionUnspentOutput} utxo - The unspent transaction output to add as a reference input.
+   * @returns {TxBuilder} The same transaction builder
    * @throws {Error} If the input to be added is already present in the list of reference inputs, to prevent duplicates.
    */
   addReferenceInput(utxo: TransactionUnspentOutput) {
@@ -212,6 +211,7 @@ export class TxBuilder {
     }
     // Update the transaction body with the new set of reference inputs.
     this.body.setReferenceInputs(referenceInputs)
+    return this
   }
 
   /**
@@ -222,6 +222,7 @@ export class TxBuilder {
    * @param {TransactionUnspentOutput} utxo - The UTxO to be consumed as an input.
    * @param {PlutusData} [redeemer] - Optional. The redeemer data for script validation, required for spending Plutus script-locked UTxOs.
    * @param {PlutusData} [unhashDatum] - Optional. The unhashed datum, required if the UTxO being spent includes a datum hash instead of inline datum.
+   * @returns {TxBuilder} The same transaction builder
    * @throws {Error} If attempting to add a duplicate input, if the UTxO payment key is missing, if attempting to spend with a redeemer for a KeyHash credential,
    *                 if attempting to spend without a datum when required, or if providing both an inline datum and an unhashed datum.
    */
@@ -287,8 +288,8 @@ export class TxBuilder {
           purpose: RedeemerPurpose['spend'],
           data: redeemer.toCore(),
           executionUnits: {
-            memory: Number(TxParams.maxTxExMem),
-            steps: Number(TxParams.maxTxExSteps),
+            memory: this.params.maxExecutionUnitsPerTransaction.memory,
+            steps: this.params.maxExecutionUnitsPerTransaction.steps,
           },
         }),
       )
@@ -301,6 +302,7 @@ export class TxBuilder {
         this.requiredWitnesses.add(HashAsPubKeyHex(key.hash))
       }
     }
+    return this
   }
 
   /**
@@ -308,11 +310,13 @@ export class TxBuilder {
    * These UTxOs can then be used for balancing the transaction, ensuring that inputs and outputs are equal.
    *
    * @param {TransactionUnspentOutput[]} utxos - The unspent transaction outputs to add.
+   * @returns {TxBuilder} The same transaction builder
    */
   addUnspentOutputs(utxos: TransactionUnspentOutput[]) {
     for (const utxo of utxos){
       this.utxos.add(utxo)
     }
+    return this
   }
 
   /**
@@ -351,8 +355,8 @@ export class TxBuilder {
           purpose: RedeemerPurpose['mint'], // Specify the purpose of the redeemer as minting.
           data: redeemer.toCore(), // Convert the provided PlutusData redeemer to its core representation.
           executionUnits: {
-            memory: Number(TxParams.maxTxExMem), // Placeholder memory units, replace with actual estimation.
-            steps: Number(TxParams.maxTxExSteps), // Placeholder step units, replace with actual estimation.
+            memory: this.params.maxExecutionUnitsPerTransaction.memory, // Placeholder memory units, replace with actual estimation.
+            steps: this.params.maxExecutionUnitsPerTransaction.steps, // Placeholder step units, replace with actual estimation.
           },
         }),
       )
@@ -362,6 +366,7 @@ export class TxBuilder {
       // If no redeemer is provided, assume minting under a native script and add the policy ID hash to the required native scripts.
       this.requiredNativeScripts.add(PolicyIdToHash(policy))
     }
+    return this
   }
 
   /**
@@ -369,7 +374,7 @@ export class TxBuilder {
    * requirements are met for the output. After adding the output, it updates the transaction body's outputs.
    *
    * @param {TransactionOutput} output - The transaction output to be added.
-   * @returns {number} The index of the newly added output within the transaction body's outputs array.
+   * @returns {TxBuilder} The same transaction builder
    */
   addOutput(output: TransactionOutput) {
     // Retrieve the current list of outputs from the transaction body.
@@ -378,7 +383,16 @@ export class TxBuilder {
     const index = outputs.push(output) - 1
     this.body.setOutputs(outputs)
     // Return the index at which the new output was added.
-    return index
+    return this
+  }
+
+  /**
+   * Returns the number of transaction outputs in the current transaction body.
+   *
+   * @returns {number} The number of transaction outputs.
+   */
+  get outputsCount(): number {
+    return this.body.outputs().length
   }
 
   /**
@@ -387,9 +401,11 @@ export class TxBuilder {
    * need to validate the transaction without requiring it to be attached to a specific output.
    *
    * @param {PlutusData} datum - The Plutus datum to be added to the transaction.
+   * @returns {TxBuilder} The same transaction builder
    */
   provideDatum(datum: PlutusData) {
     this.extraneousDatums.add(datum)
+    return this
   }
 
   /**
@@ -401,7 +417,7 @@ export class TxBuilder {
    * @param {Transaction} draft_tx - The draft transaction to evaluate.
    * @returns {bigint} The total fee calculated based on the execution units of the scripts.
    */
-  evaluate(draft_tx: Transaction): bigint {
+  private evaluate(draft_tx: Transaction): bigint {
     // Collect all UTXOs from the transaction's scope.
     let allUtxos: TransactionUnspentOutput[] = Array.from(
       this.utxoScope.values(),
@@ -415,11 +431,11 @@ export class TxBuilder {
       fromHex(costModelsBytes), // Convert the cost models to hex format.
       BigInt(
         Math.floor(
-          Number(TxParams.maxTxExSteps) / (this.overEstimateSteps ?? 1),
+          this.params.maxExecutionUnitsPerTransaction.steps / (this.overEstimateSteps ?? 1),
         ),
       ), // Calculate the estimated max execution steps.
       BigInt(
-        Math.floor(Number(TxParams.maxTxExMem) / (this.overEstimateMem ?? 1)),
+        Math.floor(this.params.maxExecutionUnitsPerTransaction.memory / (this.overEstimateMem ?? 1)),
       ), // Calculate the estimated max memory.
       BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroTime), // Network-specific zero time for slot calculation.
       BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroSlot), // Network-specific zero slot.
@@ -446,8 +462,8 @@ export class TxBuilder {
       redeemerValues.push(redeemer) // Add the updated redeemer to the array.
 
       // Calculate the fee contribution from this redeemer and add it to the total fee.
-      fee += TxParams.priceStep * Number(exUnits.steps())
-      fee += TxParams.priceMem * Number(exUnits.mem())
+      fee += this.params.maxExecutionUnitsPerTransaction.steps * Number(exUnits.steps())
+      fee += this.params.maxExecutionUnitsPerTransaction.memory * Number(exUnits.mem())
     }
 
     // Create a new Redeemers object and set its values to the updated redeemers.
@@ -538,9 +554,13 @@ export class TxBuilder {
     let vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore)
     let requiredWitnesses: VkeyWitness[] = []
     for (const val of this.requiredWitnesses.values()) {
-      requiredWitnesses.push(VkeyWitness.fromCore([val, dummySignature]))
+      requiredWitnesses.push(VkeyWitness.fromCore([Ed25519PublicKeyHex("0".repeat(64)), Ed25519SignatureHex('0'.repeat(128))]))
+    }
+    for (let i = 0; i < this.additionalSigners; i++){
+      requiredWitnesses.push(VkeyWitness.fromCore([Ed25519PublicKeyHex("0".repeat(64)), Ed25519SignatureHex('0'.repeat(128))]))
     }
     vkeyWitnesses.setValues(requiredWitnesses)
+    tw.setVkeys(vkeyWitnesses)
     tw.setRedeemers(this.redeemers)
     // Process Plutus data
     let plutusData = CborSet.fromCore([], PlutusData.fromCore)
@@ -564,10 +584,10 @@ export class TxBuilder {
    * @returns {Value} The net value that represents the transaction's pitch.
    * @throws {Error} If a corresponding UTxO for an input cannot be found.
    */
-  private getPitch() {
+  private getPitch(withSpare:boolean = true) {
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(0n)
-    let outputValue = new Value(0n)
+    let outputValue = new Value(this.fee)
     let mintValue = new Value(0n, this.body.mint())
 
     // Aggregate the total input value from all inputs.
@@ -587,6 +607,7 @@ export class TxBuilder {
       inputValue = value.merge(inputValue, utxo.output().amount())
     }
 
+    this.body.outputs()[this.changeOutputIndex!] = new TransactionOutput(this.changeAddress!, value.zero)
     // Aggregate the total output value from all outputs.
     for (const output of this.body.outputs().values()) {
       outputValue = value.merge(outputValue, output.amount())
@@ -594,13 +615,14 @@ export class TxBuilder {
 
     // Calculate the net value by merging input, output (negated), and mint values.
     // Subtract a fixed fee amount (5 ADA) to ensure enough is allocated for transaction fees.
-    return value.merge(
-      value.merge(
-        value.merge(inputValue, value.negate(outputValue)),
-        mintValue,
-      ),
-      new Value(-5000000n), // Subtract 5 ADA from the excess.
+    const tilt = value.merge(
+      value.merge(inputValue, value.negate(outputValue)),
+      mintValue,
     )
+    if (withSpare == true) {
+      return value.merge(tilt, new Value(-5000000n)) // Subtract 5 ADA from the excess.
+    }
+    return tilt
   }
 
   /**
@@ -690,7 +712,8 @@ export class TxBuilder {
     // If there is no existing change output index, add the new output to the transaction
     // and store its index. Otherwise, update the existing change output with the new output.
     if (!this.changeOutputIndex) {
-      this.changeOutputIndex = this.addOutput(output)
+      this.addOutput(output)
+      this.changeOutputIndex = this.outputsCount
     } else {
       let outputs = this.body.outputs()
       outputs[this.changeOutputIndex] = output
@@ -708,7 +731,7 @@ export class TxBuilder {
   private calculateFees(draft_tx: Transaction, tw: TransactionWitnessSet) {
     // Calculate the fee based on the transaction size and minimum fee parameters.
     this.fee =
-      TxParams.minFeeB + BigInt(draft_tx.toCbor().length / 2) * TxParams.minFeeA
+      BigInt(Math.ceil(this.params.minFeeConstant + (fromHex(draft_tx.toCbor()).length) * this.params.minFeeCoefficient))
     // Update the transaction body with the calculated fee.
     this.body.setFee(this.fee)
   }
@@ -764,11 +787,15 @@ export class TxBuilder {
     if (!this.changeAddress) {
       throw new Error('balanceCollateralChange: change address not set')
     }
+    let collateral = this.body.collateral()
+    if (!collateral || collateral.size()==0){
+      return
+    }
     // Retrieve available UTXOs within scope.
     let scope = [...this.utxoScope.values()]
     // Calculate the total collateral based on the transaction fee and collateral percentage.
     let totalCollateral = BigInt(
-      Math.ceil(TxParams.collateralPercentage * Number(this.fee)),
+      Math.ceil(this.params.collateralPercentage * Number(this.fee)),
     )
     // Calculate the collateral value by summing up the amounts from collateral inputs.
     let collateralValue = this.body
@@ -818,7 +845,7 @@ export class TxBuilder {
     // Gather all inputs from the transaction body.
     let inputs = [...this.body.inputs().values()]
     // Perform initial checks and preparations for coin selection.
-    let excessValue = this.getPitch()
+    let excessValue = this.getPitch(true)
     let spareInputs: TransactionUnspentOutput[] = []
     for (const [utxo] of this.utxos.entries()) {
       if (!inputs.includes(utxo.input())) {
@@ -853,6 +880,7 @@ export class TxBuilder {
       )
     }
     // Build the transaction witness set for fee estimation and script validation.
+    //excessValue = this.getPitch(false)
     let tw = this.buildTransactionWitnessSet()
     // Calculate and set the script data hash if necessary.
     {
@@ -861,31 +889,38 @@ export class TxBuilder {
         this.body.setScriptDataHash(scriptDataHash)
       }
     }
+    this.balanceChange(excessValue)
     // Create a draft transaction for fee calculation.
     let draft_tx = new Transaction(this.body, tw)
     // Calculate and set the transaction fee.
+    let draft_size = draft_tx.toCbor().length / 2
     this.calculateFees(draft_tx, tw)
-    this.body.setFee(this.fee)
     excessValue = value.merge(excessValue, new Value(-this.fee))
     this.balanceChange(excessValue)
-    this.prepareCollateral()
-    let evaluationFee = this.evaluate(draft_tx)
-    this.fee += evaluationFee
-    excessValue = value.merge(excessValue, new Value(-evaluationFee))
-    this.balanceChange(excessValue)
-    tw.setRedeemers(this.redeemers)
+    if (this.redeemers.size()>0) {
+      this.prepareCollateral()
+      let evaluationFee = this.evaluate(draft_tx)
+      this.fee += evaluationFee
+      excessValue = value.merge(excessValue, new Value(-evaluationFee))
+      tw.setRedeemers(this.redeemers)
+    }
     {
-      let scriptDataHash = this.getScriptDataHash(tw)
+      const scriptDataHash = this.getScriptDataHash(tw)
       if (scriptDataHash) {
         this.body.setScriptDataHash(scriptDataHash)
       }
     }
     this.body.setFee(this.fee)
     // Merge the fee with the excess value and rebalance the change.
-    excessValue = value.merge(excessValue, new Value(-this.fee))
+    this.balanceCollateralChange()
+    let final_size = draft_tx.toCbor().length / 2
+    this.fee += BigInt(Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient))
+    excessValue = this.getPitch(false)
+    this.body.setFee(this.fee)
     this.balanceChange(excessValue)
     this.balanceCollateralChange()
     // Return the fully constructed transaction.
+    tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore))
     return new Transaction(this.body, tw)
   }
 
@@ -911,6 +946,7 @@ export class TxBuilder {
    * @param {C.Cardano.RewardAccount} address - The reward account from which to withdraw.
    * @param {bigint} amount - The amount of ADA to withdraw.
    * @param {PlutusData} [redeemer] - Optional. The redeemer data for script validation.
+   * @returns {TxBuilder} The same transaction builder
    * @throws {Error} If the reward account does not have a stake credential or if any other error occurs.
    */
   addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData) {
@@ -931,8 +967,8 @@ export class TxBuilder {
           purpose: RedeemerPurpose['mint'], // TODO: Confirm the purpose of the redeemer.
           data: redeemer.toCore(),
           executionUnits: {
-            memory: Number(TxParams.maxTxExMem),
-            steps: Number(TxParams.maxTxExSteps),
+            memory: this.params.maxExecutionUnitsPerTransaction.memory,
+            steps: this.params.maxExecutionUnitsPerTransaction.steps,
           },
         }),
       )
@@ -953,12 +989,14 @@ export class TxBuilder {
         this.requiredWitnesses.add(HashAsPubKeyHex(key.hash))
       }
     }
+    return this
   }
 
   /**
    * Adds a required signer to the transaction. This is necessary for transactions that must be explicitly signed by a particular key.
    *
    * @param {Ed25519KeyHashHex} signer - The hash of the Ed25519 public key that is required to sign the transaction.
+   * @returns {TxBuilder} The same transaction builder
    */
   addRequiredSigner(signer: Ed25519KeyHashHex) {
     // Retrieve existing required signers or initialize a new CBOR set if none exist.
@@ -970,6 +1008,7 @@ export class TxBuilder {
     signers.setValues(values)
     // Update the transaction body with the new set of required signers.
     this.body.setRequiredSigners(signers)
+    return this
   }
 
   /**
@@ -978,8 +1017,10 @@ export class TxBuilder {
    * transaction, either directly or by reference, to optimize the transaction size and processing.
    *
    * @param {Script} script - The script to be added to the transaction's script scope.
+   * @returns {TxBuilder} The same transaction builder
    */
   provideScript(script: Script) {
     this.scriptScope.add(script)
+    return this
   }
 }

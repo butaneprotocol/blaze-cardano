@@ -1,33 +1,55 @@
 import {
-  CostModels,
-  ExUnits,
-  Prices,
-  ProtocolVersion,
-} from '@cardano-sdk/core/dist/cjs/Cardano'
+  Cardano
+} from '@cardano-sdk/core'
 
+/**
+ * Cardano ledger protocol parameters.
+ */
 export interface ProtocolParameters {
+  /** The number of coins per UTXO byte. */
   coinsPerUtxoByte: number
+  /** The maximum transaction size. */
   maxTxSize: number
+  /** The minimum fee coefficient. */
   minFeeCoefficient: number
+  /** The minimum fee constant. */
   minFeeConstant: number
+  /** The maximum block body size. */
   maxBlockBodySize: number
+  /** The maximum block header size. */
   maxBlockHeaderSize: number
+  /** The stake key deposit. */
   stakeKeyDeposit: number
+  /** The pool deposit. */
   poolDeposit: number | null
+  /** The pool retirement epoch bound. */
   poolRetirementEpochBound: number
+  /** The desired number of pools. */
   desiredNumberOfPools: number
+  /** The pool influence. */
   poolInfluence: string
+  /** The monetary expansion. */
   monetaryExpansion: string
+  /** The treasury expansion. */
   treasuryExpansion: string
+  /** The minimum pool cost. */
   minPoolCost: number
-  protocolVersion: ProtocolVersion
+  /** The protocol version. */
+  protocolVersion: Cardano.ProtocolVersion
+  /** The maximum value size. */
   maxValueSize: number
+  /** The collateral percentage. */
   collateralPercentage: number
+  /** The maximum collateral inputs. */
   maxCollateralInputs: number
-  costModels: CostModels
-  prices: Prices
-  maxExecutionUnitsPerTransaction: ExUnits
-  maxExecutionUnitsPerBlock: ExUnits
+  /** The cost models. */
+  costModels: Cardano.CostModels
+  /** The prices. */
+  prices: Cardano.Prices
+  /** The maximum execution units per transaction. */
+  maxExecutionUnitsPerTransaction: Cardano.ExUnits
+  /** The maximum execution units per block. */
+  maxExecutionUnitsPerBlock: Cardano.ExUnits
 }
 
 export const hardCodedProtocolParams: ProtocolParameters = {
@@ -47,7 +69,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
   minPoolCost: 170000000,
   protocolVersion: { major: 8, minor: 0 },
   maxValueSize: 5000,
-  collateralPercentage: 150,
+  collateralPercentage: 150/100,
   maxCollateralInputs: 3,
   costModels: new Map()
     .set(0, [
@@ -395,7 +417,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
       32947,
       10,
     ]),
-  prices: { memory: 577, steps: 721 },
+  prices: { memory: 577/10000, steps: 721/10000 },
   maxExecutionUnitsPerTransaction: { memory: 14000000, steps: 10000000000 },
   maxExecutionUnitsPerBlock: { memory: 62000000, steps: 20000000000 },
 }

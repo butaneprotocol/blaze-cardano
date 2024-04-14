@@ -65,18 +65,18 @@ export class Maestro implements Provider {
             minPoolCost: params.min_pool_cost,
             protocolVersion: params.protocol_version,
             maxValueSize: params.max_value_size,
-            collateralPercentage: params.collateral_percentage,
+            collateralPercentage: params.collateral_percentage / 100,
             maxCollateralInputs: params.max_collateral_inputs,
             costModels: costModels,
             prices: {
-                memory: parseFloat(params.prices.memory),
-                steps: parseFloat(params.prices.steps)
+                memory: parseFloat(params.prices.memory) / 10000,
+                steps: parseFloat(params.prices.steps) / 10000
             },
             maxExecutionUnitsPerTransaction: params.max_execution_units_per_transaction,
             maxExecutionUnitsPerBlock: params.max_execution_units_per_block,
         }
         }
-        throw new Error("getUnspentOutputs: Could not parse response json");
+        throw new Error("getParameters: Could not parse response json");
       })
   }
 
