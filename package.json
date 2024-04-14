@@ -1,5 +1,5 @@
 {
-  "name": "translucent-core",
+  "name": "translucent",
   "module": "index.ts",
   "scripts": {
     "docs": "typedoc ./packages/translucent-tx/ ./packages/translucent-core/ ./packages/translucent-blueprint/ ./packages/translucent-emulator/ ./packages/translucent-query/ ./packages/translucent-wallet/"
