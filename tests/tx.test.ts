@@ -4,7 +4,7 @@ import {
   Hash32ByteBase16,
   PlutusLanguageVersion,
   Ed25519KeyHashHex,
-} from '../packages/translucent-core/types'
+} from '../packages/translucent-core'
 import { HexBlob } from '@cardano-sdk/util'
 import * as C from '@cardano-sdk/core'
 // import * as D from '@dcspark/cardano-multiplatform-lib-nodejs'

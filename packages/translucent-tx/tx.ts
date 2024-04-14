@@ -151,9 +151,11 @@ export class TxBuilder {
    * This address will receive any remaining funds not allocated to outputs or fees.
    *
    * @param {Address} address - The address to receive the change.
+   * @returns {TxBuilder} The same transaction builder
    */
   setChangeAddress(address: Address) {
     this.changeAddress = address
+    return this
   }
 
   /**
@@ -161,9 +163,11 @@ export class TxBuilder {
    * These will be included in the signing phase at a later stage.
    * This is needed due to native scripts signees being non-deterministic.
    * @param {number} amount - The amount of additional signers
+   * @returns {TxBuilder} The same transaction builder
    */
   addAdditionalSigners(amount: number){
     this.additionalSigners += amount
+    return this
   }
 
   /**
@@ -172,6 +176,7 @@ export class TxBuilder {
    * checking the state of a datum without consuming the UTxO that holds it.
    *
    * @param {TransactionUnspentOutput} utxo - The unspent transaction output to add as a reference input.
+   * @returns {TxBuilder} The same transaction builder
    * @throws {Error} If the input to be added is already present in the list of reference inputs, to prevent duplicates.
    */
   addReferenceInput(utxo: TransactionUnspentOutput) {
@@ -206,6 +211,7 @@ export class TxBuilder {
     }
     // Update the transaction body with the new set of reference inputs.
     this.body.setReferenceInputs(referenceInputs)
+    return this
   }
 
   /**
@@ -216,6 +222,7 @@ export class TxBuilder {
    * @param {TransactionUnspentOutput} utxo - The UTxO to be consumed as an input.
    * @param {PlutusData} [redeemer] - Optional. The redeemer data for script validation, required for spending Plutus script-locked UTxOs.
    * @param {PlutusData} [unhashDatum] - Optional. The unhashed datum, required if the UTxO being spent includes a datum hash instead of inline datum.
+   * @returns {TxBuilder} The same transaction builder
    * @throws {Error} If attempting to add a duplicate input, if the UTxO payment key is missing, if attempting to spend with a redeemer for a KeyHash credential,
    *                 if attempting to spend without a datum when required, or if providing both an inline datum and an unhashed datum.
    */
@@ -295,6 +302,7 @@ export class TxBuilder {
         this.requiredWitnesses.add(HashAsPubKeyHex(key.hash))
       }
     }
+    return this
   }
 
   /**
@@ -302,11 +310,13 @@ export class TxBuilder {
    * These UTxOs can then be used for balancing the transaction, ensuring that inputs and outputs are equal.
    *
    * @param {TransactionUnspentOutput[]} utxos - The unspent transaction outputs to add.
+   * @returns {TxBuilder} The same transaction builder
    */
   addUnspentOutputs(utxos: TransactionUnspentOutput[]) {
     for (const utxo of utxos){
       this.utxos.add(utxo)
     }
+    return this
   }
 
   /**
@@ -356,6 +366,7 @@ export class TxBuilder {
       // If no redeemer is provided, assume minting under a native script and add the policy ID hash to the required native scripts.
       this.requiredNativeScripts.add(PolicyIdToHash(policy))
     }
+    return this
   }
 
   /**
@@ -363,7 +374,7 @@ export class TxBuilder {
    * requirements are met for the output. After adding the output, it updates the transaction body's outputs.
    *
    * @param {TransactionOutput} output - The transaction output to be added.
-   * @returns {number} The index of the newly added output within the transaction body's outputs array.
+   * @returns {TxBuilder} The same transaction builder
    */
   addOutput(output: TransactionOutput) {
     // Retrieve the current list of outputs from the transaction body.
@@ -372,7 +383,16 @@ export class TxBuilder {
     const index = outputs.push(output) - 1
     this.body.setOutputs(outputs)
     // Return the index at which the new output was added.
-    return index
+    return this
+  }
+
+  /**
+   * Returns the number of transaction outputs in the current transaction body.
+   *
+   * @returns {number} The number of transaction outputs.
+   */
+  get outputsCount(): number {
+    return this.body.outputs().length
   }
 
   /**
@@ -381,9 +401,11 @@ export class TxBuilder {
    * need to validate the transaction without requiring it to be attached to a specific output.
    *
    * @param {PlutusData} datum - The Plutus datum to be added to the transaction.
+   * @returns {TxBuilder} The same transaction builder
    */
   provideDatum(datum: PlutusData) {
     this.extraneousDatums.add(datum)
+    return this
   }
 
   /**
@@ -690,7 +712,8 @@ export class TxBuilder {
     // If there is no existing change output index, add the new output to the transaction
     // and store its index. Otherwise, update the existing change output with the new output.
     if (!this.changeOutputIndex) {
-      this.changeOutputIndex = this.addOutput(output)
+      this.addOutput(output)
+      this.changeOutputIndex = this.outputsCount
     } else {
       let outputs = this.body.outputs()
       outputs[this.changeOutputIndex] = output
@@ -923,6 +946,7 @@ export class TxBuilder {
    * @param {C.Cardano.RewardAccount} address - The reward account from which to withdraw.
    * @param {bigint} amount - The amount of ADA to withdraw.
    * @param {PlutusData} [redeemer] - Optional. The redeemer data for script validation.
+   * @returns {TxBuilder} The same transaction builder
    * @throws {Error} If the reward account does not have a stake credential or if any other error occurs.
    */
   addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData) {
@@ -965,12 +989,14 @@ export class TxBuilder {
         this.requiredWitnesses.add(HashAsPubKeyHex(key.hash))
       }
     }
+    return this
   }
 
   /**
    * Adds a required signer to the transaction. This is necessary for transactions that must be explicitly signed by a particular key.
    *
    * @param {Ed25519KeyHashHex} signer - The hash of the Ed25519 public key that is required to sign the transaction.
+   * @returns {TxBuilder} The same transaction builder
    */
   addRequiredSigner(signer: Ed25519KeyHashHex) {
     // Retrieve existing required signers or initialize a new CBOR set if none exist.
@@ -982,6 +1008,7 @@ export class TxBuilder {
     signers.setValues(values)
     // Update the transaction body with the new set of required signers.
     this.body.setRequiredSigners(signers)
+    return this
   }
 
   /**
@@ -990,8 +1017,10 @@ export class TxBuilder {
    * transaction, either directly or by reference, to optimize the transaction size and processing.
    *
    * @param {Script} script - The script to be added to the transaction's script scope.
+   * @returns {TxBuilder} The same transaction builder
    */
   provideScript(script: Script) {
     this.scriptScope.add(script)
+    return this
   }
 }
