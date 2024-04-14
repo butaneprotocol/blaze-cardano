@@ -2,7 +2,7 @@
   "name": "translucent",
   "module": "index.ts",
   "scripts": {
-    "docs": "typedoc ./packages/translucent-tx/ ./packages/translucent-core/ ./packages/translucent-blueprint/ ./packages/translucent-emulator/ ./packages/translucent-query/ ./packages/translucent-wallet/ && mkdir docs/logo && cp logo/translucent.svg docs/logo/translucent.svg"
+    "docs": "typedoc \"packages/*\" && cp logo/translucent.svg docs/logo/translucent.svg"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
