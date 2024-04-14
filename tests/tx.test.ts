@@ -9,7 +9,7 @@ import { HexBlob } from '@cardano-sdk/util'
 import * as C from '@cardano-sdk/core'
 // import * as D from '@dcspark/cardano-multiplatform-lib-nodejs'
 import * as util from '../packages/translucent-core/util'
-import { TxBuilder } from '../packages/translucent-tx/tx'
+import { TxBuilder } from '../packages/translucent-tx'
 import { hardCodedProtocolParams } from '../packages/translucent-core/params'
 
 {

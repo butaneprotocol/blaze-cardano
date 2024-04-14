@@ -104,8 +104,6 @@ const SLOT_CONFIG_NETWORK = {
   Custom: { zeroTime: 0, zeroSlot: 0, slotLength: 0 },
 }
 
-const dummySignature = Ed25519SignatureHex('0'.repeat(128))
-
 /**
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
  */
@@ -523,9 +521,10 @@ export class TxBuilder {
     let vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore)
     let requiredWitnesses: VkeyWitness[] = []
     for (const val of this.requiredWitnesses.values()) {
-      requiredWitnesses.push(VkeyWitness.fromCore([val, dummySignature]))
+      requiredWitnesses.push(VkeyWitness.fromCore([Ed25519PublicKeyHex("0".repeat(64)), Ed25519SignatureHex('0'.repeat(128))]))
     }
     vkeyWitnesses.setValues(requiredWitnesses)
+    tw.setVkeys(vkeyWitnesses)
     tw.setRedeemers(this.redeemers)
     // Process Plutus data
     let plutusData = CborSet.fromCore([], PlutusData.fromCore)
@@ -549,10 +548,10 @@ export class TxBuilder {
    * @returns {Value} The net value that represents the transaction's pitch.
    * @throws {Error} If a corresponding UTxO for an input cannot be found.
    */
-  private getPitch() {
+  private getPitch(withSpare:boolean = true) {
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(0n)
-    let outputValue = new Value(0n)
+    let outputValue = new Value(this.fee)
     let mintValue = new Value(0n, this.body.mint())
 
     // Aggregate the total input value from all inputs.
@@ -572,6 +571,7 @@ export class TxBuilder {
       inputValue = value.merge(inputValue, utxo.output().amount())
     }
 
+    this.body.outputs()[this.changeOutputIndex!] = new TransactionOutput(this.changeAddress!, value.zero)
     // Aggregate the total output value from all outputs.
     for (const output of this.body.outputs().values()) {
       outputValue = value.merge(outputValue, output.amount())
@@ -579,13 +579,14 @@ export class TxBuilder {
 
     // Calculate the net value by merging input, output (negated), and mint values.
     // Subtract a fixed fee amount (5 ADA) to ensure enough is allocated for transaction fees.
-    return value.merge(
-      value.merge(
-        value.merge(inputValue, value.negate(outputValue)),
-        mintValue,
-      ),
-      new Value(-5000000n), // Subtract 5 ADA from the excess.
+    const tilt = value.merge(
+      value.merge(inputValue, value.negate(outputValue)),
+      mintValue,
     )
+    if (withSpare == true) {
+      return value.merge(tilt, new Value(-5000000n)) // Subtract 5 ADA from the excess.
+    }
+    return tilt
   }
 
   /**
@@ -693,7 +694,7 @@ export class TxBuilder {
   private calculateFees(draft_tx: Transaction, tw: TransactionWitnessSet) {
     // Calculate the fee based on the transaction size and minimum fee parameters.
     this.fee =
-      BigInt(Math.ceil(this.params.minFeeConstant + draft_tx.toCbor().length / 2 * this.params.minFeeCoefficient))
+      BigInt(Math.ceil(this.params.minFeeConstant + (fromHex(draft_tx.toCbor()).length) * this.params.minFeeCoefficient))
     // Update the transaction body with the calculated fee.
     this.body.setFee(this.fee)
   }
@@ -749,6 +750,10 @@ export class TxBuilder {
     if (!this.changeAddress) {
       throw new Error('balanceCollateralChange: change address not set')
     }
+    let collateral = this.body.collateral()
+    if (!collateral || collateral.size()==0){
+      return
+    }
     // Retrieve available UTXOs within scope.
     let scope = [...this.utxoScope.values()]
     // Calculate the total collateral based on the transaction fee and collateral percentage.
@@ -803,7 +808,7 @@ export class TxBuilder {
     // Gather all inputs from the transaction body.
     let inputs = [...this.body.inputs().values()]
     // Perform initial checks and preparations for coin selection.
-    let excessValue = this.getPitch()
+    let excessValue = this.getPitch(true)
     let spareInputs: TransactionUnspentOutput[] = []
     for (const [utxo] of this.utxos.entries()) {
       if (!inputs.includes(utxo.input())) {
@@ -838,6 +843,7 @@ export class TxBuilder {
       )
     }
     // Build the transaction witness set for fee estimation and script validation.
+    //excessValue = this.getPitch(false)
     let tw = this.buildTransactionWitnessSet()
     // Calculate and set the script data hash if necessary.
     {
@@ -846,31 +852,38 @@ export class TxBuilder {
         this.body.setScriptDataHash(scriptDataHash)
       }
     }
+    this.balanceChange(excessValue)
     // Create a draft transaction for fee calculation.
     let draft_tx = new Transaction(this.body, tw)
     // Calculate and set the transaction fee.
+    let draft_size = draft_tx.toCbor().length / 2
     this.calculateFees(draft_tx, tw)
-    this.body.setFee(this.fee)
     excessValue = value.merge(excessValue, new Value(-this.fee))
     this.balanceChange(excessValue)
-    this.prepareCollateral()
-    let evaluationFee = this.evaluate(draft_tx)
-    this.fee += evaluationFee
-    excessValue = value.merge(excessValue, new Value(-evaluationFee))
-    this.balanceChange(excessValue)
-    tw.setRedeemers(this.redeemers)
+    if (this.redeemers.size()>0) {
+      this.prepareCollateral()
+      let evaluationFee = this.evaluate(draft_tx)
+      this.fee += evaluationFee
+      excessValue = value.merge(excessValue, new Value(-evaluationFee))
+      tw.setRedeemers(this.redeemers)
+    }
     {
-      let scriptDataHash = this.getScriptDataHash(tw)
+      const scriptDataHash = this.getScriptDataHash(tw)
       if (scriptDataHash) {
         this.body.setScriptDataHash(scriptDataHash)
       }
     }
     this.body.setFee(this.fee)
     // Merge the fee with the excess value and rebalance the change.
-    excessValue = value.merge(excessValue, new Value(-this.fee))
+    this.balanceCollateralChange()
+    let final_size = draft_tx.toCbor().length / 2
+    this.fee += BigInt(Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient))
+    excessValue = this.getPitch(false)
+    this.body.setFee(this.fee)
     this.balanceChange(excessValue)
     this.balanceCollateralChange()
     // Return the fully constructed transaction.
+    tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore))
     return new Transaction(this.body, tw)
   }
 
