@@ -135,6 +135,7 @@ export class TxBuilder {
   private fee: bigint = 0n // The fee for the transaction.
   private overEstimateSteps = 1.2 // A multiplier to overestimate the execution steps for Plutus scripts.
   private overEstimateMem = 1.05 // A multiplier to overestimate the memory usage for Plutus scripts.
+  private additionalSigners = 0;
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -153,6 +154,16 @@ export class TxBuilder {
    */
   setChangeAddress(address: Address) {
     this.changeAddress = address
+  }
+
+  /**
+   * The additional signers field is used to add additional signing counts for fee calculation.
+   * These will be included in the signing phase at a later stage.
+   * This is needed due to native scripts signees being non-deterministic.
+   * @param {number} amount - The amount of additional signers
+   */
+  addAdditionalSigners(amount: number){
+    this.additionalSigners += amount
   }
 
   /**
@@ -521,6 +532,9 @@ export class TxBuilder {
     let vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore)
     let requiredWitnesses: VkeyWitness[] = []
     for (const val of this.requiredWitnesses.values()) {
+      requiredWitnesses.push(VkeyWitness.fromCore([Ed25519PublicKeyHex("0".repeat(64)), Ed25519SignatureHex('0'.repeat(128))]))
+    }
+    for (let i = 0; i < this.additionalSigners; i++){
       requiredWitnesses.push(VkeyWitness.fromCore([Ed25519PublicKeyHex("0".repeat(64)), Ed25519SignatureHex('0'.repeat(128))]))
     }
     vkeyWitnesses.setValues(requiredWitnesses)
