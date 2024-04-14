@@ -18,5 +18,5 @@
     "resolveJsonModule": true,
   },
   "exclude": ["node_modules"],
-  "include": ["packages", "packages/*.ts", "*.json", "packages/translucent-core/*.ts", "tests/costModels.ts", "plutus.ts"]
+  "include": ["packages", "packages/*.ts", "*.json", "packages/translucent-core/*.ts", "tests/costModels.ts", "plutus.ts", "response.ts"]
 }
