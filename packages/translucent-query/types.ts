@@ -7,8 +7,8 @@ import {
   PlutusData,
   TransactionId,
   Transaction,
+  ProtocolParameters
 } from '../translucent-core'
-import { TxParams } from '../translucent-tx/tx'
 
 /**
  * Interface for the Provider class.
@@ -17,9 +17,9 @@ export interface Provider {
   /**
    * Retrieves the parameters for a transaction.
    *
-   * @returns {Promise<typeof TxParams>} - The parameters for a transaction.
+   * @returns {Promise<ProtocolParameters>} - The parameters for a transaction.
    */
-  getParameters(): Promise<typeof TxParams>
+  getParameters(): Promise<ProtocolParameters>
 
   /**
    * Retrieves the unspent outputs for a given address.

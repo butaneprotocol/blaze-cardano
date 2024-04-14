@@ -9,6 +9,7 @@ import {
   Transaction,
   TransactionOutput,
   HexBlob,
+  ProtocolParameters
 } from '../translucent-core'
 import { Provider } from './types'
 
@@ -25,7 +26,9 @@ export class Maestro implements Provider {
     return { "api-key": this.apiKey };
   }
 
-  getParameters(): Promise<typeof TxParams> {}
+  getParameters(): Promise<ProtocolParameters> {
+    throw new Error("unimplemented")
+  }
 
   getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {
     /* todo: paginate */

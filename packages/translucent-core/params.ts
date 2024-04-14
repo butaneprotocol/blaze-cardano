@@ -1,6 +1,6 @@
 import { CostModels, ExUnits, Prices, ProtocolVersion } from "@cardano-sdk/core/dist/cjs/Cardano";
 
-interface ProtocolParameters {
+export interface ProtocolParameters {
     coinsPerUtxoByte: number,
     maxTxSize: number,
     minFeeCoefficient: number;

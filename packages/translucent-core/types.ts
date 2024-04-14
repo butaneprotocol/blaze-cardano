@@ -1,5 +1,6 @@
 import * as C from './core'
 import * as Crypto from './crypto'
+export { ProtocolParameters } from "./params"
 
 export const Value = C.Serialization.Value
 export type Value = C.Serialization.Value
