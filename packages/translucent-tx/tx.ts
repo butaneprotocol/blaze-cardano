@@ -304,13 +304,15 @@ export class TxBuilder {
   }
 
   /**
-   * Adds an unspent transaction output (UTxO) to the set of UTxOs available for this transaction.
-   * This UTxO can then be used for balancing the transaction, ensuring that inputs and outputs are equal.
+   * Adds unspent transaction outputs (UTxOs) to the set of UTxOs available for this transaction.
+   * These UTxOs can then be used for balancing the transaction, ensuring that inputs and outputs are equal.
    *
-   * @param {TransactionUnspentOutput} utxo - The unspent transaction output to add.
+   * @param {TransactionUnspentOutput[]} utxos - The unspent transaction outputs to add.
    */
-  addUnspentOutput(utxo: TransactionUnspentOutput) {
-    this.utxos.add(utxo)
+  addUnspentOutputs(utxos: TransactionUnspentOutput[]) {
+    for (const utxo of utxos){
+      this.utxos.add(utxo)
+    }
   }
 
   /**

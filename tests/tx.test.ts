@@ -74,8 +74,12 @@ import { TxBuilder } from '../packages/translucent-tx/tx'
 
 {
   let tx = new TxBuilder()
-  tx.addRequiredSigner(Ed25519KeyHashHex("3258f32901c7ac8acfb0815ac78515d7e27f949e7ec71f23ee1aa7bc"))
-  tx.addUnspentOutput(
+  tx.addRequiredSigner(
+    Ed25519KeyHashHex(
+      '3258f32901c7ac8acfb0815ac78515d7e27f949e7ec71f23ee1aa7bc',
+    ),
+  )
+  tx.addUnspentOutputs([
     TransactionUnspentOutput.fromCore([
       {
         txId: C.Cardano.TransactionId.fromHexBlob(
@@ -96,7 +100,7 @@ import { TxBuilder } from '../packages/translucent-tx/tx'
         },
       },
     ]),
-  )
+  ])
   tx.setChangeAddress(
     C.Cardano.Address.fromBech32(
       'addr1qye93uefq8r6ezk0kzq443u9zht7ylu5nelvw8eracd200ylzvhpxn9c4g2fyxe5rlmn6z5qmm3dtjqfjn2vvy58l88szlpjw4',
