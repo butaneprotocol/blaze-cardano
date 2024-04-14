@@ -2,7 +2,7 @@
   "name": "translucent-core",
   "module": "index.ts",
   "scripts": {
-    "docs": "typedoc ./packages/translucent-tx/"
+    "docs": "typedoc ./packages/translucent-tx/ ./packages/translucent-core/ ./packages/translucent-blueprint/ ./packages/translucent-emulator/ ./packages/translucent-query/ ./packages/translucent-wallet/"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
