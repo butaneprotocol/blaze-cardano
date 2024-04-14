@@ -1,4 +1,5 @@
-import { Address } from '../packages/translucent-core'
+import { Address, PlutusLanguageVersion } from '../packages/translucent-core'
+import { hardCodedProtocolParams } from '../packages/translucent-core/params'
 import { Maestro } from '../packages/translucent-query/maestro'
 
 let provider = new Maestro({
@@ -10,4 +11,6 @@ let address = Address.fromBech32(
   'addr1qye93uefq8r6ezk0kzq443u9zht7ylu5nelvw8eracd200ylzvhpxn9c4g2fyxe5rlmn6z5qmm3dtjqfjn2vvy58l88szlpjw4',
 )
 
-provider.getUnspentOutputs(address).then((x)=>console.log(x.map((y)=>y.toCore())))
+provider.getParameters().then((x)=>{})
+
+// provider.getUnspentOutputs(address).then((x)=>console.log(x.map((y)=>y.toCore())))

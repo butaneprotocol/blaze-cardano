@@ -122,6 +122,8 @@ export type Hash<T extends string> = C.Serialization.Hash<T>;
 export const DatumHash = Crypto.Hash32ByteBase16;
 export type DatumHash = Crypto.Hash32ByteBase16;
 
+export type CostModels = C.Cardano.CostModels;
+
 export enum NetworkId {
   Mainnet = 0,
   Testnet = 1,
