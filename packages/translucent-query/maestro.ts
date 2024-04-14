@@ -9,7 +9,9 @@ import {
   Transaction,
   TransactionOutput,
   HexBlob,
-  ProtocolParameters
+  ProtocolParameters,
+  PlutusLanguageVersion,
+  CostModels
 } from '../translucent-core'
 import { Provider } from './types'
 
@@ -27,7 +29,55 @@ export class Maestro implements Provider {
   }
 
   getParameters(): Promise<ProtocolParameters> {
-    throw new Error("unimplemented")
+    const query = `/protocol-params`
+    return fetch(`${this.url}${query}`, {headers: this.headers()})
+      .then((resp) => resp.json())
+      .then((json) => {
+        if (json) {
+          const response = json as MaestroResponse<MaestroProtocolParametersResponse>
+          if ('message' in response){
+            throw new Error(`getUnspentOutputs: Maestro threw "${response.message}"`)
+          }
+          const params = response.data
+          const costModels: CostModels = new Map()
+          for (const cm of Object.keys(params.cost_models) as MaestroLanguageVersions[]){
+            let costModel: number[] = []
+            let keys = Object.keys(params.cost_models[cm]).sort()
+            for (const key of keys){
+                costModel.push(params.cost_models[cm][key])
+            }
+            costModels.set(fromMaestroLanguageVersion(cm), costModel)
+          }
+          return {
+            coinsPerUtxoByte: params.coins_per_utxo_byte,
+            maxTxSize: params.max_tx_size,
+            minFeeCoefficient: params.min_fee_coefficient,
+            minFeeConstant: params.min_fee_constant,
+            maxBlockBodySize: params.max_block_body_size,
+            maxBlockHeaderSize: params.max_block_header_size,
+            stakeKeyDeposit: params.stake_key_deposit,
+            poolDeposit: params.pool_deposit,
+            poolRetirementEpochBound: params.pool_retirement_epoch_bound,
+            desiredNumberOfPools: params.desired_number_of_pools,
+            poolInfluence: params.pool_influence,
+            monetaryExpansion: params.monetary_expansion,
+            treasuryExpansion: params.treasury_expansion,
+            minPoolCost: params.min_pool_cost,
+            protocolVersion: params.protocol_version,
+            maxValueSize: params.max_value_size,
+            collateralPercentage: params.collateral_percentage,
+            maxCollateralInputs: params.max_collateral_inputs,
+            costModels: costModels,
+            prices: {
+                memory: parseFloat(params.prices.memory),
+                steps: parseFloat(params.prices.steps)
+            },
+            maxExecutionUnitsPerTransaction: params.max_execution_units_per_transaction,
+            maxExecutionUnitsPerBlock: params.max_execution_units_per_block,
+        }
+        }
+        throw new Error("getUnspentOutputs: Could not parse response json");
+      })
   }
 
   getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {
@@ -91,11 +141,61 @@ export class Maestro implements Provider {
   }
 }
 
+type MaestroLanguageVersions = "plutus:v1" | "plutus:v2"
+const fromMaestroLanguageVersion = (x: MaestroLanguageVersions): PlutusLanguageVersion => {
+    if (x == "plutus:v1"){
+        return PlutusLanguageVersion.V1
+    }else if (x=="plutus:v2"){
+        return PlutusLanguageVersion.V2
+    }
+    throw new Error("fromMaestroLanguageVersion: Unreachable!")
+}
+
+interface MaestroProtocolParametersResponse {
+    data: {
+      min_fee_coefficient: number;
+      min_fee_constant: number;
+      max_block_body_size: number;
+      max_block_header_size: number;
+      max_tx_size: number;
+      stake_key_deposit: number;
+      pool_deposit: number;
+      pool_retirement_epoch_bound: number;
+      desired_number_of_pools: number;
+      pool_influence: string;
+      monetary_expansion: string;
+      treasury_expansion: string;
+      protocol_version: {
+        major: number;
+        minor: number;
+      };
+      min_pool_cost: number;
+      coins_per_utxo_byte: number;
+      cost_models: Record<MaestroLanguageVersions, {[key: string]: number}>;
+      prices: {
+        memory: string;
+        steps: string;
+      };
+      max_execution_units_per_transaction: {
+        memory: number;
+        steps: number;
+      };
+      max_execution_units_per_block: {
+        memory: number;
+        steps: number;
+      };
+      max_value_size: number;
+      collateral_percentage: number;
+      max_collateral_inputs: number;
+    };
+    last_updated: MaestroLastUpdated;
+  }
+
 type MaestroResponse<SomeResponse> = SomeResponse | { message: string }
 
 interface MaestroUTxOResponse {
   data: MaestroTransaction[]
-  last_updated: LastUpdated
+  last_updated: MaestroLastUpdated
   next_cursor: null
 }
 
@@ -106,16 +206,8 @@ interface MaestroTransaction {
   txout_cbor: string
 }
 
-interface LastUpdated {
+interface MaestroLastUpdated {
   timestamp: string
   block_hash: string
   block_slot: number
 }
-
-/*
-
-curl -L -X GET 'https://mainnet.gomaestro-api.org/v1/addresses/addr1qye93uefq8r6ezk0kzq443u9zht7ylu5nelvw8eracd200ylzvhpxn9c4g2fyxe5rlmn6z5qmm3dtjqfjn2vvy58l88szlpjw4/utxos?with_cbor=true' \
--H 'Accept: application/json' \
--H 'api-key: ninRUQmqtOwS66rddPStASM6PItD1fa8'
-
-*/
