@@ -76,7 +76,7 @@ export class Maestro implements Provider {
             maxExecutionUnitsPerBlock: params.max_execution_units_per_block,
         }
         }
-        throw new Error("getUnspentOutputs: Could not parse response json");
+        throw new Error("getParameters: Could not parse response json");
       })
   }
 
