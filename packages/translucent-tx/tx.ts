@@ -384,7 +384,7 @@ export class TxBuilder {
    * @param {Transaction} draft_tx - The draft transaction to evaluate.
    * @returns {bigint} The total fee calculated based on the execution units of the scripts.
    */
-  evaluate(draft_tx: Transaction): bigint {
+  private evaluate(draft_tx: Transaction): bigint {
     // Collect all UTXOs from the transaction's scope.
     let allUtxos: TransactionUnspentOutput[] = Array.from(
       this.utxoScope.values(),
