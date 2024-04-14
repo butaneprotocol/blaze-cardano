@@ -5,28 +5,11 @@
     "docs": "typedoc ./src/tx.ts"
   },
   "devDependencies": {
-    "@cardano-ogmios/schema": "^6.0.0-rc6",
-    "@types/jest": "^29.5.5",
-    "@types/sha256": "^0.2.2",
-    "better-docs": "^2.7.3",
-    "bun-types": "latest",
-    "eslint": "^8.50.0",
-    "jest": "^29.7.0",
-    "jsdoc": "^4.0.2",
-    "ts-jest": "^29.1.1",
     "typedoc": "^0.25.13",
     "typescript": "^5.3.3"
   },
   "dependencies": {
     "@cardano-sdk/core": "^0.30.0",
-    "@sinclair/typebox": "^0.31.28",
-    "uplc-node": "^0.0.3",
-    "uplc-web": "^0.0.3"
-  },
-  "browser": {
-    "uplc-node": "uplc-web"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
+    "uplc-node": "^0.0.3"
   }
 }

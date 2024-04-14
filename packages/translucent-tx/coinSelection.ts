@@ -1,16 +1,25 @@
-import { TransactionUnspentOutput, Value } from './types'
+import { TransactionUnspentOutput, Value } from '../translucent-core'
 import * as value from './value'
 
+/**
+ * The result of a coin selection operation.
+ * It includes the selected inputs, the total value of the selected inputs, and the remaining inputs.
+ */
 type SelectionResult = {
   selectedInputs: TransactionUnspentOutput[]
   selectedValue: Value
   inputs: TransactionUnspentOutput[]
 }
 
-// wide selection is a multiasset coin selector that doesn't care about magnitude
-// this tries to maximise the number of coins covered by a small number of inputs
-// it is a greedy best improvement algorithm that selects 1st what covers the most different assets fully,
-// and then to tie split selects what covers the largest intersection (i.e the greater magnitude of those values)
+/**
+ * The wide selection algorithm is a multiasset coin selector that doesn't care about magnitude.
+ * It maximizes the number of coins covered by a small number of inputs.
+ * It is a greedy best improvement algorithm that selects first what covers the most different assets fully,
+ * and then to tie split selects what covers the largest intersection (i.e the greater magnitude of those values).
+ * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
+ * @param {Value} dearth - The value to be covered by the selected inputs.
+ * @returns {SelectionResult} The result of the wide selection operation.
+ */
 function wideSelection(
   inputs: TransactionUnspentOutput[],
   dearth: Value,
@@ -46,8 +55,13 @@ function wideSelection(
   return { selectedInputs, selectedValue: acc, inputs: availableInputs }
 }
 
-// deepSelection works as a multiasset selector by solving a single asset fully, and then moving to another asset
-// it repeatedly picks an asset to solve, picks the largest assets with
+/**
+ * The deep selection algorithm works as a multiasset selector by solving a single asset fully, and then moving to another asset.
+ * It repeatedly picks an asset to solve, picking the largest assets with the greatest magnitude.
+ * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
+ * @param {Value} dearth - The value to be covered by the selected inputs.
+ * @returns {SelectionResult} The result of the deep selection operation.
+ */
 function deepSelection(
   inputs: TransactionUnspentOutput[],
   dearth: Value,
@@ -86,8 +100,13 @@ function deepSelection(
   return { selectedInputs, selectedValue: acc, inputs: availableInputs }
 }
 
-// our main coin selection function executes wideSelection and then deepSelection, combining the two.
-// this works to greedily select the smallest set of utxos, and then any extra is done with the depth search
+/**
+ * The main coin selection function executes wideSelection and then deepSelection, combining the two.
+ * It greedily selects the smallest set of utxos, and then any extra is done with the depth search.
+ * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
+ * @param {Value} dearth - The value to be covered by the selected inputs.
+ * @returns {SelectionResult} The result of the coin selection operation.
+ */
 export function micahsSelector(
   inputs: TransactionUnspentOutput[],
   dearth: Value,

@@ -37,13 +37,16 @@ import {
   CborWriter,
   RewardAccount,
   Hash,
-} from './types'
-import { HexBlob } from '@cardano-sdk/util'
+  HexBlob,
+  HashAsPubKeyHex,
+  PolicyIdToHash,
+  toHex,
+  fromHex,
+} from '../translucent-core'
 import * as value from './value'
 import { micahsSelector } from './coinSelection'
-import * as utils from './utils'
-import { costModels, costModelsBytes } from './costModels'
-import * as Crypto from '@cardano-sdk/crypto'
+import { costModels, costModelsBytes } from '../../tests/costModels'
+import * as Crypto from '../translucent-core/crypto'
 import * as U from 'uplc-node'
 
 /*
@@ -102,7 +105,7 @@ export const TxParams = {
   priceStep: 721 / 10_000_000,
   //ex_unit_prices: ExUnitPrices,
   //costMdls: Costmdls,
-  collateralPercentage: 1.50,
+  collateralPercentage: 1.5,
   maxCollateralInputs: 3,
 }
 
@@ -120,33 +123,36 @@ const SLOT_CONFIG_NETWORK = {
 
 const dummySignature = Ed25519SignatureHex('0'.repeat(128))
 
+/**
+ * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
+ */
 export class TxBuilder {
-  body: TransactionBody
-  inputs: TransactionInputSet = CborSet.fromCore([], TransactionInput.fromCore)
-  private redeemers: Redeemers = Redeemers.fromCore([])
+  body: TransactionBody // The main body of the transaction containing inputs, outputs, etc.
+  inputs: TransactionInputSet = CborSet.fromCore([], TransactionInput.fromCore) // A set of transaction inputs.
+  private redeemers: Redeemers = Redeemers.fromCore([]) // A collection of redeemers for script validation.
   private utxos: Set<TransactionUnspentOutput> = new Set<
     TransactionUnspentOutput
-  >([])
+  >() // A set of unspent transaction outputs.
   private utxoScope: Set<TransactionUnspentOutput> = new Set<
     TransactionUnspentOutput
-  >([])
-  private scriptScope: Set<Script> = new Set()
-  private scriptSeen: Set<ScriptHash> = new Set()
-  private changeAddress?: Address
-  private changeOutputIndex?: number
-  private plutusData: TransactionWitnessPlutusData = new Set()
-  private requiredWitnesses: Set<Ed25519PublicKeyHex> = new Set()
-  private requiredNativeScripts: Set<Hash28ByteBase16> = new Set()
-  private requiredPlutusScripts: Set<Hash28ByteBase16> = new Set()
+  >() // A scoped set of UTxOs for the transaction.
+  private scriptScope: Set<Script> = new Set() // A set of scripts included in the transaction.
+  private scriptSeen: Set<ScriptHash> = new Set() // A set of script hashes that have been processed.
+  private changeAddress?: Address // The address to send change to, if any.
+  private changeOutputIndex?: number // The index of the change output in the transaction.
+  private plutusData: TransactionWitnessPlutusData = new Set() // A set of Plutus data for witness purposes.
+  private requiredWitnesses: Set<Ed25519PublicKeyHex> = new Set() // A set of public keys required for witnessing the transaction.
+  private requiredNativeScripts: Set<Hash28ByteBase16> = new Set() // A set of native script hashes required by the transaction.
+  private requiredPlutusScripts: Set<Hash28ByteBase16> = new Set() // A set of Plutus script hashes required by the transaction.
   private usedLanguages: Record<PlutusLanguageVersion, boolean> = {
-    [0]: false,
-    [1]: false,
-    [2]: false,
+    [0]: false, // Indicates whether Plutus V1 is used.
+    [1]: false, // Indicates whether Plutus V2 is used.
+    [2]: false, // Indicates whether Plutus V3 is used.
   }
-  private extraneousDatums: Set<PlutusData> = new Set()
-  private fee: bigint = 0n
-  private overEstimateSteps = 1.2
-  private overEstimateMem = 1.05
+  private extraneousDatums: Set<PlutusData> = new Set() // A set of extraneous Plutus data not directly used in the transaction.
+  private fee: bigint = 0n // The fee for the transaction.
+  private overEstimateSteps = 1.2 // A multiplier to overestimate the execution steps for Plutus scripts.
+  private overEstimateMem = 1.05 // A multiplier to overestimate the memory usage for Plutus scripts.
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -207,6 +213,7 @@ export class TxBuilder {
     // Update the transaction body with the new set of reference inputs.
     this.body.setReferenceInputs(referenceInputs)
   }
+
   /**
    * Adds an input to the transaction. This method is responsible for including a new input, which represents
    * a reference to an unspent transaction output (UTxO) that will be consumed by the transaction. Optionally,
@@ -291,7 +298,7 @@ export class TxBuilder {
       if (key.type == CredentialType.ScriptHash) {
         this.requiredNativeScripts.add(key.hash)
       } else {
-        this.requiredWitnesses.add(utils.HashAsPubKeyHex(key.hash))
+        this.requiredWitnesses.add(HashAsPubKeyHex(key.hash))
       }
     }
   }
@@ -331,12 +338,11 @@ export class TxBuilder {
     // If a redeemer is provided, handle Plutus script requirements.
     if (redeemer) {
       // Add the policy ID hash to the set of required Plutus scripts.
-      this.requiredPlutusScripts.add(utils.PolicyIdToHash(policy))
+      this.requiredPlutusScripts.add(PolicyIdToHash(policy))
       // Retrieve the current list of redeemers and prepare to add a new one.
       let redeemers = [...this.redeemers.values()]
       // Create and add a new redeemer for the minting action, specifying execution units.
-      // Note: Execution units are placeholders and should be replaced with actual values.
-      console.log(' adding mint reeemer')
+      // Note: Execution units are placeholders and are replaced with actual values during the evaluation phase.
       redeemers.push(
         Redeemer.fromCore({
           index: 0, // The index for minting actions is typically 0, but may need adjustment based on the transaction structure.
@@ -352,9 +358,10 @@ export class TxBuilder {
       this.redeemers.setValues(redeemers)
     } else {
       // If no redeemer is provided, assume minting under a native script and add the policy ID hash to the required native scripts.
-      this.requiredNativeScripts.add(utils.PolicyIdToHash(policy))
+      this.requiredNativeScripts.add(PolicyIdToHash(policy))
     }
   }
+
   /**
    * Adds a transaction output to the current transaction body. This method also ensures that the minimum ada
    * requirements are met for the output. After adding the output, it updates the transaction body's outputs.
@@ -371,6 +378,7 @@ export class TxBuilder {
     // Return the index at which the new output was added.
     return index
   }
+
   /**
    * Adds a Plutus datum to the transaction. This datum is not directly associated with any particular output but may be used
    * by scripts during transaction validation. This method is useful for including additional information that scripts may
@@ -382,54 +390,70 @@ export class TxBuilder {
     this.extraneousDatums.add(datum)
   }
 
-  // Balances inputs and outputs, selecting from added unspent outputs
-  // Also selects a collateral input if none are selected
-  // Fails if cannot be balanced or collateral cannot cover runtime
-  balance() {}
+  /**
+   * Evaluates the scripts for the given draft transaction and calculates the execution units and fees required.
+   * This function iterates over all UTXOs within the transaction's scope, simulates the execution of associated scripts,
+   * and aggregates the execution units. It then calculates the total fee based on the execution units and updates the
+   * transaction's redeemers with the new execution units.
+   *
+   * @param {Transaction} draft_tx - The draft transaction to evaluate.
+   * @returns {bigint} The total fee calculated based on the execution units of the scripts.
+   */
+  evaluate(draft_tx: Transaction): bigint {
+    // Collect all UTXOs from the transaction's scope.
+    let allUtxos: TransactionUnspentOutput[] = Array.from(
+      this.utxoScope.values(),
+    )
 
-  // Evaluate scripts and return exunits
-  evaluate(draft_tx: Transaction) {
-    let allUtxos: TransactionUnspentOutput[] = []
-    for (const utxo of this.utxoScope.values()) {
-      allUtxos.push(utxo)
-    }
+    // Simulate the execution of scripts using the UPLC (Untyped Plutus Core) evaluator.
     const uplcResults = U.eval_phase_two_raw(
-      utils.fromHex(draft_tx.toCbor()),
-      allUtxos.map((x) => utils.fromHex(x.input().toCbor())),
-      allUtxos.map((x) => utils.fromHex(x.output().toCbor())),
-      utils.fromHex(costModelsBytes),
+      fromHex(draft_tx.toCbor()), // Convert the draft transaction to CBOR and hex format.
+      allUtxos.map((x) => fromHex(x.input().toCbor())), // Convert all input UTXOs to CBOR and hex format.
+      allUtxos.map((x) => fromHex(x.output().toCbor())), // Convert all output UTXOs to CBOR and hex format.
+      fromHex(costModelsBytes), // Convert the cost models to hex format.
       BigInt(
         Math.floor(
           Number(TxParams.maxTxExSteps) / (this.overEstimateSteps ?? 1),
         ),
-      ),
+      ), // Calculate the estimated max execution steps.
       BigInt(
         Math.floor(Number(TxParams.maxTxExMem) / (this.overEstimateMem ?? 1)),
-      ),
-      BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroTime),
-      BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroSlot),
-      SLOT_CONFIG_NETWORK.Mainnet.slotLength,
+      ), // Calculate the estimated max memory.
+      BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroTime), // Network-specific zero time for slot calculation.
+      BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroSlot), // Network-specific zero slot.
+      SLOT_CONFIG_NETWORK.Mainnet.slotLength, // Network-specific slot length.
     )
-    let fee = 0
-    let redeemerValues: Redeemer[] = []
+
+    let fee = 0 // Initialize the fee accumulator.
+    let redeemerValues: Redeemer[] = [] // Initialize an array to hold the updated redeemers.
+
+    // Iterate over the results from the UPLC evaluator.
     for (const redeemerBytes of uplcResults) {
-      let redeemer = Redeemer.fromCbor(HexBlob(utils.toHex(redeemerBytes)))
-      let exUnits = redeemer.exUnits()
+      let redeemer = Redeemer.fromCbor(HexBlob(toHex(redeemerBytes))) // Convert each result back from CBOR to a Redeemer object.
+      let exUnits = redeemer.exUnits() // Extract the execution units from the redeemer.
+
+      // Adjust the execution units based on overestimation factors.
       exUnits.setSteps(
         BigInt(Math.round(Number(exUnits.steps()) * this.overEstimateSteps)),
       )
       exUnits.setMem(
         BigInt(Math.round(Number(exUnits.mem()) * this.overEstimateMem)),
       )
-      redeemer.setExUnits(exUnits)
-      redeemerValues.push(redeemer)
+
+      redeemer.setExUnits(exUnits) // Update the redeemer with the adjusted execution units.
+      redeemerValues.push(redeemer) // Add the updated redeemer to the array.
+
+      // Calculate the fee contribution from this redeemer and add it to the total fee.
       fee += TxParams.priceStep * Number(exUnits.steps())
       fee += TxParams.priceMem * Number(exUnits.mem())
     }
+
+    // Create a new Redeemers object and set its values to the updated redeemers.
     let redeemers: Redeemers = Redeemers.fromCore([])
     redeemers.setValues(redeemerValues)
-    this.redeemers = redeemers
-    return BigInt(Math.ceil(fee))
+    this.redeemers = redeemers // Update the transaction's redeemers with the new set.
+
+    return BigInt(Math.ceil(fee)) // Return the total fee, rounded up to the nearest whole number.
   }
 
   /**
@@ -515,7 +539,6 @@ export class TxBuilder {
       requiredWitnesses.push(VkeyWitness.fromCore([val, dummySignature]))
     }
     vkeyWitnesses.setValues(requiredWitnesses)
-    console.log('VKEY', vkeyWitnesses.toCore())
     tw.setRedeemers(this.redeemers)
     // Process Plutus data
     let plutusData = CborSet.fromCore([], PlutusData.fromCore)
@@ -593,10 +616,21 @@ export class TxBuilder {
     let datums = tw.plutusData()?.values().slice() || []
     // Proceed only if there are datums or redeemers to process.
     if (datums.length > 0 || redeemers.length > 0) {
+      // Initialize a CBOR writer to encode the script data.
+      const writer = new CborWriter()
+      // Encode redeemers and datums into CBOR format.
+      writer.writeStartArray(redeemers.length)
+      for (const redeemer of redeemers) {
+        writer.writeEncodedValue(Buffer.from(redeemer.toCbor(), 'hex'))
+      }
+      if (datums && datums.length > 0) {
+        writer.writeStartArray(datums.length)
+        for (const datum of datums) {
+          writer.writeEncodedValue(Buffer.from(datum.toCbor(), 'hex'))
+        }
+      }
       // Initialize a container for used cost models.
       let usedCostModels = new Costmdls()
-      // Debug log for development purposes.
-      console.log(this.usedLanguages, costModels)
       // Populate the used cost models based on the languages used in the transaction.
       for (let i = 0; i <= Object.keys(this.usedLanguages).length; i++) {
         if (i == 0) {
@@ -612,14 +646,6 @@ export class TxBuilder {
           usedCostModels.insert(new CostModel(i, cm))
         }
       }
-      // Debug log for development purposes.
-      console.log(usedCostModels)
-      // Initialize a CBOR writer to encode the script data.
-      const writer = new CborWriter()
-      // Encode redeemers and datums into CBOR format.
-      writer.writeEncodedValue(utils.getCborEncodedArray(redeemers))
-      if (datums && datums.length > 0)
-        writer.writeEncodedValue(utils.getCborEncodedArray(datums))
       // Encode the used cost models into CBOR format.
       writer.writeEncodedValue(
         Buffer.from(usedCostModels.languageViewsEncoding(), 'hex'),
@@ -634,6 +660,7 @@ export class TxBuilder {
     // Return undefined if there are no datums or redeemers.
     return undefined
   }
+
   /**
    * Adjusts the balance of the transaction by creating or updating a change output.
    * This method takes the excess value from the transaction, removes any zero-valued
@@ -669,24 +696,42 @@ export class TxBuilder {
     }
   }
 
+  /**
+   * Calculates the transaction fees based on the transaction size and parameters.
+   * It updates the transaction body with the calculated fee.
+   *
+   * @param {Transaction} draft_tx - The draft transaction to calculate fees for.
+   * @param {TransactionWitnessSet} tw - The transaction witness set.
+   */
   private calculateFees(draft_tx: Transaction, tw: TransactionWitnessSet) {
+    // Calculate the fee based on the transaction size and minimum fee parameters.
     this.fee =
       TxParams.minFeeB + BigInt(draft_tx.toCbor().length / 2) * TxParams.minFeeA
+    // Update the transaction body with the calculated fee.
     this.body.setFee(this.fee)
   }
 
+  /**
+   * Prepares the collateral for the transaction by selecting suitable UTXOs.
+   * Throws an error if suitable collateral cannot be found or if some inputs cannot be resolved.
+   */
   private prepareCollateral() {
+    // Retrieve inputs from the transaction body and available UTXOs within scope.
     let inputs = [...this.body.inputs().values()]
     let scope = [...this.utxoScope.values()]
+    // Initialize variables to track the best UTXO for collateral and its ranking.
     let [best, rank]: [TransactionUnspentOutput | undefined, number] = [
       undefined,
       99,
     ]
+    // Iterate over inputs to find the best UTXO for collateral.
     for (const input of inputs) {
       let utxo = scope.find((x) => x.input() == input)
       if (utxo) {
+        // Check if the UTXO amount is sufficient for collateral.
         if (utxo.output().amount().coin() >= 10n * 10n ** 6n) {
           let ranking = value.assetTypes(utxo.output().amount())
+          // Update the best UTXO and its ranking if it's a better candidate.
           if (ranking < rank) {
             rank = ranking
             best = utxo
@@ -696,21 +741,34 @@ export class TxBuilder {
         throw new Error('prepareCollateral: could not resolve some input')
       }
     }
+    // Throw an error if no suitable collateral UTXO is found.
     if (!best) {
       throw new Error('prepareCollateral: could not find enough collateral')
     }
+    // Set the selected UTXO as collateral in the transaction body.
     let tis = CborSet.fromCore([], TransactionInput.fromCore)
     tis.setValues([best.input()])
     this.body.setCollateral(tis)
+    // Also set the collateral return to the output of the selected UTXO.
     this.body.setCollateralReturn(best.output())
   }
 
+  /**
+   * Balances the collateral change by creating a transaction output that returns the excess collateral.
+   * Throws an error if the change address is not set.
+   */
   private balanceCollateralChange() {
+    // Ensure a change address is set before proceeding.
     if (!this.changeAddress) {
       throw new Error('balanceCollateralChange: change address not set')
     }
+    // Retrieve available UTXOs within scope.
     let scope = [...this.utxoScope.values()]
-    let totalCollateral = BigInt(Math.ceil(TxParams.collateralPercentage * Number(this.fee)))
+    // Calculate the total collateral based on the transaction fee and collateral percentage.
+    let totalCollateral = BigInt(
+      Math.ceil(TxParams.collateralPercentage * Number(this.fee)),
+    )
+    // Calculate the collateral value by summing up the amounts from collateral inputs.
     let collateralValue = this.body
       .collateral()!
       .values()
@@ -723,15 +781,14 @@ export class TxBuilder {
         }
         return value.merge(utxo.output().amount(), acc)
       }, value.zero)
+    // Create a transaction output for the change address with the adjusted collateral value.
     this.body.setCollateralReturn(
       new TransactionOutput(
         this.changeAddress,
-        value.merge(
-          collateralValue,
-          new Value(-totalCollateral),
-        ),
+        value.merge(collateralValue, new Value(-totalCollateral)),
       ),
     )
+    // Update the transaction body with the total collateral amount.
     this.body.setTotalCollateral(totalCollateral)
   }
 
@@ -804,19 +861,13 @@ export class TxBuilder {
     }
     // Create a draft transaction for fee calculation.
     let draft_tx = new Transaction(this.body, tw)
-    // Log the draft transaction size for debugging.
-    console.log('Draft length', draft_tx.toCbor().length / 2)
     // Calculate and set the transaction fee.
     this.calculateFees(draft_tx, tw)
-    // console.log('tx length', this.body.toCbor().length / 2)
     this.body.setFee(this.fee)
     excessValue = value.merge(excessValue, new Value(-this.fee))
     this.balanceChange(excessValue)
-    //
-    //console.log(D.Transaction.from_bytes(utils.fromHex(draft_tx.toCbor())).to_json())
     this.prepareCollateral()
     let evaluationFee = this.evaluate(draft_tx)
-    console.log('evaluated')
     this.fee += evaluationFee
     excessValue = value.merge(excessValue, new Value(-evaluationFee))
     this.balanceChange(excessValue)
@@ -861,7 +912,6 @@ export class TxBuilder {
    * @throws {Error} If the reward account does not have a stake credential or if any other error occurs.
    */
   addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData) {
-    console.log('used withdrawal')
     // Retrieve existing withdrawals or initialize a new map if none exist.
     const withdrawals: Map<RewardAccount, bigint> =
       this.body.withdrawals() ?? new Map()
@@ -898,7 +948,7 @@ export class TxBuilder {
       if (key.type == CredentialType.ScriptHash) {
         this.requiredNativeScripts.add(key.hash)
       } else {
-        this.requiredWitnesses.add(utils.HashAsPubKeyHex(key.hash))
+        this.requiredWitnesses.add(HashAsPubKeyHex(key.hash))
       }
     }
   }
@@ -909,7 +959,6 @@ export class TxBuilder {
    * @param {Ed25519KeyHashHex} signer - The hash of the Ed25519 public key that is required to sign the transaction.
    */
   addRequiredSigner(signer: Ed25519KeyHashHex) {
-    console.log('adding required signer')
     // Retrieve existing required signers or initialize a new CBOR set if none exist.
     let signers: CborSet<Ed25519KeyHashHex, Hash<Ed25519KeyHashHex>> =
       this.body.requiredSigners() ?? CborSet.fromCore([], Hash.fromCore)
@@ -918,7 +967,6 @@ export class TxBuilder {
     values.push(Hash.fromCore(signer))
     signers.setValues(values)
     // Update the transaction body with the new set of required signers.
-    console.log(signers.toCbor())
     this.body.setRequiredSigners(signers)
   }
 

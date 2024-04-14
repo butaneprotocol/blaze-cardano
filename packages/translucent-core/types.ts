@@ -1,6 +1,5 @@
-import * as C from '@cardano-sdk/core'
-import * as Crypto from '@cardano-sdk/crypto'
-import { HexBlob } from '@cardano-sdk/util'
+import * as C from './core'
+import * as Crypto from './crypto'
 
 export const Value = C.Serialization.Value
 export type Value = C.Serialization.Value
@@ -9,6 +8,9 @@ export type TokenMap = C.Cardano.TokenMap
 
 export const Transaction = C.Serialization.Transaction
 export type Transaction = C.Serialization.Transaction
+
+export const TransactionId = C.Cardano.TransactionId
+export type TransactionId = C.Cardano.TransactionId
 
 export const TransactionBody = C.Serialization.TransactionBody
 export type TransactionBody = C.Serialization.TransactionBody
@@ -24,17 +26,6 @@ export type TransactionInput = C.Serialization.TransactionInput
 
 export const TransactionOutput = C.Serialization.TransactionOutput
 export type TransactionOutput = C.Serialization.TransactionOutput
-
-interface CborSerializable<C> {
-  toCbor(): HexBlob
-  toCore(): C
-}
-
-export const CborSet = C.Serialization.CborSet
-export type CborSet<A, B extends CborSerializable<A>> = C.Serialization.CborSet<
-  A,
-  B
->
 
 export type TransactionInputSet = C.Serialization.CborSet<
   ReturnType<TransactionInput['toCore']>,
@@ -122,3 +113,6 @@ export type RewardAccount = C.Cardano.RewardAccount
 
 export const Hash = C.Serialization.Hash
 export type Hash<T extends string> = C.Serialization.Hash<T>
+
+export const DatumHash = Crypto.Hash32ByteBase16
+export type DatumHash = Crypto.Hash32ByteBase16
