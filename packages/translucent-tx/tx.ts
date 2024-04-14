@@ -42,6 +42,7 @@ import {
   PolicyIdToHash,
   toHex,
   fromHex,
+  ProtocolParameters,
 } from '../translucent-core'
 import * as value from './value'
 import { micahsSelector } from './coinSelection'
@@ -91,24 +92,6 @@ constraints:
     mustProduceAtLeast
 */
 
-export const TxParams = {
-  minFeeA: 44n,
-  minFeeB: 155381n,
-  poolDeposit: 500000000n,
-  keyDeposit: 2000000n,
-  maxValueSize: 5000n,
-  maxTxSize: 16384n,
-  maxTxExMem: 14000000n,
-  maxTxExSteps: 10000000000n,
-  coinsPerUtxoByte: 4310n,
-  priceMem: 577 / 10000,
-  priceStep: 721 / 10_000_000,
-  //ex_unit_prices: ExUnitPrices,
-  //costMdls: Costmdls,
-  collateralPercentage: 1.5,
-  maxCollateralInputs: 3,
-}
-
 const SLOT_CONFIG_NETWORK = {
   Mainnet: { zeroTime: 1596059091000, zeroSlot: 4492800, slotLength: 1000 }, // Starting at Shelley era
   Preview: { zeroTime: 1666656000000, zeroSlot: 0, slotLength: 1000 }, // Starting at Shelley era
@@ -127,6 +110,7 @@ const dummySignature = Ed25519SignatureHex('0'.repeat(128))
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
  */
 export class TxBuilder {
+  readonly params: ProtocolParameters
   body: TransactionBody // The main body of the transaction containing inputs, outputs, etc.
   inputs: TransactionInputSet = CborSet.fromCore([], TransactionInput.fromCore) // A set of transaction inputs.
   private redeemers: Redeemers = Redeemers.fromCore([]) // A collection of redeemers for script validation.
@@ -158,7 +142,8 @@ export class TxBuilder {
    * Constructs a new instance of the TxBuilder class.
    * Initializes a new transaction body with an empty set of inputs, outputs, and no fee.
    */
-  constructor() {
+  constructor(params: ProtocolParameters) {
+    this.params = params
     this.body = new TransactionBody(this.inputs, [], 0n, undefined)
   }
 
@@ -287,8 +272,8 @@ export class TxBuilder {
           purpose: RedeemerPurpose['spend'],
           data: redeemer.toCore(),
           executionUnits: {
-            memory: Number(TxParams.maxTxExMem),
-            steps: Number(TxParams.maxTxExSteps),
+            memory: this.params.maxExecutionUnitsPerTransaction.memory,
+            steps: this.params.maxExecutionUnitsPerTransaction.steps,
           },
         }),
       )
@@ -351,8 +336,8 @@ export class TxBuilder {
           purpose: RedeemerPurpose['mint'], // Specify the purpose of the redeemer as minting.
           data: redeemer.toCore(), // Convert the provided PlutusData redeemer to its core representation.
           executionUnits: {
-            memory: Number(TxParams.maxTxExMem), // Placeholder memory units, replace with actual estimation.
-            steps: Number(TxParams.maxTxExSteps), // Placeholder step units, replace with actual estimation.
+            memory: this.params.maxExecutionUnitsPerTransaction.memory, // Placeholder memory units, replace with actual estimation.
+            steps: this.params.maxExecutionUnitsPerTransaction.steps, // Placeholder step units, replace with actual estimation.
           },
         }),
       )
@@ -415,11 +400,11 @@ export class TxBuilder {
       fromHex(costModelsBytes), // Convert the cost models to hex format.
       BigInt(
         Math.floor(
-          Number(TxParams.maxTxExSteps) / (this.overEstimateSteps ?? 1),
+          this.params.maxExecutionUnitsPerTransaction.steps / (this.overEstimateSteps ?? 1),
         ),
       ), // Calculate the estimated max execution steps.
       BigInt(
-        Math.floor(Number(TxParams.maxTxExMem) / (this.overEstimateMem ?? 1)),
+        Math.floor(this.params.maxExecutionUnitsPerTransaction.memory / (this.overEstimateMem ?? 1)),
       ), // Calculate the estimated max memory.
       BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroTime), // Network-specific zero time for slot calculation.
       BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroSlot), // Network-specific zero slot.
@@ -446,8 +431,8 @@ export class TxBuilder {
       redeemerValues.push(redeemer) // Add the updated redeemer to the array.
 
       // Calculate the fee contribution from this redeemer and add it to the total fee.
-      fee += TxParams.priceStep * Number(exUnits.steps())
-      fee += TxParams.priceMem * Number(exUnits.mem())
+      fee += this.params.maxExecutionUnitsPerTransaction.steps * Number(exUnits.steps())
+      fee += this.params.maxExecutionUnitsPerTransaction.memory * Number(exUnits.mem())
     }
 
     // Create a new Redeemers object and set its values to the updated redeemers.
@@ -708,7 +693,7 @@ export class TxBuilder {
   private calculateFees(draft_tx: Transaction, tw: TransactionWitnessSet) {
     // Calculate the fee based on the transaction size and minimum fee parameters.
     this.fee =
-      TxParams.minFeeB + BigInt(draft_tx.toCbor().length / 2) * TxParams.minFeeA
+      BigInt(Math.ceil(this.params.minFeeConstant + draft_tx.toCbor().length / 2 * this.params.minFeeCoefficient))
     // Update the transaction body with the calculated fee.
     this.body.setFee(this.fee)
   }
@@ -768,7 +753,7 @@ export class TxBuilder {
     let scope = [...this.utxoScope.values()]
     // Calculate the total collateral based on the transaction fee and collateral percentage.
     let totalCollateral = BigInt(
-      Math.ceil(TxParams.collateralPercentage * Number(this.fee)),
+      Math.ceil(this.params.collateralPercentage * Number(this.fee)),
     )
     // Calculate the collateral value by summing up the amounts from collateral inputs.
     let collateralValue = this.body
@@ -931,8 +916,8 @@ export class TxBuilder {
           purpose: RedeemerPurpose['mint'], // TODO: Confirm the purpose of the redeemer.
           data: redeemer.toCore(),
           executionUnits: {
-            memory: Number(TxParams.maxTxExMem),
-            steps: Number(TxParams.maxTxExSteps),
+            memory: this.params.maxExecutionUnitsPerTransaction.memory,
+            steps: this.params.maxExecutionUnitsPerTransaction.steps,
           },
         }),
       )

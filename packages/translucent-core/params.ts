@@ -47,7 +47,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
   minPoolCost: 170000000,
   protocolVersion: { major: 8, minor: 0 },
   maxValueSize: 5000,
-  collateralPercentage: 150,
+  collateralPercentage: 150/100,
   maxCollateralInputs: 3,
   costModels: new Map()
     .set(0, [
@@ -395,7 +395,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
       32947,
       10,
     ]),
-  prices: { memory: 577, steps: 721 },
+  prices: { memory: 577/10000, steps: 721/10000 },
   maxExecutionUnitsPerTransaction: { memory: 14000000, steps: 10000000000 },
   maxExecutionUnitsPerBlock: { memory: 62000000, steps: 20000000000 },
 }
