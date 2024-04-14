@@ -1,12 +1,11 @@
 {
   "compilerOptions": {
-    "types": ["bun-types", "jest"],
+    "types": ["jest"],
     "lib": ["ESNext"],
     "module": "esnext",
     "target": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "moduleDetection": "force",
-    "allowImportingTsExtensions": true,
     "noEmit": true,
     "composite": true,
     "strict": true,
@@ -19,5 +18,5 @@
     "resolveJsonModule": true,
   },
   "exclude": ["node_modules"],
-  "include": ["packages/translucent-tx/*.ts", "*.json", "packages/translucent-core/*.ts", "tests/costModels.ts", "plutus.ts"]
+  "include": ["packages", "packages/*.ts", "*.json", "packages/translucent-core/*.ts", "tests/costModels.ts", "plutus.ts"]
 }
