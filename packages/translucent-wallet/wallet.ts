@@ -69,7 +69,7 @@ export class Wallet {
     return addresses.map((addy) => {
       const parsedAddy = Address.fromString(addy);
       if (!parsedAddy) {
-        throw "Wallet API returned an invalid used address.";
+        throw new Error("getUsedAddresses: Wallet API returned an invalid used address.");
       }
       return parsedAddy;
     });
@@ -84,7 +84,7 @@ export class Wallet {
     return addresses.map((addy) => {
       const parsedAddy = Address.fromString(addy);
       if (!parsedAddy) {
-        throw "Wallet API returned an invalid unused address.";
+        throw new Error("getUnusedAddresses: Wallet API returned an invalid unused address.");
       }
       return parsedAddy;
     });
@@ -98,7 +98,7 @@ export class Wallet {
     const addy = await this.webWallet.getChangeAddress();
     const parsedAddy = Address.fromString(addy);
     if (!parsedAddy) {
-      throw "Wallet API returned an invalid change address.";
+      throw new Error("getChangeAddress: Wallet API returned an invalid change address.");
     }
     return parsedAddy;
   }
@@ -112,11 +112,11 @@ export class Wallet {
     return addresses.map((addy) => {
       const parsedAddy = Address.fromString(addy);
       if (!parsedAddy) {
-        throw "Wallet API returned an invalid address.";
+        throw new Error("getRewardAddresses: Wallet API returned an invalid address.");
       }
       const parsedRewardAddy = RewardAddress.fromAddress(parsedAddy);
       if (!parsedRewardAddy) {
-        throw "Wallet API returned an invalid reward address.";
+        throw new Error("getRewardAddresses: Wallet API returned an invalid reward address.");
       }
       return parsedRewardAddy;
     });
