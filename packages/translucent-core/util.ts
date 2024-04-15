@@ -66,9 +66,11 @@ export function fromHex(hexString: string): Uint8Array {
  * @returns {string} The resulting hex string.
  */
 export function toHex(byteArray: Uint8Array): string {
-  return Array.from(byteArray, (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
+  let hexString = '';
+  for (let i = 0; i < byteArray.length; i++) {
+    hexString += ('0' + (byteArray[i] & 0xFF).toString(16)).slice(-2);
+  }
+  return hexString;
 }
 
 interface CborSerializable<C> {
