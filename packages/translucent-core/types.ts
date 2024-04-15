@@ -88,8 +88,8 @@ export type Hash32ByteBase16 = Crypto.Hash32ByteBase16;
 export const CredentialType = C.Cardano.CredentialType;
 export type CredentialType = C.Cardano.CredentialType;
 
-export const StakeRegistration = C.Serialization.StakeRegistration
-export type StakeRegistration = C.Serialization.StakeRegistration
+export const StakeRegistration = C.Serialization.StakeRegistration;
+export type StakeRegistration = C.Serialization.StakeRegistration;
 
 export const VkeyWitness = C.Serialization.VkeyWitness;
 export type VkeyWitness = C.Serialization.VkeyWitness;

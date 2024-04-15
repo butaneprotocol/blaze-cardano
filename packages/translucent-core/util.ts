@@ -66,9 +66,9 @@ export function fromHex(hexString: string): Uint8Array {
  * @returns {string} The resulting hex string.
  */
 export function toHex(byteArray: Uint8Array): string {
-  let hexString = '';
+  let hexString = "";
   for (let i = 0; i < byteArray.length; i++) {
-    hexString += ('0' + (byteArray[i] & 0xFF).toString(16)).slice(-2);
+    hexString += ("0" + (byteArray[i] & 0xff).toString(16)).slice(-2);
   }
   return hexString;
 }

@@ -12,6 +12,7 @@ import {
   ProtocolParameters,
   PlutusLanguageVersion,
   CostModels,
+  fromHex,
 } from "../translucent-core";
 import { Provider } from "./types";
 
@@ -145,7 +146,25 @@ export class Maestro implements Provider {
   }
 
   postTransactionToChain(tx: Transaction): Promise<TransactionId> {
-    throw new Error("unimplemented");
+    const query = `/submit/tx`;
+    return fetch(`${this.url}${query}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/cbor",
+        Accept: "text/plain",
+        ...this.headers(),
+      },
+      body: fromHex(tx.toCbor()),
+    })
+      .then((resp) => {
+        if (!resp.ok) {
+          throw new Error(
+            `postTransactionToChain: failed to submit transaction to Maestro endpoint. Status code ${resp.status}`,
+          );
+        }
+        return resp.text();
+      })
+      .then((result) => TransactionId(result));
   }
 }
 

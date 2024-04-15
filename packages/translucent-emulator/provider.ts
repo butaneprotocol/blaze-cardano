@@ -8,9 +8,9 @@ import {
   PlutusData,
   TransactionId,
   Transaction,
-} from '../translucent-core'
-import { Provider } from '../translucent-query'
-import { Emulator } from './emulator'
+} from "../translucent-core";
+import { Provider } from "../translucent-query";
+import { Emulator } from "./emulator";
 
 /**
  * The EmulatorProvider class implements the Provider interface.
@@ -20,78 +20,78 @@ export class EmulatorProvider implements Provider {
   /**
    * The Emulator instance.
    */
-  private emulator: Emulator
+  private emulator: Emulator;
 
   constructor(emulator: Emulator) {
-    this.emulator = emulator
+    this.emulator = emulator;
   }
   getParameters(): Promise<ProtocolParameters> {
-    return Promise.resolve(this.emulator.params)
+    return Promise.resolve(this.emulator.params);
   }
 
   getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {
-    const utxos: TransactionUnspentOutput[] = []
+    const utxos: TransactionUnspentOutput[] = [];
     for (const utxo of this.emulator.ledger.values()) {
       if (utxo.output().address() == address) {
-        utxos.push(utxo)
+        utxos.push(utxo);
       }
     }
-    return Promise.resolve(utxos)
+    return Promise.resolve(utxos);
   }
 
   getUnspentOutputsWithAsset(
     address: Address,
     unit: AssetId,
   ): Promise<TransactionUnspentOutput[]> {
-    const utxos: TransactionUnspentOutput[] = []
+    const utxos: TransactionUnspentOutput[] = [];
     for (const utxo of this.emulator.ledger.values()) {
-      const output = utxo.output()
+      const output = utxo.output();
       if (
         output.address() == address &&
         output.amount().multiasset()?.get(unit) != undefined
       ) {
-        utxos.push(utxo)
+        utxos.push(utxo);
       }
     }
-    return Promise.resolve(utxos)
+    return Promise.resolve(utxos);
   }
 
   getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput> {
     for (const utxo of this.emulator.ledger.values()) {
-      const output = utxo.output()
-      if (
-        output.amount().multiasset()?.get(unit) != undefined
-      ) {
-        return Promise.resolve(utxo)
+      const output = utxo.output();
+      if (output.amount().multiasset()?.get(unit) != undefined) {
+        return Promise.resolve(utxo);
       }
     }
-    return Promise.reject("getUnspentOutputByNFT: emulated ledger had no UTxO with NFT")
+    return Promise.reject(
+      "getUnspentOutputByNFT: emulated ledger had no UTxO with NFT",
+    );
   }
 
   resolveUnspentOutputs(
     txIns: TransactionInput[],
   ): Promise<TransactionUnspentOutput[]> {
-    const utxos = []
+    const utxos = [];
     for (const utxo of this.emulator.ledger.values()) {
-        if (txIns.includes(utxo.input())){
-            utxos.push(utxo)
-        }
+      if (txIns.includes(utxo.input())) {
+        utxos.push(utxo);
+      }
     }
-    return Promise.resolve(utxos)
+    return Promise.resolve(utxos);
   }
 
   resolveDatum(datumHash: Hash32ByteBase16): Promise<PlutusData> {
-    throw new Error('Method not implemented. (todo)')
+    throw new Error("Method not implemented. (todo)");
   }
 
   awaitTransactionConfirmation(
     txId: TransactionId,
     timeout?: number | undefined,
   ): Promise<boolean> {
-    throw new Error('Method not implemented. (todo)')
+    throw new Error("Method not implemented. (todo)");
   }
 
   postTransactionToChain(tx: Transaction): Promise<TransactionId> {
-    return this.emulator.submitTransaction(tx)
+    return this.emulator.submitTransaction(tx);
   }
 }
