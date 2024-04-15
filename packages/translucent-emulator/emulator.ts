@@ -21,7 +21,7 @@ export class LedgerTimer {
 
 /**
  * The Emulator class is used to simulate the behavior of a ledger.
- * It maintains a ledger of unspent transaction outputs, protocol parameters, and a clock.
+ * It maintains a ledger of unspent transaction outputs, reward accounts, protocol parameters, and a clock.
  * It also provides methods to start and stop an event loop for the ledger.
  */
 export class Emulator {
