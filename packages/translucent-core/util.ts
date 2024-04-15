@@ -1,6 +1,12 @@
-import * as C from './core'
-import { HexBlob } from '@cardano-sdk/util'
-import { PolicyId, Hash28ByteBase16, Ed25519PublicKeyHex, Address, PaymentAddress } from './types'
+import * as C from "./core";
+import { HexBlob } from "@cardano-sdk/util";
+import {
+  PolicyId,
+  Hash28ByteBase16,
+  Ed25519PublicKeyHex,
+  Address,
+  PaymentAddress,
+} from "./types";
 
 /**
  * Converts an Address to a PaymentAddress.
@@ -9,13 +15,15 @@ import { PolicyId, Hash28ByteBase16, Ed25519PublicKeyHex, Address, PaymentAddres
  * @throws {Error} If a reward account is passed in.
  */
 export function getPaymentAddress(address: Address): PaymentAddress {
-  const bech = address.toBech32()
+  const bech = address.toBech32();
 
-  if (bech.__opaqueString == 'RewardAccount') {
-    throw new Error('getPaymentAddress: failed because a reward account was passed in!')
+  if (bech.__opaqueString == "RewardAccount") {
+    throw new Error(
+      "getPaymentAddress: failed because a reward account was passed in!",
+    );
   }
 
-  return bech
+  return bech;
 }
 
 /**
@@ -24,7 +32,7 @@ export function getPaymentAddress(address: Address): PaymentAddress {
  * @returns {Hash28ByteBase16} The converted hash in Hash28ByteBase16 format.
  */
 export function PolicyIdToHash(policy: PolicyId): Hash28ByteBase16 {
-  return (policy as unknown) as Hash28ByteBase16
+  return policy as unknown as Hash28ByteBase16;
 }
 
 /**
@@ -33,7 +41,7 @@ export function PolicyIdToHash(policy: PolicyId): Hash28ByteBase16 {
  * @returns {Ed25519PublicKeyHex} The converted hash in Ed25519PublicKeyHex format.
  */
 export function HashAsPubKeyHex(hash: Hash28ByteBase16): Ed25519PublicKeyHex {
-  return (hash as unknown) as Ed25519PublicKeyHex
+  return hash as unknown as Ed25519PublicKeyHex;
 }
 
 /**
@@ -43,13 +51,13 @@ export function HashAsPubKeyHex(hash: Hash28ByteBase16): Ed25519PublicKeyHex {
  */
 export function fromHex(hexString: string): Uint8Array {
   if (hexString.length % 2 !== 0) {
-    throw new Error('Invalid hexString length')
+    throw new Error("Invalid hexString length");
   }
-  const byteArray = new Uint8Array(hexString.length / 2)
+  const byteArray = new Uint8Array(hexString.length / 2);
   for (let i = 0, j = 0; i < hexString.length; i += 2, j++) {
-    byteArray[j] = parseInt(hexString.substr(i, 2), 16)
+    byteArray[j] = parseInt(hexString.substr(i, 2), 16);
   }
-  return byteArray
+  return byteArray;
 }
 
 /**
@@ -59,19 +67,19 @@ export function fromHex(hexString: string): Uint8Array {
  */
 export function toHex(byteArray: Uint8Array): string {
   return Array.from(byteArray, (byte) =>
-    byte.toString(16).padStart(2, '0'),
-  ).join('')
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
 }
 
 interface CborSerializable<C> {
-  toCbor(): HexBlob
-  toCore(): C
+  toCbor(): HexBlob;
+  toCore(): C;
 }
 
-export const CborSet = C.Serialization.CborSet
+export const CborSet = C.Serialization.CborSet;
 export type CborSet<A, B extends CborSerializable<A>> = C.Serialization.CborSet<
   A,
   B
->
+>;
 
-export { HexBlob }
+export { HexBlob };

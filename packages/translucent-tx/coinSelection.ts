@@ -1,15 +1,15 @@
-import { TransactionUnspentOutput, Value } from '../translucent-core'
-import * as value from './value'
+import { TransactionUnspentOutput, Value } from "../translucent-core";
+import * as value from "./value";
 
 /**
  * The result of a coin selection operation.
  * It includes the selected inputs, the total value of the selected inputs, and the remaining inputs.
  */
 type SelectionResult = {
-  selectedInputs: TransactionUnspentOutput[]
-  selectedValue: Value
-  inputs: TransactionUnspentOutput[]
-}
+  selectedInputs: TransactionUnspentOutput[];
+  selectedValue: Value;
+  inputs: TransactionUnspentOutput[];
+};
 
 /**
  * The wide selection algorithm is a multiasset coin selector that doesn't care about magnitude.
@@ -24,35 +24,35 @@ function wideSelection(
   inputs: TransactionUnspentOutput[],
   dearth: Value,
 ): SelectionResult {
-  const availableInputs: TransactionUnspentOutput[] = [...inputs]
-  const selectedInputs: TransactionUnspentOutput[] = []
-  let acc = new Value(0n)
+  const availableInputs: TransactionUnspentOutput[] = [...inputs];
+  const selectedInputs: TransactionUnspentOutput[] = [];
+  let acc = new Value(0n);
   for (let j = 0; j < 30; j++) {
-    let diff = value.sub(dearth, acc)
-    let goal = value.positives(diff)
+    let diff = value.sub(dearth, acc);
+    let goal = value.positives(diff);
     // it's le 1 instead of lt 1 because depth is applied after, depth is best for size 1
     if (value.assetTypes(goal) <= 1) {
-      break
+      break;
     } else {
-      let bestStep: [number, Value, number] = [0, new Value(0n), -1]
+      let bestStep: [number, Value, number] = [0, new Value(0n), -1];
       for (let i = 0; i < availableInputs.length; i += 1) {
-        const iValue = availableInputs[i].output().amount()
-        const iImprove = value.positives(value.sub(goal, iValue))
-        const iIntersect = value.intersect(goal, iValue)
+        const iValue = availableInputs[i].output().amount();
+        const iImprove = value.positives(value.sub(goal, iValue));
+        const iIntersect = value.intersect(goal, iValue);
         const rating =
-          value.assetTypes(goal) - value.assetTypes(iImprove) + iIntersect / 10
+          value.assetTypes(goal) - value.assetTypes(iImprove) + iIntersect / 10;
         if (rating > bestStep[0]) {
-          bestStep = [rating, iValue, i]
+          bestStep = [rating, iValue, i];
         }
       }
       if (bestStep[2] == -1) {
-        throw new Error('UTxO Balance Insufficient')
+        throw new Error("UTxO Balance Insufficient");
       }
-      selectedInputs.push(...availableInputs.splice(bestStep[2], 1))
-      acc = value.merge(acc, bestStep[1])
+      selectedInputs.push(...availableInputs.splice(bestStep[2], 1));
+      acc = value.merge(acc, bestStep[1]);
     }
   }
-  return { selectedInputs, selectedValue: acc, inputs: availableInputs }
+  return { selectedInputs, selectedValue: acc, inputs: availableInputs };
 }
 
 /**
@@ -66,38 +66,38 @@ function deepSelection(
   inputs: TransactionUnspentOutput[],
   dearth: Value,
 ): SelectionResult {
-  const availableInputs: TransactionUnspentOutput[] = [...inputs]
-  const selectedInputs: TransactionUnspentOutput[] = []
-  let acc = new Value(0n)
+  const availableInputs: TransactionUnspentOutput[] = [...inputs];
+  const selectedInputs: TransactionUnspentOutput[] = [];
+  let acc = new Value(0n);
   for (let j = 0; j < 30; j++) {
-    let diff = value.sub(dearth, acc)
-    let goal = value.positives(diff)
+    let diff = value.sub(dearth, acc);
+    let goal = value.positives(diff);
     // break when there's no more goal to solve
     if (value.assetTypes(goal) == 0) {
-      break
+      break;
     } else {
-      let searchAsset = value.assets(goal)[0]
-      let bestStep: [bigint, Value, number] = [0n, new Value(0n), -1]
+      let searchAsset = value.assets(goal)[0];
+      let bestStep: [bigint, Value, number] = [0n, new Value(0n), -1];
       for (let i = 0; i < availableInputs.length; i += 1) {
-        const iValue = availableInputs[i].output().amount()
-        let rating: bigint
-        if (searchAsset == 'lovelace') {
-          rating = iValue.coin()
+        const iValue = availableInputs[i].output().amount();
+        let rating: bigint;
+        if (searchAsset == "lovelace") {
+          rating = iValue.coin();
         } else {
-          rating = iValue.multiasset()?.get(searchAsset) ?? 0n
+          rating = iValue.multiasset()?.get(searchAsset) ?? 0n;
         }
         if (rating > bestStep[0]) {
-          bestStep = [rating, iValue, i]
+          bestStep = [rating, iValue, i];
         }
       }
       if (bestStep[2] == -1) {
-        throw new Error('UTxO Balance Insufficient')
+        throw new Error("UTxO Balance Insufficient");
       }
-      selectedInputs.push(...availableInputs.splice(bestStep[2], 1))
-      acc = value.merge(acc, bestStep[1])
+      selectedInputs.push(...availableInputs.splice(bestStep[2], 1));
+      acc = value.merge(acc, bestStep[1]);
     }
   }
-  return { selectedInputs, selectedValue: acc, inputs: availableInputs }
+  return { selectedInputs, selectedValue: acc, inputs: availableInputs };
 }
 
 /**
@@ -111,16 +111,16 @@ export function micahsSelector(
   inputs: TransactionUnspentOutput[],
   dearth: Value,
 ): SelectionResult {
-  let wideResult = wideSelection(inputs, dearth)
+  let wideResult = wideSelection(inputs, dearth);
   let remainingDearth = value.positives(
     value.sub(dearth, wideResult.selectedValue),
-  )
-  let deepResult = deepSelection(wideResult.inputs, remainingDearth)
+  );
+  let deepResult = deepSelection(wideResult.inputs, remainingDearth);
   let finalDearth = value.positives(
     value.sub(remainingDearth, deepResult.selectedValue),
-  )
+  );
   if (!value.empty(finalDearth)) {
-    throw new Error('Coin selector failed!')
+    throw new Error("Coin selector failed!");
   }
   return {
     selectedInputs: [
@@ -132,5 +132,5 @@ export function micahsSelector(
       deepResult.selectedValue,
     ),
     inputs: deepResult.inputs,
-  }
+  };
 }

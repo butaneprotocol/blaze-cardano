@@ -47,7 +47,7 @@ export class Wallet {
   async getUtxos(): Promise<TransactionUnspentOutput[]> {
     const utxos = await this.webWallet.getUtxos();
     return (utxos ?? []).map((utxo) =>
-      TransactionUnspentOutput.fromCbor(HexBlob(utxo))
+      TransactionUnspentOutput.fromCbor(HexBlob(utxo)),
     );
   }
 
@@ -69,7 +69,9 @@ export class Wallet {
     return addresses.map((addy) => {
       const parsedAddy = Address.fromString(addy);
       if (!parsedAddy) {
-        throw new Error("getUsedAddresses: Wallet API returned an invalid used address.");
+        throw new Error(
+          "getUsedAddresses: Wallet API returned an invalid used address.",
+        );
       }
       return parsedAddy;
     });
@@ -84,7 +86,9 @@ export class Wallet {
     return addresses.map((addy) => {
       const parsedAddy = Address.fromString(addy);
       if (!parsedAddy) {
-        throw new Error("getUnusedAddresses: Wallet API returned an invalid unused address.");
+        throw new Error(
+          "getUnusedAddresses: Wallet API returned an invalid unused address.",
+        );
       }
       return parsedAddy;
     });
@@ -98,7 +102,9 @@ export class Wallet {
     const addy = await this.webWallet.getChangeAddress();
     const parsedAddy = Address.fromString(addy);
     if (!parsedAddy) {
-      throw new Error("getChangeAddress: Wallet API returned an invalid change address.");
+      throw new Error(
+        "getChangeAddress: Wallet API returned an invalid change address.",
+      );
     }
     return parsedAddy;
   }
@@ -112,11 +118,15 @@ export class Wallet {
     return addresses.map((addy) => {
       const parsedAddy = Address.fromString(addy);
       if (!parsedAddy) {
-        throw new Error("getRewardAddresses: Wallet API returned an invalid address.");
+        throw new Error(
+          "getRewardAddresses: Wallet API returned an invalid address.",
+        );
       }
       const parsedRewardAddy = RewardAddress.fromAddress(parsedAddy);
       if (!parsedRewardAddy) {
-        throw new Error("getRewardAddresses: Wallet API returned an invalid reward address.");
+        throw new Error(
+          "getRewardAddresses: Wallet API returned an invalid reward address.",
+        );
       }
       return parsedRewardAddy;
     });
@@ -130,7 +140,7 @@ export class Wallet {
    */
   async signTx(
     tx: string,
-    partialSign: boolean
+    partialSign: boolean,
   ): Promise<TransactionWitnessSet> {
     const witnessSet = await this.webWallet.signTx(tx, partialSign);
     return TransactionWitnessSet.fromCbor(HexBlob(witnessSet));
@@ -144,7 +154,7 @@ export class Wallet {
    */
   async signData(
     address: string,
-    payload: string
+    payload: string,
   ): Promise<Cip30DataSignature> {
     const { signature, key } = await this.webWallet.signData(address, payload);
     return {
@@ -170,7 +180,7 @@ export class Wallet {
   async getCollateral(): Promise<TransactionUnspentOutput[]> {
     const utxos = await this.webWallet.getCollateral();
     return (utxos ?? []).map((utxo) =>
-      TransactionUnspentOutput.fromCbor(HexBlob(utxo))
+      TransactionUnspentOutput.fromCbor(HexBlob(utxo)),
     );
   }
 }

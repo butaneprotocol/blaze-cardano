@@ -43,12 +43,12 @@ import {
   toHex,
   fromHex,
   ProtocolParameters,
-} from '../translucent-core'
-import * as value from './value'
-import { micahsSelector } from './coinSelection'
-import { costModels, costModelsBytes } from '../../tests/costModels'
-import * as Crypto from '../translucent-core/crypto'
-import * as U from 'uplc-node'
+} from "../translucent-core";
+import * as value from "./value";
+import { micahsSelector } from "./coinSelection";
+import { costModels, costModelsBytes } from "../../tests/costModels";
+import * as Crypto from "../translucent-core/crypto";
+import * as U from "uplc-node";
 
 /*
 methods we want to implement somewhere in new translucent (from haskell codebase):
@@ -102,39 +102,37 @@ const SLOT_CONFIG_NETWORK = {
   }, // Starting at Shelley era
   /** Customizable slot config (Initialized with 0 values). */
   Custom: { zeroTime: 0, zeroSlot: 0, slotLength: 0 },
-}
+};
 
 /**
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
  */
 export class TxBuilder {
-  readonly params: ProtocolParameters
-  body: TransactionBody // The main body of the transaction containing inputs, outputs, etc.
-  inputs: TransactionInputSet = CborSet.fromCore([], TransactionInput.fromCore) // A set of transaction inputs.
-  private redeemers: Redeemers = Redeemers.fromCore([]) // A collection of redeemers for script validation.
-  private utxos: Set<TransactionUnspentOutput> = new Set<
-    TransactionUnspentOutput
-  >() // A set of unspent transaction outputs.
-  private utxoScope: Set<TransactionUnspentOutput> = new Set<
-    TransactionUnspentOutput
-  >() // A scoped set of UTxOs for the transaction.
-  private scriptScope: Set<Script> = new Set() // A set of scripts included in the transaction.
-  private scriptSeen: Set<ScriptHash> = new Set() // A set of script hashes that have been processed.
-  private changeAddress?: Address // The address to send change to, if any.
-  private changeOutputIndex?: number // The index of the change output in the transaction.
-  private plutusData: TransactionWitnessPlutusData = new Set() // A set of Plutus data for witness purposes.
-  private requiredWitnesses: Set<Ed25519PublicKeyHex> = new Set() // A set of public keys required for witnessing the transaction.
-  private requiredNativeScripts: Set<Hash28ByteBase16> = new Set() // A set of native script hashes required by the transaction.
-  private requiredPlutusScripts: Set<Hash28ByteBase16> = new Set() // A set of Plutus script hashes required by the transaction.
+  readonly params: ProtocolParameters;
+  body: TransactionBody; // The main body of the transaction containing inputs, outputs, etc.
+  inputs: TransactionInputSet = CborSet.fromCore([], TransactionInput.fromCore); // A set of transaction inputs.
+  private redeemers: Redeemers = Redeemers.fromCore([]); // A collection of redeemers for script validation.
+  private utxos: Set<TransactionUnspentOutput> =
+    new Set<TransactionUnspentOutput>(); // A set of unspent transaction outputs.
+  private utxoScope: Set<TransactionUnspentOutput> =
+    new Set<TransactionUnspentOutput>(); // A scoped set of UTxOs for the transaction.
+  private scriptScope: Set<Script> = new Set(); // A set of scripts included in the transaction.
+  private scriptSeen: Set<ScriptHash> = new Set(); // A set of script hashes that have been processed.
+  private changeAddress?: Address; // The address to send change to, if any.
+  private changeOutputIndex?: number; // The index of the change output in the transaction.
+  private plutusData: TransactionWitnessPlutusData = new Set(); // A set of Plutus data for witness purposes.
+  private requiredWitnesses: Set<Ed25519PublicKeyHex> = new Set(); // A set of public keys required for witnessing the transaction.
+  private requiredNativeScripts: Set<Hash28ByteBase16> = new Set(); // A set of native script hashes required by the transaction.
+  private requiredPlutusScripts: Set<Hash28ByteBase16> = new Set(); // A set of Plutus script hashes required by the transaction.
   private usedLanguages: Record<PlutusLanguageVersion, boolean> = {
     [0]: false, // Indicates whether Plutus V1 is used.
     [1]: false, // Indicates whether Plutus V2 is used.
     [2]: false, // Indicates whether Plutus V3 is used.
-  }
-  private extraneousDatums: Set<PlutusData> = new Set() // A set of extraneous Plutus data not directly used in the transaction.
-  private fee: bigint = 0n // The fee for the transaction.
-  private overEstimateSteps = 1.2 // A multiplier to overestimate the execution steps for Plutus scripts.
-  private overEstimateMem = 1.05 // A multiplier to overestimate the memory usage for Plutus scripts.
+  };
+  private extraneousDatums: Set<PlutusData> = new Set(); // A set of extraneous Plutus data not directly used in the transaction.
+  private fee: bigint = 0n; // The fee for the transaction.
+  private overEstimateSteps = 1.2; // A multiplier to overestimate the execution steps for Plutus scripts.
+  private overEstimateMem = 1.05; // A multiplier to overestimate the memory usage for Plutus scripts.
   private additionalSigners = 0;
 
   /**
@@ -142,8 +140,8 @@ export class TxBuilder {
    * Initializes a new transaction body with an empty set of inputs, outputs, and no fee.
    */
   constructor(params: ProtocolParameters) {
-    this.params = params
-    this.body = new TransactionBody(this.inputs, [], 0n, undefined)
+    this.params = params;
+    this.body = new TransactionBody(this.inputs, [], 0n, undefined);
   }
 
   /**
@@ -154,8 +152,8 @@ export class TxBuilder {
    * @returns {TxBuilder} The same transaction builder
    */
   setChangeAddress(address: Address) {
-    this.changeAddress = address
-    return this
+    this.changeAddress = address;
+    return this;
   }
 
   /**
@@ -165,9 +163,9 @@ export class TxBuilder {
    * @param {number} amount - The amount of additional signers
    * @returns {TxBuilder} The same transaction builder
    */
-  addAdditionalSigners(amount: number){
-    this.additionalSigners += amount
-    return this
+  addAdditionalSigners(amount: number) {
+    this.additionalSigners += amount;
+    return this;
   }
 
   /**
@@ -183,9 +181,9 @@ export class TxBuilder {
     // Attempt to retrieve existing reference inputs from the transaction body, or initialize a new set if none exist.
     const referenceInputs =
       this.body.referenceInputs() ??
-      CborSet.fromCore([], TransactionInput.fromCore)
+      CborSet.fromCore([], TransactionInput.fromCore);
     // Convert the set of reference inputs to an array for easier manipulation.
-    const values = [...referenceInputs.values()]
+    const values = [...referenceInputs.values()];
     // Check if the input to be added already exists in the array of reference inputs.
     if (
       values.find(
@@ -195,23 +193,25 @@ export class TxBuilder {
       )
     ) {
       // If a duplicate is found, throw an error to prevent adding it.
-      throw new Error('Cannot add duplicate reference input to the transaction')
+      throw new Error(
+        "Cannot add duplicate reference input to the transaction",
+      );
     }
     // If no duplicate is found, add the input to the array of reference inputs.
-    values.push(utxo.input())
+    values.push(utxo.input());
     // Update the reference inputs in the transaction body with the new array.
-    referenceInputs.setValues(values)
+    referenceInputs.setValues(values);
     // Add the UTxO to the scope of UTxOs considered by the transaction.
-    this.utxoScope.add(utxo)
+    this.utxoScope.add(utxo);
     // If the UTxO has an associated script reference, add it to the script scope and mark the script as seen.
-    let scriptRef = utxo.output().scriptRef()
+    let scriptRef = utxo.output().scriptRef();
     if (scriptRef) {
-      this.scriptScope.add(scriptRef)
-      this.scriptSeen.add(scriptRef.hash())
+      this.scriptScope.add(scriptRef);
+      this.scriptSeen.add(scriptRef.hash());
     }
     // Update the transaction body with the new set of reference inputs.
-    this.body.setReferenceInputs(referenceInputs)
-    return this
+    this.body.setReferenceInputs(referenceInputs);
+    return this;
   }
 
   /**
@@ -232,8 +232,8 @@ export class TxBuilder {
     unhashDatum?: PlutusData,
   ) {
     // Retrieve the current inputs from the transaction body for manipulation.
-    const inputs = this.body.inputs()
-    const values = [...inputs.values()]
+    const inputs = this.body.inputs();
+    const values = [...inputs.values()];
     // Check for and prevent the addition of duplicate inputs.
     if (
       values.find(
@@ -242,67 +242,69 @@ export class TxBuilder {
           val.transactionId() == utxo.input().transactionId(),
       )
     ) {
-      throw new Error('Cannot add duplicate reference input to the transaction')
+      throw new Error(
+        "Cannot add duplicate reference input to the transaction",
+      );
     }
     // Add the new input to the array of inputs and update the transaction body.
-    const inputIndex = values.push(utxo.input())
-    inputs.setValues(values)
-    this.utxoScope.add(utxo)
-    this.body.setInputs(inputs)
+    const inputIndex = values.push(utxo.input());
+    inputs.setValues(values);
+    this.utxoScope.add(utxo);
+    this.body.setInputs(inputs);
     // Process the redeemer and datum logic for Plutus script-locked UTxOs.
-    let key = utxo.output().address().getProps().paymentPart
+    let key = utxo.output().address().getProps().paymentPart;
     if (!key) {
-      throw new Error('addInput: Somehow the UTxO payment key is missing!')
+      throw new Error("addInput: Somehow the UTxO payment key is missing!");
     }
     if (redeemer) {
       if (key.type == CredentialType.KeyHash) {
         throw new Error(
-          'addInput: Cannot spend with redeemer for KeyHash credential!',
-        )
+          "addInput: Cannot spend with redeemer for KeyHash credential!",
+        );
       }
-      this.requiredPlutusScripts.add(key.hash)
-      let datum = utxo.output().datum()
+      this.requiredPlutusScripts.add(key.hash);
+      let datum = utxo.output().datum();
       if (!datum) {
         throw new Error(
-          'addInput: Cannot spend with redeemer when datum is missing!',
-        )
+          "addInput: Cannot spend with redeemer when datum is missing!",
+        );
       }
       if (datum?.asInlineData() && unhashDatum) {
         throw new Error(
-          'addInput: Cannot have inline datum and also provided datum (3rd arg).',
-        )
+          "addInput: Cannot have inline datum and also provided datum (3rd arg).",
+        );
       }
       if (datum?.asDataHash()) {
         if (!unhashDatum) {
           throw new Error(
-            'addInput: When spending datum hash, must provide datum (3rd arg).',
-          )
+            "addInput: When spending datum hash, must provide datum (3rd arg).",
+          );
         }
-        this.plutusData.add(unhashDatum!)
+        this.plutusData.add(unhashDatum!);
       }
       // Prepare and add the redeemer to the transaction, including execution units estimation.
-      let redeemers = [...this.redeemers.values()]
+      let redeemers = [...this.redeemers.values()];
       redeemers.push(
         Redeemer.fromCore({
           index: inputIndex,
-          purpose: RedeemerPurpose['spend'],
+          purpose: RedeemerPurpose["spend"],
           data: redeemer.toCore(),
           executionUnits: {
             memory: this.params.maxExecutionUnitsPerTransaction.memory,
             steps: this.params.maxExecutionUnitsPerTransaction.steps,
           },
         }),
-      )
-      this.redeemers.setValues(redeemers)
+      );
+      this.redeemers.setValues(redeemers);
     } else {
       // Handle the required scripts or witnesses for non-Plutus script-locked UTxOs.
       if (key.type == CredentialType.ScriptHash) {
-        this.requiredNativeScripts.add(key.hash)
+        this.requiredNativeScripts.add(key.hash);
       } else {
-        this.requiredWitnesses.add(HashAsPubKeyHex(key.hash))
+        this.requiredWitnesses.add(HashAsPubKeyHex(key.hash));
       }
     }
-    return this
+    return this;
   }
 
   /**
@@ -313,10 +315,10 @@ export class TxBuilder {
    * @returns {TxBuilder} The same transaction builder
    */
   addUnspentOutputs(utxos: TransactionUnspentOutput[]) {
-    for (const utxo of utxos){
-      this.utxos.add(utxo)
+    for (const utxo of utxos) {
+      this.utxos.add(utxo);
     }
-    return this
+    return this;
   }
 
   /**
@@ -333,40 +335,40 @@ export class TxBuilder {
     redeemer?: PlutusData,
   ) {
     // Retrieve the current mint map from the transaction body, or initialize a new one if none exists.
-    const mint: TokenMap = this.body.mint() ?? new Map()
+    const mint: TokenMap = this.body.mint() ?? new Map();
     // Iterate over the assets map and add each asset to the mint map under the specified policy.
     for (const [key, amount] of assets.entries()) {
-      mint.set(AssetId.fromParts(policy, key), amount)
+      mint.set(AssetId.fromParts(policy, key), amount);
     }
     // Update the transaction body with the modified mint map.
-    this.body.setMint(mint)
+    this.body.setMint(mint);
 
     // If a redeemer is provided, handle Plutus script requirements.
     if (redeemer) {
       // Add the policy ID hash to the set of required Plutus scripts.
-      this.requiredPlutusScripts.add(PolicyIdToHash(policy))
+      this.requiredPlutusScripts.add(PolicyIdToHash(policy));
       // Retrieve the current list of redeemers and prepare to add a new one.
-      let redeemers = [...this.redeemers.values()]
+      let redeemers = [...this.redeemers.values()];
       // Create and add a new redeemer for the minting action, specifying execution units.
       // Note: Execution units are placeholders and are replaced with actual values during the evaluation phase.
       redeemers.push(
         Redeemer.fromCore({
           index: 0, // The index for minting actions is typically 0, but may need adjustment based on the transaction structure.
-          purpose: RedeemerPurpose['mint'], // Specify the purpose of the redeemer as minting.
+          purpose: RedeemerPurpose["mint"], // Specify the purpose of the redeemer as minting.
           data: redeemer.toCore(), // Convert the provided PlutusData redeemer to its core representation.
           executionUnits: {
             memory: this.params.maxExecutionUnitsPerTransaction.memory, // Placeholder memory units, replace with actual estimation.
             steps: this.params.maxExecutionUnitsPerTransaction.steps, // Placeholder step units, replace with actual estimation.
           },
         }),
-      )
+      );
       // Update the transaction's redeemers with the new list.
-      this.redeemers.setValues(redeemers)
+      this.redeemers.setValues(redeemers);
     } else {
       // If no redeemer is provided, assume minting under a native script and add the policy ID hash to the required native scripts.
-      this.requiredNativeScripts.add(PolicyIdToHash(policy))
+      this.requiredNativeScripts.add(PolicyIdToHash(policy));
     }
-    return this
+    return this;
   }
 
   /**
@@ -378,12 +380,12 @@ export class TxBuilder {
    */
   addOutput(output: TransactionOutput) {
     // Retrieve the current list of outputs from the transaction body.
-    const outputs = this.body.outputs()
+    const outputs = this.body.outputs();
     // Add the new output to the list and update the transaction body's outputs.
-    const index = outputs.push(output) - 1
-    this.body.setOutputs(outputs)
+    const index = outputs.push(output) - 1;
+    this.body.setOutputs(outputs);
     // Return the index at which the new output was added.
-    return this
+    return this;
   }
 
   /**
@@ -392,7 +394,7 @@ export class TxBuilder {
    * @returns {number} The number of transaction outputs.
    */
   get outputsCount(): number {
-    return this.body.outputs().length
+    return this.body.outputs().length;
   }
 
   /**
@@ -404,8 +406,8 @@ export class TxBuilder {
    * @returns {TxBuilder} The same transaction builder
    */
   provideDatum(datum: PlutusData) {
-    this.extraneousDatums.add(datum)
-    return this
+    this.extraneousDatums.add(datum);
+    return this;
   }
 
   /**
@@ -421,7 +423,7 @@ export class TxBuilder {
     // Collect all UTXOs from the transaction's scope.
     let allUtxos: TransactionUnspentOutput[] = Array.from(
       this.utxoScope.values(),
-    )
+    );
 
     // Simulate the execution of scripts using the UPLC (Untyped Plutus Core) evaluator.
     const uplcResults = U.eval_phase_two_raw(
@@ -431,47 +433,55 @@ export class TxBuilder {
       fromHex(costModelsBytes), // Convert the cost models to hex format.
       BigInt(
         Math.floor(
-          this.params.maxExecutionUnitsPerTransaction.steps / (this.overEstimateSteps ?? 1),
+          this.params.maxExecutionUnitsPerTransaction.steps /
+            (this.overEstimateSteps ?? 1),
         ),
       ), // Calculate the estimated max execution steps.
       BigInt(
-        Math.floor(this.params.maxExecutionUnitsPerTransaction.memory / (this.overEstimateMem ?? 1)),
+        Math.floor(
+          this.params.maxExecutionUnitsPerTransaction.memory /
+            (this.overEstimateMem ?? 1),
+        ),
       ), // Calculate the estimated max memory.
       BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroTime), // Network-specific zero time for slot calculation.
       BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroSlot), // Network-specific zero slot.
       SLOT_CONFIG_NETWORK.Mainnet.slotLength, // Network-specific slot length.
-    )
+    );
 
-    let fee = 0 // Initialize the fee accumulator.
-    let redeemerValues: Redeemer[] = [] // Initialize an array to hold the updated redeemers.
+    let fee = 0; // Initialize the fee accumulator.
+    let redeemerValues: Redeemer[] = []; // Initialize an array to hold the updated redeemers.
 
     // Iterate over the results from the UPLC evaluator.
     for (const redeemerBytes of uplcResults) {
-      let redeemer = Redeemer.fromCbor(HexBlob(toHex(redeemerBytes))) // Convert each result back from CBOR to a Redeemer object.
-      let exUnits = redeemer.exUnits() // Extract the execution units from the redeemer.
+      let redeemer = Redeemer.fromCbor(HexBlob(toHex(redeemerBytes))); // Convert each result back from CBOR to a Redeemer object.
+      let exUnits = redeemer.exUnits(); // Extract the execution units from the redeemer.
 
       // Adjust the execution units based on overestimation factors.
       exUnits.setSteps(
         BigInt(Math.round(Number(exUnits.steps()) * this.overEstimateSteps)),
-      )
+      );
       exUnits.setMem(
         BigInt(Math.round(Number(exUnits.mem()) * this.overEstimateMem)),
-      )
+      );
 
-      redeemer.setExUnits(exUnits) // Update the redeemer with the adjusted execution units.
-      redeemerValues.push(redeemer) // Add the updated redeemer to the array.
+      redeemer.setExUnits(exUnits); // Update the redeemer with the adjusted execution units.
+      redeemerValues.push(redeemer); // Add the updated redeemer to the array.
 
       // Calculate the fee contribution from this redeemer and add it to the total fee.
-      fee += this.params.maxExecutionUnitsPerTransaction.steps * Number(exUnits.steps())
-      fee += this.params.maxExecutionUnitsPerTransaction.memory * Number(exUnits.mem())
+      fee +=
+        this.params.maxExecutionUnitsPerTransaction.steps *
+        Number(exUnits.steps());
+      fee +=
+        this.params.maxExecutionUnitsPerTransaction.memory *
+        Number(exUnits.mem());
     }
 
     // Create a new Redeemers object and set its values to the updated redeemers.
-    let redeemers: Redeemers = Redeemers.fromCore([])
-    redeemers.setValues(redeemerValues)
-    this.redeemers = redeemers // Update the transaction's redeemers with the new set.
+    let redeemers: Redeemers = Redeemers.fromCore([]);
+    redeemers.setValues(redeemerValues);
+    this.redeemers = redeemers; // Update the transaction's redeemers with the new set.
 
-    return BigInt(Math.ceil(fee)) // Return the total fee, rounded up to the nearest whole number.
+    return BigInt(Math.ceil(fee)); // Return the total fee, rounded up to the nearest whole number.
   }
 
   /**
@@ -485,95 +495,105 @@ export class TxBuilder {
    * @throws {Error} If a required script cannot be resolved by its hash.
    */
   private buildTransactionWitnessSet() {
-    let tw = new TransactionWitnessSet()
+    let tw = new TransactionWitnessSet();
     // Script lookup table to map script hashes to script objects
-    let scriptLookup: Record<ScriptHash, Script> = {}
+    let scriptLookup: Record<ScriptHash, Script> = {};
     for (const script of this.scriptScope) {
-      scriptLookup[script.hash()] = script
+      scriptLookup[script.hash()] = script;
     }
     // Arrays to hold scripts of different types
-    let sn: NativeScript[] = []
-    let s1: PlutusV1Script[] = []
-    let s2: PlutusV2Script[] = []
-    let s3: PlutusV3Script[] = []
+    let sn: NativeScript[] = [];
+    let s1: PlutusV1Script[] = [];
+    let s2: PlutusV2Script[] = [];
+    let s3: PlutusV3Script[] = [];
     // Populate script arrays based on required script hashes
     for (const requiredScriptHash of this.requiredPlutusScripts) {
       if (!this.scriptSeen.has(requiredScriptHash)) {
-        let script = scriptLookup[requiredScriptHash]
+        let script = scriptLookup[requiredScriptHash];
         if (!script) {
           throw new Error(
             `complete: Could not resolve script hash ${requiredScriptHash}`,
-          )
+          );
         } else {
           if (script.asNative() != undefined) {
-            sn.push(script.asNative()!)
+            sn.push(script.asNative()!);
           }
           if (script.asPlutusV1() != undefined) {
-            s1.push(script.asPlutusV1()!)
+            s1.push(script.asPlutusV1()!);
           }
           if (script.asPlutusV2() != undefined) {
-            s2.push(script.asPlutusV2()!)
+            s2.push(script.asPlutusV2()!);
           }
           if (script.asPlutusV3() != undefined) {
-            s3.push(script.asPlutusV3()!)
+            s3.push(script.asPlutusV3()!);
           }
         }
       }
       // Mark the script language versions used in the transaction
-      let lang = scriptLookup[requiredScriptHash].language()
+      let lang = scriptLookup[requiredScriptHash].language();
       if (lang == 1) {
-        this.usedLanguages[PlutusLanguageVersion.V1] = true
+        this.usedLanguages[PlutusLanguageVersion.V1] = true;
       } else if (lang == 2) {
-        this.usedLanguages[PlutusLanguageVersion.V2] = true
+        this.usedLanguages[PlutusLanguageVersion.V2] = true;
       } else if (lang == 3) {
-        this.usedLanguages[PlutusLanguageVersion.V3] = true
+        this.usedLanguages[PlutusLanguageVersion.V3] = true;
       }
     }
     // Add scripts to the transaction witness set
     if (sn.length != 0) {
-      let cborSet = CborSet.fromCore([], NativeScript.fromCore)
-      cborSet.setValues(sn)
-      tw.setNativeScripts(cborSet)
+      let cborSet = CborSet.fromCore([], NativeScript.fromCore);
+      cborSet.setValues(sn);
+      tw.setNativeScripts(cborSet);
     }
     if (s1.length != 0) {
-      let cborSet = CborSet.fromCore([], PlutusV1Script.fromCore)
-      cborSet.setValues(s1)
-      tw.setPlutusV1Scripts(cborSet)
+      let cborSet = CborSet.fromCore([], PlutusV1Script.fromCore);
+      cborSet.setValues(s1);
+      tw.setPlutusV1Scripts(cborSet);
     }
     if (s2.length != 0) {
-      let cborSet = CborSet.fromCore([], PlutusV2Script.fromCore)
-      cborSet.setValues(s2)
-      tw.setPlutusV2Scripts(cborSet)
+      let cborSet = CborSet.fromCore([], PlutusV2Script.fromCore);
+      cborSet.setValues(s2);
+      tw.setPlutusV2Scripts(cborSet);
     }
     if (s3.length != 0) {
-      let cborSet = CborSet.fromCore([], PlutusV3Script.fromCore)
-      cborSet.setValues(s3)
-      tw.setPlutusV3Scripts(cborSet)
+      let cborSet = CborSet.fromCore([], PlutusV3Script.fromCore);
+      cborSet.setValues(s3);
+      tw.setPlutusV3Scripts(cborSet);
     }
     // Process vkey witnesses
-    let vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore)
-    let requiredWitnesses: VkeyWitness[] = []
+    let vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore);
+    let requiredWitnesses: VkeyWitness[] = [];
     for (const val of this.requiredWitnesses.values()) {
-      requiredWitnesses.push(VkeyWitness.fromCore([Ed25519PublicKeyHex("0".repeat(64)), Ed25519SignatureHex('0'.repeat(128))]))
+      requiredWitnesses.push(
+        VkeyWitness.fromCore([
+          Ed25519PublicKeyHex("0".repeat(64)),
+          Ed25519SignatureHex("0".repeat(128)),
+        ]),
+      );
     }
-    for (let i = 0; i < this.additionalSigners; i++){
-      requiredWitnesses.push(VkeyWitness.fromCore([Ed25519PublicKeyHex("0".repeat(64)), Ed25519SignatureHex('0'.repeat(128))]))
+    for (let i = 0; i < this.additionalSigners; i++) {
+      requiredWitnesses.push(
+        VkeyWitness.fromCore([
+          Ed25519PublicKeyHex("0".repeat(64)),
+          Ed25519SignatureHex("0".repeat(128)),
+        ]),
+      );
     }
-    vkeyWitnesses.setValues(requiredWitnesses)
-    tw.setVkeys(vkeyWitnesses)
-    tw.setRedeemers(this.redeemers)
+    vkeyWitnesses.setValues(requiredWitnesses);
+    tw.setVkeys(vkeyWitnesses);
+    tw.setRedeemers(this.redeemers);
     // Process Plutus data
-    let plutusData = CborSet.fromCore([], PlutusData.fromCore)
-    let plutusDataList: PlutusData[] = []
+    let plutusData = CborSet.fromCore([], PlutusData.fromCore);
+    let plutusDataList: PlutusData[] = [];
     for (const p of this.plutusData.values()) {
-      plutusDataList.push(p)
+      plutusDataList.push(p);
     }
     for (const p of this.extraneousDatums.values()) {
-      plutusDataList.push(p)
+      plutusDataList.push(p);
     }
-    plutusData.setValues(plutusDataList)
-    tw.setPlutusData(plutusData)
-    return tw
+    plutusData.setValues(plutusDataList);
+    tw.setPlutusData(plutusData);
+    return tw;
   }
 
   /**
@@ -584,33 +604,36 @@ export class TxBuilder {
    * @returns {Value} The net value that represents the transaction's pitch.
    * @throws {Error} If a corresponding UTxO for an input cannot be found.
    */
-  private getPitch(withSpare:boolean = true) {
+  private getPitch(withSpare: boolean = true) {
     // Initialize values for input, output, and minted amounts.
-    let inputValue = new Value(0n)
-    let outputValue = new Value(this.fee)
-    let mintValue = new Value(0n, this.body.mint())
+    let inputValue = new Value(0n);
+    let outputValue = new Value(this.fee);
+    let mintValue = new Value(0n, this.body.mint());
 
     // Aggregate the total input value from all inputs.
     for (const input of this.body.inputs().values()) {
-      let utxo: TransactionUnspentOutput | undefined
+      let utxo: TransactionUnspentOutput | undefined;
       // Find the matching UTxO for the input.
       for (const iterUtxo of this.utxoScope.values()) {
         if (iterUtxo.input().toCbor() == input.toCbor()) {
-          utxo = iterUtxo
+          utxo = iterUtxo;
         }
       }
       // Throw an error if a matching UTxO cannot be found.
       if (!utxo) {
-        throw new Error('Unreachable! UTxO missing!')
+        throw new Error("Unreachable! UTxO missing!");
       }
       // Merge the UTxO's output amount into the total input value.
-      inputValue = value.merge(inputValue, utxo.output().amount())
+      inputValue = value.merge(inputValue, utxo.output().amount());
     }
 
-    this.body.outputs()[this.changeOutputIndex!] = new TransactionOutput(this.changeAddress!, value.zero)
+    this.body.outputs()[this.changeOutputIndex!] = new TransactionOutput(
+      this.changeAddress!,
+      value.zero,
+    );
     // Aggregate the total output value from all outputs.
     for (const output of this.body.outputs().values()) {
-      outputValue = value.merge(outputValue, output.amount())
+      outputValue = value.merge(outputValue, output.amount());
     }
 
     // Calculate the net value by merging input, output (negated), and mint values.
@@ -618,11 +641,11 @@ export class TxBuilder {
     const tilt = value.merge(
       value.merge(inputValue, value.negate(outputValue)),
       mintValue,
-    )
+    );
     if (withSpare == true) {
-      return value.merge(tilt, new Value(-5000000n)) // Subtract 5 ADA from the excess.
+      return value.merge(tilt, new Value(-5000000n)); // Subtract 5 ADA from the excess.
     }
-    return tilt
+    return tilt;
   }
 
   /**
@@ -636,53 +659,53 @@ export class TxBuilder {
     tw: TransactionWitnessSet,
   ): Hash32ByteBase16 | undefined {
     // Extract redeemers and datums from the transaction witness set.
-    let redeemers = [...this.redeemers.values()]
-    let datums = tw.plutusData()?.values().slice() || []
+    let redeemers = [...this.redeemers.values()];
+    let datums = tw.plutusData()?.values().slice() || [];
     // Proceed only if there are datums or redeemers to process.
     if (datums.length > 0 || redeemers.length > 0) {
       // Initialize a CBOR writer to encode the script data.
-      const writer = new CborWriter()
+      const writer = new CborWriter();
       // Encode redeemers and datums into CBOR format.
-      writer.writeStartArray(redeemers.length)
+      writer.writeStartArray(redeemers.length);
       for (const redeemer of redeemers) {
-        writer.writeEncodedValue(Buffer.from(redeemer.toCbor(), 'hex'))
+        writer.writeEncodedValue(Buffer.from(redeemer.toCbor(), "hex"));
       }
       if (datums && datums.length > 0) {
-        writer.writeStartArray(datums.length)
+        writer.writeStartArray(datums.length);
         for (const datum of datums) {
-          writer.writeEncodedValue(Buffer.from(datum.toCbor(), 'hex'))
+          writer.writeEncodedValue(Buffer.from(datum.toCbor(), "hex"));
         }
       }
       // Initialize a container for used cost models.
-      let usedCostModels = new Costmdls()
+      let usedCostModels = new Costmdls();
       // Populate the used cost models based on the languages used in the transaction.
       for (let i = 0; i <= Object.keys(this.usedLanguages).length; i++) {
         if (i == 0) {
           // Retrieve the cost model for the current language version.
-          let cm = costModels.get(i)
+          let cm = costModels.get(i);
           // Throw an error if the cost model is missing.
           if (cm == undefined) {
             throw new Error(
               `complete: Could not find cost model for Plutus Language Version ${i}`,
-            )
+            );
           }
           // Insert the cost model into the used cost models container.
-          usedCostModels.insert(new CostModel(i, cm))
+          usedCostModels.insert(new CostModel(i, cm));
         }
       }
       // Encode the used cost models into CBOR format.
       writer.writeEncodedValue(
-        Buffer.from(usedCostModels.languageViewsEncoding(), 'hex'),
-      )
+        Buffer.from(usedCostModels.languageViewsEncoding(), "hex"),
+      );
       // Generate and return the script data hash.
       return Hash32ByteBase16.fromHexBlob(
         HexBlob.fromBytes(
           Crypto.blake2b(Crypto.blake2b.BYTES).update(writer.encode()).digest(),
         ),
-      )
+      );
     }
     // Return undefined if there are no datums or redeemers.
-    return undefined
+    return undefined;
   }
 
   /**
@@ -695,29 +718,29 @@ export class TxBuilder {
    */
   private balanceChange(excessValue: Value) {
     // Retrieve the multiasset map from the excess value.
-    let tokenMap = excessValue.multiasset()
+    let tokenMap = excessValue.multiasset();
     // If the multiasset map exists, iterate over its keys.
     if (tokenMap) {
       for (const key of tokenMap.keys()) {
         // Delete any tokens with a zero value to clean up the multiasset map.
         if (tokenMap.get(key) == 0n) {
-          tokenMap.delete(key)
+          tokenMap.delete(key);
         }
       }
       // Update the excess value with the cleaned-up multiasset map.
-      excessValue.setMultiasset(tokenMap)
+      excessValue.setMultiasset(tokenMap);
     }
     // Create a new transaction output with the change address and the adjusted excess value.
-    let output = new TransactionOutput(this.changeAddress!, excessValue)
+    let output = new TransactionOutput(this.changeAddress!, excessValue);
     // If there is no existing change output index, add the new output to the transaction
     // and store its index. Otherwise, update the existing change output with the new output.
     if (!this.changeOutputIndex) {
-      this.addOutput(output)
-      this.changeOutputIndex = this.outputsCount
+      this.addOutput(output);
+      this.changeOutputIndex = this.outputsCount;
     } else {
-      let outputs = this.body.outputs()
-      outputs[this.changeOutputIndex] = output
-      this.body.setOutputs(outputs)
+      let outputs = this.body.outputs();
+      outputs[this.changeOutputIndex] = output;
+      this.body.setOutputs(outputs);
     }
   }
 
@@ -730,10 +753,14 @@ export class TxBuilder {
    */
   private calculateFees(draft_tx: Transaction, tw: TransactionWitnessSet) {
     // Calculate the fee based on the transaction size and minimum fee parameters.
-    this.fee =
-      BigInt(Math.ceil(this.params.minFeeConstant + (fromHex(draft_tx.toCbor()).length) * this.params.minFeeCoefficient))
+    this.fee = BigInt(
+      Math.ceil(
+        this.params.minFeeConstant +
+          fromHex(draft_tx.toCbor()).length * this.params.minFeeCoefficient,
+      ),
+    );
     // Update the transaction body with the calculated fee.
-    this.body.setFee(this.fee)
+    this.body.setFee(this.fee);
   }
 
   /**
@@ -742,40 +769,40 @@ export class TxBuilder {
    */
   private prepareCollateral() {
     // Retrieve inputs from the transaction body and available UTXOs within scope.
-    let inputs = [...this.body.inputs().values()]
-    let scope = [...this.utxoScope.values()]
+    let inputs = [...this.body.inputs().values()];
+    let scope = [...this.utxoScope.values()];
     // Initialize variables to track the best UTXO for collateral and its ranking.
     let [best, rank]: [TransactionUnspentOutput | undefined, number] = [
       undefined,
       99,
-    ]
+    ];
     // Iterate over inputs to find the best UTXO for collateral.
     for (const input of inputs) {
-      let utxo = scope.find((x) => x.input() == input)
+      let utxo = scope.find((x) => x.input() == input);
       if (utxo) {
         // Check if the UTXO amount is sufficient for collateral.
         if (utxo.output().amount().coin() >= 10n * 10n ** 6n) {
-          let ranking = value.assetTypes(utxo.output().amount())
+          let ranking = value.assetTypes(utxo.output().amount());
           // Update the best UTXO and its ranking if it's a better candidate.
           if (ranking < rank) {
-            rank = ranking
-            best = utxo
+            rank = ranking;
+            best = utxo;
           }
         }
       } else {
-        throw new Error('prepareCollateral: could not resolve some input')
+        throw new Error("prepareCollateral: could not resolve some input");
       }
     }
     // Throw an error if no suitable collateral UTXO is found.
     if (!best) {
-      throw new Error('prepareCollateral: could not find enough collateral')
+      throw new Error("prepareCollateral: could not find enough collateral");
     }
     // Set the selected UTXO as collateral in the transaction body.
-    let tis = CborSet.fromCore([], TransactionInput.fromCore)
-    tis.setValues([best.input()])
-    this.body.setCollateral(tis)
+    let tis = CborSet.fromCore([], TransactionInput.fromCore);
+    tis.setValues([best.input()]);
+    this.body.setCollateral(tis);
     // Also set the collateral return to the output of the selected UTXO.
-    this.body.setCollateralReturn(best.output())
+    this.body.setCollateralReturn(best.output());
   }
 
   /**
@@ -785,40 +812,40 @@ export class TxBuilder {
   private balanceCollateralChange() {
     // Ensure a change address is set before proceeding.
     if (!this.changeAddress) {
-      throw new Error('balanceCollateralChange: change address not set')
+      throw new Error("balanceCollateralChange: change address not set");
     }
-    let collateral = this.body.collateral()
-    if (!collateral || collateral.size()==0){
-      return
+    let collateral = this.body.collateral();
+    if (!collateral || collateral.size() == 0) {
+      return;
     }
     // Retrieve available UTXOs within scope.
-    let scope = [...this.utxoScope.values()]
+    let scope = [...this.utxoScope.values()];
     // Calculate the total collateral based on the transaction fee and collateral percentage.
     let totalCollateral = BigInt(
       Math.ceil(this.params.collateralPercentage * Number(this.fee)),
-    )
+    );
     // Calculate the collateral value by summing up the amounts from collateral inputs.
     let collateralValue = this.body
       .collateral()!
       .values()
       .reduce((acc, input) => {
-        let utxo = scope.find((x) => x.input() == input)
+        let utxo = scope.find((x) => x.input() == input);
         if (!utxo) {
           throw new Error(
-            'balanceCollateralChange: Could not resolve some collateral input',
-          )
+            "balanceCollateralChange: Could not resolve some collateral input",
+          );
         }
-        return value.merge(utxo.output().amount(), acc)
-      }, value.zero)
+        return value.merge(utxo.output().amount(), acc);
+      }, value.zero);
     // Create a transaction output for the change address with the adjusted collateral value.
     this.body.setCollateralReturn(
       new TransactionOutput(
         this.changeAddress,
         value.merge(collateralValue, new Value(-totalCollateral)),
       ),
-    )
+    );
     // Update the transaction body with the total collateral amount.
-    this.body.setTotalCollateral(totalCollateral)
+    this.body.setTotalCollateral(totalCollateral);
   }
 
   /**
@@ -839,89 +866,91 @@ export class TxBuilder {
     // Ensure a change address has been set before proceeding.
     if (!this.changeAddress) {
       throw new Error(
-        'Cannot complete transaction without setting change address',
-      )
+        "Cannot complete transaction without setting change address",
+      );
     }
     // Gather all inputs from the transaction body.
-    let inputs = [...this.body.inputs().values()]
+    let inputs = [...this.body.inputs().values()];
     // Perform initial checks and preparations for coin selection.
-    let excessValue = this.getPitch(true)
-    let spareInputs: TransactionUnspentOutput[] = []
+    let excessValue = this.getPitch(true);
+    let spareInputs: TransactionUnspentOutput[] = [];
     for (const [utxo] of this.utxos.entries()) {
       if (!inputs.includes(utxo.input())) {
-        spareInputs.push(utxo)
+        spareInputs.push(utxo);
       }
     }
     // Perform coin selection to cover any negative excess value.
     const selectionResult = micahsSelector(
       spareInputs,
       value.negate(value.negatives(excessValue)),
-    )
+    );
     // Update the excess value and spare inputs based on the selection result.
-    excessValue = value.merge(excessValue, selectionResult.selectedValue)
-    spareInputs = selectionResult.inputs
+    excessValue = value.merge(excessValue, selectionResult.selectedValue);
+    spareInputs = selectionResult.inputs;
     // Add selected inputs to the transaction.
     for (const input of selectionResult.selectedInputs) {
-      this.addInput(input)
+      this.addInput(input);
     }
     // Ensure the coin selection has eliminated all negative values.
     if (!value.empty(value.negatives(excessValue))) {
       throw new Error(
-        'Unreachable! Somehow coin selection succeeded but still failed.',
-      )
+        "Unreachable! Somehow coin selection succeeded but still failed.",
+      );
     }
 
     // Balance the change output with the updated excess value.
-    this.balanceChange(excessValue)
+    this.balanceChange(excessValue);
     // Ensure a change output index has been set after balancing.
     if (!this.changeOutputIndex) {
       throw new Error(
-        'Unreachable! Somehow change balancing succeeded but still failed.',
-      )
+        "Unreachable! Somehow change balancing succeeded but still failed.",
+      );
     }
     // Build the transaction witness set for fee estimation and script validation.
     //excessValue = this.getPitch(false)
-    let tw = this.buildTransactionWitnessSet()
+    let tw = this.buildTransactionWitnessSet();
     // Calculate and set the script data hash if necessary.
     {
-      let scriptDataHash = this.getScriptDataHash(tw)
+      let scriptDataHash = this.getScriptDataHash(tw);
       if (scriptDataHash) {
-        this.body.setScriptDataHash(scriptDataHash)
+        this.body.setScriptDataHash(scriptDataHash);
       }
     }
-    this.balanceChange(excessValue)
+    this.balanceChange(excessValue);
     // Create a draft transaction for fee calculation.
-    let draft_tx = new Transaction(this.body, tw)
+    let draft_tx = new Transaction(this.body, tw);
     // Calculate and set the transaction fee.
-    let draft_size = draft_tx.toCbor().length / 2
-    this.calculateFees(draft_tx, tw)
-    excessValue = value.merge(excessValue, new Value(-this.fee))
-    this.balanceChange(excessValue)
-    if (this.redeemers.size()>0) {
-      this.prepareCollateral()
-      let evaluationFee = this.evaluate(draft_tx)
-      this.fee += evaluationFee
-      excessValue = value.merge(excessValue, new Value(-evaluationFee))
-      tw.setRedeemers(this.redeemers)
+    let draft_size = draft_tx.toCbor().length / 2;
+    this.calculateFees(draft_tx, tw);
+    excessValue = value.merge(excessValue, new Value(-this.fee));
+    this.balanceChange(excessValue);
+    if (this.redeemers.size() > 0) {
+      this.prepareCollateral();
+      let evaluationFee = this.evaluate(draft_tx);
+      this.fee += evaluationFee;
+      excessValue = value.merge(excessValue, new Value(-evaluationFee));
+      tw.setRedeemers(this.redeemers);
     }
     {
-      const scriptDataHash = this.getScriptDataHash(tw)
+      const scriptDataHash = this.getScriptDataHash(tw);
       if (scriptDataHash) {
-        this.body.setScriptDataHash(scriptDataHash)
+        this.body.setScriptDataHash(scriptDataHash);
       }
     }
-    this.body.setFee(this.fee)
+    this.body.setFee(this.fee);
     // Merge the fee with the excess value and rebalance the change.
-    this.balanceCollateralChange()
-    let final_size = draft_tx.toCbor().length / 2
-    this.fee += BigInt(Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient))
-    excessValue = this.getPitch(false)
-    this.body.setFee(this.fee)
-    this.balanceChange(excessValue)
-    this.balanceCollateralChange()
+    this.balanceCollateralChange();
+    let final_size = draft_tx.toCbor().length / 2;
+    this.fee += BigInt(
+      Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
+    );
+    excessValue = this.getPitch(false);
+    this.body.setFee(this.fee);
+    this.balanceChange(excessValue);
+    this.balanceCollateralChange();
     // Return the fully constructed transaction.
-    tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore))
-    return new Transaction(this.body, tw)
+    tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore));
+    return new Transaction(this.body, tw);
   }
 
   // Adds a certificate to delegate a staker to a pool
@@ -952,44 +981,44 @@ export class TxBuilder {
   addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData) {
     // Retrieve existing withdrawals or initialize a new map if none exist.
     const withdrawals: Map<RewardAccount, bigint> =
-      this.body.withdrawals() ?? new Map()
+      this.body.withdrawals() ?? new Map();
     // Set the withdrawal amount for the specified address.
-    withdrawals.set(address, amount)
+    withdrawals.set(address, amount);
     // Update the transaction body with the new or updated withdrawals map.
-    this.body.setWithdrawals(withdrawals)
+    this.body.setWithdrawals(withdrawals);
     // If a redeemer is provided, process it for script validation.
     if (redeemer) {
-      let redeemers = [...this.redeemers.values()]
+      let redeemers = [...this.redeemers.values()];
       // Add the redeemer to the list of redeemers with execution units based on transaction parameters.
       redeemers.push(
         Redeemer.fromCore({
           index: 0, // TODO: Determine the correct index for the redeemer.
-          purpose: RedeemerPurpose['mint'], // TODO: Confirm the purpose of the redeemer.
+          purpose: RedeemerPurpose["mint"], // TODO: Confirm the purpose of the redeemer.
           data: redeemer.toCore(),
           executionUnits: {
             memory: this.params.maxExecutionUnitsPerTransaction.memory,
             steps: this.params.maxExecutionUnitsPerTransaction.steps,
           },
         }),
-      )
+      );
       // Update the transaction with the new list of redeemers.
-      this.redeemers.setValues(redeemers)
+      this.redeemers.setValues(redeemers);
     } else {
       // If no redeemer is provided, process the address for required scripts or witnesses.
-      let key = Address.fromBech32(address).getProps().delegationPart
+      let key = Address.fromBech32(address).getProps().delegationPart;
       if (!key) {
         throw new Error(
-          'addWithdrawal: The RewardAccount provided does not have an associated stake credential.',
-        )
+          "addWithdrawal: The RewardAccount provided does not have an associated stake credential.",
+        );
       }
       // Add the required scripts or witnesses based on the type of the stake credential.
       if (key.type == CredentialType.ScriptHash) {
-        this.requiredNativeScripts.add(key.hash)
+        this.requiredNativeScripts.add(key.hash);
       } else {
-        this.requiredWitnesses.add(HashAsPubKeyHex(key.hash))
+        this.requiredWitnesses.add(HashAsPubKeyHex(key.hash));
       }
     }
-    return this
+    return this;
   }
 
   /**
@@ -1000,15 +1029,17 @@ export class TxBuilder {
    */
   addRequiredSigner(signer: Ed25519KeyHashHex) {
     // Retrieve existing required signers or initialize a new CBOR set if none exist.
-    let signers: CborSet<Ed25519KeyHashHex, Hash<Ed25519KeyHashHex>> =
-      this.body.requiredSigners() ?? CborSet.fromCore([], Hash.fromCore)
+    let signers: CborSet<
+      Ed25519KeyHashHex,
+      Hash<Ed25519KeyHashHex>
+    > = this.body.requiredSigners() ?? CborSet.fromCore([], Hash.fromCore);
     // Convert the signer to a hash and add it to the set of required signers.
-    let values = [...signers.values()]
-    values.push(Hash.fromCore(signer))
-    signers.setValues(values)
+    let values = [...signers.values()];
+    values.push(Hash.fromCore(signer));
+    signers.setValues(values);
     // Update the transaction body with the new set of required signers.
-    this.body.setRequiredSigners(signers)
-    return this
+    this.body.setRequiredSigners(signers);
+    return this;
   }
 
   /**
@@ -1020,7 +1051,7 @@ export class TxBuilder {
    * @returns {TxBuilder} The same transaction builder
    */
   provideScript(script: Script) {
-    this.scriptScope.add(script)
-    return this
+    this.scriptScope.add(script);
+    return this;
   }
 }

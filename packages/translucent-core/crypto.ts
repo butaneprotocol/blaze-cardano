@@ -1,1 +1,1 @@
-export * from "@cardano-sdk/crypto"
+export * from "@cardano-sdk/crypto";

@@ -71,7 +71,7 @@ export interface WalletInterface {
    */
   signData(
     address: string,
-    payload: string
+    payload: string,
   ): Promise<{ signature: string; key: string }>;
   /**
    * Submits a signed transaction to the network.

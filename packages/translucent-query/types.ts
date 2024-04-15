@@ -7,8 +7,8 @@ import {
   PlutusData,
   TransactionId,
   Transaction,
-  ProtocolParameters
-} from '../translucent-core'
+  ProtocolParameters,
+} from "../translucent-core";
 
 /**
  * Interface for the Provider class.
@@ -19,7 +19,7 @@ export interface Provider {
    *
    * @returns {Promise<ProtocolParameters>} - The parameters for a transaction.
    */
-  getParameters(): Promise<ProtocolParameters>
+  getParameters(): Promise<ProtocolParameters>;
 
   /**
    * Retrieves the unspent outputs for a given address.
@@ -27,7 +27,7 @@ export interface Provider {
    * @param {Address} address - The address to retrieve unspent outputs for.
    * @returns {Promise<TransactionUnspentOutput[]>} - The unspent outputs for the address.
    */
-  getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>
+  getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>;
 
   /**
    * Retrieves the unspent outputs for a given address and asset.
@@ -39,7 +39,7 @@ export interface Provider {
   getUnspentOutputsWithAsset(
     address: Address,
     unit: AssetId,
-  ): Promise<TransactionUnspentOutput[]>
+  ): Promise<TransactionUnspentOutput[]>;
 
   /**
    * Retrieves the unspent output for a given NFT.
@@ -47,7 +47,7 @@ export interface Provider {
    * @param {AssetId} unit - The NFT to retrieve the unspent output for.
    * @returns {Promise<TransactionUnspentOutput>} - The unspent output for the NFT.
    */
-  getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>
+  getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
 
   /**
    * Resolves the unspent outputs for a given set of transaction inputs.
@@ -57,7 +57,7 @@ export interface Provider {
    */
   resolveUnspentOutputs(
     txIns: TransactionInput[],
-  ): Promise<TransactionUnspentOutput[]>
+  ): Promise<TransactionUnspentOutput[]>;
 
   /**
    * Resolves the datum for a given datum hash.
@@ -65,7 +65,7 @@ export interface Provider {
    * @param {DatumHash} datumHash - The datum hash to resolve the datum for.
    * @returns {Promise<PlutusData>} - The resolved datum.
    */
-  resolveDatum(datumHash: DatumHash): Promise<PlutusData>
+  resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
 
   /**
    * Waits for the confirmation of a given transaction.
@@ -77,7 +77,7 @@ export interface Provider {
   awaitTransactionConfirmation(
     txId: TransactionId,
     timeout?: number,
-  ): Promise<boolean>
+  ): Promise<boolean>;
 
   /**
    * Posts a given transaction to the chain.
@@ -85,6 +85,5 @@ export interface Provider {
    * @param {Transaction} tx - The transaction to post to the chain.
    * @returns {Promise<TransactionId>} - The id of the posted transaction.
    */
-  postTransactionToChain(tx: Transaction): Promise<TransactionId>
+  postTransactionToChain(tx: Transaction): Promise<TransactionId>;
 }
-
