@@ -1,7 +1,7 @@
 <p align="center">
   <img width="100px" src="./logo/translucent.svg" align="center"/>
   <h1 align="center">Translucent</h1>
-  <p align="center">Translucent is a library, which allows you to create Cardano transactions and off-chain code for your Aiken contracts in JavaScript.<br/>
+  <p align="center">Translucent is a library, which allows you to create Cardano transactions and off-chain code for your Aiken contracts in JavaScript.<br/><br/>
   Built with ❤️ by the Butane Team.
 <p align="center">
     <img src="https://img.shields.io/github/commit-activity/m/butaneprotocol/translucent?style=for-the-badge" />
