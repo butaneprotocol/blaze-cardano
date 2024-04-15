@@ -1,9 +1,9 @@
-import { HexBlob } from "../translucent-core";
+import { Address, HexBlob, NetworkId, RewardAddress, TransactionId, TransactionUnspentOutput, TransactionWitnessSet, Value } from "../translucent-core";
 
 type CoseSign1CborHex = HexBlob;
 type CoseKeyCborHex = HexBlob;
 
-export interface Cip30DataSignature {
+export interface CIP30DataSignature {
   key: CoseKeyCborHex;
   signature: CoseSign1CborHex;
 }
@@ -11,7 +11,7 @@ export interface Cip30DataSignature {
 /**
  * CIP-30 Wallet interface.
  */
-export interface WalletInterface {
+export interface CIP30Interface {
   /**
    * Retrieves the network ID of the currently connected account.
    *
@@ -86,4 +86,86 @@ export interface WalletInterface {
    * @returns {Promise<string[]>} - The hex-encoded CBOR bytes of the collateral UTXOs owned by the wallet.
    */
   getCollateral(): Promise<string[]>;
+}
+
+/**
+ * Abstract class for Wallet.
+ */
+export abstract class Wallet {
+  /**
+   * Retrieves the network ID of the currently connected account.
+   * @returns {Promise<NetworkId>} - The network ID of the currently connected account.
+   */
+  abstract getNetworkId(): Promise<NetworkId>;
+
+  /**
+   * Retrieves the UTxO(s) controlled by the wallet.
+   * @returns {Promise<TransactionUnspentOutput[]>} - The UTXO(s) controlled by the wallet.
+   */
+  abstract getUtxos(): Promise<TransactionUnspentOutput[]>;
+
+  /**
+   * Retrieves the total available balance of the wallet, encoded in CBOR.
+   * @returns {Promise<Value>} - The balance of the wallet.
+   */
+  abstract getBalance(): Promise<Value>;
+
+  /**
+   * Retrieves all used addresses controlled by the wallet.
+   * @returns {Promise<Address[]>} - The used addresses controlled by the wallet.
+   */
+  abstract getUsedAddresses(): Promise<Address[]>;
+
+  /**
+   * Retrieves all unused addresses controlled by the wallet.
+   * @returns {Promise<Address[]>} - The unused addresses controlled by the wallet.
+   */
+  abstract getUnusedAddresses(): Promise<Address[]>;
+
+  /**
+   * Retrieves an address owned by the wallet which should be used to return transaction change.
+   * @returns {Promise<Address>} - The change address.
+   */
+  abstract getChangeAddress(): Promise<Address>;
+
+  /**
+   * Retrieves the reward addresses controlled by the wallet.
+   * @returns {Promise<RewardAddress[]>} - The reward addresses controlled by the wallet.
+   */
+  abstract getRewardAddresses(): Promise<RewardAddress[]>;
+
+  /**
+   * Requests a transaction signature from the wallet.
+   * @param {string} tx - The transaction to sign.
+   * @param {boolean} partialSign - Whether to partially sign the transaction.
+   * @returns {Promise<TransactionWitnessSet>} - The signed transaction.
+   */
+  abstract signTx(
+    tx: string,
+    partialSign: boolean,
+  ): Promise<TransactionWitnessSet>;
+
+  /**
+   * Requests signed data from the wallet.
+   * @param {string} address - The address to sign the data with.
+   * @param {string} payload - The data to sign.
+   * @returns {Promise<Cip30DataSignature>} - The signed data.
+   */
+  abstract signData(
+    address: string,
+    payload: string,
+  ): Promise<CIP30DataSignature>;
+
+  /**
+   * Submits a transaction through the wallet.
+   * @param {string} tx - The transaction to submit.
+   * @returns {Promise<TransactionId>} - The ID of the submitted transaction.
+   */
+  abstract submitTx(tx: string): Promise<TransactionId>;
+
+  /**
+   * Retrieves the collateral UTxO(s) for the wallet.
+   * @returns {Promise<TransactionUnspentOutput[]>} - The collateral for the wallet.
+   */
+  abstract getCollateral(): Promise<TransactionUnspentOutput[]>;
 }

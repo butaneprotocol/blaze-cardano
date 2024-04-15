@@ -8,19 +8,19 @@ import {
   TransactionWitnessSet,
   Value,
 } from "../translucent-core";
-import { Cip30DataSignature, WalletInterface } from "./types";
+import { Wallet, CIP30DataSignature, CIP30Interface } from "./types";
 
 /**
  * Wallet class that interacts with the WalletInterface.
  */
-export class Wallet {
-  private webWallet: WalletInterface;
+export class WebWallet implements Wallet {
+  private webWallet: CIP30Interface;
 
   /**
-   * Constructs a new instance of the Wallet class.
-   * @param {WalletInterface} webWallet - The WalletInterface to be used.
+   * Constructs a new instance of the WebWallet class.
+   * @param {CIP30Interface} webWallet - The CIP30Interface to be used.
    */
-  constructor(webWallet: WalletInterface) {
+  constructor(webWallet: CIP30Interface) {
     this.webWallet = webWallet;
   }
 
@@ -150,12 +150,12 @@ export class Wallet {
    * Requests signed data from the wallet.
    * @param {string} address - The address to sign the data with.
    * @param {string} payload - The data to sign.
-   * @returns {Promise<Cip30DataSignature>} - The signed data.
+   * @returns {Promise<CIP30DataSignature>} - The signed data.
    */
   async signData(
     address: string,
     payload: string,
-  ): Promise<Cip30DataSignature> {
+  ): Promise<CIP30DataSignature> {
     const { signature, key } = await this.webWallet.signData(address, payload);
     return {
       key: HexBlob(key),
