@@ -2,7 +2,8 @@
   "name": "translucent",
   "module": "index.ts",
   "scripts": {
-    "docs": "typedoc \"packages/*\" && mkdir docs/logo && cp logo/translucent.svg docs/logo/translucent.svg"
+    "docs": "typedoc \"packages/*\" && mkdir docs/logo && cp logo/translucent.svg docs/logo/translucent.svg",
+    "fmt": "prettier -w *.ts"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
