@@ -13,6 +13,8 @@ import {
   PlutusLanguageVersion,
   CostModels,
   fromHex,
+  Credential,
+  AddressType,
 } from "../translucent-core";
 import { Provider } from "./types";
 
@@ -87,10 +89,20 @@ export class Maestro implements Provider {
       });
   }
 
-  getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {
+  getUnspentOutputs(
+    address: Address | Credential,
+  ): Promise<TransactionUnspentOutput[]> {
     /* todo: paginate */
-    const query = `/addresses/${address.toBech32()}/utxos?with_cbor=true&count=100`;
-    return fetch(`${this.url}${query}`, { headers: this.headers() })
+    const query =
+      address instanceof Address
+        ? `/addresses/${address.toBech32()}/`
+        : `/cred/${new Address({
+            type: AddressType.EnterpriseKey,
+            paymentPart: address,
+          }).toBech32()}/`;
+    return fetch(`${this.url}${query}utxos?with_cbor=true&count=100`, {
+      headers: this.headers(),
+    })
       .then((resp) => resp.json())
       .then((json) => {
         if (json) {
@@ -128,21 +140,93 @@ export class Maestro implements Provider {
     throw new Error("unimplemented");
   }
 
-  resolveUnspentOutputs(
+  async resolveUnspentOutputs(
     txIns: TransactionInput[],
   ): Promise<TransactionUnspentOutput[]> {
-    throw new Error("unimplemented");
+    const query = `/transactions/outputs?with_cbor=true`;
+    const txInStrings = txIns.map(
+      (txIn) => `${txIn.transactionId()}#${txIn.index()}`,
+    );
+
+    try {
+      const response = await fetch(`${this.url}${query}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...this.headers(),
+        },
+        body: JSON.stringify(txInStrings),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `resolveUnspentOutputs: Failed to resolve unspent outputs from Maestro endpoint. Status code ${response.status}`,
+        );
+      }
+
+      const json =
+        (await response.json()) as MaestroResponse<MaestroUnspentOutputResolution>;
+
+      if ("message" in json) {
+        throw new Error(
+          `resolveUnspentOutputs: Maestro threw "${json.message}"`,
+        );
+      }
+
+      const resolvedOutputs: TransactionUnspentOutput[] = json.data.map(
+        (output) => {
+          const txIn = new TransactionInput(
+            TransactionId(output.tx_hash),
+            BigInt(output.index),
+          );
+          const txOut = TransactionOutput.fromCbor(HexBlob(output.txout_cbor));
+
+          return new TransactionUnspentOutput(txIn, txOut);
+        },
+      );
+
+      return resolvedOutputs;
+    } catch (error) {
+      console.error("resolveUnspentOutputs:", error);
+      throw new Error("resolveUnspentOutputs: Unexpected error occurred");
+    }
   }
 
   resolveDatum(datumHash: DatumHash): Promise<PlutusData> {
-    throw new Error("unimplemented");
+    const query = `/datums/${datumHash}`;
+    return fetch(`${this.url}${query}`, {
+      headers: this.headers(),
+    })
+      .then((resp) => resp.json() as Promise<MaestroDatumHashResolution>)
+      .then((json) => {
+        if (json) {
+          return PlutusData.fromCbor(HexBlob(json.data.bytes));
+        }
+        throw new Error("resolveDatum: Could not parse response json");
+      });
   }
 
-  awaitTransactionConfirmation(
+  async awaitTransactionConfirmation(
     txId: TransactionId,
     timeout?: number,
   ): Promise<boolean> {
-    throw new Error("unimplemented");
+    const startTime = Date.now();
+    const checkConfirmation = async () => {
+      const response = await fetch(`${this.url}/transactions/${txId}/cbor`);
+      if (response.ok) {
+        return true;
+      } else if (Date.now() - startTime < (timeout || 0)) {
+        setTimeout(checkConfirmation, 20000);
+      } else {
+        return false;
+      }
+    };
+    let result = await checkConfirmation();
+    if (!result) {
+      throw new Error("awaitTransactionConfirmation: unexpected error!");
+    }
+    return Promise.resolve(result);
   }
 
   postTransactionToChain(tx: Transaction): Promise<TransactionId> {
@@ -239,4 +323,34 @@ interface MaestroLastUpdated {
   timestamp: string;
   block_hash: string;
   block_slot: number;
+}
+
+interface MaestroDatumHashResolution {
+  data: {
+    json: any;
+    bytes: string;
+  };
+  last_updated: MaestroLastUpdated;
+}
+
+interface MaestroUnspentOutputResolution {
+  data: {
+    tx_hash: string;
+    index: number;
+    assets: {
+      unit: string;
+      amount: string;
+    }[];
+    address: string;
+    datum?: {
+      type: "inline";
+      hash: string;
+      bytes: string;
+      json: any;
+    };
+    reference_script?: string;
+    txout_cbor: string;
+  }[];
+  last_updated: MaestroLastUpdated;
+  next_cursor: null;
 }

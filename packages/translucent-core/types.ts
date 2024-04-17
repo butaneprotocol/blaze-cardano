@@ -73,6 +73,8 @@ export type AddressType = C.Cardano.AddressType;
 export const PaymentAddress = C.Cardano.PaymentAddress;
 export type PaymentAddress = C.Cardano.PaymentAddress;
 
+export type Credential = C.Cardano.Credential;
+
 export const Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
 export type Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
 
