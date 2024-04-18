@@ -431,13 +431,6 @@ interface MaestroUtxoCbor {
   txout_cbor: string;
 }
 
-interface MaestroTransaction {
-  tx_hash: string;
-  index: number;
-  slot: number;
-  txout_cbor: string;
-}
-
 interface MaestroLastUpdated {
   timestamp: string;
   block_hash: string;
