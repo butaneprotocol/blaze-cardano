@@ -18,3 +18,7 @@ This api is experimental!
 ### Docs
 
 Translucent channel is in the [TxPipe Discord](https://discord.gg/FAeAR6jX)!
+
+### Contributing
+
+Please see [contributing.md](./CONTRIBUTING.md)
