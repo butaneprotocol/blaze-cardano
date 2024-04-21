@@ -43,6 +43,8 @@ import {
   toHex,
   fromHex,
   ProtocolParameters,
+  getPaymentAddress,
+  Datum,
 } from "../translucent-core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
@@ -379,12 +381,12 @@ export class TxBuilder {
    * @returns {TxBuilder} The same transaction builder
    */
   addOutput(output: TransactionOutput) {
+    // todo: minAda, maxUTxO size
     // Retrieve the current list of outputs from the transaction body.
     const outputs = this.body.outputs();
     // Add the new output to the list and update the transaction body's outputs.
     const index = outputs.push(output) - 1;
     this.body.setOutputs(outputs);
-    // Return the index at which the new output was added.
     return this;
   }
 
@@ -395,6 +397,110 @@ export class TxBuilder {
    */
   get outputsCount(): number {
     return this.body.outputs().length;
+  }
+
+  /**
+   * Adds a payment in lovelace to the transaction output.
+   * This method ensures that the address is valid and the payment is added to the transaction output.
+   *
+   * @param {Address} address - The address to send the payment to.
+   * @param {bigint} lovelace - The amount of lovelace to send.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  payLovelace(address: Address, lovelace: bigint) {
+    assertPaymentsAddress(address);
+    let paymentAddress = getPaymentAddress(address);
+    this.addOutput(
+      TransactionOutput.fromCore({
+        address: paymentAddress,
+        value: { coins: lovelace },
+      }),
+    );
+    return this;
+  }
+
+  /**
+   * Adds a payment in assets to the transaction output.
+   * This method ensures that the address is valid and the payment is added to the transaction output.
+   *
+   * @param {Address} address - The address to send the payment to.
+   * @param {Value} value - The value of the assets to send.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  payAssets(address: Address, value: Value) {
+    assertPaymentsAddress(address);
+    let paymentAddress = getPaymentAddress(address);
+    this.addOutput(
+      TransactionOutput.fromCore({
+        address: paymentAddress,
+        value: value.toCore(),
+      }),
+    );
+    return this;
+  }
+
+  /**
+   * Locks a specified amount of lovelace to a script.
+   * The difference between 'pay' and 'lock' is that you pay to a public key/user,
+   * and you lock at a script.
+   * This method ensures that the address is valid and the lovelace is locked to the script.
+   *
+   * @param {Address} address - The address to lock the lovelace to.
+   * @param {bigint} lovelace - The amount of lovelace to lock.
+   * @param {Datum} datum - The datum to be associated with the locked lovelace.
+   * @param {Script} scriptReference - The reference to the script to lock the lovelace to.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  lockLovelace(
+    address: Address,
+    lovelace: bigint,
+    datum: Datum,
+    scriptReference?: Script,
+  ) {
+    assertLockAddress(address);
+    let paymentAddress = getPaymentAddress(address);
+    this.addOutput(
+      TransactionOutput.fromCore({
+        address: paymentAddress,
+        value: { coins: lovelace },
+        datum: !("__opaqueString" in datum) ? datum.toCore() : undefined,
+        datumHash: "__opaqueString" in datum ? datum : undefined,
+        scriptReference: scriptReference?.toCore(),
+      }),
+    );
+    return this;
+  }
+
+  /**
+   * Locks a specified amount of assets to a script.
+   * The difference between 'pay' and 'lock' is that you pay to a public key/user,
+   * and you lock at a script.
+   * This method ensures that the address is valid and the assets are locked to the script.
+   *
+   * @param {Address} address - The address to lock the assets to.
+   * @param {Value} value - The value of the assets to lock.
+   * @param {Datum} datum - The datum to be associated with the locked assets.
+   * @param {Script} scriptReference - The reference to the script to lock the assets to.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  lockAssets(
+    address: Address,
+    value: Value,
+    datum: Datum,
+    scriptReference?: Script,
+  ) {
+    assertLockAddress(address);
+    let paymentAddress = getPaymentAddress(address);
+    this.addOutput(
+      TransactionOutput.fromCore({
+        address: paymentAddress,
+        value: value.toCore(),
+        datum: !("__opaqueString" in datum) ? datum.toCore() : undefined,
+        datumHash: "__opaqueString" in datum ? datum : undefined,
+        scriptReference: scriptReference?.toCore(),
+      }),
+    );
+    return this;
   }
 
   /**
@@ -1053,5 +1159,29 @@ export class TxBuilder {
   provideScript(script: Script) {
     this.scriptScope.add(script);
     return this;
+  }
+}
+
+function assertPaymentsAddress(address: Address) {
+  let props = address.getProps();
+  if (!props.paymentPart) {
+    throw new Error("assertPaymentsAddress: address has no payment part!");
+  }
+  if (props.paymentPart.type == CredentialType.ScriptHash) {
+    throw new Error(
+      "assertPaymentsAddress: address payment credential cannot be a script hash!",
+    );
+  }
+}
+
+function assertLockAddress(address: Address) {
+  let props = address.getProps();
+  if (!props.paymentPart) {
+    throw new Error("assertLockAddress: address has no payment part!");
+  }
+  if (props.paymentPart.type != CredentialType.ScriptHash) {
+    throw new Error(
+      "assertLockAddress: address payment credential must be a script hash!",
+    );
   }
 }
