@@ -162,4 +162,28 @@ export function empty(v: Value): boolean {
   return assetTypes(v) == 0;
 }
 
+/**
+ * A constant Value object with zero coins and no assets.
+ */
 export const zero: Value = new Value(0n);
+
+/**
+ * Creates a new Value object with the specified amount of lovelace and assets.
+ *
+ * @param {bigint} lovelace - The amount of lovelace.
+ * @param {...[string, bigint][]} assets - The assets to include in the Value object.
+ * @returns {Value} - The newly created Value object.
+ */
+export function make(lovelace: bigint, ...assets: [string, bigint][]): Value {
+  if (assets.length == 0) {
+    return Value.fromCore({ coins: lovelace });
+  }
+  let tokenMap: Map<AssetId, bigint> = new Map();
+  for (const [asset, qty] of assets) {
+    tokenMap.set(AssetId(asset), qty);
+  }
+  return Value.fromCore({
+    coins: lovelace,
+    assets: tokenMap,
+  });
+}
