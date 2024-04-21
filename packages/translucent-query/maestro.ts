@@ -41,7 +41,7 @@ export class Maestro implements Provider {
             json as MaestroResponse<MaestroProtocolParametersResponse>;
           if ("message" in response) {
             throw new Error(
-              `getUnspentOutputs: Maestro threw "${response.message}"`,
+              `getParameters: Maestro threw "${response.message}"`,
             );
           }
           const params = response.data;

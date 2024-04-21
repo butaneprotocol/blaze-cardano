@@ -15,6 +15,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@cardano-ogmios/schema": "^6.2.0",
     "@cardano-sdk/core": "^0.30.0",
     "uplc-node": "^0.0.3"
   }
