@@ -857,9 +857,8 @@ export class TxBuilder {
    * It updates the transaction body with the calculated fee.
    *
    * @param {Transaction} draft_tx - The draft transaction to calculate fees for.
-   * @param {TransactionWitnessSet} tw - The transaction witness set.
    */
-  private calculateFees(draft_tx: Transaction, tw: TransactionWitnessSet) {
+  private calculateFees(draft_tx: Transaction) {
     // Calculate the fee based on the transaction size and minimum fee parameters.
     this.fee = BigInt(
       Math.ceil(
@@ -1029,7 +1028,7 @@ export class TxBuilder {
     let draft_tx = new Transaction(this.body, tw);
     // Calculate and set the transaction fee.
     let draft_size = draft_tx.toCbor().length / 2;
-    this.calculateFees(draft_tx, tw);
+    this.calculateFees(draft_tx);
     excessValue = value.merge(excessValue, new Value(-this.fee));
     this.balanceChange(excessValue);
     if (this.redeemers.size() > 0) {
