@@ -52,7 +52,7 @@ export class Maestro implements Provider {
             let costModel: number[] = [];
             let keys = Object.keys(params.cost_models[cm]).sort();
             for (const key of keys) {
-              costModel.push(params.cost_models[cm][key]);
+              costModel.push(params.cost_models[cm][key]!);
             }
             costModels.set(fromMaestroLanguageVersion(cm), costModel);
           }

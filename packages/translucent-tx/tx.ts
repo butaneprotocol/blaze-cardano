@@ -385,7 +385,7 @@ export class TxBuilder {
     // Retrieve the current list of outputs from the transaction body.
     const outputs = this.body.outputs();
     // Add the new output to the list and update the transaction body's outputs.
-    const index = outputs.push(output) - 1;
+    outputs.push(output);
     this.body.setOutputs(outputs);
     return this;
   }
@@ -643,8 +643,10 @@ export class TxBuilder {
         this.usedLanguages[PlutusLanguageVersion.V2] = true;
       } else if (lang == 3) {
         this.usedLanguages[PlutusLanguageVersion.V3] = true;
-      }else if (!lang){
-        throw new Error("buildTransactionWitnessSet: lang script lookup failed")
+      } else if (!lang) {
+        throw new Error(
+          "buildTransactionWitnessSet: lang script lookup failed",
+        );
       }
     }
     // Add scripts to the transaction witness set
@@ -671,7 +673,7 @@ export class TxBuilder {
     // Process vkey witnesses
     let vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore);
     let requiredWitnesses: VkeyWitness[] = [];
-    for (const val of this.requiredWitnesses.values()) {
+    for (const _item of this.requiredWitnesses.values()) {
       requiredWitnesses.push(
         VkeyWitness.fromCore([
           Ed25519PublicKeyHex("0".repeat(64)),

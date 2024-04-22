@@ -174,7 +174,10 @@ export const zero: Value = new Value(0n);
  * @param {...[string, bigint][]} assets - The assets to include in the Value object.
  * @returns {Value} - The newly created Value object.
  */
-export function makeValue(lovelace: bigint, ...assets: [string, bigint][]): Value {
+export function makeValue(
+  lovelace: bigint,
+  ...assets: [string, bigint][]
+): Value {
   if (assets.length == 0) {
     return Value.fromCore({ coins: lovelace });
   }
