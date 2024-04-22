@@ -636,13 +636,15 @@ export class TxBuilder {
         }
       }
       // Mark the script language versions used in the transaction
-      let lang = scriptLookup[requiredScriptHash].language();
+      let lang = scriptLookup[requiredScriptHash]?.language();
       if (lang == 1) {
         this.usedLanguages[PlutusLanguageVersion.V1] = true;
       } else if (lang == 2) {
         this.usedLanguages[PlutusLanguageVersion.V2] = true;
       } else if (lang == 3) {
         this.usedLanguages[PlutusLanguageVersion.V3] = true;
+      }else if (!lang){
+        throw new Error("buildTransactionWitnessSet: lang script lookup failed")
       }
     }
     // Add scripts to the transaction witness set
