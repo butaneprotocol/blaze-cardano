@@ -1,5 +1,6 @@
 import * as C from "./core";
 import * as Crypto from "./crypto";
+import { OpaqueString, typedHex } from "./util";
 
 export const Value = C.Serialization.Value;
 export type Value = C.Serialization.Value;
@@ -47,6 +48,9 @@ export type Redeemer = C.Serialization.Redeemer;
 export const RedeemerPurpose = C.Cardano.RedeemerPurpose;
 export type RedeemerPurpose = C.Cardano.RedeemerPurpose;
 
+export const RedeemerTag = C.Serialization.RedeemerTag;
+export type RedeemerTag = C.Serialization.RedeemerTag;
+
 export const Script = C.Serialization.Script;
 export type Script = C.Serialization.Script;
 
@@ -77,6 +81,11 @@ export type Credential = C.Cardano.Credential;
 
 export const Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
 export type Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
+
+export type Ed25519PrivateNormalKeyHex = OpaqueString<"Ed25519PrivateKeyHex">;
+export const Ed25519PrivateNormalKeyHex = (
+  value: string,
+): Ed25519PrivateNormalKeyHex => typedHex(value, 64);
 
 export const Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
 export type Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
@@ -136,8 +145,9 @@ export type Datum = PlutusData | DatumHash;
 
 export type CostModels = C.Cardano.CostModels;
 
-export enum NetworkId {
-  Mainnet = 0,
-  Testnet = 1,
-  Other = 2,
-}
+export type ExUnits = C.Serialization.ExUnits
+export const ExUnits = C.Serialization.ExUnits
+
+export type NetworkId = C.Cardano.ChainId["networkId"];
+
+export type Evaluator = (tx: Transaction, additionalUtxos: TransactionUnspentOutput[]) => Promise<Redeemers>
