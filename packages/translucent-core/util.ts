@@ -1,5 +1,5 @@
 import * as C from "./core";
-import { HexBlob } from "@cardano-sdk/util";
+import { HexBlob, OpaqueString, typedHex } from "@cardano-sdk/util";
 import {
   PolicyId,
   Hash28ByteBase16,
@@ -68,7 +68,7 @@ export function fromHex(hexString: string): Uint8Array {
 export function toHex(byteArray: Uint8Array): string {
   let hexString = "";
   for (let i = 0; i < byteArray.length; i++) {
-    hexString += ("0" + (byteArray[i] & 0xff).toString(16)).slice(-2);
+    hexString += ("0" + (byteArray[i]! & 0xff).toString(16)).slice(-2);
   }
   return hexString;
 }
@@ -84,4 +84,4 @@ export type CborSet<A, B extends CborSerializable<A>> = C.Serialization.CborSet<
   B
 >;
 
-export { HexBlob };
+export { HexBlob, OpaqueString, typedHex };

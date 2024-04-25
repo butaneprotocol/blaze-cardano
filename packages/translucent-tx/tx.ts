@@ -40,17 +40,15 @@ import {
   HexBlob,
   HashAsPubKeyHex,
   PolicyIdToHash,
-  toHex,
   fromHex,
   ProtocolParameters,
   getPaymentAddress,
   Datum,
+  Evaluator,
+  Crypto
 } from "../translucent-core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
-import { costModels, costModelsBytes } from "../../tests/costModels";
-import * as Crypto from "../translucent-core/crypto";
-import * as U from "uplc-node";
 
 /*
 methods we want to implement somewhere in new translucent (from haskell codebase):
@@ -94,25 +92,13 @@ constraints:
     mustProduceAtLeast
 */
 
-const SLOT_CONFIG_NETWORK = {
-  Mainnet: { zeroTime: 1596059091000, zeroSlot: 4492800, slotLength: 1000 }, // Starting at Shelley era
-  Preview: { zeroTime: 1666656000000, zeroSlot: 0, slotLength: 1000 }, // Starting at Shelley era
-  Preprod: {
-    zeroTime: 1654041600000 + 1728000000,
-    zeroSlot: 86400,
-    slotLength: 1000,
-  }, // Starting at Shelley era
-  /** Customizable slot config (Initialized with 0 values). */
-  Custom: { zeroTime: 0, zeroSlot: 0, slotLength: 0 },
-};
-
 /**
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
  */
 export class TxBuilder {
   readonly params: ProtocolParameters;
-  body: TransactionBody; // The main body of the transaction containing inputs, outputs, etc.
-  inputs: TransactionInputSet = CborSet.fromCore([], TransactionInput.fromCore); // A set of transaction inputs.
+  private body: TransactionBody; // The main body of the transaction containing inputs, outputs, etc.
+  private inputs: TransactionInputSet = CborSet.fromCore([], TransactionInput.fromCore); // A set of transaction inputs.
   private redeemers: Redeemers = Redeemers.fromCore([]); // A collection of redeemers for script validation.
   private utxos: Set<TransactionUnspentOutput> =
     new Set<TransactionUnspentOutput>(); // A set of unspent transaction outputs.
@@ -133,9 +119,8 @@ export class TxBuilder {
   };
   private extraneousDatums: Set<PlutusData> = new Set(); // A set of extraneous Plutus data not directly used in the transaction.
   private fee: bigint = 0n; // The fee for the transaction.
-  private overEstimateSteps = 1.2; // A multiplier to overestimate the execution steps for Plutus scripts.
-  private overEstimateMem = 1.05; // A multiplier to overestimate the memory usage for Plutus scripts.
   private additionalSigners = 0;
+  private evaluator?: Evaluator
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -155,6 +140,11 @@ export class TxBuilder {
    */
   setChangeAddress(address: Address) {
     this.changeAddress = address;
+    return this;
+  }
+
+  useEvaluator(evaluator: Evaluator) {
+    this.evaluator = evaluator
     return this;
   }
 
@@ -523,55 +513,20 @@ export class TxBuilder {
    * transaction's redeemers with the new execution units.
    *
    * @param {Transaction} draft_tx - The draft transaction to evaluate.
-   * @returns {bigint} The total fee calculated based on the execution units of the scripts.
+   * @returns {Promise<bigint>} The total fee calculated based on the execution units of the scripts.
    */
-  private evaluate(draft_tx: Transaction): bigint {
+  private async evaluate(draft_tx: Transaction): Promise<bigint> {
     // Collect all UTXOs from the transaction's scope.
     let allUtxos: TransactionUnspentOutput[] = Array.from(
       this.utxoScope.values(),
     );
+    // todo: filter utxoscope to only include inputs, reference inputs, collateral inputs, not excess junk
 
-    // Simulate the execution of scripts using the UPLC (Untyped Plutus Core) evaluator.
-    const uplcResults = U.eval_phase_two_raw(
-      fromHex(draft_tx.toCbor()), // Convert the draft transaction to CBOR and hex format.
-      allUtxos.map((x) => fromHex(x.input().toCbor())), // Convert all input UTXOs to CBOR and hex format.
-      allUtxos.map((x) => fromHex(x.output().toCbor())), // Convert all output UTXOs to CBOR and hex format.
-      fromHex(costModelsBytes), // Convert the cost models to hex format.
-      BigInt(
-        Math.floor(
-          this.params.maxExecutionUnitsPerTransaction.steps /
-            (this.overEstimateSteps ?? 1),
-        ),
-      ), // Calculate the estimated max execution steps.
-      BigInt(
-        Math.floor(
-          this.params.maxExecutionUnitsPerTransaction.memory /
-            (this.overEstimateMem ?? 1),
-        ),
-      ), // Calculate the estimated max memory.
-      BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroTime), // Network-specific zero time for slot calculation.
-      BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroSlot), // Network-specific zero slot.
-      SLOT_CONFIG_NETWORK.Mainnet.slotLength, // Network-specific slot length.
-    );
-
-    let fee = 0; // Initialize the fee accumulator.
-    let redeemerValues: Redeemer[] = []; // Initialize an array to hold the updated redeemers.
-
+    const redeemers = await this.evaluator!(draft_tx, allUtxos)
+    let fee = 0;
     // Iterate over the results from the UPLC evaluator.
-    for (const redeemerBytes of uplcResults) {
-      let redeemer = Redeemer.fromCbor(HexBlob(toHex(redeemerBytes))); // Convert each result back from CBOR to a Redeemer object.
-      let exUnits = redeemer.exUnits(); // Extract the execution units from the redeemer.
-
-      // Adjust the execution units based on overestimation factors.
-      exUnits.setSteps(
-        BigInt(Math.round(Number(exUnits.steps()) * this.overEstimateSteps)),
-      );
-      exUnits.setMem(
-        BigInt(Math.round(Number(exUnits.mem()) * this.overEstimateMem)),
-      );
-
-      redeemer.setExUnits(exUnits); // Update the redeemer with the adjusted execution units.
-      redeemerValues.push(redeemer); // Add the updated redeemer to the array.
+    for (const redeemer of redeemers.values()) {
+      const exUnits = redeemer.exUnits()
 
       // Calculate the fee contribution from this redeemer and add it to the total fee.
       fee +=
@@ -583,8 +538,6 @@ export class TxBuilder {
     }
 
     // Create a new Redeemers object and set its values to the updated redeemers.
-    let redeemers: Redeemers = Redeemers.fromCore([]);
-    redeemers.setValues(redeemerValues);
     this.redeemers = redeemers; // Update the transaction's redeemers with the new set.
 
     return BigInt(Math.ceil(fee)); // Return the total fee, rounded up to the nearest whole number.
@@ -739,7 +692,7 @@ export class TxBuilder {
 
     this.body.outputs()[this.changeOutputIndex!] = new TransactionOutput(
       this.changeAddress!,
-      value.zero,
+      value.zero(),
     );
     // Aggregate the total output value from all outputs.
     for (const output of this.body.outputs().values()) {
@@ -792,7 +745,7 @@ export class TxBuilder {
       for (let i = 0; i <= Object.keys(this.usedLanguages).length; i++) {
         if (i == 0) {
           // Retrieve the cost model for the current language version.
-          let cm = costModels.get(i);
+          let cm = this.params.costModels.get(i);
           // Throw an error if the cost model is missing.
           if (cm == undefined) {
             throw new Error(
@@ -945,7 +898,7 @@ export class TxBuilder {
           );
         }
         return value.merge(utxo.output().amount(), acc);
-      }, value.zero);
+      }, value.zero());
     // Create a transaction output for the change address with the adjusted collateral value.
     this.body.setCollateralReturn(
       new TransactionOutput(
@@ -969,9 +922,9 @@ export class TxBuilder {
    *
    * @throws {Error} If the change address is not set, or if the coin selection fails to eliminate negative values,
    *                 or if balancing the change output fails.
-   * @returns {Transaction} A new Transaction object with all components set and ready for submission.
+   * @returns {Promise<Transaction>} A new Transaction object with all components set and ready for submission.
    */
-  complete(): Transaction {
+  async complete(): Promise<Transaction> {
     // Ensure a change address has been set before proceeding.
     if (!this.changeAddress) {
       throw new Error(
@@ -1035,7 +988,7 @@ export class TxBuilder {
     this.balanceChange(excessValue);
     if (this.redeemers.size() > 0) {
       this.prepareCollateral();
-      let evaluationFee = this.evaluate(draft_tx);
+      let evaluationFee = await this.evaluate(draft_tx);
       this.fee += evaluationFee;
       excessValue = value.merge(excessValue, new Value(-evaluationFee));
       tw.setRedeemers(this.redeemers);
