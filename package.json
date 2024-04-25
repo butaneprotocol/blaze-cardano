@@ -16,6 +16,9 @@
   },
   "dependencies": {
     "@cardano-sdk/core": "^0.30.0",
+    "@noble/ed25519": "^2.1.0",
+    "@noble/hashes": "^1.4.0",
+    "blakejs": "^1.2.1",
     "uplc-node": "^0.0.3"
   }
 }

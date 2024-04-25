@@ -107,7 +107,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
         18975, 10, 38887044, 32947, 10,
       ],
     ),
-  prices: { memory: 577 / 10000, steps: 721 / 10000 },
+  prices: { memory: 577 / 10000, steps: 0.0000721 },
   maxExecutionUnitsPerTransaction: { memory: 14000000, steps: 10000000000 },
   maxExecutionUnitsPerBlock: { memory: 62000000, steps: 20000000000 },
 };
