@@ -49,27 +49,30 @@ export interface ProtocolParameters {
   /** The maximum execution units per block. */
   maxExecutionUnitsPerBlock: Cardano.ExUnits;
 }
-
+/**
+ * Hard coded protocol parameters for the Cardano ledger.
+ * These parameters are used as default values in the absence of network-provided parameters.
+ */
 export const hardCodedProtocolParams: ProtocolParameters = {
-  coinsPerUtxoByte: 4310,
-  maxTxSize: 16384,
-  minFeeCoefficient: 44,
-  minFeeConstant: 155381,
-  maxBlockBodySize: 90112,
-  maxBlockHeaderSize: 1100,
-  stakeKeyDeposit: 2000000,
-  poolDeposit: 500000000,
-  poolRetirementEpochBound: 18,
-  desiredNumberOfPools: 500,
-  poolInfluence: "3/10",
-  monetaryExpansion: "3/1000",
-  treasuryExpansion: "1/5",
-  minPoolCost: 170000000,
-  protocolVersion: { major: 8, minor: 0 },
-  maxValueSize: 5000,
-  collateralPercentage: 150 / 100,
-  maxCollateralInputs: 3,
-  costModels: new Map()
+  coinsPerUtxoByte: 4310, // The number of coins per UTXO byte.
+  maxTxSize: 16384, // The maximum transaction size.
+  minFeeCoefficient: 44, // The minimum fee coefficient.
+  minFeeConstant: 155381, // The minimum fee constant.
+  maxBlockBodySize: 90112, // The maximum block body size.
+  maxBlockHeaderSize: 1100, // The maximum block header size.
+  stakeKeyDeposit: 2000000, // The stake key deposit.
+  poolDeposit: 500000000, // The pool deposit.
+  poolRetirementEpochBound: 18, // The pool retirement epoch bound.
+  desiredNumberOfPools: 500, // The desired number of pools.
+  poolInfluence: "3/10", // The pool influence.
+  monetaryExpansion: "3/1000", // The monetary expansion.
+  treasuryExpansion: "1/5", // The treasury expansion.
+  minPoolCost: 170000000, // The minimum pool cost.
+  protocolVersion: { major: 8, minor: 0 }, // The protocol version.
+  maxValueSize: 5000, // The maximum value size.
+  collateralPercentage: 150 / 100, // The collateral percentage.
+  maxCollateralInputs: 3, // The maximum collateral inputs.
+  costModels: new Map() // The cost models.
     .set(
       0,
       [
@@ -107,7 +110,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
         18975, 10, 38887044, 32947, 10,
       ],
     ),
-  prices: { memory: 577 / 10000, steps: 0.0000721 },
-  maxExecutionUnitsPerTransaction: { memory: 14000000, steps: 10000000000 },
-  maxExecutionUnitsPerBlock: { memory: 62000000, steps: 20000000000 },
+  prices: { memory: 577 / 10000, steps: 0.0000721 }, // The prices.
+  maxExecutionUnitsPerTransaction: { memory: 14000000, steps: 10000000000 }, // The maximum execution units per transaction.
+  maxExecutionUnitsPerBlock: { memory: 62000000, steps: 20000000000 }, // The maximum execution units per block.
 };
