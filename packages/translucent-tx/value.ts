@@ -164,8 +164,10 @@ export function empty(v: Value): boolean {
 
 /**
  * A constant Value object with zero coins and no assets.
+ *
+ * @returns {Value} - The zero Value object.
  */
-export const zero: Value = new Value(0n);
+export const zero: () => Value = () => new Value(0n);
 
 /**
  * Creates a new Value object with the specified amount of lovelace and assets.
