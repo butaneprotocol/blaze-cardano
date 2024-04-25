@@ -15,6 +15,9 @@ import {
   fromHex,
   Credential,
   AddressType,
+  Redeemers,
+  ExUnits,
+  RedeemerTag,
 } from "../translucent-core";
 import { Provider } from "./types";
 
@@ -22,7 +25,13 @@ export class Maestro implements Provider {
   private url: string;
   private apiKey: string;
 
-  constructor({ network, apiKey }: { network: string; apiKey: string }) {
+  constructor({
+    network,
+    apiKey,
+  }: {
+    network: "mainnet" | "preview" | "preprod";
+    apiKey: string;
+  }) {
     this.url = `https://${network}.gomaestro-api.org/v1`;
     this.apiKey = apiKey;
   }
@@ -31,6 +40,13 @@ export class Maestro implements Provider {
     return { "api-key": this.apiKey };
   }
 
+  /**
+   * This method fetches the protocol parameters from the Maestro API.
+   * It constructs the query URL, sends a GET request with the appropriate headers, and processes the response.
+   * The response is parsed into a ProtocolParameters object, which is then returned.
+   * If the response is not in the expected format, an error is thrown.
+   * @returns A Promise that resolves to a ProtocolParameters object.
+   */
   getParameters(): Promise<ProtocolParameters> {
     const query = `/protocol-params`;
     return fetch(`${this.url}${query}`, { headers: this.headers() })
@@ -331,8 +347,9 @@ export class Maestro implements Provider {
     return Promise.resolve(result);
   }
 
-  postTransactionToChain(tx: Transaction): Promise<TransactionId> {
-    const query = `/submit/tx`;
+  async postTransactionToChain(tx: Transaction): Promise<TransactionId> {
+    const query = `/txmanager`;
+    console.log("attempting to submit ", tx.toCbor());
     return fetch(`${this.url}${query}`, {
       method: "POST",
       headers: {
@@ -342,15 +359,80 @@ export class Maestro implements Provider {
       },
       body: fromHex(tx.toCbor()),
     })
-      .then((resp) => {
+      .then(async (resp) => {
         if (!resp.ok) {
+          console.log(JSON.stringify(resp));
+          const body = await resp.text();
           throw new Error(
-            `postTransactionToChain: failed to submit transaction to Maestro endpoint. Status code ${resp.status}`,
+            `postTransactionToChain: failed to submit transaction to Maestro endpoint. Status code ${body}`,
           );
         }
         return resp.text();
       })
       .then((result) => TransactionId(result));
+  }
+
+  async evaluateTransaction(
+    tx: Transaction,
+    additionalUtxos: TransactionUnspentOutput[],
+  ): Promise<Redeemers> {
+    const query = `/transactions/evaluate`;
+    const request: { additional_utxos: MaestroAdditionalUTxO[]; cbor: string } =
+      {
+        additional_utxos: additionalUtxos.map((x) => ({
+          txout_cbor: x.output().toCbor(),
+          index: Number(x.input().index()),
+          tx_hash: x.input().transactionId(),
+        })),
+        cbor: tx.toCbor(),
+      };
+    return fetch(`${this.url}${query}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...this.headers(),
+      },
+      body: JSON.stringify(request),
+    })
+      .then(async (resp) => {
+        if (!resp.ok) {
+          console.log(JSON.stringify(resp));
+          const body = await resp.text();
+          throw new Error(
+            `evaluateTransaction: failed to evaluate transaction with Maestro endpoint. Status code ${body}`,
+          );
+        }
+        return resp.json();
+      })
+      .then((result) => {
+        let redeemers = tx.witnessSet().redeemers()?.values();
+        if (!redeemers) {
+          throw new Error("Cannot evaluate without redeemers!");
+        }
+        let lightRedeemers = result as MaestroRedeemer[];
+        for (const redeemerData of lightRedeemers) {
+          const index = BigInt(redeemerData.redeemer_index);
+          const purpose = purposeFromTag(redeemerData.redeemer_tag);
+          const exUnits = ExUnits.fromCore({
+            memory: redeemerData.ex_units.mem,
+            steps: redeemerData.ex_units.steps,
+          });
+
+          let redeemer = redeemers.find(
+            (x) => x.tag() == purpose && x.index() == index,
+          );
+          if (!redeemer) {
+            throw new Error(
+              "evaluateTransaction: Maestro endpoint had extraneous redeemer data",
+            );
+          }
+          redeemer.setExUnits(exUnits);
+          // For extra verification: could make sure that the set of index,purposes is equal to the input set,
+          // this would guarantee no cost calculations are missing
+        }
+        return Redeemers.fromCore(redeemers.map((x) => x.toCore()));
+      });
   }
 }
 
@@ -465,4 +547,23 @@ interface MaestroUnspentOutputResolution {
   }[];
   last_updated: MaestroLastUpdated;
   next_cursor: null;
+}
+
+interface MaestroRedeemer {
+  ex_units: {
+    mem: number;
+    steps: number;
+  };
+  redeemer_index: number;
+  redeemer_tag: string;
+}
+
+interface MaestroAdditionalUTxO {
+  index: number;
+  tx_hash: string;
+  txout_cbor: string;
+}
+
+function purposeFromTag(tag: string): RedeemerTag {
+  throw new Error("unimplemented");
 }
