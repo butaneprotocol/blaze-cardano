@@ -3,6 +3,7 @@ import {
   HexBlob,
   NetworkId,
   RewardAddress,
+  Transaction,
   TransactionId,
   TransactionUnspentOutput,
   TransactionWitnessSet,
@@ -145,32 +146,32 @@ export abstract class Wallet {
 
   /**
    * Requests a transaction signature from the wallet.
-   * @param {string} tx - The transaction to sign.
+   * @param {Transaction} tx - The transaction to sign.
    * @param {boolean} partialSign - Whether to partially sign the transaction.
    * @returns {Promise<TransactionWitnessSet>} - The signed transaction.
    */
   abstract signTx(
-    tx: string,
+    tx: Transaction,
     partialSign: boolean,
   ): Promise<TransactionWitnessSet>;
 
   /**
    * Requests signed data from the wallet.
-   * @param {string} address - The address to sign the data with.
+   * @param {Address} address - The address to sign the data with.
    * @param {string} payload - The data to sign.
    * @returns {Promise<Cip30DataSignature>} - The signed data.
    */
   abstract signData(
-    address: string,
+    address: Address,
     payload: string,
   ): Promise<CIP30DataSignature>;
 
   /**
    * Submits a transaction through the wallet.
-   * @param {string} tx - The transaction to submit.
+   * @param {Transaction} tx - The transaction to submit.
    * @returns {Promise<TransactionId>} - The ID of the submitted transaction.
    */
-  abstract submitTx(tx: string): Promise<TransactionId>;
+  abstract submitTx(tx: Transaction): Promise<TransactionId>;
 
   /**
    * Retrieves the collateral UTxO(s) for the wallet.
