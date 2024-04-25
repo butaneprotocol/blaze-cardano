@@ -31,7 +31,7 @@ async function manageWallet() {
   const tx = await new TxBuilder(params)
     .addUnspentOutputs(myUtxos)
     .setChangeAddress(me)
-    .useEvaluator((x,y)=>provider.evaluateTransaction(x, y))
+    .useEvaluator((x, y) => provider.evaluateTransaction(x, y))
     .payLovelace(me, 50n * 1_000_000n)
     .complete();
 
@@ -46,4 +46,3 @@ async function manageWallet() {
 }
 
 manageWallet();
-

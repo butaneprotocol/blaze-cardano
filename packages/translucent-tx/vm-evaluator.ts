@@ -9,8 +9,8 @@ import {
   TransactionUnspentOutput,
   fromHex,
   toHex,
-} from '../translucent-core'
-import * as U from 'uplc-node'
+} from "../translucent-core";
+import * as U from "uplc-node";
 
 const SLOT_CONFIG_NETWORK = {
   Mainnet: { zeroTime: 1596059091000, zeroSlot: 4492800, slotLength: 1000 }, // Starting at Shelley era
@@ -22,7 +22,7 @@ const SLOT_CONFIG_NETWORK = {
   }, // Starting at Shelley era
   /** Customizable slot config (Initialized with 0 values). */
   Custom: { zeroTime: 0, zeroSlot: 0, slotLength: 0 },
-}
+};
 
 /**
  * This function returns an evaluator function that can be used to evaluate a transaction.
@@ -32,7 +32,11 @@ const SLOT_CONFIG_NETWORK = {
  * @param overEstimateMem - The overestimation factor for memory.
  * @returns An evaluator function.
  */
-export function evaluate(params: ProtocolParameters, overEstimateSteps: number, overEstimateMem: number): Evaluator {
+export function evaluate(
+  params: ProtocolParameters,
+  overEstimateSteps: number,
+  overEstimateMem: number,
+): Evaluator {
   return (
     draft_tx: Transaction,
     allUtxos: TransactionUnspentOutput[],
@@ -58,30 +62,30 @@ export function evaluate(params: ProtocolParameters, overEstimateSteps: number, 
       BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroTime), // Network-specific zero time for slot calculation.
       BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroSlot), // Network-specific zero slot.
       SLOT_CONFIG_NETWORK.Mainnet.slotLength, // Network-specific slot length.
-    )
+    );
 
-    let redeemerValues: Redeemer[] = [] // Initialize an array to hold the updated redeemers.
+    let redeemerValues: Redeemer[] = []; // Initialize an array to hold the updated redeemers.
 
     // Iterate over the results from the UPLC evaluator.
     for (const redeemerBytes of uplcResults) {
-      let redeemer = Redeemer.fromCbor(HexBlob(toHex(redeemerBytes))) // Convert each result back from CBOR to a Redeemer object.
-      let exUnits = redeemer.exUnits() // Extract the execution units from the redeemer.
+      let redeemer = Redeemer.fromCbor(HexBlob(toHex(redeemerBytes))); // Convert each result back from CBOR to a Redeemer object.
+      let exUnits = redeemer.exUnits(); // Extract the execution units from the redeemer.
 
       // Adjust the execution units based on overestimation factors.
       exUnits.setSteps(
         BigInt(Math.round(Number(exUnits.steps()) * overEstimateSteps)),
-      )
+      );
       exUnits.setMem(
         BigInt(Math.round(Number(exUnits.mem()) * overEstimateMem)),
-      )
+      );
 
-      redeemer.setExUnits(exUnits) // Update the redeemer with the adjusted execution units.
-      redeemerValues.push(redeemer) // Add the updated redeemer to the array.
+      redeemer.setExUnits(exUnits); // Update the redeemer with the adjusted execution units.
+      redeemerValues.push(redeemer); // Add the updated redeemer to the array.
     }
 
     // Create a new Redeemers object and set its values to the updated redeemers.
-    let redeemers: Redeemers = Redeemers.fromCore([])
-    redeemers.setValues(redeemerValues)
-    return Promise.resolve(redeemers)
-  }
+    let redeemers: Redeemers = Redeemers.fromCore([]);
+    redeemers.setValues(redeemerValues);
+    return Promise.resolve(redeemers);
+  };
 }

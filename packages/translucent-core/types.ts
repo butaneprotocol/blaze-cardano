@@ -145,9 +145,12 @@ export type Datum = PlutusData | DatumHash;
 
 export type CostModels = C.Cardano.CostModels;
 
-export type ExUnits = C.Serialization.ExUnits
-export const ExUnits = C.Serialization.ExUnits
+export type ExUnits = C.Serialization.ExUnits;
+export const ExUnits = C.Serialization.ExUnits;
 
 export type NetworkId = C.Cardano.ChainId["networkId"];
 
-export type Evaluator = (tx: Transaction, additionalUtxos: TransactionUnspentOutput[]) => Promise<Redeemers>
+export type Evaluator = (
+  tx: Transaction,
+  additionalUtxos: TransactionUnspentOutput[],
+) => Promise<Redeemers>;

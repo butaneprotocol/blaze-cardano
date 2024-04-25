@@ -45,7 +45,7 @@ import {
   getPaymentAddress,
   Datum,
   Evaluator,
-  Crypto
+  Crypto,
 } from "../translucent-core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
@@ -98,7 +98,10 @@ constraints:
 export class TxBuilder {
   readonly params: ProtocolParameters;
   private body: TransactionBody; // The main body of the transaction containing inputs, outputs, etc.
-  private inputs: TransactionInputSet = CborSet.fromCore([], TransactionInput.fromCore); // A set of transaction inputs.
+  private inputs: TransactionInputSet = CborSet.fromCore(
+    [],
+    TransactionInput.fromCore,
+  ); // A set of transaction inputs.
   private redeemers: Redeemers = Redeemers.fromCore([]); // A collection of redeemers for script validation.
   private utxos: Set<TransactionUnspentOutput> =
     new Set<TransactionUnspentOutput>(); // A set of unspent transaction outputs.
@@ -120,7 +123,7 @@ export class TxBuilder {
   private extraneousDatums: Set<PlutusData> = new Set(); // A set of extraneous Plutus data not directly used in the transaction.
   private fee: bigint = 0n; // The fee for the transaction.
   private additionalSigners = 0;
-  private evaluator?: Evaluator
+  private evaluator?: Evaluator;
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -144,7 +147,7 @@ export class TxBuilder {
   }
 
   useEvaluator(evaluator: Evaluator) {
-    this.evaluator = evaluator
+    this.evaluator = evaluator;
     return this;
   }
 
@@ -522,11 +525,11 @@ export class TxBuilder {
     );
     // todo: filter utxoscope to only include inputs, reference inputs, collateral inputs, not excess junk
 
-    const redeemers = await this.evaluator!(draft_tx, allUtxos)
+    const redeemers = await this.evaluator!(draft_tx, allUtxos);
     let fee = 0;
     // Iterate over the results from the UPLC evaluator.
     for (const redeemer of redeemers.values()) {
-      const exUnits = redeemer.exUnits()
+      const exUnits = redeemer.exUnits();
 
       // Calculate the fee contribution from this redeemer and add it to the total fee.
       fee +=

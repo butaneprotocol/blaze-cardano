@@ -8,18 +8,20 @@ import {
   TransactionId,
   Transaction,
   ProtocolParameters,
+  Redeemers,
 } from "../translucent-core";
 
 /**
- * Interface for the Provider class.
+ * Abstract class for the Provider.
+ * This class provides an interface for interacting with the blockchain.
  */
-export interface Provider {
+export abstract class Provider {
   /**
    * Retrieves the parameters for a transaction.
    *
    * @returns {Promise<ProtocolParameters>} - The parameters for a transaction.
    */
-  getParameters(): Promise<ProtocolParameters>;
+  abstract getParameters(): Promise<ProtocolParameters>;
 
   /**
    * Retrieves the unspent outputs for a given address.
@@ -27,7 +29,9 @@ export interface Provider {
    * @param {Address} address - The address to retrieve unspent outputs for.
    * @returns {Promise<TransactionUnspentOutput[]>} - The unspent outputs for the address.
    */
-  getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>;
+  abstract getUnspentOutputs(
+    address: Address,
+  ): Promise<TransactionUnspentOutput[]>;
 
   /**
    * Retrieves the unspent outputs for a given address and asset.
@@ -36,7 +40,7 @@ export interface Provider {
    * @param {AssetId} unit - The asset to retrieve unspent outputs for.
    * @returns {Promise<TransactionUnspentOutput[]>} - The unspent outputs for the address and asset.
    */
-  getUnspentOutputsWithAsset(
+  abstract getUnspentOutputsWithAsset(
     address: Address,
     unit: AssetId,
   ): Promise<TransactionUnspentOutput[]>;
@@ -47,7 +51,9 @@ export interface Provider {
    * @param {AssetId} unit - The NFT to retrieve the unspent output for.
    * @returns {Promise<TransactionUnspentOutput>} - The unspent output for the NFT.
    */
-  getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
+  abstract getUnspentOutputByNFT(
+    unit: AssetId,
+  ): Promise<TransactionUnspentOutput>;
 
   /**
    * Resolves the unspent outputs for a given set of transaction inputs.
@@ -55,7 +61,7 @@ export interface Provider {
    * @param {TransactionInput[]} txIns - The transaction inputs to resolve unspent outputs for.
    * @returns {Promise<TransactionUnspentOutput[]>} - The resolved unspent outputs.
    */
-  resolveUnspentOutputs(
+  abstract resolveUnspentOutputs(
     txIns: TransactionInput[],
   ): Promise<TransactionUnspentOutput[]>;
 
@@ -65,7 +71,7 @@ export interface Provider {
    * @param {DatumHash} datumHash - The datum hash to resolve the datum for.
    * @returns {Promise<PlutusData>} - The resolved datum.
    */
-  resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+  abstract resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
 
   /**
    * Waits for the confirmation of a given transaction.
@@ -74,7 +80,7 @@ export interface Provider {
    * @param {number} [timeout] - The timeout in milliseconds.
    * @returns {Promise<boolean>} - A boolean indicating whether the transaction is confirmed.
    */
-  awaitTransactionConfirmation(
+  abstract awaitTransactionConfirmation(
     txId: TransactionId,
     timeout?: number,
   ): Promise<boolean>;
@@ -85,5 +91,18 @@ export interface Provider {
    * @param {Transaction} tx - The transaction to post to the chain.
    * @returns {Promise<TransactionId>} - The id of the posted transaction.
    */
-  postTransactionToChain(tx: Transaction): Promise<TransactionId>;
+  abstract postTransactionToChain(tx: Transaction): Promise<TransactionId>;
+
+  /**
+   * Evaluates the transaction by calculating the exunits for each redeemer, applying them, and returning the redeemers.
+   * This makes a remote call to the provider in most cases, however may use a virtual machine in some implementations.
+   *
+   * @param {Transaction} tx - The transaction to evaluate.
+   * @param {TransactionUnspentOutput[]} additionalUtxos - The additional unspent outputs to consider.
+   * @returns {Promise<Redeemers>} - The redeemers with applied exunits.
+   */
+  abstract evaluateTransaction(
+    tx: Transaction,
+    additionalUtxos: TransactionUnspentOutput[],
+  ): Promise<Redeemers>;
 }
