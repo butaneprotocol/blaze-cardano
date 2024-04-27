@@ -2,7 +2,6 @@ import {
   Address,
   AddressType,
   Ed25519PublicKeyHex,
-  Ed25519KeyHashHex,
   Ed25519PrivateNormalKeyHex,
   NetworkId,
   RewardAddress,
@@ -10,23 +9,19 @@ import {
   TransactionUnspentOutput,
   TransactionWitnessSet,
   Value,
-  fromHex,
-  toHex,
   CredentialType,
-  Hash28ByteBase16,
   Transaction,
   VkeyWitness,
   Ed25519SignatureHex,
   CborSet,
+  blake2b_224,
+  HexBlob,
+  derivePublicKey,
+  signMessage,
 } from "../blaze-core";
-import { sha512 } from "@noble/hashes/sha512";
-import { ed } from "../blaze-core/crypto";
 import { Provider } from "../blaze-query";
 import { Wallet, CIP30DataSignature } from "./types";
-import * as blake from "blakejs";
 import * as value from "../blaze-tx/value";
-
-ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 
 /**
  * Wallet class that interacts with the HotWallet.
@@ -35,7 +30,6 @@ export class HotWallet implements Wallet {
   private provider: Provider;
   private privateKey: Ed25519PrivateNormalKeyHex;
   private publicKey: Ed25519PublicKeyHex;
-  private publicKeyHash: Ed25519KeyHashHex;
   readonly address: Address;
   readonly networkId: NetworkId;
 
@@ -54,20 +48,14 @@ export class HotWallet implements Wallet {
     // Set private key (raw bytes)
     this.privateKey = privateKey;
     // Use noble derive public key
-    this.publicKey = Ed25519PublicKeyHex(
-      toHex(ed.getPublicKey(fromHex(this.privateKey))),
-    );
-    // blake228 (228/8 = 28)
-    this.publicKeyHash = Ed25519KeyHashHex(
-      blake.blake2bHex(fromHex(this.publicKey), undefined, 28),
-    );
+    this.publicKey = derivePublicKey(this.privateKey);
 
     this.address = new Address({
       type: AddressType.EnterpriseKey,
       networkId: this.networkId,
       paymentPart: {
         type: CredentialType.KeyHash,
-        hash: Hash28ByteBase16(this.publicKeyHash),
+        hash: blake2b_224(HexBlob(this.publicKey)),
       },
     });
     this.provider = provider;
@@ -150,7 +138,7 @@ export class HotWallet implements Wallet {
         "signTx: Hot wallet only supports partial signing = true",
       );
     }
-    let signature = toHex(ed.sign(tx.getId(), this.privateKey));
+    let signature = signMessage(HexBlob(tx.getId()), this.privateKey);
     let tws = new TransactionWitnessSet();
     let vkw = new VkeyWitness(this.publicKey, Ed25519SignatureHex(signature));
     tws.setVkeys(CborSet.fromCore([vkw.toCore()], VkeyWitness.fromCore));
