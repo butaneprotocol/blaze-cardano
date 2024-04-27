@@ -11,7 +11,21 @@ import {
   AddressType,
   NetworkId,
   Credential,
+  Hash32ByteBase16,
 } from "./types";
+import { sha256 } from "@noble/hashes/sha256";
+import * as sha3 from "@noble/hashes/sha3";
+import { sha512 } from "@noble/hashes/sha512";
+import {
+  Ed25519PrivateExtendedKeyHex,
+  Ed25519PrivateNormalKeyHex,
+  Ed25519SignatureHex,
+  ed,
+} from "./crypto";
+import * as blake from "blakejs";
+import * as bip39 from "@scure/bip39";
+
+ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 
 /**
  * Converts an Address to a PaymentAddress.
@@ -77,6 +91,93 @@ export function toHex(byteArray: Uint8Array): string {
   }
   return hexString;
 }
+
+/**
+ * Function to compute the SHA2-256 hash of a hex blob.
+ * @param {HexBlob} _data - The hex blob to compute the hash of.
+ * @returns {Hash32ByteBase16} The computed hash in Hash32ByteBase16 format.
+ */
+export function sha2_256(data: HexBlob): Hash32ByteBase16 {
+  return Hash32ByteBase16(toHex(sha256(fromHex(data))));
+}
+
+/**
+ * Function to compute the SHA3-256 hash of a hex blob.
+ * @param {HexBlob} _data - The hex blob to compute the hash of.
+ * @returns {Hash32ByteBase16} The computed hash in Hash32ByteBase16 format.
+ */
+export function sha3_256(data: HexBlob): Hash32ByteBase16 {
+  return Hash32ByteBase16(toHex(sha3.sha3_256(fromHex(data))));
+}
+
+/**
+ * Function to compute the BLAKE2b-256 hash of a hex blob.
+ * @param {HexBlob} _data - The hex blob to compute the hash of.
+ * @returns {Hash32ByteBase16} The computed hash in Hash32ByteBase16 format.
+ */
+export function blake2b_256(data: HexBlob): Hash32ByteBase16 {
+  return Hash32ByteBase16(blake.blake2bHex(fromHex(data), undefined, 32));
+}
+
+/**
+ * Function to compute the BLAKE2b-224 hash of a hex blob.
+ * @param {HexBlob} _data - The hex blob to compute the hash of.
+ * @returns {Hash32ByteBase16} The computed hash in Hash28ByteBase16 format.
+ */
+export function blake2b_224(data: HexBlob): Hash28ByteBase16 {
+  return Hash28ByteBase16(blake.blake2bHex(fromHex(data), undefined, 28));
+}
+
+/**
+ * Function to derive the public key from a private key.
+ * @param {Ed25519PrivateNormalKeyHex | Ed25519PrivateExtendedKeyHex} privateKey - The private key to derive the public key from.
+ * @returns {Ed25519PublicKeyHex} The derived public key.
+ */
+export function derivePublicKey(
+  privateKey: Ed25519PrivateNormalKeyHex | Ed25519PrivateExtendedKeyHex,
+): Ed25519PublicKeyHex {
+  if (privateKey.length > 64) {
+    return Ed25519PublicKeyHex(
+      toHex(ed.getPublicKey(fromHex(privateKey.slice(0, 64)))),
+    );
+  } else {
+    return Ed25519PublicKeyHex(toHex(ed.getPublicKey(fromHex(privateKey))));
+  }
+}
+
+/**
+ * Function to sign a message with a private key.
+ * @param {HexBlob} message - The message to sign.
+ * @param {Ed25519PrivateNormalKeyHex} privateKey - The private key to sign the message with.
+ * @returns {Ed25519SignatureHex} The signature of the message.
+ */
+export function signMessage(
+  message: HexBlob,
+  privateKey: Ed25519PrivateNormalKeyHex,
+): Ed25519SignatureHex {
+  return Ed25519SignatureHex(toHex(ed.sign(message, privateKey)));
+}
+
+/**
+ * Function to generate a mnemonic.
+ * @returns {string} The generated mnemonic.
+ */
+export const generateMnemonic = bip39.generateMnemonic;
+
+/**
+ * Function to convert entropy to a mnemonic.
+ * @param {Buffer} entropy - The entropy to convert.
+ * @returns {string} The generated mnemonic.
+ */
+export const entropyToMnemonic = bip39.entropyToMnemonic;
+
+/**
+ * Function to convert a mnemonic to entropy.
+ * @param {string} mnemonic - The mnemonic to convert.
+ * @returns {Buffer} The generated entropy.
+ */
+export const mnemonicToEntropy = bip39.mnemonicToEntropy;
+
 /**
  * Function to create an Address from a Bech32 string.
  * @param {string} bech32 - The Bech32 string to create the Address from.
