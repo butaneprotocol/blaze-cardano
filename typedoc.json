@@ -1,0 +1,19 @@
+{
+    "entryPoints": [
+        // Blaze
+        "packages/blaze/index.ts",
+        "packages/blaze-blueprint/index.ts",
+        "packages/blaze-core/index.ts",
+        "packages/blaze-emulator/index.ts",
+        "packages/blaze-query/index.ts",
+        "packages/blaze-tx/index.ts",
+        "packages/blaze-wallet/index.ts",
+    ],
+    "out": "docs",
+    "includeVersion": true,
+    "disableSources": false,
+    "excludeProtected": true,
+    "excludePrivate": true,
+    "hideGenerator": true,
+    "theme": "default"
+  }

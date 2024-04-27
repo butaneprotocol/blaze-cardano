@@ -18,6 +18,8 @@
     "@cardano-sdk/core": "^0.30.0",
     "@noble/ed25519": "^2.1.0",
     "@noble/hashes": "^1.4.0",
+    "@scure/bip39": "^1.3.0",
+    "@stricahq/bip32ed25519": "^1.0.4",
     "blakejs": "^1.2.1",
     "uplc-node": "^0.0.3"
   }
