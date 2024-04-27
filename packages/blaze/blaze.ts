@@ -3,10 +3,10 @@ import { TxBuilder } from "../blaze-tx";
 import { Wallet } from "../blaze-wallet";
 
 /**
- * The blaze class is used to create and manage Cardano transactions.
+ * The Blaze class is used to create and manage Cardano transactions.
  * It requires a provider and a wallet to interact with the blockchain and manage funds.
  */
-export class blaze<ProviderType extends Provider, WalletType extends Wallet> {
+export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
   provider: ProviderType;
   wallet: WalletType;
 
