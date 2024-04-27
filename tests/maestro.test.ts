@@ -1,15 +1,11 @@
 import {
-  Address,
-  TransactionOutput,
   fromHex,
-  getPaymentAddress,
-  Hash32ByteBase16,
-  HexBlob,
   TransactionId,
   TransactionInput,
-} from "../packages/translucent-core";
-import { Maestro } from "../packages/translucent-query/maestro";
-import { TxBuilder } from "../packages/translucent-tx";
+  addressFromBech32,
+} from "../packages/blaze-core";
+import { Maestro } from "../packages/blaze-query/maestro";
+import { TxBuilder, makeValue } from "../packages/blaze-tx";
 
 let provider = new Maestro({
   network: "mainnet",
@@ -36,29 +32,39 @@ setTimeout(async function () {
       ])
     ).map((x) => x.toCore()),
   );
-  // const me = Address.fromBech32(
-  //   "addr1qye93uefq8r6ezk0kzq443u9zht7ylu5nelvw8eracd200ylzvhpxn9c4g2fyxe5rlmn6z5qmm3dtjqfjn2vvy58l88szlpjw4",
-  // );
+  const me = addressFromBech32(
+    "addr1qye93uefq8r6ezk0kzq443u9zht7ylu5nelvw8eracd200ylzvhpxn9c4g2fyxe5rlmn6z5qmm3dtjqfjn2vvy58l88szlpjw4",
+  );
 
-  // const params = await provider.getParameters();
-  // const utxos = await provider.getUnspentOutputs(me);
-  // const tx = new TxBuilder(params)
-  //   .addUnspentOutputs(utxos)
-  //   .setChangeAddress(me)
-  //   .addOutput(
-  //     TransactionOutput.fromCore({
-  //       address: getPaymentAddress(me),
-  //       value: { coins: 5n * 10_000_000n },
-  //     }),
-  //   )
-  //   .complete();
+  const params = await provider.getParameters();
+  const utxos = await provider.getUnspentOutputs(me);
+  const tx = await new TxBuilder(params)
+    .addUnspentOutputs(utxos)
+    .setChangeAddress(me)
+    .payLovelace(me, 5n * 10_000_000n)
+    .payAssets(
+      me,
+      makeValue(
+        0n,
+        [
+          "016be5325fd988fea98ad422fcfd53e5352cacfced5c106a932a35a442544e",
+          10_000_000n,
+        ],
+        [
+          "e52964af4fffdb54504859875b1827b60ba679074996156461143dc14f5054494d",
+          10_000_000n,
+        ],
+      ),
+    )
+    .complete();
 
-  // console.log(tx.toCbor());
+  console.log(tx.toCbor());
 
-  // let tx2 = D.Transaction.from_bytes(fromHex(tx.toCbor()))
-  // console.log("completed tx length: ", (tx2.to_bytes().length))
-  // console.log("fee should be ", (tx2.to_bytes().length) * params.minFeeCoefficient + params.minFeeConstant)
-  // console.log(
-  //   D.Transaction.from_bytes(fromHex(tx.toCbor())).to_json(),
-  // )
+  let tx2 = D.Transaction.from_bytes(fromHex(tx.toCbor()));
+  console.log("completed tx length: ", tx2.to_bytes().length);
+  console.log(
+    "fee should be ",
+    tx2.to_bytes().length * params.minFeeCoefficient + params.minFeeConstant,
+  );
+  console.log(D.Transaction.from_bytes(fromHex(tx.toCbor())).to_json());
 });

@@ -9,7 +9,7 @@ import {
   TransactionUnspentOutput,
   fromHex,
   toHex,
-} from "../translucent-core";
+} from "../blaze-core";
 import * as U from "uplc-node";
 
 const SLOT_CONFIG_NETWORK = {

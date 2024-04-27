@@ -9,7 +9,7 @@ import {
   Transaction,
   ProtocolParameters,
   Redeemers,
-} from "../translucent-core";
+} from "../blaze-core";
 
 /**
  * Abstract class for the Provider.

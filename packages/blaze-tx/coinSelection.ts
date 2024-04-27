@@ -1,4 +1,4 @@
-import { TransactionUnspentOutput, Value } from "../translucent-core";
+import { TransactionUnspentOutput, Value } from "../blaze-core";
 import * as value from "./value";
 
 /**
@@ -36,7 +36,7 @@ function wideSelection(
     } else {
       let bestStep: [number, Value, number] = [0, new Value(0n), -1];
       for (let i = 0; i < availableInputs.length; i += 1) {
-        const iValue = availableInputs[i].output().amount();
+        const iValue = availableInputs[i]!.output().amount();
         const iImprove = value.positives(value.sub(goal, iValue));
         const iIntersect = value.intersect(goal, iValue);
         const rating =
@@ -76,10 +76,10 @@ function deepSelection(
     if (value.assetTypes(goal) == 0) {
       break;
     } else {
-      let searchAsset = value.assets(goal)[0];
+      let searchAsset = value.assets(goal)[0]!;
       let bestStep: [bigint, Value, number] = [0n, new Value(0n), -1];
       for (let i = 0; i < availableInputs.length; i += 1) {
-        const iValue = availableInputs[i].output().amount();
+        const iValue = availableInputs[i]!.output().amount();
         let rating: bigint;
         if (searchAsset == "lovelace") {
           rating = iValue.coin();

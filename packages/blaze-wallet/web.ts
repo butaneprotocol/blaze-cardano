@@ -8,7 +8,7 @@ import {
   TransactionUnspentOutput,
   TransactionWitnessSet,
   Value,
-} from "../translucent-core";
+} from "../blaze-core";
 import { Wallet, CIP30DataSignature, CIP30Interface } from "./types";
 
 /**

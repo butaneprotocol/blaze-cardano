@@ -7,11 +7,8 @@ import {
   TransactionId,
   TransactionInput,
   RewardAccount,
-  StakeRegistration,
-  Address,
-  AddressType,
-} from "../translucent-core";
-import { hardCodedProtocolParams } from "../translucent-core/params";
+} from "../blaze-core";
+import { hardCodedProtocolParams } from "../blaze-core/params";
 
 export class LedgerTimer {
   block: number = 0;
@@ -72,7 +69,7 @@ export class Emulator {
         TransactionId("00".repeat(32)),
         BigInt(i),
       );
-      this.ledger.add(new TransactionUnspentOutput(txIn, genesisOutputs[i]));
+      this.ledger.add(new TransactionUnspentOutput(txIn, genesisOutputs[i]!));
     }
     this.params = params;
   }
@@ -175,13 +172,13 @@ export class Emulator {
     for (let i = 0; i < outputs.length; i++) {
       const utxo = new TransactionUnspentOutput(
         new TransactionInput(txId, BigInt(i)),
-        outputs[i],
+        outputs[i]!,
       );
       this.ledger.add(utxo);
     }
     const certs = tx.body().certs()?.values() ?? [];
     for (let i = 0; i < certs.length; i++) {
-      const cert = certs[i];
+      const cert = certs[i]!;
       const stakeRegistration = cert.asStakeRegistration();
       if (stakeRegistration != undefined) {
         const cred = stakeRegistration.stakeCredential();

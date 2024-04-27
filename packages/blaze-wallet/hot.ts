@@ -18,13 +18,13 @@ import {
   VkeyWitness,
   Ed25519SignatureHex,
   CborSet,
-} from "../translucent-core";
+} from "../blaze-core";
 import { sha512 } from "@noble/hashes/sha512";
-import { ed } from "../translucent-core/crypto";
-import { Provider } from "../translucent-query";
+import { ed } from "../blaze-core/crypto";
+import { Provider } from "../blaze-query";
 import { Wallet, CIP30DataSignature } from "./types";
 import * as blake from "blakejs";
-import * as value from "../translucent-tx/value";
+import * as value from "../blaze-tx/value";
 
 ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 
@@ -164,8 +164,8 @@ export class HotWallet implements Wallet {
    * @returns {Promise<CIP30DataSignature>} - The signed data.
    */
   async signData(
-    address: Address,
-    payload: string,
+    _address: Address,
+    _payload: string,
   ): Promise<CIP30DataSignature> {
     throw new Error("signData: Hot wallet does not yet support data signing");
   }

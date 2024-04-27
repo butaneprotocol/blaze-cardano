@@ -8,7 +8,7 @@ import {
   TransactionUnspentOutput,
   TransactionWitnessSet,
   Value,
-} from "../translucent-core";
+} from "../blaze-core";
 
 type CoseSign1CborHex = HexBlob;
 type CoseKeyCborHex = HexBlob;

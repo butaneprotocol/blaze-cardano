@@ -9,19 +9,15 @@ import {
   PlutusData,
   TransactionId,
   Transaction,
-  TransactionOutput,
-  HexBlob,
   ProtocolParameters,
   PlutusLanguageVersion,
-  CostModels,
-  fromHex,
   Credential,
-  AddressType,
-} from "../translucent-core";
+  Redeemers,
+} from "../blaze-core";
 import { Provider } from "./types";
 
 export class Blockfrost implements Provider {
-  private url: string;
+  url: string;
   private projectId: string;
 
   constructor({
@@ -35,41 +31,60 @@ export class Blockfrost implements Provider {
     this.projectId = projectId;
   }
 
-  private headers() {
+  headers() {
     return { project_id: this.projectId };
   }
 
-  getParameters(): Promise<ProtocolParameters> {}
+  getParameters(): Promise<ProtocolParameters> {
+    throw new Error("unimplemented");
+  }
 
   getUnspentOutputs(
-    address: Address | Credential,
+    _address: Address | Credential,
   ): Promise<TransactionUnspentOutput[]> {
     /* todo: paginate */
+    throw new Error("unimplemented");
   }
 
   getUnspentOutputsWithAsset(
-    address: Address,
-    unit: AssetId,
-  ): Promise<TransactionUnspentOutput[]> {}
+    _address: Address,
+    _unit: AssetId,
+  ): Promise<TransactionUnspentOutput[]> {
+    throw new Error("unimplemented");
+  }
 
-  getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput> {}
+  getUnspentOutputByNFT(_unit: AssetId): Promise<TransactionUnspentOutput> {
+    throw new Error("unimplemented");
+  }
 
   async resolveUnspentOutputs(
-    txIns: TransactionInput[],
-  ): Promise<TransactionUnspentOutput[]> {}
+    _txIns: TransactionInput[],
+  ): Promise<TransactionUnspentOutput[]> {
+    throw new Error("unimplemented");
+  }
 
-  resolveDatum(datumHash: DatumHash): Promise<PlutusData> {}
+  resolveDatum(_datumHash: DatumHash): Promise<PlutusData> {
+    throw new Error("unimplemented");
+  }
 
   async awaitTransactionConfirmation(
-    txId: TransactionId,
-    timeout?: number,
-  ): Promise<boolean> {}
+    _txId: TransactionId,
+    _timeout?: number,
+  ): Promise<boolean> {
+    throw new Error("unimplemented");
+  }
 
-  async postTransactionToChain(tx: Transaction): Promise<TransactionId> {}
+  async postTransactionToChain(_tx: Transaction): Promise<TransactionId> {
+    throw new Error("unimplemented");
+  }
+
+  async evaluateTransaction(_tx: Transaction): Promise<Redeemers> {
+    throw new Error("unimplemented");
+  }
 }
 
 type BlockfrostLanguageVersions = "PlutusV1" | "PlutusV2" | "PlutusV3";
-const fromBlockfrostLanguageVersion = (
+export const fromBlockfrostLanguageVersion = (
   x: BlockfrostLanguageVersions,
 ): PlutusLanguageVersion => {
   if (x == "PlutusV1") {
@@ -82,7 +97,7 @@ const fromBlockfrostLanguageVersion = (
   throw new Error("fromMaestroLanguageVersion: Unreachable!");
 };
 
-interface BlockfrostProtocolParameters {
+export interface BlockfrostProtocolParameters {
   epoch: number;
   min_fee_a: number;
   min_fee_b: number;

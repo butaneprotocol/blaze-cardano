@@ -46,12 +46,12 @@ import {
   Datum,
   Evaluator,
   Crypto,
-} from "../translucent-core";
+} from "../blaze-core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
 
 /*
-methods we want to implement somewhere in new translucent (from haskell codebase):
+methods we want to implement somewhere in new blaze (from haskell codebase):
 
 provider:
     submitTx

@@ -8,8 +8,9 @@ import {
   PlutusData,
   TransactionId,
   Transaction,
-} from "../translucent-core";
-import { Provider } from "../translucent-query";
+  Redeemers,
+} from "../blaze-core";
+import { Provider } from "../blaze-query";
 import { Emulator } from "./emulator";
 
 /**
@@ -80,18 +81,25 @@ export class EmulatorProvider implements Provider {
     return Promise.resolve(utxos);
   }
 
-  resolveDatum(datumHash: Hash32ByteBase16): Promise<PlutusData> {
+  resolveDatum(_datumHash: Hash32ByteBase16): Promise<PlutusData> {
     throw new Error("Method not implemented. (todo)");
   }
 
   awaitTransactionConfirmation(
-    txId: TransactionId,
-    timeout?: number | undefined,
+    _txId: TransactionId,
+    _timeout?: number | undefined,
   ): Promise<boolean> {
     throw new Error("Method not implemented. (todo)");
   }
 
   postTransactionToChain(tx: Transaction): Promise<TransactionId> {
     return this.emulator.submitTransaction(tx);
+  }
+
+  evaluateTransaction(
+    _tx: Transaction,
+    _additionalUtxos: TransactionUnspentOutput[],
+  ): Promise<Redeemers> {
+    throw new Error("Unimplemented!");
   }
 }

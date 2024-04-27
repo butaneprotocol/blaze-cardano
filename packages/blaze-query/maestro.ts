@@ -18,7 +18,7 @@ import {
   Redeemers,
   ExUnits,
   RedeemerTag,
-} from "../translucent-core";
+} from "../blaze-core";
 import { Provider } from "./types";
 
 export class Maestro implements Provider {
@@ -255,7 +255,8 @@ export class Maestro implements Provider {
           return utxos[0];
         }
         throw new Error("getUnspentOutputs: Could not parse response json");
-      });
+      })
+      .then((x) => x!);
   }
 
   async resolveUnspentOutputs(
@@ -330,21 +331,17 @@ export class Maestro implements Provider {
     timeout?: number,
   ): Promise<boolean> {
     const startTime = Date.now();
+    let finalResponse: boolean = false;
     const checkConfirmation = async () => {
       const response = await fetch(`${this.url}/transactions/${txId}/cbor`);
       if (response.ok) {
-        return true;
+        finalResponse = true;
       } else if (Date.now() - startTime < (timeout || 0)) {
-        setTimeout(checkConfirmation, 20000);
-      } else {
-        return false;
+        await setTimeout(checkConfirmation, 20000);
       }
     };
-    let result = await checkConfirmation();
-    if (!result) {
-      throw new Error("awaitTransactionConfirmation: unexpected error!");
-    }
-    return Promise.resolve(result);
+    await checkConfirmation();
+    return Promise.resolve(finalResponse);
   }
 
   async postTransactionToChain(tx: Transaction): Promise<TransactionId> {
@@ -564,6 +561,6 @@ interface MaestroAdditionalUTxO {
   txout_cbor: string;
 }
 
-function purposeFromTag(tag: string): RedeemerTag {
+function purposeFromTag(_tag: string): RedeemerTag {
   throw new Error("unimplemented");
 }

@@ -1,20 +1,17 @@
-import { Provider } from "../translucent-query";
-import { TxBuilder } from "../translucent-tx";
-import { Wallet } from "../translucent-wallet";
+import { Provider } from "../blaze-query";
+import { TxBuilder } from "../blaze-tx";
+import { Wallet } from "../blaze-wallet";
 
 /**
- * The Translucent class is used to create and manage Cardano transactions.
+ * The blaze class is used to create and manage Cardano transactions.
  * It requires a provider and a wallet to interact with the blockchain and manage funds.
  */
-export class Translucent<
-  ProviderType extends Provider,
-  WalletType extends Wallet,
-> {
+export class blaze<ProviderType extends Provider, WalletType extends Wallet> {
   provider: ProviderType;
   wallet: WalletType;
 
   /**
-   * Constructs a new instance of the Translucent class.
+   * Constructs a new instance of the blaze class.
    * @param {ProviderType} provider - The provider to use for interacting with the blockchain.
    * @param {WalletType} wallet - The wallet to use for managing funds.
    */
