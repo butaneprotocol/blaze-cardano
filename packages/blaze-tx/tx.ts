@@ -367,14 +367,58 @@ export class TxBuilder {
   }
 
   /**
+   * This method checks and alters the output of a transaction.
+   * It ensures that the output meets the minimum ada requirements and does not exceed the maximum value size.
+   *
+   * @param {TransactionOutput} output - The transaction output to be checked and altered.
+   * @returns {TransactionOutput} The altered transaction output.
+   * @throws {Error} If the output does not meet the minimum ada requirements or exceeds the maximum value size.
+   */
+  private checkAndAlterOutput(output: TransactionOutput) {
+    while (true) {
+      const byteLength = BigInt(output.toCbor().length / 2);
+      const minAda = (BigInt(this.params.coinsPerUtxoByte)) * (byteLength + 160n);
+      const coin = output.amount().coin();
+      if (coin < minAda) {
+        const amount = output.amount();
+        amount.setCoin(minAda);
+        const datum = output.datum();
+        const scriptRef = output.scriptRef();
+        output = new TransactionOutput(output.address(), amount);
+        if (datum) {
+          output.setDatum(datum);
+        }
+        if (scriptRef) {
+          output.setScriptRef(scriptRef);
+        }
+      } else {
+        break;
+      }
+    }
+    const byteLength = BigInt(output.toCbor().length / 2);
+    if (
+      output.amount().coin() <
+      (BigInt(this.params.coinsPerUtxoByte)) * (byteLength + 160n)
+    ) {
+      throw new Error("addOutput: Failed due to min ada!");
+    }
+    const valueByteLength = output.amount().toCbor().length / 2;
+    if (valueByteLength > this.params.maxValueSize) {
+      throw new Error("addOutput: Failed due to max value size!");
+    }
+    return output;
+  }
+
+  /**
    * Adds a transaction output to the current transaction body. This method also ensures that the minimum ada
    * requirements are met for the output. After adding the output, it updates the transaction body's outputs.
+   * It also checks if the output value exceeds the maximum value size.
    *
    * @param {TransactionOutput} output - The transaction output to be added.
    * @returns {TxBuilder} The same transaction builder
    */
   addOutput(output: TransactionOutput) {
-    // todo: minAda, maxUTxO size
+    output = this.checkAndAlterOutput(output);
     // Retrieve the current list of outputs from the transaction body.
     const outputs = this.body.outputs();
     // Add the new output to the list and update the transaction body's outputs.
@@ -802,10 +846,10 @@ export class TxBuilder {
     // and store its index. Otherwise, update the existing change output with the new output.
     if (!this.changeOutputIndex) {
       this.addOutput(output);
-      this.changeOutputIndex = this.outputsCount;
+      this.changeOutputIndex = this.outputsCount - 1;
     } else {
       let outputs = this.body.outputs();
-      outputs[this.changeOutputIndex] = output;
+      outputs[this.changeOutputIndex] = this.checkAndAlterOutput(output);
       this.body.setOutputs(outputs);
     }
   }
