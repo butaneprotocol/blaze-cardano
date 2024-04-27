@@ -109,10 +109,10 @@ export abstract class Wallet {
   abstract getNetworkId(): Promise<NetworkId>;
 
   /**
-   * Retrieves the UTxO(s) controlled by the wallet.
-   * @returns {Promise<TransactionUnspentOutput[]>} - The UTXO(s) controlled by the wallet.
+   * Retrieves the UnspentOutputs controlled by the wallet.
+   * @returns {Promise<TransactionUnspentOutput[]>} - The UnspentOutputs controlled by the wallet.
    */
-  abstract getUtxos(): Promise<TransactionUnspentOutput[]>;
+  abstract getUnspentOutputs(): Promise<TransactionUnspentOutput[]>;
 
   /**
    * Retrieves the total available balance of the wallet, encoded in CBOR.
@@ -150,7 +150,7 @@ export abstract class Wallet {
    * @param {boolean} partialSign - Whether to partially sign the transaction.
    * @returns {Promise<TransactionWitnessSet>} - The signed transaction.
    */
-  abstract signTx(
+  abstract signTransaction(
     tx: Transaction,
     partialSign: boolean,
   ): Promise<TransactionWitnessSet>;
@@ -167,14 +167,14 @@ export abstract class Wallet {
   ): Promise<CIP30DataSignature>;
 
   /**
-   * Submits a transaction through the wallet.
+   * Posts a transaction through the wallet.
    * @param {Transaction} tx - The transaction to submit.
    * @returns {Promise<TransactionId>} - The ID of the submitted transaction.
    */
-  abstract submitTx(tx: Transaction): Promise<TransactionId>;
+  abstract postTransaction(tx: Transaction): Promise<TransactionId>;
 
   /**
-   * Retrieves the collateral UTxO(s) for the wallet.
+   * Retrieves the collateral UnspentOutputs for the wallet.
    * @returns {Promise<TransactionUnspentOutput[]>} - The collateral for the wallet.
    */
   abstract getCollateral(): Promise<TransactionUnspentOutput[]>;

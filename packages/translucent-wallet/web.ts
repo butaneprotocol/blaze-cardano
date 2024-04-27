@@ -3,6 +3,7 @@ import {
   HexBlob,
   NetworkId,
   RewardAddress,
+  Transaction,
   TransactionId,
   TransactionUnspentOutput,
   TransactionWitnessSet,
@@ -32,11 +33,11 @@ export class WebWallet implements Wallet {
     const id = await this.webWallet.getNetworkId();
     switch (id) {
       case 0:
-        return NetworkId.Mainnet;
+        return 0;
       case 1:
-        return NetworkId.Testnet;
+        return 1;
       default:
-        return NetworkId.Other;
+        throw new Error("Could not resolve CIP30 network id.");
     }
   }
 
@@ -44,7 +45,7 @@ export class WebWallet implements Wallet {
    * Retrieves the UTxO(s) controlled by the wallet.
    * @returns {Promise<TransactionUnspentOutput[]>} - The UTXO(s) controlled by the wallet.
    */
-  async getUtxos(): Promise<TransactionUnspentOutput[]> {
+  async getUnspentOutputs(): Promise<TransactionUnspentOutput[]> {
     const utxos = await this.webWallet.getUtxos();
     return (utxos ?? []).map((utxo) =>
       TransactionUnspentOutput.fromCbor(HexBlob(utxo)),
@@ -138,25 +139,28 @@ export class WebWallet implements Wallet {
    * @param {boolean} partialSign - Whether to partially sign the transaction.
    * @returns {Promise<TransactionWitnessSet>} - The signed transaction.
    */
-  async signTx(
-    tx: string,
+  async signTransaction(
+    tx: Transaction,
     partialSign: boolean,
   ): Promise<TransactionWitnessSet> {
-    const witnessSet = await this.webWallet.signTx(tx, partialSign);
+    const witnessSet = await this.webWallet.signTx(tx.toCbor(), partialSign);
     return TransactionWitnessSet.fromCbor(HexBlob(witnessSet));
   }
 
   /**
    * Requests signed data from the wallet.
-   * @param {string} address - The address to sign the data with.
+   * @param {Address} address - The address to sign the data with.
    * @param {string} payload - The data to sign.
    * @returns {Promise<CIP30DataSignature>} - The signed data.
    */
   async signData(
-    address: string,
+    address: Address,
     payload: string,
   ): Promise<CIP30DataSignature> {
-    const { signature, key } = await this.webWallet.signData(address, payload);
+    const { signature, key } = await this.webWallet.signData(
+      address.toBech32(),
+      payload,
+    );
     return {
       key: HexBlob(key),
       signature: HexBlob(signature),
@@ -165,11 +169,11 @@ export class WebWallet implements Wallet {
 
   /**
    * Submits a transaction through the wallet.
-   * @param {string} tx - The transaction to submit.
+   * @param {Transaction} tx - The transaction to submit.
    * @returns {Promise<TransactionId>} - The ID of the submitted transaction.
    */
-  async submitTx(tx: string): Promise<TransactionId> {
-    const transactionId = await this.webWallet.submitTx(tx);
+  async postTransaction(tx: Transaction): Promise<TransactionId> {
+    const transactionId = await this.webWallet.submitTx(tx.toCbor());
     return TransactionId.fromHexBlob(HexBlob(transactionId));
   }
 

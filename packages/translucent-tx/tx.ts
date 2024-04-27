@@ -1121,6 +1121,11 @@ export class TxBuilder {
   }
 }
 
+/**
+ * Asserts that the given address is a valid payment address.
+ * @param {Address} address - The address to be checked.
+ * @throws {Error} If the address has no payment part or if the payment credential is a script hash.
+ */
 function assertPaymentsAddress(address: Address) {
   let props = address.getProps();
   if (!props.paymentPart) {
@@ -1133,6 +1138,11 @@ function assertPaymentsAddress(address: Address) {
   }
 }
 
+/**
+ * Asserts that the given address is a valid lock address.
+ * @param {Address} address - The address to be checked.
+ * @throws {Error} If the address has no payment part or if the payment credential is not a script hash.
+ */
 function assertLockAddress(address: Address) {
   let props = address.getProps();
   if (!props.paymentPart) {

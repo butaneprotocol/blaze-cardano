@@ -85,7 +85,7 @@ export class HotWallet implements Wallet {
    * Retrieves the UTxO(s) controlled by the wallet.
    * @returns {Promise<TransactionUnspentOutput[]>} - The UTXO(s) controlled by the wallet.
    */
-  async getUtxos(): Promise<TransactionUnspentOutput[]> {
+  async getUnspentOutputs(): Promise<TransactionUnspentOutput[]> {
     return this.provider.getUnspentOutputs(this.address);
   }
 
@@ -95,7 +95,7 @@ export class HotWallet implements Wallet {
    */
   async getBalance(): Promise<Value> {
     let balance = value.zero();
-    let utxos = await this.getUtxos();
+    let utxos = await this.getUnspentOutputs();
     for (const utxo of utxos) {
       balance = value.merge(balance, utxo.output().amount());
     }
@@ -141,7 +141,7 @@ export class HotWallet implements Wallet {
    * @param {boolean} partialSign - Whether to partially sign the transaction.
    * @returns {Promise<TransactionWitnessSet>} - The signed transaction.
    */
-  async signTx(
+  async signTransaction(
     tx: Transaction,
     partialSign: boolean = true,
   ): Promise<TransactionWitnessSet> {
@@ -167,7 +167,7 @@ export class HotWallet implements Wallet {
     address: Address,
     payload: string,
   ): Promise<CIP30DataSignature> {
-    throw new Error("signData: Hot wallet does not support data signing yet");
+    throw new Error("signData: Hot wallet does not yet support data signing");
   }
 
   /**
@@ -175,7 +175,7 @@ export class HotWallet implements Wallet {
    * @param {string} tx - The transaction to submit.
    * @returns {Promise<TransactionId>} - The ID of the submitted transaction.
    */
-  async submitTx(tx: Transaction): Promise<TransactionId> {
+  async postTransaction(tx: Transaction): Promise<TransactionId> {
     return this.provider.postTransactionToChain(tx);
   }
 

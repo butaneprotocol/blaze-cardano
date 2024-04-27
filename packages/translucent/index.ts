@@ -1,1 +1,1 @@
-export * from "./translucent"
+export * from "./translucent";
