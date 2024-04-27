@@ -21,7 +21,7 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
   }
 
   /**
-   * Creates a new transaction using the provided provider and wallet.
+   * Creates a new transaction using the provider and wallet.
    * @returns {TxBuilder} - The newly created transaction builder.
    */
   async newTransaction() {
