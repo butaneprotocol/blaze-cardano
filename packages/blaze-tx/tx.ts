@@ -46,6 +46,7 @@ import {
   Datum,
   Evaluator,
   Crypto,
+  Slot,
 } from "../blaze-core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
@@ -97,6 +98,7 @@ export class TxBuilder {
   private scriptScope: Set<Script> = new Set(); // A set of scripts included in the transaction.
   private scriptSeen: Set<ScriptHash> = new Set(); // A set of script hashes that have been processed.
   private changeAddress?: Address; // The address to send change to, if any.
+  private rewardAddress?: Address; // The reward address to delegate from, if any.
   private changeOutputIndex?: number; // The index of the change output in the transaction.
   private plutusData: TransactionWitnessPlutusData = new Set(); // A set of Plutus data for witness purposes.
   private requiredWitnesses: Set<Ed25519PublicKeyHex> = new Set(); // A set of public keys required for witnessing the transaction.
@@ -130,6 +132,18 @@ export class TxBuilder {
    */
   setChangeAddress(address: Address) {
     this.changeAddress = address;
+    return this;
+  }
+
+  /**
+   * Sets the reward address for the transaction.
+   * This address will be used for delegation purposes and also stake key component of the transaction.
+   *
+   * @param {Address} address - The reward address
+   * @returns {TxBuilder} The same transaction builder
+   */
+  setRewardAddress(address: Address) {
+    this.rewardAddress = address;
     return this;
   }
 
@@ -1051,6 +1065,19 @@ export class TxBuilder {
 
   // Adds a certificate to delegate a staker to a pool
   addDelegation() {}
+  
+  /**
+   * Delegates the selected reward address to a pool
+   *
+   * @param {string} _pool - The pool to delegate the reward address to.
+   * @throws {Error} If the reward address is not set or if the method is unimplemented.
+   */
+  delegate(_pool: string) {
+    if (!this.rewardAddress){
+      throw new Error("TxBuilder delegate: Reward address must be set!")
+    }
+    throw new Error("TxBuilder delegate: unimplemented.")
+  }
 
   // Adds a certificate to register a staker
   addRegisterStake() {}
@@ -1063,6 +1090,34 @@ export class TxBuilder {
 
   // Adds a certificate to retire a pool
   addRetirePool() {}
+
+  /**
+   * Specifies the exact time when the transaction becomes valid
+   *
+   * @param {Slot} validFrom - The slot from which the transaction becomes valid
+   * @throws {Error} If the validity start interval is already set
+   */
+  setValidFrom(validFrom: Slot) {
+    if (this.body.validityStartInterval() !== undefined) {
+      throw new Error(
+        "TxBuilder setValidFrom: Validity start interval is already set",
+      );
+    }
+    this.body.setValidityStartInterval(validFrom);
+  }
+
+  /**
+   * Specifies the exact time when the transaction expires
+   *
+   * @param {Slot} validUntil - The slot until which the transaction is valid
+   * @throws {Error} If the time to live is already set
+   */
+  setValidUntil(validUntil: Slot) {
+    if (this.body.ttl() !== undefined) {
+      throw new Error("TxBuilder setValidUntil: Time to live is already set");
+    }
+    this.body.setTtl(validUntil);
+  }
 
   /**
    * Adds a withdrawal to the transaction. This method allows for the withdrawal of funds from a staking reward account.
