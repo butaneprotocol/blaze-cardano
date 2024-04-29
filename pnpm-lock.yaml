@@ -8,30 +8,6 @@ importers:
 
   .:
     devDependencies:
-      '@blazecardano/blueprint':
-        specifier: workspace:*
-        version: link:packages/blaze-blueprint
-      '@blazecardano/core':
-        specifier: workspace:*
-        version: link:packages/blaze-core
-      '@blazecardano/emulator':
-        specifier: workspace:*
-        version: link:packages/blaze-emulator
-      '@blazecardano/query':
-        specifier: workspace:*
-        version: link:packages/blaze-query
-      '@blazecardano/sdk':
-        specifier: workspace:*
-        version: link:packages/blaze-sdk
-      '@blazecardano/tsconfig':
-        specifier: workspace:*
-        version: link:packages/blaze-tsconfig
-      '@blazecardano/tx':
-        specifier: workspace:*
-        version: link:packages/blaze-tx
-      '@blazecardano/wallet':
-        specifier: workspace:*
-        version: link:packages/blaze-wallet
       '@changesets/cli':
         specifier: ^2.27.1
         version: 2.27.1

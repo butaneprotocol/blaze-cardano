@@ -191,12 +191,12 @@ export class TxBuilder {
       values.find(
         (val) =>
           val.index() == utxo.input().index() &&
-          val.transactionId() == utxo.input().transactionId()
+          val.transactionId() == utxo.input().transactionId(),
       )
     ) {
       // If a duplicate is found, throw an error to prevent adding it.
       throw new Error(
-        "Cannot add duplicate reference input to the transaction"
+        "Cannot add duplicate reference input to the transaction",
       );
     }
     // If no duplicate is found, add the input to the array of reference inputs.
@@ -231,7 +231,7 @@ export class TxBuilder {
   addInput(
     utxo: TransactionUnspentOutput,
     redeemer?: PlutusData,
-    unhashDatum?: PlutusData
+    unhashDatum?: PlutusData,
   ) {
     // Retrieve the current inputs from the transaction body for manipulation.
     const inputs = this.body.inputs();
@@ -241,11 +241,11 @@ export class TxBuilder {
       values.find(
         (val) =>
           val.index() == utxo.input().index() &&
-          val.transactionId() == utxo.input().transactionId()
+          val.transactionId() == utxo.input().transactionId(),
       )
     ) {
       throw new Error(
-        "Cannot add duplicate reference input to the transaction"
+        "Cannot add duplicate reference input to the transaction",
       );
     }
     // Add the new input to the array of inputs and update the transaction body.
@@ -261,25 +261,25 @@ export class TxBuilder {
     if (redeemer) {
       if (key.type == CredentialType.KeyHash) {
         throw new Error(
-          "addInput: Cannot spend with redeemer for KeyHash credential!"
+          "addInput: Cannot spend with redeemer for KeyHash credential!",
         );
       }
       this.requiredPlutusScripts.add(key.hash);
       let datum = utxo.output().datum();
       if (!datum) {
         throw new Error(
-          "addInput: Cannot spend with redeemer when datum is missing!"
+          "addInput: Cannot spend with redeemer when datum is missing!",
         );
       }
       if (datum?.asInlineData() && unhashDatum) {
         throw new Error(
-          "addInput: Cannot have inline datum and also provided datum (3rd arg)."
+          "addInput: Cannot have inline datum and also provided datum (3rd arg).",
         );
       }
       if (datum?.asDataHash()) {
         if (!unhashDatum) {
           throw new Error(
-            "addInput: When spending datum hash, must provide datum (3rd arg)."
+            "addInput: When spending datum hash, must provide datum (3rd arg).",
           );
         }
         this.plutusData.add(unhashDatum!);
@@ -295,7 +295,7 @@ export class TxBuilder {
             memory: this.params.maxExecutionUnitsPerTransaction.memory,
             steps: this.params.maxExecutionUnitsPerTransaction.steps,
           },
-        })
+        }),
       );
       this.redeemers.setValues(redeemers);
     } else {
@@ -334,7 +334,7 @@ export class TxBuilder {
   addMint(
     policy: PolicyId,
     assets: Map<AssetName, bigint>,
-    redeemer?: PlutusData
+    redeemer?: PlutusData,
   ) {
     // Retrieve the current mint map from the transaction body, or initialize a new one if none exists.
     const mint: TokenMap = this.body.mint() ?? new Map();
@@ -362,7 +362,7 @@ export class TxBuilder {
             memory: this.params.maxExecutionUnitsPerTransaction.memory, // Placeholder memory units, replace with actual estimation.
             steps: this.params.maxExecutionUnitsPerTransaction.steps, // Placeholder step units, replace with actual estimation.
           },
-        })
+        }),
       );
       // Update the transaction's redeemers with the new list.
       this.redeemers.setValues(redeemers);
@@ -458,7 +458,7 @@ export class TxBuilder {
       TransactionOutput.fromCore({
         address: paymentAddress,
         value: { coins: lovelace },
-      })
+      }),
     );
     return this;
   }
@@ -478,7 +478,7 @@ export class TxBuilder {
       TransactionOutput.fromCore({
         address: paymentAddress,
         value: value.toCore(),
-      })
+      }),
     );
     return this;
   }
@@ -499,7 +499,7 @@ export class TxBuilder {
     address: Address,
     lovelace: bigint,
     datum: Datum,
-    scriptReference?: Script
+    scriptReference?: Script,
   ) {
     assertLockAddress(address);
     let paymentAddress = getPaymentAddress(address);
@@ -510,7 +510,7 @@ export class TxBuilder {
         datum: !("__opaqueString" in datum) ? datum.toCore() : undefined,
         datumHash: "__opaqueString" in datum ? datum : undefined,
         scriptReference: scriptReference?.toCore(),
-      })
+      }),
     );
     return this;
   }
@@ -531,7 +531,7 @@ export class TxBuilder {
     address: Address,
     value: Value,
     datum: Datum,
-    scriptReference?: Script
+    scriptReference?: Script,
   ) {
     assertLockAddress(address);
     let paymentAddress = getPaymentAddress(address);
@@ -542,7 +542,7 @@ export class TxBuilder {
         datum: !("__opaqueString" in datum) ? datum.toCore() : undefined,
         datumHash: "__opaqueString" in datum ? datum : undefined,
         scriptReference: scriptReference?.toCore(),
-      })
+      }),
     );
     return this;
   }
@@ -572,7 +572,7 @@ export class TxBuilder {
   private async evaluate(draft_tx: Transaction): Promise<bigint> {
     // Collect all UTXOs from the transaction's scope.
     let allUtxos: TransactionUnspentOutput[] = Array.from(
-      this.utxoScope.values()
+      this.utxoScope.values(),
     );
     // todo: filter utxoscope to only include inputs, reference inputs, collateral inputs, not excess junk
 
@@ -625,7 +625,7 @@ export class TxBuilder {
         let script = scriptLookup[requiredScriptHash];
         if (!script) {
           throw new Error(
-            `complete: Could not resolve script hash ${requiredScriptHash}`
+            `complete: Could not resolve script hash ${requiredScriptHash}`,
           );
         } else {
           if (script.asNative() != undefined) {
@@ -652,7 +652,7 @@ export class TxBuilder {
         this.usedLanguages[PlutusLanguageVersion.V3] = true;
       } else if (!lang) {
         throw new Error(
-          "buildTransactionWitnessSet: lang script lookup failed"
+          "buildTransactionWitnessSet: lang script lookup failed",
         );
       }
     }
@@ -685,7 +685,7 @@ export class TxBuilder {
         VkeyWitness.fromCore([
           Ed25519PublicKeyHex("0".repeat(64)),
           Ed25519SignatureHex("0".repeat(128)),
-        ])
+        ]),
       );
     }
     for (let i = 0; i < this.additionalSigners; i++) {
@@ -693,7 +693,7 @@ export class TxBuilder {
         VkeyWitness.fromCore([
           Ed25519PublicKeyHex("0".repeat(64)),
           Ed25519SignatureHex("0".repeat(128)),
-        ])
+        ]),
       );
     }
     vkeyWitnesses.setValues(requiredWitnesses);
@@ -746,7 +746,7 @@ export class TxBuilder {
 
     this.body.outputs()[this.changeOutputIndex!] = new TransactionOutput(
       this.changeAddress!,
-      value.zero()
+      value.zero(),
     );
     // Aggregate the total output value from all outputs.
     for (const output of this.body.outputs().values()) {
@@ -757,7 +757,7 @@ export class TxBuilder {
     // Subtract a fixed fee amount (5 ADA) to ensure enough is allocated for transaction fees.
     const tilt = value.merge(
       value.merge(inputValue, value.negate(outputValue)),
-      mintValue
+      mintValue,
     );
     if (withSpare == true) {
       return value.merge(tilt, new Value(-5000000n)); // Subtract 5 ADA from the excess.
@@ -773,7 +773,7 @@ export class TxBuilder {
    * @returns {Hash32ByteBase16 | undefined} The script data hash if datums or redeemers are present, otherwise undefined.
    */
   private getScriptDataHash(
-    tw: TransactionWitnessSet
+    tw: TransactionWitnessSet,
   ): Hash32ByteBase16 | undefined {
     // Extract redeemers and datums from the transaction witness set.
     let redeemers = [...this.redeemers.values()];
@@ -803,7 +803,7 @@ export class TxBuilder {
           // Throw an error if the cost model is missing.
           if (cm == undefined) {
             throw new Error(
-              `complete: Could not find cost model for Plutus Language Version ${i}`
+              `complete: Could not find cost model for Plutus Language Version ${i}`,
             );
           }
           // Insert the cost model into the used cost models container.
@@ -812,13 +812,13 @@ export class TxBuilder {
       }
       // Encode the used cost models into CBOR format.
       writer.writeEncodedValue(
-        Buffer.from(usedCostModels.languageViewsEncoding(), "hex")
+        Buffer.from(usedCostModels.languageViewsEncoding(), "hex"),
       );
       // Generate and return the script data hash.
       return Hash32ByteBase16.fromHexBlob(
         HexBlob.fromBytes(
-          Crypto.blake2b(Crypto.blake2b.BYTES).update(writer.encode()).digest()
-        )
+          Crypto.blake2b(Crypto.blake2b.BYTES).update(writer.encode()).digest(),
+        ),
       );
     }
     // Return undefined if there are no datums or redeemers.
@@ -872,8 +872,8 @@ export class TxBuilder {
     this.fee = BigInt(
       Math.ceil(
         this.params.minFeeConstant +
-          fromHex(draft_tx.toCbor()).length * this.params.minFeeCoefficient
-      )
+          fromHex(draft_tx.toCbor()).length * this.params.minFeeCoefficient,
+      ),
     );
     // Update the transaction body with the calculated fee.
     this.body.setFee(this.fee);
@@ -938,7 +938,7 @@ export class TxBuilder {
     let scope = [...this.utxoScope.values()];
     // Calculate the total collateral based on the transaction fee and collateral percentage.
     let totalCollateral = BigInt(
-      Math.ceil(this.params.collateralPercentage * Number(this.fee))
+      Math.ceil(this.params.collateralPercentage * Number(this.fee)),
     );
     // Calculate the collateral value by summing up the amounts from collateral inputs.
     let collateralValue = this.body
@@ -948,7 +948,7 @@ export class TxBuilder {
         let utxo = scope.find((x) => x.input() == input);
         if (!utxo) {
           throw new Error(
-            "balanceCollateralChange: Could not resolve some collateral input"
+            "balanceCollateralChange: Could not resolve some collateral input",
           );
         }
         return value.merge(utxo.output().amount(), acc);
@@ -957,8 +957,8 @@ export class TxBuilder {
     this.body.setCollateralReturn(
       new TransactionOutput(
         this.changeAddress,
-        value.merge(collateralValue, new Value(-totalCollateral))
-      )
+        value.merge(collateralValue, new Value(-totalCollateral)),
+      ),
     );
     // Update the transaction body with the total collateral amount.
     this.body.setTotalCollateral(totalCollateral);
@@ -982,7 +982,7 @@ export class TxBuilder {
     // Ensure a change address has been set before proceeding.
     if (!this.changeAddress) {
       throw new Error(
-        "Cannot complete transaction without setting change address"
+        "Cannot complete transaction without setting change address",
       );
     }
     // Gather all inputs from the transaction body.
@@ -998,7 +998,7 @@ export class TxBuilder {
     // Perform coin selection to cover any negative excess value.
     const selectionResult = micahsSelector(
       spareInputs,
-      value.negate(value.negatives(excessValue))
+      value.negate(value.negatives(excessValue)),
     );
     // Update the excess value and spare inputs based on the selection result.
     excessValue = value.merge(excessValue, selectionResult.selectedValue);
@@ -1015,7 +1015,7 @@ export class TxBuilder {
     // Ensure the coin selection has eliminated all negative values.
     if (!value.empty(value.negatives(excessValue))) {
       throw new Error(
-        "Unreachable! Somehow coin selection succeeded but still failed."
+        "Unreachable! Somehow coin selection succeeded but still failed.",
       );
     }
 
@@ -1024,7 +1024,7 @@ export class TxBuilder {
     // Ensure a change output index has been set after balancing.
     if (!this.changeOutputIndex) {
       throw new Error(
-        "Unreachable! Somehow change balancing succeeded but still failed."
+        "Unreachable! Somehow change balancing succeeded but still failed.",
       );
     }
     // Build the transaction witness set for fee estimation and script validation.
@@ -1065,7 +1065,7 @@ export class TxBuilder {
     }
     let final_size = draft_tx.toCbor().length / 2;
     this.fee += BigInt(
-      Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient)
+      Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
     );
     excessValue = this.getPitch(false);
     this.body.setFee(this.fee);
@@ -1175,7 +1175,7 @@ export class TxBuilder {
   setValidFrom(validFrom: Slot) {
     if (this.body.validityStartInterval() !== undefined) {
       throw new Error(
-        "TxBuilder setValidFrom: Validity start interval is already set"
+        "TxBuilder setValidFrom: Validity start interval is already set",
       );
     }
     this.body.setValidityStartInterval(validFrom);
@@ -1225,7 +1225,7 @@ export class TxBuilder {
             memory: this.params.maxExecutionUnitsPerTransaction.memory,
             steps: this.params.maxExecutionUnitsPerTransaction.steps,
           },
-        })
+        }),
       );
       // Update the transaction with the new list of redeemers.
       this.redeemers.setValues(redeemers);
@@ -1234,7 +1234,7 @@ export class TxBuilder {
       let key = Address.fromBech32(address).getProps().delegationPart;
       if (!key) {
         throw new Error(
-          "addWithdrawal: The RewardAccount provided does not have an associated stake credential."
+          "addWithdrawal: The RewardAccount provided does not have an associated stake credential.",
         );
       }
       // Add the required scripts or witnesses based on the type of the stake credential.
@@ -1294,7 +1294,7 @@ function assertPaymentsAddress(address: Address) {
   }
   if (props.paymentPart.type == CredentialType.ScriptHash) {
     throw new Error(
-      "assertPaymentsAddress: address payment credential cannot be a script hash!"
+      "assertPaymentsAddress: address payment credential cannot be a script hash!",
     );
   }
 }
@@ -1311,7 +1311,7 @@ function assertLockAddress(address: Address) {
   }
   if (props.paymentPart.type != CredentialType.ScriptHash) {
     throw new Error(
-      "assertLockAddress: address payment credential must be a script hash!"
+      "assertLockAddress: address payment credential must be a script hash!",
     );
   }
 }
