@@ -2,6 +2,9 @@ import { OpaqueString, typedHex } from "@cardano-sdk/util";
 import * as C from "./core";
 import * as Crypto from "./crypto";
 
+export const Slot = C.Cardano.Slot;
+export type Slot = C.Cardano.Slot;
+
 export const Value = C.Serialization.Value;
 export type Value = C.Serialization.Value;
 
