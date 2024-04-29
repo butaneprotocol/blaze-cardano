@@ -18,10 +18,10 @@ import {
   HexBlob,
   derivePublicKey,
   signMessage,
-} from "../blaze-core";
-import { Provider } from "../blaze-query";
+} from "@blazecardano/core";
+import { Provider } from "@blazecardano/query";
 import { Wallet, CIP30DataSignature } from "./types";
-import * as value from "../blaze-tx/value";
+import * as value from "@blazecardano/tx/value";
 
 /**
  * Wallet class that interacts with the HotWallet.

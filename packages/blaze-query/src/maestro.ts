@@ -18,7 +18,7 @@ import {
   Redeemers,
   ExUnits,
   RedeemerTag,
-} from "../blaze-core";
+} from "@blazecardano/core";
 import { Provider } from "./types";
 
 export class Maestro implements Provider {

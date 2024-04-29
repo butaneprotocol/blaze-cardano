@@ -1,4 +1,4 @@
-import { Value, TokenMap, AssetId } from "../blaze-core";
+import { Value, TokenMap, AssetId } from "@blazecardano/core";
 
 /**
  * Merges two Value objects into a single Value object by combining their coins and multiassets.

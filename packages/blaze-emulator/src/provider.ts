@@ -9,8 +9,8 @@ import {
   TransactionId,
   Transaction,
   Redeemers,
-} from "../blaze-core";
-import { Provider } from "../blaze-query";
+} from "@blazecardano/core";
+import { Provider } from "@blazecardano/query";
 import { Emulator } from "./emulator";
 
 /**

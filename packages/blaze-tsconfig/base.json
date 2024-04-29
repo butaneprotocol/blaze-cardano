@@ -1,13 +1,10 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Default",
   "compilerOptions": {
-    "types": ["jest"],
-    "lib": ["ESNext"],
-    "module": "esnext",
-    "target": "esnext",
-    "moduleResolution": "node",
-    "moduleDetection": "force",
-    "noEmit": true,
-    "composite": true,
+    "lib": ["ES2020"],
+    "target": "ES2020",
+    "moduleResolution": "Bundler",
     "strict": true,
     "downlevelIteration": true,
     "skipLibCheck": true,
@@ -30,12 +27,5 @@
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true
   },
-  "exclude": ["node_modules"],
-  "include": [
-    "examples/*",
-    "packages/**/*",
-    "*.json",
-    "tests/costModels.ts",
-    "plutus.ts"
-  ]
+  "exclude": ["node_modules"]
 }

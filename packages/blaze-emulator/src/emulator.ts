@@ -1,4 +1,3 @@
-import { NetworkId } from "@cardano-sdk/core/dist/cjs/Cardano";
 import {
   TransactionUnspentOutput,
   ProtocolParameters,
@@ -7,8 +6,9 @@ import {
   TransactionId,
   TransactionInput,
   RewardAccount,
-} from "../blaze-core";
-import { hardCodedProtocolParams } from "../blaze-core/params";
+  NetworkId,
+} from "@blazecardano/core";
+import { hardCodedProtocolParams } from "@blazecardano/core";
 
 export class LedgerTimer {
   block: number = 0;
