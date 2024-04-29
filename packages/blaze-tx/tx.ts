@@ -74,22 +74,9 @@ provider:
     queryUnspentTxOutsAt
     utxoRefsWithCurrency
 
-wallet:
-    ownUtxos
-    ownAddress
-    ownAddresses
-    ownPaymentPubKeyHashes
-    ownFirstPaymentPubKeyHash
-
 constraints:
     mustValidateIn
     mustValidateInTimeRange
-    mustBeSignedBy
-    mustPayTo****
-    mustMintValue
-    mustMintCurrency
-    mustSpendAtLeast
-    mustProduceAtLeast
 */
 
 /**
