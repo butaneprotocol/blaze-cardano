@@ -8,7 +8,7 @@ import {
   TransactionUnspentOutput,
   TransactionWitnessSet,
   Value,
-} from "../blaze-core";
+} from "@blazecardano/core";
 
 type CoseSign1CborHex = HexBlob;
 type CoseKeyCborHex = HexBlob;

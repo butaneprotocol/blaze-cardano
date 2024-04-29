@@ -9,7 +9,7 @@ import {
   Transaction,
   ProtocolParameters,
   Redeemers,
-} from "../blaze-core";
+} from "@blazecardano/core";
 
 /**
  * Abstract class for the Provider.

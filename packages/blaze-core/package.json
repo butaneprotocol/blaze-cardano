@@ -1,0 +1,28 @@
+{
+  "name": "@blazecardano/core",
+  "version": "0.0.1",
+  "description": "Blaze cardano core library",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": ["dist/**"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --external rxjs",
+    "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
+  },
+  "devDependencies": {
+    "@blazecardano/tsconfig": "workspace:*",
+    "eslint": "^9.1.1",
+    "tsup": "^8.0.2",
+    "typescript": "^5.3.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@cardano-sdk/crypto": "^0.1.23",
+    "@cardano-sdk/util": "^0.15.1"
+  }
+}

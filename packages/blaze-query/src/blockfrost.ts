@@ -13,7 +13,7 @@ import {
   PlutusLanguageVersion,
   Credential,
   Redeemers,
-} from "../blaze-core";
+} from "@blazecardano/core";
 import { Provider } from "./types";
 
 export class Blockfrost implements Provider {

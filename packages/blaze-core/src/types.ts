@@ -151,6 +151,7 @@ export type CostModels = C.Cardano.CostModels;
 export type ExUnits = C.Serialization.ExUnits;
 export const ExUnits = C.Serialization.ExUnits;
 
+export const NetworkId = C.Cardano.NetworkId;
 export type NetworkId = C.Cardano.ChainId["networkId"];
 
 export type Evaluator = (

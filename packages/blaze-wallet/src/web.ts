@@ -8,7 +8,7 @@ import {
   TransactionUnspentOutput,
   TransactionWitnessSet,
   Value,
-} from "../blaze-core";
+} from "@blazecardano/core";
 import { Wallet, CIP30DataSignature, CIP30Interface } from "./types";
 
 /**
