@@ -28,8 +28,14 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
+    "noPropertyAccessFromIndexSignature": true
   },
   "exclude": ["node_modules"],
-  "include": ["packages/**/*", "*.json", "tests/costModels.ts", "plutus.ts"]
+  "include": [
+    "examples/*",
+    "packages/**/*",
+    "*.json",
+    "tests/costModels.ts",
+    "plutus.ts"
+  ]
 }

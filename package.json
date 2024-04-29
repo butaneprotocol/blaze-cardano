@@ -3,7 +3,7 @@
   "module": "index.ts",
   "scripts": {
     "docs": "typedoc \"packages/*\" && mkdir docs/logo && cp logo/blaze.svg docs/logo/blaze.svg",
-    "fmt": "prettier -w *.ts */*.ts */*/*.ts"
+    "fmt": "prettier -w *.ts */*.ts */*/*.ts *.json"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
