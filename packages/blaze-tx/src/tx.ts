@@ -2,7 +2,6 @@ import {
   CborSet,
   TransactionInput,
   TransactionBody,
-  TransactionInputSet,
   TransactionUnspentOutput,
   Transaction,
   Value,
@@ -17,6 +16,7 @@ import {
   Address,
   Ed25519PublicKeyHex,
   Ed25519KeyHashHex,
+  Credential,
   CredentialType,
   Hash28ByteBase16,
   Hash32ByteBase16,
@@ -47,6 +47,11 @@ import {
   Evaluator,
   Crypto,
   Slot,
+  PoolId,
+  Certificate,
+  StakeDelegation,
+  StakeDelegationCertificate,
+  CertificateType,
 } from "@blazecardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
@@ -86,10 +91,6 @@ constraints:
 export class TxBuilder {
   readonly params: ProtocolParameters;
   private body: TransactionBody; // The main body of the transaction containing inputs, outputs, etc.
-  private inputs: TransactionInputSet = CborSet.fromCore(
-    [],
-    TransactionInput.fromCore
-  ); // A set of transaction inputs.
   private redeemers: Redeemers = Redeemers.fromCore([]); // A collection of redeemers for script validation.
   private utxos: Set<TransactionUnspentOutput> =
     new Set<TransactionUnspentOutput>(); // A set of unspent transaction outputs.
@@ -120,7 +121,12 @@ export class TxBuilder {
    */
   constructor(params: ProtocolParameters) {
     this.params = params;
-    this.body = new TransactionBody(this.inputs, [], 0n, undefined);
+    this.body = new TransactionBody(
+      CborSet.fromCore([], TransactionInput.fromCore),
+      [],
+      0n,
+      undefined,
+    );
   }
 
   /**
@@ -243,7 +249,7 @@ export class TxBuilder {
       );
     }
     // Add the new input to the array of inputs and update the transaction body.
-    const inputIndex = values.push(utxo.input());
+    values.push(utxo.input());
     inputs.setValues(values);
     this.utxoScope.add(utxo);
     this.body.setInputs(inputs);
@@ -282,7 +288,7 @@ export class TxBuilder {
       let redeemers = [...this.redeemers.values()];
       redeemers.push(
         Redeemer.fromCore({
-          index: inputIndex,
+          index: 256,
           purpose: RedeemerPurpose["spend"],
           data: redeemer.toCore(),
           executionUnits: {
@@ -349,7 +355,7 @@ export class TxBuilder {
       // Note: Execution units are placeholders and are replaced with actual values during the evaluation phase.
       redeemers.push(
         Redeemer.fromCore({
-          index: 0, // The index for minting actions is typically 0, but may need adjustment based on the transaction structure.
+          index: 256,
           purpose: RedeemerPurpose["mint"], // Specify the purpose of the redeemer as minting.
           data: redeemer.toCore(), // Convert the provided PlutusData redeemer to its core representation.
           executionUnits: {
@@ -1001,6 +1007,11 @@ export class TxBuilder {
     for (const input of selectionResult.selectedInputs) {
       this.addInput(input);
     }
+    if (this.body.inputs().values().length == 0) {
+      throw new Error(
+        "TxBuilder: resolved empty input set, cannot construct transaction!",
+      );
+    }
     // Ensure the coin selection has eliminated all negative values.
     if (!value.empty(value.negatives(excessValue))) {
       throw new Error(
@@ -1048,8 +1059,10 @@ export class TxBuilder {
       }
     }
     this.body.setFee(this.fee);
-    // Merge the fee with the excess value and rebalance the change.
-    this.balanceCollateralChange();
+    if (this.body.collateral()) {
+      // Merge the fee with the excess value and rebalance the change.
+      this.balanceCollateralChange();
+    }
     let final_size = draft_tx.toCbor().length / 2;
     this.fee += BigInt(
       Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient)
@@ -1057,26 +1070,88 @@ export class TxBuilder {
     excessValue = this.getPitch(false);
     this.body.setFee(this.fee);
     this.balanceChange(excessValue);
-    this.balanceCollateralChange();
+    if (this.body.collateral()) {
+      this.balanceCollateralChange();
+    }
     // Return the fully constructed transaction.
     tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore));
     return new Transaction(this.body, tw);
   }
 
-  // Adds a certificate to delegate a staker to a pool
-  addDelegation() {}
+  /**
+   * Adds a certificate to delegate a staker to a pool
+   *
+   * @param {Credential} delegator - The credential of the staker to delegate.
+   * @param {PoolId} poolId - The ID of the pool to delegate to.
+   * @param {PlutusData} [redeemer] - Optional. A redeemer to be used if the delegation requires Plutus script validation.
+   * @returns {TxBuilder} The updated transaction builder.
+   */
+  addDelegation(
+    delegator: Credential,
+    poolId: PoolId,
+    redeemer?: PlutusData,
+  ): TxBuilder {
+    const stakeDelegation: StakeDelegationCertificate = {
+      __typename: CertificateType.StakeDelegation,
+      stakeCredential: delegator.toCore(),
+      poolId: poolId,
+    };
+    const delegationCertificate: Certificate = Certificate.newStakeDelegation(
+      StakeDelegation.fromCore(stakeDelegation),
+    );
+    const certs =
+      this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const vals = [...certs.values(), delegationCertificate];
+    certs.setValues(vals);
+    this.body.setCerts(certs);
+    const delegatorCredential = delegator.toCore();
+    if (delegatorCredential.type == CredentialType.ScriptHash) {
+      if (redeemer) {
+        this.requiredPlutusScripts.add(delegatorCredential.hash);
+        let redeemers = [...this.redeemers.values()];
+        redeemers.push(
+          Redeemer.fromCore({
+            index: 256, // todo: fix
+            purpose: RedeemerPurpose["certificate"],
+            data: redeemer.toCore(),
+            executionUnits: {
+              memory: this.params.maxExecutionUnitsPerTransaction.memory,
+              steps: this.params.maxExecutionUnitsPerTransaction.steps,
+            },
+          }),
+        );
+        this.redeemers.setValues(redeemers);
+      } else {
+        this.requiredNativeScripts.add(delegatorCredential.hash);
+      }
+    } else if (redeemer) {
+      throw new Error(
+        "TxBuilder addDelegation: failing to attach redeemer to a non-script delegation!",
+      );
+    }
+    return this;
+  }
 
   /**
-   * Delegates the selected reward address to a pool
+   * This method delegates the selected reward address to a pool.
+   * It first checks if the reward address is set and if it has a stake component.
+   * If both conditions are met, it adds a delegation to the transaction.
    *
-   * @param {string} _pool - The pool to delegate the reward address to.
+   * @param {PoolId} poolId - The ID of the pool to delegate the reward address to.
    * @throws {Error} If the reward address is not set or if the method is unimplemented.
    */
-  delegate(_pool: string) {
+  delegate(poolId: PoolId, redeemer?: PlutusData) {
     if (!this.rewardAddress) {
       throw new Error("TxBuilder delegate: Reward address must be set!");
     }
-    throw new Error("TxBuilder delegate: unimplemented.");
+    const credential = this.rewardAddress!.getProps().delegationPart;
+    if (!credential) {
+      throw new Error(
+        "TxBuilder delegate: Somehow the reward address had no stake component",
+      );
+    }
+    this.addDelegation(Credential.fromCore(credential), poolId, redeemer);
+    return this;
   }
 
   // Adds a certificate to register a staker
@@ -1143,7 +1218,7 @@ export class TxBuilder {
       // Add the redeemer to the list of redeemers with execution units based on transaction parameters.
       redeemers.push(
         Redeemer.fromCore({
-          index: 0, // TODO: Determine the correct index for the redeemer.
+          index: 256, // TODO: Determine the correct index for the redeemer.
           purpose: RedeemerPurpose["mint"], // TODO: Confirm the purpose of the redeemer.
           data: redeemer.toCore(),
           executionUnits: {

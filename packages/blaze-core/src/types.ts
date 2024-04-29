@@ -80,7 +80,8 @@ export type AddressType = C.Cardano.AddressType;
 export const PaymentAddress = C.Cardano.PaymentAddress;
 export type PaymentAddress = C.Cardano.PaymentAddress;
 
-export type Credential = C.Cardano.Credential;
+export const Credential = C.Serialization.Credential;
+export type Credential = C.Serialization.Credential;
 
 export const Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
 export type Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
@@ -102,8 +103,22 @@ export type Hash32ByteBase16 = Crypto.Hash32ByteBase16;
 export const CredentialType = C.Cardano.CredentialType;
 export type CredentialType = C.Cardano.CredentialType;
 
+export const Certificate = C.Serialization.Certificate;
+export type Certificate = C.Serialization.Certificate;
+
+export const PoolId = C.Cardano.PoolId;
+export type PoolId = C.Cardano.PoolId;
+
 export const StakeRegistration = C.Serialization.StakeRegistration;
 export type StakeRegistration = C.Serialization.StakeRegistration;
+
+export const StakeDelegation = C.Serialization.StakeDelegation;
+export type StakeDelegation = C.Serialization.StakeDelegation;
+
+export type StakeDelegationCertificate = C.Cardano.StakeDelegationCertificate;
+
+export const CertificateType = C.Cardano.CertificateType;
+export type CertificateType = C.Cardano.CertificateType;
 
 export const VkeyWitness = C.Serialization.VkeyWitness;
 export type VkeyWitness = C.Serialization.VkeyWitness;

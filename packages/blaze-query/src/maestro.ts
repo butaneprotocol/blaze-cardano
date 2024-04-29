@@ -114,7 +114,7 @@ export class Maestro implements Provider {
         ? `/addresses/${address.toBech32()}/`
         : `/addresses/cred/${new Address({
             type: AddressType.EnterpriseKey,
-            paymentPart: address,
+            paymentPart: address.toCore(),
           }).toBech32()}/`;
     return fetch(`${this.url}${query}utxos?with_cbor=true&count=100`, {
       headers: this.headers(),

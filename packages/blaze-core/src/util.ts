@@ -212,7 +212,7 @@ export const addressFromCredential = (
   credential: Credential,
 ): Address =>
   new Address({
-    paymentPart: credential,
+    paymentPart: credential.toCore(),
     type: AddressType.EnterpriseScript,
     networkId: network,
   });
