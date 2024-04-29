@@ -364,7 +364,7 @@ export class TxBuilder {
   private checkAndAlterOutput(output: TransactionOutput) {
     while (true) {
       const byteLength = BigInt(output.toCbor().length / 2);
-      const minAda = (BigInt(this.params.coinsPerUtxoByte)) * (byteLength + 160n);
+      const minAda = BigInt(this.params.coinsPerUtxoByte) * (byteLength + 160n);
       const coin = output.amount().coin();
       if (coin < minAda) {
         const amount = output.amount();
@@ -385,7 +385,7 @@ export class TxBuilder {
     const byteLength = BigInt(output.toCbor().length / 2);
     if (
       output.amount().coin() <
-      (BigInt(this.params.coinsPerUtxoByte)) * (byteLength + 160n)
+      BigInt(this.params.coinsPerUtxoByte) * (byteLength + 160n)
     ) {
       throw new Error("addOutput: Failed due to min ada!");
     }
