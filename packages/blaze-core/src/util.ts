@@ -14,7 +14,7 @@ import {
   Hash32ByteBase16,
   Ed25519PrivateExtendedKeyHex,
   Ed25519PrivateNormalKeyHex,
-  Ed25519SignatureHex
+  Ed25519SignatureHex,
 } from "./types";
 import { sha256 } from "@noble/hashes/sha256";
 import * as sha3 from "@noble/hashes/sha3";
