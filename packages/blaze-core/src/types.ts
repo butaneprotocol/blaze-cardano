@@ -91,6 +91,11 @@ export const Ed25519PrivateNormalKeyHex = (
   value: string,
 ): Ed25519PrivateNormalKeyHex => typedHex(value, 64);
 
+export type Ed25519PrivateExtendedKeyHex = OpaqueString<"Ed25519PrivateKeyHex">;
+export const Ed25519PrivateExtendedKeyHex = (
+  value: string,
+): Ed25519PrivateExtendedKeyHex => typedHex(value, 128);
+
 export const Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
 export type Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
 

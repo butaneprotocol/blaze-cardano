@@ -1,8 +1,5 @@
 import * as C from "@cardano-sdk/core";
 import { HexBlob, OpaqueString, typedHex } from "@cardano-sdk/util";
-import {Ed25519PrivateExtendedKeyHex,
-  Ed25519PrivateNormalKeyHex,
-  Ed25519SignatureHex} from "@cardano-sdk/crypto"
 import {
   PolicyId,
   Hash28ByteBase16,
@@ -15,6 +12,9 @@ import {
   NetworkId,
   Credential,
   Hash32ByteBase16,
+  Ed25519PrivateExtendedKeyHex,
+  Ed25519PrivateNormalKeyHex,
+  Ed25519SignatureHex
 } from "./types";
 import { sha256 } from "@noble/hashes/sha256";
 import * as sha3 from "@noble/hashes/sha3";
