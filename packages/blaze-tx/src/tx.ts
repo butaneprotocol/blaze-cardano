@@ -715,15 +715,23 @@ export class TxBuilder {
 
   /**
    * Calculates the net value difference between the inputs and outputs of a transaction,
-   * including minted values and subtracting a fixed fee amount.
+   * including minted values, withdrawals, and subtracting a fixed fee amount.
    * This function is used to determine the excess value that needs to be returned as change.
    *
    * @returns {Value} The net value that represents the transaction's pitch.
    * @throws {Error} If a corresponding UTxO for an input cannot be found.
    */
   private getPitch(withSpare: boolean = true) {
+    // Calculate withdrawal amounts.
+    let withdrawalAmount = 0n;
+    const withdrawals = this.body.withdrawals()
+    if (withdrawals!=undefined){
+      for (const account of withdrawals.keys()){
+        withdrawalAmount += withdrawals.get(account)!
+      }
+    }
     // Initialize values for input, output, and minted amounts.
-    let inputValue = new Value(0n);
+    let inputValue = new Value(withdrawalAmount);
     let outputValue = new Value(this.fee);
     let mintValue = new Value(0n, this.body.mint());
 
