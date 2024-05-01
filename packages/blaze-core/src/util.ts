@@ -1,5 +1,8 @@
-import * as C from "./core";
+import * as C from "@cardano-sdk/core";
 import { HexBlob, OpaqueString, typedHex } from "@cardano-sdk/util";
+import {Ed25519PrivateExtendedKeyHex,
+  Ed25519PrivateNormalKeyHex,
+  Ed25519SignatureHex} from "@cardano-sdk/crypto"
 import {
   PolicyId,
   Hash28ByteBase16,
@@ -16,14 +19,9 @@ import {
 import { sha256 } from "@noble/hashes/sha256";
 import * as sha3 from "@noble/hashes/sha3";
 import { sha512 } from "@noble/hashes/sha512";
-import {
-  Ed25519PrivateExtendedKeyHex,
-  Ed25519PrivateNormalKeyHex,
-  Ed25519SignatureHex,
-  ed,
-} from "./crypto";
 import * as blake from "blakejs";
 import * as bip39 from "@scure/bip39";
+import * as ed from "@noble/ed25519";
 
 ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 

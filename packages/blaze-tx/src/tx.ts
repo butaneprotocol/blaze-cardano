@@ -37,7 +37,6 @@ import {
   CborWriter,
   RewardAccount,
   Hash,
-  HexBlob,
   HashAsPubKeyHex,
   PolicyIdToHash,
   fromHex,
@@ -45,13 +44,13 @@ import {
   getPaymentAddress,
   Datum,
   Evaluator,
-  Crypto,
   Slot,
   PoolId,
   Certificate,
   StakeDelegation,
   StakeDelegationCertificate,
   CertificateType,
+  blake2b_256
 } from "@blazecardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
@@ -823,11 +822,7 @@ export class TxBuilder {
         Buffer.from(usedCostModels.languageViewsEncoding(), "hex")
       );
       // Generate and return the script data hash.
-      return Hash32ByteBase16.fromHexBlob(
-        HexBlob.fromBytes(
-          Crypto.blake2b(Crypto.blake2b.BYTES).update(writer.encode()).digest()
-        )
-      );
+      return blake2b_256(writer.encodeAsHex())
     }
     // Return undefined if there are no datums or redeemers.
     return undefined;
