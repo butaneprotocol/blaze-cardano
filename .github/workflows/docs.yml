@@ -20,6 +20,7 @@ jobs:
         with:
           version: 8
       - run: pnpm i
+      - run: pnpm run build
       - run: pnpm run docs
       - uses: actions/upload-pages-artifact@v2
         with:
