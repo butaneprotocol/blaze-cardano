@@ -15,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-pnpm@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3.0.0
       - run: pnpm i
       - run: pnpm run docs
       - uses: actions/upload-pages-artifact@v2
