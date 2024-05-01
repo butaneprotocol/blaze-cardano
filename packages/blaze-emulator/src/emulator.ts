@@ -1,5 +1,4 @@
 import {
-  TransactionUnspentOutput,
   ProtocolParameters,
   TransactionOutput,
   Transaction,
@@ -7,8 +6,21 @@ import {
   TransactionInput,
   RewardAccount,
   NetworkId,
-} from "@blazecardano/core";
-import { hardCodedProtocolParams } from "@blazecardano/core";
+  HexBlob,
+  Ed25519PublicKey,
+  Ed25519Signature,
+  RedeemerTag,
+  ScriptHash,
+  Hash28ByteBase16,
+  AssetId,
+  PolicyIdToHash,
+  CredentialType,
+  Address,
+  DatumKind,
+  hardCodedProtocolParams,
+  // } from "@blazecardano/core";
+} from "../../blaze-core/src";
+import { Cardano } from "../../blaze-core/src/core";
 
 export class LedgerTimer {
   block: number = 0;
@@ -25,7 +37,7 @@ export class Emulator {
   /**
    * The ledger of unspent transaction outputs.
    */
-  ledger: Set<TransactionUnspentOutput> = new Set();
+  ledger: Map<TransactionInput, TransactionOutput> = new Map();
 
   /**
    * The map of reward accounts and their balances.
@@ -62,14 +74,14 @@ export class Emulator {
    */
   constructor(
     genesisOutputs: TransactionOutput[],
-    params: ProtocolParameters = hardCodedProtocolParams,
+    params: ProtocolParameters = hardCodedProtocolParams
   ) {
     for (let i = 0; i < genesisOutputs.length; i++) {
       let txIn = new TransactionInput(
         TransactionId("00".repeat(32)),
-        BigInt(i),
+        BigInt(i)
       );
-      this.ledger.add(new TransactionUnspentOutput(txIn, genesisOutputs[i]!));
+      this.ledger.set(txIn, genesisOutputs[i]!);
     }
     this.params = params;
   }
@@ -140,10 +152,10 @@ export class Emulator {
    *   - Input Witnesses: Check that all input witnesses are included in the transaction.
    *   - Check Consumed Witnesses: Check that all witnesses have been consumed.
    *   - Apply Transitions: Apply the necessary transitions to the ledger, mempool, withdrawal requests, cert requests, and outputs, create outputs and consume datum hashes: For each output, create a new unspent output and consume the datum hash.
-   *   - UTXO: Check that the transaction's outputs are valid. Fee checking, minSize, ada /= 0, Alonzo.validateOutputTooBigUTxO, 
+   *   - UTXO: Check that the transaction's outputs are valid. Fee checking, minSize, ada /= 0, Alonzo.validateOutputTooBigUTxO,
    *   - Fee Checking: Ensure that the transaction fee is not too small. See the fee calculator in tx builder.
    *   - Collateral Checking: Check that the collateral inputs are valid. Collateral should be UTxOs where all are held by pubkeys such that the sum of the collateral minus the collateral return is greater than the minimum collateral fee for the transaction.
-   *      - Understanding collateral balancing: if the tx fails, instead of consuming inputs and producing outputs, you consume collateral inputs and produce 1 output (the collateral return), this is 
+   *      - Understanding collateral balancing: if the tx fails, instead of consuming inputs and producing outputs, you consume collateral inputs and produce 1 output (the collateral return), this is
    *   - Disjoint RefInputs: Ensure that there is no intersection between the input set of a transaction and the reference input set of a transaction. I.e no reference inputs may be spent.
    *   - Outputs Too Small: Check that all outputs of the transaction are not too small. See size calculation in tx builder, use the min size parameter from protocol params.
    *   - Other UTxO Transition Rules: Check other transition rules for the UTXO.
@@ -172,7 +184,301 @@ export class Emulator {
    *   - Number of Collateral Inputs: Validate the number of collateral inputs.
    */
   async submitTransaction(tx: Transaction): Promise<TransactionId> {
-    // ... todo: checks ...
+    const body = tx.body();
+    const witnessSet = tx.witnessSet();
+
+    if (body.networkId() !== NetworkId.Testnet)
+      throw new Error("Invalid network ID, Emulator must use Testnet.");
+
+    const validFrom = body.validityStartInterval() ?? -Infinity;
+    const validUntil = body.ttl() ?? Infinity;
+
+    const txId = tx.getId();
+
+    const consumed = new Set();
+
+    // Vkey witnesses are valid
+    const vkeyHashes = new Set(
+      await Promise.all(
+        witnessSet
+          .vkeys()!
+          .values()
+          .map(async (vkey) => {
+            const key = Ed25519PublicKey.fromHex(vkey.vkey());
+            const keyHash = await key.hash();
+            const sig = Ed25519Signature.fromHex(vkey.signature());
+            if (!key.verify(sig, HexBlob(txId))) {
+              throw new Error(
+                `Invalid vkey in witness set with hash ${keyHash}`
+              );
+            }
+            return Hash28ByteBase16.fromEd25519KeyHashHex(keyHash.hex());
+          })
+      )
+    );
+
+    const attachedPlutusHashes = new Set(
+      [
+        ...(witnessSet.plutusV1Scripts()?.values() ?? []),
+        ...(witnessSet.plutusV2Scripts()?.values() ?? []),
+        ...(witnessSet.plutusV3Scripts()?.values() ?? []),
+      ].map((script) => script.hash())
+    );
+
+    // Total set of plutus hashes including referenced scripts
+    const plutusHashes = new Set(attachedPlutusHashes);
+
+    const attachedNativeHashes = new Set(
+      witnessSet
+        .nativeScripts()
+        ?.values()
+        .map((script) => {
+          // TODO: Validate native scripts with validity interval
+          return script.hash();
+        })
+    );
+
+    const nativeHashes = new Set(attachedNativeHashes);
+
+    const redeemers = witnessSet.redeemers()?.values() ?? [];
+
+    const consumeVkey = (hash: Hash28ByteBase16) => {
+      if (!vkeyHashes.has(hash))
+        throw new Error(`Vkey (hash ${hash}) not found in witness set.`);
+      consumed.add(hash);
+    };
+
+    // TODO: Validate native scripts with validity interval if they're referenced
+    const consumeScript = (
+      hash: ScriptHash,
+      redeemerTag?: RedeemerTag,
+      redeemerIndex?: bigint
+    ) => {
+      if (
+        nativeHashes.has(hash) ||
+        (plutusHashes.has(hash) &&
+          redeemers.some(
+            (r) => r.tag() === redeemerTag && r.index() === redeemerIndex
+          ))
+      ) {
+        consumed.add(hash);
+      } else {
+        throw new Error(`Script (hash ${hash}) not found in witness set.`);
+      }
+    };
+
+    const consumeCred = (
+      cred: Cardano.Credential,
+      redeemerTag?: RedeemerTag,
+      redeemerIndex?: bigint
+    ) => {
+      if (cred.type === CredentialType.KeyHash) {
+        consumeVkey(cred.hash);
+      } else {
+        consumeScript(cred.hash, redeemerTag, redeemerIndex);
+      }
+    };
+
+    // Witnesses
+    // -- Certificates
+    body
+      .certs()
+      ?.values()
+      .forEach((cert, index) => {
+        switch (cert.kind()) {
+          // CertificateKind is not an exported enum so we match on number literals
+          case 0: {
+            // StakeRegistration
+            const stakeRegistration = cert.asStakeRegistration()!;
+            const rewardAddr = RewardAccount.fromCredential(
+              stakeRegistration.stakeCredential(),
+              NetworkId.Testnet
+            );
+            if (this.accounts.has(rewardAddr))
+              throw new Error(
+                `Stake key with reward address ${rewardAddr} is already registered.`
+              );
+            break;
+          }
+          case 1: {
+            // StakeDeregistration
+            const stakeDeregistration = cert.asStakeDeregistration()!;
+            const stakeCred = stakeDeregistration.stakeCredential();
+            const rewardAddr = RewardAccount.fromCredential(
+              stakeCred,
+              NetworkId.Testnet
+            );
+            if (!this.accounts.has(rewardAddr))
+              throw new Error(
+                `Stake key with reward address ${rewardAddr} is not registered.`
+              );
+            consumeCred(stakeCred, RedeemerTag.Cert, BigInt(index));
+            break;
+          }
+          // TODO: Other kinds (delegation, governance, e.t.c.)
+        }
+      });
+
+    // -- Withdrawals
+    Array.from(body.withdrawals() ?? []).forEach(
+      ([rewardAddr, amount], index) => {
+        const balance = this.accounts.get(rewardAddr);
+        if (balance !== amount)
+          throw new Error(
+            `Withdrawal amount for ${rewardAddr} does not match the actual reward balance (Withdrawing: ${amount} Balance: ${balance}).`
+          );
+
+        const stakeCred =
+          Address.fromBech32(rewardAddr).getProps().delegationPart!;
+        consumeCred(stakeCred, RedeemerTag.Reward, BigInt(index));
+      }
+    );
+
+    // -- Mints
+    {
+      let mintIdx = 0n;
+      const processedPolicies = new Set();
+      // Cardano JS SDK transactions map assetIds not policyIds, so have to ensure we don't double count
+      Array.from(body.mint() ?? []).forEach(([assetId]) => {
+        if (assetId == "") throw new Error("Cannot mint ADA.");
+        const policy = AssetId.getPolicyId(assetId);
+        if (processedPolicies.has(policy)) {
+          return;
+        }
+        processedPolicies.add(policy);
+        consumeScript(PolicyIdToHash(policy), RedeemerTag.Mint, mintIdx);
+        mintIdx++;
+      });
+    }
+
+    // -- Required Signers
+    body
+      .requiredSigners()
+      ?.values()
+      .forEach((hash) => {
+        consumeVkey(Hash28ByteBase16.fromEd25519KeyHashHex(hash.value()));
+      });
+
+    // Validity interval contains the current slot range and is formed correctly
+    if (this.clock.slot < validFrom || this.clock.slot >= validUntil)
+      throw new Error(
+        `Validity interval (${validFrom} to ${validUntil}) is outside the slot range (${this.clock.slot}).`
+      );
+
+    if (validFrom >= validUntil)
+      throw new Error("Validity interval is invalid.");
+
+    // Input Validation
+    // -- Collateral Inputs
+
+    const collateral = body.collateral()?.values();
+    const collateralAmount =
+      collateral?.reduce((acc, input) => {
+        const out = this.ledger.get(input);
+        if (!out) {
+          throw new Error(
+            `Collateral input ${input.toCore()} not found in the ledger.`
+          );
+        }
+        const paymentCred = out.address().getProps().paymentPart!;
+        if (paymentCred.type !== CredentialType.KeyHash) {
+          throw new Error(
+            `Collateral input ${input.toCore()} must contain a vkey.`
+          );
+        }
+        consumeVkey(paymentCred.hash);
+        return acc + out.amount().coin();
+      }, 0n) ?? 0n;
+
+    if (collateral?.length ?? 0 > this.params.maxCollateralInputs)
+      throw new Error("Collateral inputs exceed the maximum allowed.");
+
+    const minCollateral = BigInt(
+      this.params.collateralPercentage * Number(body.fee())
+    );
+
+    if (
+      witnessSet.redeemers() &&
+      collateralAmount - (body.collateralReturn()?.amount().coin() ?? 0n) <
+        minCollateral
+    )
+      throw new Error("Collateral inputs are insufficient.");
+
+    const checkInput = (
+      input: TransactionInput,
+      index: number,
+      spent: boolean
+    ) => {
+      const out = this.ledger.get(input);
+      if (!out) {
+        throw new Error(
+          `Reference input ${input.toCore()} not found in the ledger.`
+        );
+      }
+
+      if (out.datum()?.kind() == DatumKind.DataHash) {
+        consumed.add(out.datum()!.asDataHash()!);
+      }
+
+      const scriptRef = out.scriptRef();
+      if (scriptRef) {
+        if (scriptRef.language() == 0) {
+          // Native
+          nativeHashes.add(scriptRef.hash());
+        } else {
+          plutusHashes.add(scriptRef.hash());
+        }
+      }
+
+      if (spent) {
+        const paymentCred = out.address().getProps().paymentPart!;
+        consumeCred(paymentCred, RedeemerTag.Spend, BigInt(index));
+      }
+    };
+
+    // -- Reference Inputs
+    const refInputs = body.referenceInputs()?.values();
+    const checkInputReferenced = (input: TransactionInput, index: number) =>
+      checkInput(input, index, false);
+    refInputs?.forEach(checkInputReferenced);
+
+    // -- Inputs
+    const inputs = body.inputs().values();
+    const checkInputSpent = (input: TransactionInput, index: number) =>
+      checkInput(input, index, true);
+    [...inputs]
+      .sort(
+        (a, b) =>
+          a.transactionId().localeCompare(b.transactionId()) ||
+          Number(a.index() - b.index())
+      )
+      .forEach(checkInputSpent);
+
+    if (inputs.length === 0) {
+      throw new Error("Inputs must not be an empty set.");
+    }
+
+    // Disjointness of inputs and reference inputs
+    if (
+      inputs.some((input) =>
+        refInputs?.some(
+          (ref) =>
+            ref.transactionId() === input.transactionId() &&
+            ref.index() === input.index()
+        )
+      )
+    ) {
+      throw new Error("Inputs and reference inputs must be disjoint.");
+    }
+
+    // Consumed Witnesses count
+    [...vkeyHashes, ...attachedNativeHashes, ...attachedPlutusHashes].forEach(
+      (hash) => {
+        if (!consumed.has(hash)) {
+          throw new Error(`Extraneous witness. ${hash} has not been consumed.`);
+        }
+      }
+    );
 
     this.acceptTransaction(tx);
     return tx.getId();
@@ -191,19 +497,15 @@ export class Emulator {
    */
   private acceptTransaction(tx: Transaction) {
     const inputs = tx.body().inputs().values();
-    for (const utxo of this.ledger.values()) {
-      if (inputs.find((x) => x == utxo.input())) {
+    for (const utxo of this.ledger.keys()) {
+      if (inputs.find((x) => x == utxo)) {
         this.ledger.delete(utxo);
       }
     }
     const outputs = tx.body().outputs();
     const txId = tx.getId();
     for (let i = 0; i < outputs.length; i++) {
-      const utxo = new TransactionUnspentOutput(
-        new TransactionInput(txId, BigInt(i)),
-        outputs[i]!,
-      );
-      this.ledger.add(utxo);
+      this.ledger.set(new TransactionInput(txId, BigInt(i)), outputs[i]!);
     }
     const certs = tx.body().certs()?.values() ?? [];
     for (let i = 0; i < certs.length; i++) {
@@ -213,7 +515,7 @@ export class Emulator {
         const cred = stakeRegistration.stakeCredential();
         const rewardAccount = RewardAccount.fromCredential(
           cred,
-          NetworkId.Testnet,
+          NetworkId.Testnet
         );
         this.accounts.set(rewardAccount, 0n);
       }
@@ -222,7 +524,7 @@ export class Emulator {
         const cred = stakeDeregistration.stakeCredential();
         const rewardAccount = RewardAccount.fromCredential(
           cred,
-          NetworkId.Testnet,
+          NetworkId.Testnet
         );
         this.accounts.delete(rewardAccount);
       }

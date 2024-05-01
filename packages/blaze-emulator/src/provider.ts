@@ -33,7 +33,7 @@ export class EmulatorProvider implements Provider {
   getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {
     const utxos: TransactionUnspentOutput[] = [];
     for (const utxo of this.emulator.ledger.values()) {
-      if (utxo.output().address() == address) {
+      if (utxo.address() == address) {
         utxos.push(utxo);
       }
     }
@@ -46,7 +46,7 @@ export class EmulatorProvider implements Provider {
   ): Promise<TransactionUnspentOutput[]> {
     const utxos: TransactionUnspentOutput[] = [];
     for (const utxo of this.emulator.ledger.values()) {
-      const output = utxo.output();
+      const output = utxo;
       if (
         output.address() == address &&
         output.amount().multiasset()?.get(unit) != undefined
@@ -59,7 +59,7 @@ export class EmulatorProvider implements Provider {
 
   getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput> {
     for (const utxo of this.emulator.ledger.values()) {
-      const output = utxo.output();
+      const output = utxo;
       if (output.amount().multiasset()?.get(unit) != undefined) {
         return Promise.resolve(utxo);
       }
@@ -73,8 +73,8 @@ export class EmulatorProvider implements Provider {
     txIns: TransactionInput[],
   ): Promise<TransactionUnspentOutput[]> {
     const utxos = [];
-    for (const utxo of this.emulator.ledger.values()) {
-      if (txIns.includes(utxo.input())) {
+    for (const utxo of this.emulator.ledger.keys()) {
+      if (txIns.includes(utxo)) {
         utxos.push(utxo);
       }
     }

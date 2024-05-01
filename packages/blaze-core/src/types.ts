@@ -126,6 +126,12 @@ export type VkeyWitness = C.Serialization.VkeyWitness;
 export const Ed25519SignatureHex = Crypto.Ed25519SignatureHex;
 export type Ed25519SignatureHex = Crypto.Ed25519SignatureHex;
 
+export const Ed25519PublicKey = Crypto.Ed25519PublicKey;
+export type Ed25519PublicKey = Crypto.Ed25519PublicKey;
+
+export const Ed25519Signature = Crypto.Ed25519Signature;
+export type Ed25519Signature = Crypto.Ed25519Signature;
+
 export const PlutusLanguageVersion = C.Cardano.PlutusLanguageVersion;
 export type PlutusLanguageVersion = C.Cardano.PlutusLanguageVersion;
 
@@ -168,6 +174,8 @@ export const ExUnits = C.Serialization.ExUnits;
 
 export const NetworkId = C.Cardano.NetworkId;
 export type NetworkId = C.Cardano.ChainId["networkId"];
+
+export const DatumKind = C.Serialization.DatumKind
 
 export type Evaluator = (
   tx: Transaction,
