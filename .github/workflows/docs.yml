@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-      - run: npm i
-      - run: npm run docs
+      - uses: actions/setup-pnpm@v6
+      - run: pnpm i
+      - run: pnpm run docs
       - uses: actions/upload-pages-artifact@v2
         with:
           path: ./docs 
