@@ -32,7 +32,7 @@ const SLOT_CONFIG_NETWORK = {
  * @param overEstimateMem - The overestimation factor for memory.
  * @returns An evaluator function.
  */
-export function evaluate(
+export function uplcEvaluator(
   params: ProtocolParameters,
   overEstimateSteps: number,
   overEstimateMem: number,
