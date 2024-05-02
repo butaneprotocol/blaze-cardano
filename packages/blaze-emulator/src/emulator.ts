@@ -311,12 +311,7 @@ export class Emulator {
       )
     );
 
-    witnessSet
-      .bootstraps()
-      ?.values()
-      .forEach((bootstrap) => {
-        bootstrap;
-      });
+    // TODO: bootstrap addresses validation
 
     const attachedPlutusHashes = new Set(
       [
@@ -752,11 +747,12 @@ export class Emulator {
       this.accounts.set(account, balance - withdrawn);
     }
 
-    const datums = tx.witnessSet().plutusData()?.values();
-    if (datums) {
-      for (const datum of datums) {
+    tx
+      .witnessSet()
+      .plutusData()
+      ?.values()
+      .forEach((datum) => {
         this.datumHashes[blake2b_256(datum.toCbor())] = datum;
-      }
-    }
+      });
   }
 }
