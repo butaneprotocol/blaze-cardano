@@ -26,14 +26,10 @@ export class ColdWallet implements Wallet {
    * @param {NetworkId} networkId - The network ID of the wallet.
    * @param {Provider} provider - The provider of the wallet.
    */
-  constructor(
-    address: Address,
-    networkId: NetworkId,
-    provider: Provider,
-  ) {
+  constructor(address: Address, networkId: NetworkId, provider: Provider) {
     this.networkId = networkId;
 
-    this.address = address
+    this.address = address;
     this.provider = provider;
   }
 
@@ -124,9 +120,7 @@ export class ColdWallet implements Wallet {
     _address: Address,
     _payload: string,
   ): Promise<CIP30DataSignature> {
-    throw new Error(
-      "ColdWallet signData: Cold wallet cannot sign data!",
-    );
+    throw new Error("ColdWallet signData: Cold wallet cannot sign data!");
   }
 
   /**
