@@ -1,6 +1,6 @@
 import { OpaqueString, typedHex } from "@cardano-sdk/util";
-import * as C from "./core";
-import * as Crypto from "./crypto";
+import * as C from "@cardano-sdk/core";
+import * as Crypto from "@cardano-sdk/crypto";
 
 export const Slot = C.Cardano.Slot;
 export type Slot = C.Cardano.Slot;
@@ -90,6 +90,11 @@ export type Ed25519PrivateNormalKeyHex = OpaqueString<"Ed25519PrivateKeyHex">;
 export const Ed25519PrivateNormalKeyHex = (
   value: string,
 ): Ed25519PrivateNormalKeyHex => typedHex(value, 64);
+
+export type Ed25519PrivateExtendedKeyHex = OpaqueString<"Ed25519PrivateKeyHex">;
+export const Ed25519PrivateExtendedKeyHex = (
+  value: string,
+): Ed25519PrivateExtendedKeyHex => typedHex(value, 128);
 
 export const Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
 export type Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
