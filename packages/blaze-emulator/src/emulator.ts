@@ -25,11 +25,9 @@ import {
   blake2b_256,
   DatumHash,
   PlutusData,
-  // } from "@blazecardano/core";
-} from "../../blaze-core/src";
-import { Cardano } from "../../blaze-core/src/core";
-import { uplcEvaluator } from "../../blaze-tx/src/vm-evaluator";
-import { Value as V } from "../../blaze-tx/src/";
+} from "@blazecardano/core";
+import * as C from "@cardano-sdk/core";
+import { makeUplcEvaluator, Value as V } from "@blazecardano/tx";
 
 export class LedgerTimer {
   block: number = 0;
@@ -119,7 +117,7 @@ export class Emulator {
       this._ledger[serialiseInput(txIn)] = genesisOutputs[i]!;
     }
     this.params = params;
-    this.evaluator = evaluator ?? uplcEvaluator(params, 1, 1);
+    this.evaluator = evaluator ?? makeUplcEvaluator(params, 1, 1);
   }
 
   stepForwardBlock(): void {
@@ -191,6 +189,7 @@ export class Emulator {
    * @returns The output corresponding to the input, or undefined if the input is not found.
    */
   getOutput(inp: TransactionInput): TransactionOutput | undefined {
+    // Should utxos in the mempool be considered?
     return this._ledger[serialiseInput(inp)];
   }
 
@@ -370,7 +369,7 @@ export class Emulator {
     };
 
     const consumeCred = (
-      cred: Cardano.Credential,
+      cred: C.Cardano.Credential,
       redeemerTag?: RedeemerTag,
       redeemerIndex?: bigint
     ) => {
@@ -506,9 +505,7 @@ export class Emulator {
     ) => {
       const out = this.getOutput(input);
       if (!out) {
-        throw new Error(
-          `Reference input ${input.toCore()} not found in the ledger.`
-        );
+        throw new Error(`Input ${input.toCore()} not found in the ledger.`);
       }
 
       usedInputs.push(new TransactionUnspentOutput(input, out));
@@ -633,11 +630,7 @@ export class Emulator {
           const providedRedeemer = redeemers.find(
             (r) => r.tag() === redeemer.tag() && r.index() === redeemer.index()
           );
-          if (
-            !providedRedeemer ||
-            providedRedeemer.tag() !== redeemer.tag() ||
-            providedRedeemer.index() !== redeemer.index()
-          ) {
+          if (!providedRedeemer) {
             throw new Error(
               `Missing redeemer: Purpose ${redeemer.toCore().purpose}, Index ${redeemer.index()})`
             );

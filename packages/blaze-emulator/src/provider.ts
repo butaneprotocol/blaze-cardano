@@ -9,9 +9,8 @@ import {
   Transaction,
   Redeemers,
   DatumHash,
-  // } from "@blazecardano/core";
-} from "../../blaze-core/src";
-import { Provider } from "../../blaze-query/src";
+} from "@blazecardano/core";
+import { Provider } from "@blazecardano/query";
 import { Emulator } from "./emulator";
 
 /**
@@ -79,8 +78,8 @@ export class EmulatorProvider implements Provider {
     return Promise.resolve(utxos);
   }
 
-  resolveDatum(datumHash: DatumHash): Promise<PlutusData | undefined> {
-    return Promise.resolve(this.emulator.datumHashes[datumHash]);
+  resolveDatum(datumHash: DatumHash): Promise<PlutusData> {
+    return Promise.resolve(this.emulator.datumHashes[datumHash]!);
   }
 
   awaitTransactionConfirmation(
