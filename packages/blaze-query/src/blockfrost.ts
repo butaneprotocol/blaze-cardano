@@ -24,7 +24,11 @@ export class Blockfrost implements Provider {
     network,
     projectId,
   }: {
-    network: "cardano-sanchonet";
+    network:
+      | "cardano-preview"
+      | "cardano-preprod"
+      | "cardano-mainnet"
+      | "cardano-sanchonet";
     projectId: string;
   }) {
     this.url = `https://${network}.blockfrost.io/api/v0/`;
@@ -36,7 +40,22 @@ export class Blockfrost implements Provider {
   }
 
   getParameters(): Promise<ProtocolParameters> {
-    throw new Error("unimplemented");
+    const query = "epochs/latest/parameters";
+    return fetch(`${this.url}${query}`, { headers: this.headers() })
+      .then((resp) => resp.json())
+      .then((json) => {
+        if (json) {
+          const response =
+            json as BlockfrostResponse<BlockfrostProtocolParametersResponse>;
+
+          // TODO: parse response
+          console.log({ response });
+
+          // Return whatever for now
+          return hardCodedProtocolParams;
+        }
+        throw new Error("getParameters: Could not parse response json");
+      });
   }
 
   getUnspentOutputs(
@@ -97,7 +116,7 @@ export const fromBlockfrostLanguageVersion = (
   throw new Error("fromMaestroLanguageVersion: Unreachable!");
 };
 
-export interface BlockfrostProtocolParameters {
+export interface BlockfrostProtocolParametersResponse {
   epoch: number;
   min_fee_a: number;
   min_fee_b: number;
@@ -130,3 +149,5 @@ export interface BlockfrostProtocolParameters {
   max_collateral_inputs: number;
   coins_per_utxo_size: string;
 }
+
+type BlockfrostResponse<SomeResponse> = SomeResponse | { message: string };
