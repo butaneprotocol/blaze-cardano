@@ -1,4 +1,4 @@
-import {
+import type {
   TransactionUnspentOutput,
   Address,
   AssetId,
@@ -9,7 +9,7 @@ import {
   Transaction,
   ProtocolParameters,
   Redeemers,
-} from "@blazecardano/core";
+} from "@blaze-cardano/core";
 
 /**
  * Abstract class for the Provider.

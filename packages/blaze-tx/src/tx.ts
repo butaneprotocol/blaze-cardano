@@ -51,7 +51,7 @@ import {
   StakeDelegationCertificate,
   CertificateType,
   blake2b_256,
-} from "@blazecardano/core";
+} from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
 

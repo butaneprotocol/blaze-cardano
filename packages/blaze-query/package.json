@@ -1,13 +1,11 @@
 {
-  "name": "@blazecardano/query",
+  "name": "@blaze-cardano/query",
   "version": "0.0.1",
   "description": "Blaze cardano emulator library",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "files": [
-    "dist/**"
-  ],
+  "files": ["dist/**"],
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --external rxjs",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
@@ -15,8 +13,9 @@
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
   "devDependencies": {
-    "@blazecardano/tsconfig": "workspace:*",
-    "eslint": "^9.1.1",
+    "@blaze-cardano/eslint-config": "workspace:*",
+    "@blaze-cardano/tsconfig": "workspace:*",
+    "eslint": "^8.57.0",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
   },
@@ -24,6 +23,6 @@
     "access": "public"
   },
   "dependencies": {
-    "@blazecardano/core": "workspace:*"
+    "@blaze-cardano/core": "workspace:*"
   }
 }
