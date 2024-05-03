@@ -10,5 +10,8 @@
     "@typescript-eslint/parser": "^7.7.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-config-turbo": "^1.13.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -10,7 +10,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   release:
     # prevents this action from running on forks
-    if: github.repository == 'butaneprotocol/blaze'
+    if: github.repository == 'butaneprotocol/blaze-cardano'
     permissions:
       contents: write # to create release (changesets/action)
       pull-requests: write # to create pull request (changesets/action)
