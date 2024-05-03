@@ -18,6 +18,7 @@ import {
   generateSeedPhrase,
   privateKeyFromMnenomic,
 } from "./util";
+import { expect, test, describe, beforeAll, beforeEach } from 'vitest'
 
 describe("Emulator", () => {
   let emulator: Emulator;
@@ -50,7 +51,7 @@ describe("Emulator", () => {
     );
   });
 
-  it("Should be able to get a genesis UTxO", async () => {
+  test("Should be able to get a genesis UTxO", async () => {
     const inp = new TransactionInput(TransactionId("00".repeat(32)), 0n);
     const out = emulator.getOutput(inp);
     expect(out).toBeDefined();

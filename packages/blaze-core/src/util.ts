@@ -23,6 +23,8 @@ import * as blake from "blakejs";
 import * as bip39 from "@scure/bip39";
 import * as ed from "@noble/ed25519";
 
+export { wordlist } from "@scure/bip39/wordlists/english";
+
 ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 
 /**
@@ -181,7 +183,7 @@ export const mnemonicToEntropy = bip39.mnemonicToEntropy;
  * @param {string} bech32 - The Bech32 string to create the Address from.
  * @returns {Address} The created Address.
  */
-export const addressFromBech32 = Address.fromBech32;
+// export const addressFromBech32 = Address.fromBech32;
 
 /**
  * Function to create an Address from a validator script.

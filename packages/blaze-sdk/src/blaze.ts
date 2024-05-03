@@ -43,7 +43,7 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
   async signTransaction(tx: Transaction): Promise<Transaction> {
     const signedWs = await this.wallet.signTransaction(tx, true);
     const txWs = tx.witnessSet();
-    txWs.setVkeys(signedWs.vkeys());
+    txWs.setVkeys(signedWs.vkeys()!);
     tx.setWitnessSet(txWs);
     return tx;
   }

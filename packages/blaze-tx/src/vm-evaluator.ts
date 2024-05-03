@@ -32,14 +32,14 @@ const SLOT_CONFIG_NETWORK = {
  * @param overEstimateMem - The overestimation factor for memory.
  * @returns An evaluator function.
  */
-export function uplcEvaluator(
+export function makeUplcEvaluator(
   params: ProtocolParameters,
   overEstimateSteps: number,
-  overEstimateMem: number,
+  overEstimateMem: number
 ): Evaluator {
   return (
     draft_tx: Transaction,
-    allUtxos: TransactionUnspentOutput[],
+    allUtxos: TransactionUnspentOutput[]
   ): Promise<Redeemers> => {
     // Simulate the execution of scripts using the UPLC (Untyped Plutus Core) evaluator.
     const uplcResults = U.eval_phase_two_raw(
@@ -50,18 +50,17 @@ export function uplcEvaluator(
       BigInt(
         Math.floor(
           params.maxExecutionUnitsPerTransaction.steps /
-            (overEstimateSteps ?? 1),
-        ),
+            (overEstimateSteps ?? 1)
+        )
       ), // Calculate the estimated max execution steps.
       BigInt(
         Math.floor(
-          params.maxExecutionUnitsPerTransaction.memory /
-            (overEstimateMem ?? 1),
-        ),
+          params.maxExecutionUnitsPerTransaction.memory / (overEstimateMem ?? 1)
+        )
       ), // Calculate the estimated max memory.
       BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroTime), // Network-specific zero time for slot calculation.
       BigInt(SLOT_CONFIG_NETWORK.Mainnet.zeroSlot), // Network-specific zero slot.
-      SLOT_CONFIG_NETWORK.Mainnet.slotLength, // Network-specific slot length.
+      SLOT_CONFIG_NETWORK.Mainnet.slotLength // Network-specific slot length.
     );
 
     let redeemerValues: Redeemer[] = []; // Initialize an array to hold the updated redeemers.
@@ -73,10 +72,10 @@ export function uplcEvaluator(
 
       // Adjust the execution units based on overestimation factors.
       exUnits.setSteps(
-        BigInt(Math.round(Number(exUnits.steps()) * overEstimateSteps)),
+        BigInt(Math.round(Number(exUnits.steps()) * overEstimateSteps))
       );
       exUnits.setMem(
-        BigInt(Math.round(Number(exUnits.mem()) * overEstimateMem)),
+        BigInt(Math.round(Number(exUnits.mem()) * overEstimateMem))
       );
 
       redeemer.setExUnits(exUnits); // Update the redeemer with the adjusted execution units.

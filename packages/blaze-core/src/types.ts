@@ -137,6 +137,9 @@ export type Ed25519PublicKey = Crypto.Ed25519PublicKey;
 export const Ed25519Signature = Crypto.Ed25519Signature;
 export type Ed25519Signature = Crypto.Ed25519Signature;
 
+export const Bip32PrivateKey = Crypto.Bip32PrivateKey
+export type Bip32PrivateKey = Crypto.Bip32PrivateKey
+
 export const PlutusLanguageVersion = C.Cardano.PlutusLanguageVersion;
 export type PlutusLanguageVersion = C.Cardano.PlutusLanguageVersion;
 
