@@ -10,10 +10,13 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "clean": "turbo run clean",
-    "docs": "typedoc \"packages/*/*\" && mkdir docs/logo && cp logo/blaze.svg docs/logo/blaze.svg",
-    "fmt": "prettier -w *.ts */*.ts */*/*.ts *.json"
+    "docs": "typedoc \"packages/*\" && mkdir docs/logo && cp logo/blaze.svg docs/logo/blaze.svg",
+    "fmt": "prettier -w .",
+    "changeset": "changeset",
+    "release": "turbo run build && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.1",
     "@types/jest": "^29.5.5",
     "@types/node": "^20.12.7",
     "eslint": "^9.1.1",
@@ -22,14 +25,6 @@
     "ts-jest": "^29.1.1",
     "turbo": "^1.13.3",
     "typedoc": "^0.25.13",
-    "typescript": "^5.3.3",
-    "@blazecardano/blueprint": "workspace:*",
-    "@blazecardano/core": "workspace:*",
-    "@blazecardano/emulator": "workspace:*",
-    "@blazecardano/query": "workspace:*",
-    "@blazecardano/sdk": "workspace:*",
-    "@blazecardano/tsconfig": "workspace:*",
-    "@blazecardano/tx": "workspace:*",
-    "@blazecardano/wallet": "workspace:*"
+    "typescript": "^5.3.3"
   }
 }

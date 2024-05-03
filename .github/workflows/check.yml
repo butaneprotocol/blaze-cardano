@@ -1,0 +1,46 @@
+name: Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# cancel in-progress runs on new commits to same PR (gitub.event.number)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: latest
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: "pnpm"
+          node-version: "latest"
+
+      - name: 🛠️ Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🧪 Run fmt check
+        run: pnpm prettier --check .
+
+      - name: 🧪 Run lint
+        run: pnpm lint
+
+      - name: 🧪 Run test
+        run: pnpm test
+
+      - name: 🎁 Run build
+        run: pnpm build

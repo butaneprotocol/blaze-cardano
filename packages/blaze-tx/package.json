@@ -13,7 +13,9 @@
       "require": "./dist/value.js"
     }
   },
-  "files": ["dist/**"],
+  "files": [
+    "dist/**"
+  ],
   "scripts": {
     "build": "tsup src/index.ts src/value.ts --format esm,cjs --dts --external rxjs",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
