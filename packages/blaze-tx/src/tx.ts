@@ -37,7 +37,6 @@ import {
   CborWriter,
   RewardAccount,
   Hash,
-  HexBlob,
   HashAsPubKeyHex,
   PolicyIdToHash,
   fromHex,
@@ -45,13 +44,13 @@ import {
   getPaymentAddress,
   Datum,
   Evaluator,
-  Crypto,
   Slot,
   PoolId,
   Certificate,
   StakeDelegation,
   StakeDelegationCertificate,
   CertificateType,
+  blake2b_256,
 } from "@blazecardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
@@ -715,15 +714,23 @@ export class TxBuilder {
 
   /**
    * Calculates the net value difference between the inputs and outputs of a transaction,
-   * including minted values and subtracting a fixed fee amount.
+   * including minted values, withdrawals, and subtracting a fixed fee amount.
    * This function is used to determine the excess value that needs to be returned as change.
    *
    * @returns {Value} The net value that represents the transaction's pitch.
    * @throws {Error} If a corresponding UTxO for an input cannot be found.
    */
   private getPitch(withSpare: boolean = true) {
+    // Calculate withdrawal amounts.
+    let withdrawalAmount = 0n;
+    const withdrawals = this.body.withdrawals();
+    if (withdrawals != undefined) {
+      for (const account of withdrawals.keys()) {
+        withdrawalAmount += withdrawals.get(account)!;
+      }
+    }
     // Initialize values for input, output, and minted amounts.
-    let inputValue = new Value(0n);
+    let inputValue = new Value(withdrawalAmount);
     let outputValue = new Value(this.fee);
     let mintValue = new Value(0n, this.body.mint());
 
@@ -815,11 +822,7 @@ export class TxBuilder {
         Buffer.from(usedCostModels.languageViewsEncoding(), "hex"),
       );
       // Generate and return the script data hash.
-      return Hash32ByteBase16.fromHexBlob(
-        HexBlob.fromBytes(
-          Crypto.blake2b(Crypto.blake2b.BYTES).update(writer.encode()).digest(),
-        ),
-      );
+      return blake2b_256(writer.encodeAsHex());
     }
     // Return undefined if there are no datums or redeemers.
     return undefined;
