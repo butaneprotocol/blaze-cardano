@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@blaze-cardano/tx",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Blaze cardano transaction building library",
   "exports": {
     ".": {
@@ -13,7 +13,9 @@
       "require": "./dist/value.js"
     }
   },
-  "files": ["dist/**"],
+  "files": [
+    "dist/**"
+  ],
   "scripts": {
     "build": "tsup src/index.ts src/value.ts --format esm,cjs --dts --external rxjs",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
