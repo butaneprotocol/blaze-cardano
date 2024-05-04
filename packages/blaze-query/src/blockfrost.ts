@@ -1,20 +1,25 @@
 /* big todo. likely leave this for an external contributor! */
 
 import type {
-  TransactionUnspentOutput,
   Address,
   AssetId,
-  TransactionInput,
+  CostModels,
+  Credential,
   DatumHash,
   PlutusData,
-  TransactionId,
-  Transaction,
   ProtocolParameters,
-  Credential,
   Redeemers,
+  Transaction,
+  TransactionId,
+  TransactionInput,
+  TransactionUnspentOutput,
 } from "@blaze-cardano/core";
 import { PlutusLanguageVersion } from "@blaze-cardano/core";
 import type { Provider } from "./types";
+import {
+  hardCodedProtocolParams,
+  PlutusLanguageVersion,
+} from "@blaze-cardano/core";
 
 export class Blockfrost implements Provider {
   url: string;
@@ -52,11 +57,20 @@ export class Blockfrost implements Provider {
               `getParameters: Blockfrost threw "${response.message}"`,
             );
           }
-          // TODO: parse response
-          // console.log({ response });
+          const costModels: CostModels = new Map();
+          for (const cm of Object.keys(
+            response.cost_models,
+          ) as BlockfrostLanguageVersions[]) {
+            const costModel: number[] = [];
+            const keys = Object.keys(response.cost_models[cm]).sort();
+            for (const key of keys) {
+              costModel.push(response.cost_models[cm][key]!);
+            }
+            costModels.set(fromBlockfrostLanguageVersion(cm), costModel);
+          }
 
           // Return whatever for now
-          return hardCodedProtocolParams;
+          return Object.assign(hardCodedProtocolParams, { costModels });
         }
         throw new Error("getParameters: Could not parse response json");
       });
@@ -117,7 +131,7 @@ export const fromBlockfrostLanguageVersion = (
   } else if (x == "PlutusV3") {
     return PlutusLanguageVersion.V3;
   }
-  throw new Error("fromMaestroLanguageVersion: Unreachable!");
+  throw new Error("fromBlockfrostLanguageVersion: Unreachable!");
 };
 
 export interface BlockfrostProtocolParametersResponse {
