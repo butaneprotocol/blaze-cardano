@@ -47,9 +47,13 @@ export class Blockfrost implements Provider {
         if (json) {
           const response =
             json as BlockfrostResponse<BlockfrostProtocolParametersResponse>;
-
+          if ("message" in response) {
+            throw new Error(
+              `getParameters: Blockfrost threw "${response.message}"`,
+            );
+          }
           // TODO: parse response
-          console.log({ response });
+          // console.log({ response });
 
           // Return whatever for now
           return hardCodedProtocolParams;
