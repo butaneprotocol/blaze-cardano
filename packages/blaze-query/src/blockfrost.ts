@@ -16,10 +16,7 @@ import type {
 } from "@blaze-cardano/core";
 import { PlutusLanguageVersion } from "@blaze-cardano/core";
 import type { Provider } from "./types";
-import {
-  hardCodedProtocolParams,
-  PlutusLanguageVersion,
-} from "@blaze-cardano/core";
+import { PlutusLanguageVersion } from "@blaze-cardano/core";
 
 export class Blockfrost implements Provider {
   url: string;
@@ -68,9 +65,42 @@ export class Blockfrost implements Provider {
             }
             costModels.set(fromBlockfrostLanguageVersion(cm), costModel);
           }
-
-          // Return whatever for now
-          return Object.assign(hardCodedProtocolParams, { costModels });
+          return {
+            coinsPerUtxoByte: response.coins_per_utxo_size,
+            maxTxSize: response.max_tx_size,
+            minFeeCoefficient: response.min_fee_a,
+            minFeeConstant: response.min_fee_b,
+            maxBlockBodySize: response.max_block_size,
+            maxBlockHeaderSize: response.max_block_header_size,
+            stakeKeyDeposit: response.key_deposit,
+            poolDeposit: response.pool_deposit,
+            poolRetirementEpochBound: response.e_max,
+            desiredNumberOfPools: response.n_opt,
+            poolInfluence: response.a0,
+            monetaryExpansion: response.rho,
+            treasuryExpansion: response.tau,
+            minPoolCost: response.min_pool_cost,
+            protocolVersion: {
+              major: response.protocol_major_ver,
+              minor: response.protocol_minor_ver,
+            },
+            maxValueSize: response.max_val_size,
+            collateralPercentage: response.collateral_percent / 100,
+            maxCollateralInputs: response.max_collateral_inputs,
+            costModels: costModels,
+            prices: {
+              memory: parseFloat(response.price_mem) / 10000,
+              steps: parseFloat(response.price_step) / 10000,
+            },
+            maxExecutionUnitsPerTransaction: {
+              memory: response.max_tx_ex_mem,
+              steps: response.max_tx_ex_steps,
+            },
+            maxExecutionUnitsPerBlock: {
+              memory: response.max_block_ex_mem,
+              steps: response.max_block_ex_steps,
+            },
+          };
         }
         throw new Error("getParameters: Could not parse response json");
       });
@@ -141,31 +171,31 @@ export interface BlockfrostProtocolParametersResponse {
   max_block_size: number;
   max_tx_size: number;
   max_block_header_size: number;
-  key_deposit: string;
-  pool_deposit: string;
+  key_deposit: number;
+  pool_deposit: number;
   e_max: number;
   n_opt: number;
-  a0: number;
-  rho: number;
-  tau: number;
+  a0: string;
+  rho: string;
+  tau: string;
   decentralisation_param: number;
   extra_entropy: null;
   protocol_major_ver: number;
   protocol_minor_ver: number;
   min_utxo: string;
-  min_pool_cost: string;
+  min_pool_cost: number;
   nonce: string;
   cost_models: Record<BlockfrostLanguageVersions, { [key: string]: number }>;
-  price_mem: number;
-  price_step: number;
-  max_tx_ex_mem: string;
-  max_tx_ex_steps: string;
-  max_block_ex_mem: string;
-  max_block_ex_steps: string;
-  max_val_size: string;
+  price_mem: string;
+  price_step: string;
+  max_tx_ex_mem: number;
+  max_tx_ex_steps: number;
+  max_block_ex_mem: number;
+  max_block_ex_steps: number;
+  max_val_size: number;
   collateral_percent: number;
   max_collateral_inputs: number;
-  coins_per_utxo_size: string;
+  coins_per_utxo_size: number;
 }
 
 type BlockfrostResponse<SomeResponse> = SomeResponse | { message: string };
