@@ -1,6 +1,6 @@
 import { Blockfrost } from "../packages/blaze-query/dist/index";
 
-const send_lovelace = async () => {
+const sendLovelace = async () => {
   const projectId = process.env["BLOCKFROST_PROJECT_ID"];
   if (!projectId) {
     throw new Error("Missing blockfrost key");
@@ -14,4 +14,4 @@ const send_lovelace = async () => {
   console.log(await provider.getParameters());
 };
 
-send_lovelace();
+sendLovelace();
