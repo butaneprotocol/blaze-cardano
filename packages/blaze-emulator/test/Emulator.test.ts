@@ -18,7 +18,10 @@ import {
   generateSeedPhrase,
   privateKeyFromMnenomic,
 } from "./util";
-import { expect, test, describe, beforeAll, beforeEach } from 'vitest'
+
+function isDefined<T>(value: T | undefined): asserts value is T {
+  expect(value).toBeDefined();
+}
 
 describe("Emulator", () => {
   let emulator: Emulator;
@@ -54,8 +57,8 @@ describe("Emulator", () => {
   test("Should be able to get a genesis UTxO", async () => {
     const inp = new TransactionInput(TransactionId("00".repeat(32)), 0n);
     const out = emulator.getOutput(inp);
-    expect(out).toBeDefined();
-    expect(out?.address()).toEqual<Address>(wallet.address);
+    isDefined(out);
+    expect(out.address()).toEqual<Address>(wallet.address);
     expect(out?.amount().coin()).toEqual(1_000_000_000n);
   });
 });

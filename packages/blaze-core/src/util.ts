@@ -18,14 +18,11 @@ import {
 } from "./types";
 import { sha256 } from "@noble/hashes/sha256";
 import * as sha3 from "@noble/hashes/sha3";
-import { sha512 } from "@noble/hashes/sha512";
 import * as blake from "blakejs";
 import * as bip39 from "@scure/bip39";
-import * as ed from "@noble/ed25519";
+import { ed25519 as ed } from "@noble/curves/ed25519";
 
 export { wordlist } from "@scure/bip39/wordlists/english";
-
-ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 
 /**
  * Converts an Address to a PaymentAddress.
@@ -38,7 +35,7 @@ export function getPaymentAddress(address: Address): PaymentAddress {
 
   if (bech.__opaqueString == "RewardAccount") {
     throw new Error(
-      "getPaymentAddress: failed because a reward account was passed in!",
+      "getPaymentAddress: failed because a reward account was passed in!"
     );
   }
 
@@ -134,11 +131,11 @@ export function blake2b_224(data: HexBlob): Hash28ByteBase16 {
  * @returns {Ed25519PublicKeyHex} The derived public key.
  */
 export function derivePublicKey(
-  privateKey: Ed25519PrivateNormalKeyHex | Ed25519PrivateExtendedKeyHex,
+  privateKey: Ed25519PrivateNormalKeyHex | Ed25519PrivateExtendedKeyHex
 ): Ed25519PublicKeyHex {
   if (privateKey.length > 64) {
     return Ed25519PublicKeyHex(
-      toHex(ed.getPublicKey(fromHex(privateKey.slice(0, 64)))),
+      toHex(ed.getPublicKey(fromHex(privateKey.slice(0, 64))))
     );
   } else {
     return Ed25519PublicKeyHex(toHex(ed.getPublicKey(fromHex(privateKey))));
@@ -153,7 +150,7 @@ export function derivePublicKey(
  */
 export function signMessage(
   message: HexBlob,
-  privateKey: Ed25519PrivateNormalKeyHex,
+  privateKey: Ed25519PrivateNormalKeyHex
 ): Ed25519SignatureHex {
   return Ed25519SignatureHex(toHex(ed.sign(message, privateKey)));
 }
@@ -193,7 +190,7 @@ export const mnemonicToEntropy = bip39.mnemonicToEntropy;
  */
 export const addressFromValidator = (
   network: NetworkId,
-  validator: Script,
+  validator: Script
 ): Address =>
   new Address({
     paymentPart: { hash: validator.hash(), type: CredentialType.ScriptHash },
@@ -209,7 +206,7 @@ export const addressFromValidator = (
  */
 export const addressFromCredential = (
   network: NetworkId,
-  credential: Credential,
+  credential: Credential
 ): Address =>
   new Address({
     paymentPart: credential.toCore(),

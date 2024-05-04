@@ -27,6 +27,8 @@
     "@blazecardano/core": "workspace:*",
     "@blazecardano/query": "workspace:*",
     "@blazecardano/tx": "workspace:*",
-    "@blazecardano/wallet": "workspace:*"
+    "@blazecardano/wallet": "workspace:*",
+    "@blazecardano/emulator": "workspace:*",
+    "@blazecardano/blueprint": "workspace:*"
   }
 }
