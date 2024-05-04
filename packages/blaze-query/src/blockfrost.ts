@@ -41,6 +41,13 @@ export class Blockfrost implements Provider {
     return { project_id: this.projectId };
   }
 
+  /**
+   * This method fetches the protocol parameters from the Blockfrost API.
+   * It constructs the query URL, sends a GET request with the appropriate headers, and processes the response.
+   * The response is parsed into a ProtocolParameters object, which is then returned.
+   * If the response is not in the expected format, an error is thrown.
+   * @returns A Promise that resolves to a ProtocolParameters object.
+   */
   getParameters(): Promise<ProtocolParameters> {
     const query = "epochs/latest/parameters";
     return fetch(`${this.url}${query}`, { headers: this.headers() })
