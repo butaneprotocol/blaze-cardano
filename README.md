@@ -27,11 +27,16 @@ npm i @blaze-cardano/sdk
 //  In this example we:
 //  - prepare the provider (Maestro), wallet, blaze,
 //  - build a transaction paying out 50 ada to an external wallet
-//  - sign & submit that transaction
+//  - dump the transaction cbor
 import { ColdWallet, Core, Blaze, Maestro } from "@blaze-cardano/sdk";
+import * as readline from "node:readline/promises";
+import { stdin, stdout } from "node:process";
+const rl = readline.createInterface({ input: stdin, output: stdout });
+
+await setTimeout(() => {}, 1000);
 
 let address = Core.addressFromBech32(
-  prompt("Please enter your bech32 cardano address: "),
+  await rl.question("Please enter your bech32 cardano address: "),
 );
 
 // $butane wallet can collect donations for us
@@ -41,9 +46,8 @@ const blazeWallet = Core.addressFromBech32(
 
 const provider = new Maestro({
   network: "mainnet",
-  apiKey: prompt("Please enter your mainnet maestro key: "),
+  apiKey: await rl.question("Please enter your mainnet maestro key: "),
 });
-
 const wallet = new ColdWallet(address, 0, provider);
 
 console.log("Your blaze address: ", wallet.address.toBech32());

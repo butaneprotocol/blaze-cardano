@@ -1,7 +1,10 @@
 {
   "name": "blaze",
+  "type": "module",
   "module": "index.ts",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
@@ -16,6 +19,7 @@
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
+    "@blaze-cardano/sdk": "workspace:*",
     "@changesets/cli": "^2.27.1",
     "@types/jest": "^29.5.5",
     "@types/node": "^20.12.7",
