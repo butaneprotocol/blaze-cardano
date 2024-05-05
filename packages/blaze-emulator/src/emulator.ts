@@ -7,6 +7,7 @@ import type {
   Hash32ByteBase16,
   DatumHash,
   PlutusData,
+  CredentialCore,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -28,7 +29,6 @@ import {
   Value,
   blake2b_256,
 } from "@blaze-cardano/core";
-import type * as C from "@cardano-sdk/core";
 import { makeUplcEvaluator, Value as V } from "@blaze-cardano/tx";
 
 export class LedgerTimer {
@@ -371,7 +371,7 @@ export class Emulator {
     };
 
     const consumeCred = (
-      cred: C.Cardano.Credential,
+      cred: CredentialCore,
       redeemerTag?: RedeemerTag,
       redeemerIndex?: bigint,
     ) => {
