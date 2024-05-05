@@ -1,4 +1,4 @@
-import type { TransactionUnspentOutput} from "@blaze-cardano/core";
+import type { TransactionUnspentOutput } from "@blaze-cardano/core";
 import { Value } from "@blaze-cardano/core";
 import * as value from "./value";
 

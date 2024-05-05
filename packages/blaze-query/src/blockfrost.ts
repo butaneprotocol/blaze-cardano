@@ -11,10 +11,9 @@ import type {
   Transaction,
   ProtocolParameters,
   Credential,
-  Redeemers} from "@blaze-cardano/core";
-import {
-  PlutusLanguageVersion
+  Redeemers,
 } from "@blaze-cardano/core";
+import { PlutusLanguageVersion } from "@blaze-cardano/core";
 import type { Provider } from "./types";
 
 export class Blockfrost implements Provider {

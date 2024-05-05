@@ -43,7 +43,7 @@ export class EmulatorProvider implements Provider {
 
   getUnspentOutputsWithAsset(
     address: Address,
-    unit: AssetId
+    unit: AssetId,
   ): Promise<TransactionUnspentOutput[]> {
     const utxos: TransactionUnspentOutput[] = [];
     for (const utxo of this.emulator.utxos()) {
@@ -64,12 +64,12 @@ export class EmulatorProvider implements Provider {
       }
     }
     return Promise.reject(
-      "getUnspentOutputByNFT: emulated ledger had no UTxO with NFT"
+      "getUnspentOutputByNFT: emulated ledger had no UTxO with NFT",
     );
   }
 
   resolveUnspentOutputs(
-    txIns: TransactionInput[]
+    txIns: TransactionInput[],
   ): Promise<TransactionUnspentOutput[]> {
     const utxos = [];
     for (const txIn of txIns) {
@@ -85,7 +85,7 @@ export class EmulatorProvider implements Provider {
 
   awaitTransactionConfirmation(
     txId: TransactionId,
-    _timeout?: number | undefined
+    _timeout?: number | undefined,
   ): Promise<boolean> {
     this.emulator.awaitTransactionConfirmation(txId);
     return Promise.resolve(true);
@@ -97,7 +97,7 @@ export class EmulatorProvider implements Provider {
 
   evaluateTransaction(
     tx: Transaction,
-    additionalUtxos: TransactionUnspentOutput[]
+    additionalUtxos: TransactionUnspentOutput[],
   ): Promise<Redeemers> {
     return this.emulator.evaluator(tx, additionalUtxos);
   }

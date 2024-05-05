@@ -1,5 +1,4 @@
-import type {
-  Ed25519PrivateNormalKeyHex} from "@blaze-cardano/core";
+import type { Ed25519PrivateNormalKeyHex } from "@blaze-cardano/core";
 import {
   derivePublicKey,
   Address,
@@ -51,7 +50,7 @@ describe("Emulator", () => {
       privateKeyHex,
       NetworkId.Testnet,
       // TODO: mock
-      new EmulatorProvider(emulator)
+      new EmulatorProvider(emulator),
     );
   });
 
