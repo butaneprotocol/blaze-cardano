@@ -16,7 +16,6 @@ import type {
 } from "@blaze-cardano/core";
 import { PlutusLanguageVersion } from "@blaze-cardano/core";
 import type { Provider } from "./types";
-import { PlutusLanguageVersion } from "@blaze-cardano/core";
 
 export class Blockfrost implements Provider {
   url: string;
