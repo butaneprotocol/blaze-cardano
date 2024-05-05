@@ -2,21 +2,23 @@
   "name": "@blaze-cardano/emulator",
   "version": "0.0.1",
   "description": "Blaze cardano emulator library",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist/**"
-  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --external rxjs",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
     "lint": "eslint \"src/**/*.ts*\"",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "test": "jest"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
+    "@blaze-cardano/jest-config": "workspace:*",
     "eslint": "^8.57.0",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
@@ -26,6 +28,8 @@
   },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
-    "@blaze-cardano/query": "workspace:*"
+    "@blaze-cardano/query": "workspace:*",
+    "@blaze-cardano/tx": "workspace:*",
+    "@blaze-cardano/wallet": "workspace:*"
   }
 }

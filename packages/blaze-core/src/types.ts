@@ -1,4 +1,4 @@
-import { OpaqueString, typedHex } from "@cardano-sdk/util";
+import { type OpaqueString, typedHex } from "@cardano-sdk/util";
 import * as C from "@cardano-sdk/core";
 import * as Crypto from "@cardano-sdk/crypto";
 
@@ -83,6 +83,8 @@ export type PaymentAddress = C.Cardano.PaymentAddress;
 export const Credential = C.Serialization.Credential;
 export type Credential = C.Serialization.Credential;
 
+export type CredentialCore = C.Cardano.Credential;
+
 export const Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
 export type Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
 
@@ -131,6 +133,15 @@ export type VkeyWitness = C.Serialization.VkeyWitness;
 export const Ed25519SignatureHex = Crypto.Ed25519SignatureHex;
 export type Ed25519SignatureHex = Crypto.Ed25519SignatureHex;
 
+export const Ed25519PublicKey = Crypto.Ed25519PublicKey;
+export type Ed25519PublicKey = Crypto.Ed25519PublicKey;
+
+export const Ed25519Signature = Crypto.Ed25519Signature;
+export type Ed25519Signature = Crypto.Ed25519Signature;
+
+export const Bip32PrivateKey = Crypto.Bip32PrivateKey;
+export type Bip32PrivateKey = Crypto.Bip32PrivateKey;
+
 export const PlutusLanguageVersion = C.Cardano.PlutusLanguageVersion;
 export type PlutusLanguageVersion = C.Cardano.PlutusLanguageVersion;
 
@@ -173,6 +184,8 @@ export const ExUnits = C.Serialization.ExUnits;
 
 export const NetworkId = C.Cardano.NetworkId;
 export type NetworkId = C.Cardano.ChainId["networkId"];
+
+export const DatumKind = C.Serialization.DatumKind;
 
 export type Evaluator = (
   tx: Transaction,

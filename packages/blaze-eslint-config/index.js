@@ -11,6 +11,8 @@ module.exports = {
     "@typescript-eslint/consistent-type-imports": "error",
     "@typescript-eslint/consistent-type-exports": "error",
     "@typescript-eslint/no-explicit-any": "off",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
   },
   parser: "@typescript-eslint/parser",
   ignorePatterns: ["node_modules", "dist", ".eslintrc.js"],

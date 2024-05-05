@@ -11,6 +11,12 @@ importers:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
         version: link:packages/blaze-eslint-config
+      '@blaze-cardano/jest-config':
+        specifier: workspace:*
+        version: link:packages/blaze-jest-config
+      '@blaze-cardano/sdk':
+        specifier: workspace:*
+        version: link:packages/blaze-sdk
       '@blaze-cardano/tsconfig':
         specifier: workspace:*
         version: link:packages/blaze-tsconfig
@@ -67,13 +73,16 @@ importers:
     dependencies:
       '@cardano-sdk/core':
         specifier: ^0.30.0
-        version: 0.30.2
+        version: 0.30.2(rxjs@7.8.1)
       '@cardano-sdk/crypto':
         specifier: ^0.1.23
         version: 0.1.23
       '@cardano-sdk/util':
         specifier: ^0.15.1
         version: 0.15.1
+      '@noble/curves':
+        specifier: ^1.4.0
+        version: 1.4.0
       '@noble/ed25519':
         specifier: ^2.1.0
         version: 2.1.0
@@ -86,6 +95,9 @@ importers:
       blakejs:
         specifier: ^1.2.1
         version: 1.2.1
+      rxjs:
+        specifier: 7.8.1
+        version: 7.8.1
     devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
@@ -111,10 +123,19 @@ importers:
       '@blaze-cardano/query':
         specifier: workspace:*
         version: link:../blaze-query
+      '@blaze-cardano/tx':
+        specifier: workspace:*
+        version: link:../blaze-tx
+      '@blaze-cardano/wallet':
+        specifier: workspace:*
+        version: link:../blaze-wallet
     devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
         version: link:../blaze-eslint-config
+      '@blaze-cardano/jest-config':
+        specifier: workspace:*
+        version: link:../blaze-jest-config
       '@blaze-cardano/tsconfig':
         specifier: workspace:*
         version: link:../blaze-tsconfig
@@ -142,6 +163,8 @@ importers:
       eslint-config-turbo:
         specifier: ^1.13.2
         version: 1.13.3(eslint@8.57.0)
+
+  packages/blaze-jest-config: {}
 
   packages/blaze-query:
     dependencies:
@@ -370,6 +393,11 @@ packages:
     engines: {node: '>=6.9.0'}
     dev: true
 
+  /@babel/helper-plugin-utils@7.24.5:
+    resolution: {integrity: sha512-xjNLDopRzW2o6ba0gKbkZq5YWEBaK3PCyTOY1K2P/O07LGMhMqlMXPxwN4S5/RhWuCobT8z0jrlKGlYmeR1OhQ==}
+    engines: {node: '>=6.9.0'}
+    dev: true
+
   /@babel/helper-simple-access@7.22.5:
     resolution: {integrity: sha512-n0H99E/K+Bika3++WNL17POvo4rKWZ7lZEp1Q+fStVbUi8nxPQEBOlTmCOxW/0JsS56SKKQ+ojAe2pHKJHN35w==}
     engines: {node: '>=6.9.0'}
@@ -489,7 +517,7 @@ packages:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.24.4
-      '@babel/helper-plugin-utils': 7.24.0
+      '@babel/helper-plugin-utils': 7.24.5
     dev: true
 
   /@babel/plugin-syntax-nullish-coalescing-operator@7.8.3(@babel/core@7.24.4):
@@ -628,7 +656,7 @@ packages:
     engines: {node: '>=14'}
     dev: false
 
-  /@cardano-sdk/core@0.30.2:
+  /@cardano-sdk/core@0.30.2(rxjs@7.8.1):
     resolution: {integrity: sha512-aFlLfM0pqjhjAE5oMyUcnhl+mhpzXva9bAOuTGvOUDQbIRPZtvr2UVv3rXpqFy6FvtNr8WIA7moSrePRPm9aCA==}
     engines: {node: '>=16.20.2'}
     peerDependencies:
@@ -646,6 +674,7 @@ packages:
       fraction.js: 4.0.1
       ip-address: 8.1.0
       lodash: 4.17.21
+      rxjs: 7.8.1
       ts-custom-error: 3.3.1
       ts-log: 2.2.5
       web-encoding: 1.1.5
@@ -1437,6 +1466,12 @@ packages:
       globby: 11.1.0
       read-yaml-file: 1.1.0
     dev: true
+
+  /@noble/curves@1.4.0:
+    resolution: {integrity: sha512-p+4cb332SFCrReJkCYe8Xzm0OWi4Jji5jVdIZRL/PmacmDkFNw6MrrV+gGpiPxLHbV+zKFRywUWbaseT+tZRXg==}
+    dependencies:
+      '@noble/hashes': 1.4.0
+    dev: false
 
   /@noble/ed25519@2.1.0:
     resolution: {integrity: sha512-KM4qTyXPinyCgMzeYJH/UudpdL+paJXtY3CHtHYZQtBkS8MZoPr4rOikZllIutJe0d06QDQKisyn02gxZ8TcQA==}
@@ -4820,6 +4855,12 @@ packages:
     dependencies:
       queue-microtask: 1.2.3
 
+  /rxjs@7.8.1:
+    resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}
+    dependencies:
+      tslib: 2.6.2
+    dev: false
+
   /safe-array-concat@1.1.2:
     resolution: {integrity: sha512-vj6RsCsWBCf19jIeHEfkRMw8DPiBb+DMXklQ/1SGDHOMlHdPUkZXFQ2YdplS23zESTijAcurb1aSgJA3AgMu1Q==}
     engines: {node: '>=0.4'}
@@ -5307,6 +5348,10 @@ packages:
 
   /ts-log@2.2.5:
     resolution: {integrity: sha512-PGcnJoTBnVGy6yYNFxWVNkdcAuAMstvutN9MgDJIV6L0oG8fB+ZNNy1T+wJzah8RPGor1mZuPQkVfXNDpy9eHA==}
+    dev: false
+
+  /tslib@2.6.2:
+    resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
     dev: false
 
   /tsup@8.0.2(typescript@5.4.5):

@@ -2,15 +2,15 @@
   "name": "@blaze-cardano/core",
   "version": "0.0.1",
   "description": "Blaze cardano core library",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist/**"
-  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --external rxjs",
-    "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
+    "build": "tsup src/index.ts --format esm,cjs --dts ",
+    "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
@@ -28,9 +28,11 @@
     "@cardano-sdk/core": "^0.30.0",
     "@cardano-sdk/crypto": "^0.1.23",
     "@cardano-sdk/util": "^0.15.1",
+    "@noble/curves": "^1.4.0",
     "@noble/ed25519": "^2.1.0",
     "@noble/hashes": "^1.4.0",
     "@scure/bip39": "^1.3.0",
-    "blakejs": "^1.2.1"
+    "blakejs": "^1.2.1",
+    "rxjs": "7.8.1"
   }
 }

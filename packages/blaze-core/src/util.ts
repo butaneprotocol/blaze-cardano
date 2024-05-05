@@ -1,29 +1,31 @@
 import * as C from "@cardano-sdk/core";
-import { HexBlob, OpaqueString, typedHex } from "@cardano-sdk/util";
-import {
+import type { OpaqueString } from "@cardano-sdk/util";
+import { HexBlob, typedHex } from "@cardano-sdk/util";
+import type {
   PolicyId,
+  PaymentAddress,
+  Script,
+  NetworkId,
+  Credential,
+  Ed25519PrivateExtendedKeyHex,
+  Ed25519PrivateNormalKeyHex,
+} from "./types";
+import {
   Hash28ByteBase16,
   Ed25519PublicKeyHex,
   Address,
-  PaymentAddress,
-  Script,
   CredentialType,
   AddressType,
-  NetworkId,
-  Credential,
   Hash32ByteBase16,
-  Ed25519PrivateExtendedKeyHex,
-  Ed25519PrivateNormalKeyHex,
   Ed25519SignatureHex,
 } from "./types";
 import { sha256 } from "@noble/hashes/sha256";
 import * as sha3 from "@noble/hashes/sha3";
-import { sha512 } from "@noble/hashes/sha512";
 import * as blake from "blakejs";
 import * as bip39 from "@scure/bip39";
-import * as ed from "@noble/ed25519";
+import { ed25519 as ed } from "@noble/curves/ed25519";
 
-ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
+export { wordlist } from "@scure/bip39/wordlists/english";
 
 /**
  * Converts an Address to a PaymentAddress.
@@ -181,7 +183,7 @@ export const mnemonicToEntropy = bip39.mnemonicToEntropy;
  * @param {string} bech32 - The Bech32 string to create the Address from.
  * @returns {Address} The created Address.
  */
-export const addressFromBech32 = Address.fromBech32;
+// export const addressFromBech32 = Address.fromBech32;
 
 /**
  * Function to create an Address from a validator script.
@@ -246,4 +248,5 @@ export type CborSet<A, B extends CborSerializable<A>> = C.Serialization.CborSet<
 /**
  * Exporting HexBlob, OpaqueString, and typedHex.
  */
-export { HexBlob, OpaqueString, typedHex };
+export type { OpaqueString };
+export { HexBlob, typedHex };

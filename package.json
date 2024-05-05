@@ -19,6 +19,7 @@
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
+    "@blaze-cardano/jest-config": "workspace:*",
     "@blaze-cardano/sdk": "workspace:*",
     "@changesets/cli": "^2.27.1",
     "@types/jest": "^29.5.5",

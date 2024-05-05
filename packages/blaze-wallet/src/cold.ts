@@ -1,4 +1,4 @@
-import {
+import type {
   Address,
   NetworkId,
   RewardAddress,
@@ -8,8 +8,8 @@ import {
   Value,
   Transaction,
 } from "@blaze-cardano/core";
-import { Provider } from "@blaze-cardano/query";
-import { Wallet, CIP30DataSignature } from "./types";
+import type { Provider } from "@blaze-cardano/query";
+import type { Wallet, CIP30DataSignature } from "./types";
 import * as value from "@blaze-cardano/tx/value";
 
 /**
@@ -55,7 +55,7 @@ export class ColdWallet implements Wallet {
    */
   async getBalance(): Promise<Value> {
     let balance = value.zero();
-    let utxos = await this.getUnspentOutputs();
+    const utxos = await this.getUnspentOutputs();
     for (const utxo of utxos) {
       balance = value.merge(balance, utxo.output().amount());
     }

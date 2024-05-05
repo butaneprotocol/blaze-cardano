@@ -1,4 +1,5 @@
-import { TransactionUnspentOutput, Value } from "@blaze-cardano/core";
+import type { TransactionUnspentOutput } from "@blaze-cardano/core";
+import { Value } from "@blaze-cardano/core";
 import * as value from "./value";
 
 /**
@@ -28,8 +29,8 @@ function wideSelection(
   const selectedInputs: TransactionUnspentOutput[] = [];
   let acc = new Value(0n);
   for (let j = 0; j < 30; j++) {
-    let diff = value.sub(dearth, acc);
-    let goal = value.positives(diff);
+    const diff = value.sub(dearth, acc);
+    const goal = value.positives(diff);
     // it's le 1 instead of lt 1 because depth is applied after, depth is best for size 1
     if (value.assetTypes(goal) <= 1) {
       break;
@@ -70,13 +71,13 @@ function deepSelection(
   const selectedInputs: TransactionUnspentOutput[] = [];
   let acc = new Value(0n);
   for (let j = 0; j < 30; j++) {
-    let diff = value.sub(dearth, acc);
-    let goal = value.positives(diff);
+    const diff = value.sub(dearth, acc);
+    const goal = value.positives(diff);
     // break when there's no more goal to solve
     if (value.assetTypes(goal) == 0) {
       break;
     } else {
-      let searchAsset = value.assets(goal)[0]!;
+      const searchAsset = value.assets(goal)[0]!;
       let bestStep: [bigint, Value, number] = [0n, new Value(0n), -1];
       for (let i = 0; i < availableInputs.length; i += 1) {
         const iValue = availableInputs[i]!.output().amount();
@@ -111,12 +112,12 @@ export function micahsSelector(
   inputs: TransactionUnspentOutput[],
   dearth: Value,
 ): SelectionResult {
-  let wideResult = wideSelection(inputs, dearth);
-  let remainingDearth = value.positives(
+  const wideResult = wideSelection(inputs, dearth);
+  const remainingDearth = value.positives(
     value.sub(dearth, wideResult.selectedValue),
   );
-  let deepResult = deepSelection(wideResult.inputs, remainingDearth);
-  let finalDearth = value.positives(
+  const deepResult = deepSelection(wideResult.inputs, remainingDearth);
+  const finalDearth = value.positives(
     value.sub(remainingDearth, deepResult.selectedValue),
   );
   if (!value.empty(finalDearth)) {
