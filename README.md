@@ -15,6 +15,12 @@
 
 This api is experimental!
 
+#### Installation
+
+```
+npm i @blaze-cardano/sdk
+```
+
 #### Basic Usage
 
 ```ts
