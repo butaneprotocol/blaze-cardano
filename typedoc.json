@@ -1,13 +1,13 @@
 {
   "entryPoints": [
     // Blaze
-    "packages/blaze/index.ts",
-    "packages/blaze-blueprint/index.ts",
-    "packages/blaze-core/index.ts",
-    "packages/blaze-emulator/index.ts",
-    "packages/blaze-query/index.ts",
-    "packages/blaze-tx/index.ts",
-    "packages/blaze-wallet/index.ts"
+    "packages/blaze-sdk/src/index.ts",
+    "packages/blaze-blueprint/src/index.ts",
+    "packages/blaze-core/src/index.ts",
+    "packages/blaze-emulator/src/index.ts",
+    "packages/blaze-query/src/index.ts",
+    "packages/blaze-tx/src/index.ts",
+    "packages/blaze-wallet/src/index.ts"
   ],
   "out": "docs",
   "includeVersion": true,
