@@ -1,5 +1,5 @@
 {
-  "name": "@blazecardano/sdk",
+  "name": "@blaze-cardano/sdk",
   "version": "0.0.1",
   "description": "Blaze cardano sdk library",
   "main": "./dist/index.js",
@@ -15,8 +15,9 @@
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
   "devDependencies": {
-    "@blazecardano/tsconfig": "workspace:*",
-    "eslint": "^9.1.1",
+    "@blaze-cardano/eslint-config": "workspace:*",
+    "@blaze-cardano/tsconfig": "workspace:*",
+    "eslint": "^8.57.0",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
   },
@@ -24,11 +25,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@blazecardano/core": "workspace:*",
-    "@blazecardano/query": "workspace:*",
-    "@blazecardano/tx": "workspace:*",
-    "@blazecardano/wallet": "workspace:*",
-    "@blazecardano/emulator": "workspace:*",
-    "@blazecardano/blueprint": "workspace:*"
+    "@blaze-cardano/blueprint": "workspace:*",
+    "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/emulator": "workspace:*",
+    "@blaze-cardano/query": "workspace:*",
+    "@blaze-cardano/tx": "workspace:*",
+    "@blaze-cardano/wallet": "workspace:*"
   }
 }

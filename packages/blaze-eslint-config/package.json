@@ -1,0 +1,17 @@
+{
+  "name": "@blaze-cardano/eslint-config",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rm -rf .turbo && rm -rf node_modules"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.7.1",
+    "@typescript-eslint/parser": "^7.7.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-turbo": "^1.13.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

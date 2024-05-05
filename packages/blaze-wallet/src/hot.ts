@@ -1,16 +1,17 @@
-import {
-  Address,
-  AddressType,
+import type {
   Ed25519PublicKeyHex,
   Ed25519PrivateNormalKeyHex,
   NetworkId,
   RewardAddress,
   TransactionId,
   TransactionUnspentOutput,
-  TransactionWitnessSet,
   Value,
+  Transaction} from "@blaze-cardano/core";
+import {
+  Address,
+  AddressType,
+  TransactionWitnessSet,
   CredentialType,
-  Transaction,
   VkeyWitness,
   Ed25519SignatureHex,
   CborSet,
@@ -18,10 +19,10 @@ import {
   HexBlob,
   derivePublicKey,
   signMessage,
-} from "@blazecardano/core";
-import { Provider } from "@blazecardano/query";
-import { Wallet, CIP30DataSignature } from "./types";
-import * as value from "@blazecardano/tx/value";
+} from "@blaze-cardano/core";
+import type { Provider } from "@blaze-cardano/query";
+import type { Wallet, CIP30DataSignature } from "./types";
+import * as value from "@blaze-cardano/tx/value";
 
 /**
  * Wallet class that interacts with the HotWallet.
@@ -83,7 +84,7 @@ export class HotWallet implements Wallet {
    */
   async getBalance(): Promise<Value> {
     let balance = value.zero();
-    let utxos = await this.getUnspentOutputs();
+    const utxos = await this.getUnspentOutputs();
     for (const utxo of utxos) {
       balance = value.merge(balance, utxo.output().amount());
     }
@@ -138,9 +139,9 @@ export class HotWallet implements Wallet {
         "signTx: Hot wallet only supports partial signing = true",
       );
     }
-    let signature = signMessage(HexBlob(tx.getId()), this.privateKey);
-    let tws = new TransactionWitnessSet();
-    let vkw = new VkeyWitness(this.publicKey, Ed25519SignatureHex(signature));
+    const signature = signMessage(HexBlob(tx.getId()), this.privateKey);
+    const tws = new TransactionWitnessSet();
+    const vkw = new VkeyWitness(this.publicKey, Ed25519SignatureHex(signature));
     tws.setVkeys(CborSet.fromCore([vkw.toCore()], VkeyWitness.fromCore));
     return tws;
   }

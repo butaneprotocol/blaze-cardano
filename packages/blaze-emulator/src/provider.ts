@@ -1,7 +1,6 @@
-import {
+import type {
   Address,
   ProtocolParameters,
-  TransactionUnspentOutput,
   AssetId,
   TransactionInput,
   PlutusData,
@@ -9,9 +8,11 @@ import {
   Transaction,
   Redeemers,
   DatumHash,
-} from "@blazecardano/core";
-import { Provider } from "@blazecardano/query";
-import { Emulator } from "./emulator";
+} from "@blaze-cardano/core";
+import { TransactionUnspentOutput } from "@blaze-cardano/core";
+
+import type { Provider } from "@blaze-cardano/query";
+import type { Emulator } from "./emulator";
 
 /**
  * The EmulatorProvider class implements the Provider interface.

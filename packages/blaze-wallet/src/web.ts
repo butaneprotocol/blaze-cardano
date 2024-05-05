@@ -1,15 +1,16 @@
+import type {
+  NetworkId,
+  Transaction} from "@blaze-cardano/core";
 import {
   Address,
   HexBlob,
-  NetworkId,
   RewardAddress,
-  Transaction,
   TransactionId,
   TransactionUnspentOutput,
   TransactionWitnessSet,
   Value,
-} from "@blazecardano/core";
-import { Wallet, CIP30DataSignature, CIP30Interface } from "./types";
+} from "@blaze-cardano/core";
+import type { Wallet, CIP30DataSignature, CIP30Interface } from "./types";
 
 /**
  * Wallet class that interacts with the WalletInterface.

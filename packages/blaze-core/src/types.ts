@@ -1,4 +1,4 @@
-import { OpaqueString, typedHex } from "@cardano-sdk/util";
+import { type OpaqueString, typedHex } from "@cardano-sdk/util";
 import * as C from "@cardano-sdk/core";
 import * as Crypto from "@cardano-sdk/crypto";
 

@@ -1,7 +1,14 @@
-import {
+import type {
   ProtocolParameters,
   TransactionOutput,
   Transaction,
+  ScriptHash,
+  Evaluator,
+  Hash32ByteBase16,
+  DatumHash,
+  PlutusData,
+} from "@blaze-cardano/core";
+import {
   TransactionId,
   TransactionInput,
   RewardAccount,
@@ -10,7 +17,6 @@ import {
   Ed25519PublicKey,
   Ed25519Signature,
   RedeemerTag,
-  ScriptHash,
   Hash28ByteBase16,
   AssetId,
   PolicyIdToHash,
@@ -18,16 +24,12 @@ import {
   Address,
   DatumKind,
   hardCodedProtocolParams,
-  Evaluator,
   TransactionUnspentOutput,
   Value,
-  Hash32ByteBase16,
   blake2b_256,
-  DatumHash,
-  PlutusData,
-} from "@blazecardano/core";
-import * as C from "@cardano-sdk/core";
-import { makeUplcEvaluator, Value as V } from "@blazecardano/tx";
+} from "@blaze-cardano/core";
+import type * as C from "@cardano-sdk/core";
+import { makeUplcEvaluator, Value as V } from "@blaze-cardano/tx";
 
 export class LedgerTimer {
   block: number = 0;
@@ -70,7 +72,7 @@ export class Emulator {
   /**
    * The map of reward accounts and their balances.
    */
-  accounts: Map<RewardAccount, BigInt> = new Map();
+  accounts: Map<RewardAccount, bigint> = new Map();
 
   /**
    * The protocol parameters of the ledger.
@@ -110,7 +112,7 @@ export class Emulator {
     evaluator?: Evaluator
   ) {
     for (let i = 0; i < genesisOutputs.length; i++) {
-      let txIn = new TransactionInput(
+      const txIn = new TransactionInput(
         TransactionId("00".repeat(32)),
         BigInt(i)
       );

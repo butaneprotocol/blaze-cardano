@@ -4,12 +4,12 @@
  * - build a transaction paying out 50 ada to Micah's Wallet
  * - sign & submit that transaction
  * ```ts
- * import { HotWallet } from '@blazecardano/wallet/hot'
+ * import { HotWallet } from '@blaze-cardano/wallet/hot'
  * import {
  *  Ed25519PrivateNormalKeyHex,
  *  addressFromBech32,
- * } from '@blazecardano/core'
- * import { Maestro } from '@blazecardano/query'
+ * } from '@blaze-cardano/core'
+ * import { Maestro } from '@blaze-cardano/query'
  * import { Blaze } from '../packages/blaze'
  *
  * let pkhHex = "... the public key hex ...";

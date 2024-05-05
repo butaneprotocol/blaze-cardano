@@ -1,5 +1,5 @@
 {
-  "name": "@blazecardano/emulator",
+  "name": "@blaze-cardano/emulator",
   "version": "0.0.1",
   "description": "Blaze cardano emulator library",
   "exports": {
@@ -16,10 +16,10 @@
     "test": "jest"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.24.5",
-    "@blazecardano/tsconfig": "workspace:*",
-    "eslint": "^9.1.1",
-    "ts-node": "^10.9.2",
+    "@blaze-cardano/eslint-config": "workspace:*",
+    "@blaze-cardano/tsconfig": "workspace:*",
+    "@blaze-cardano/jest-config": "workspace:*",
+    "eslint": "^8.57.0",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
   },
@@ -27,9 +27,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@blazecardano/core": "workspace:*",
-    "@blazecardano/query": "workspace:*",
-    "@blazecardano/tx": "workspace:*",
-    "@blazecardano/wallet": "workspace:*"
+    "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/query": "workspace:*",
+    "@blaze-cardano/tx": "workspace:*",
+    "@blaze-cardano/wallet": "workspace:*"
   }
 }

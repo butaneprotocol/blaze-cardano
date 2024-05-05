@@ -1,12 +1,13 @@
+import type {
+  Address} from "@blaze-cardano/core";
 import {
   generateMnemonic,
   wordlist,
   mnemonicToEntropy,
   Bip32PrivateKey,
-  TransactionOutput,
-  Address,
-} from "@blazecardano/core";
-import { makeValue } from "@blazecardano/tx";
+  TransactionOutput
+} from "@blaze-cardano/core";
+import { makeValue } from "@blaze-cardano/tx";
 
 export const generateSeedPhrase = () => generateMnemonic(wordlist);
 

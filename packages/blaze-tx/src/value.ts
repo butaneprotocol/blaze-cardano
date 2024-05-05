@@ -1,4 +1,5 @@
-import { Value, TokenMap, AssetId } from "@blazecardano/core";
+import type { TokenMap } from "@blaze-cardano/core";
+import { Value, AssetId } from "@blaze-cardano/core";
 
 /**
  * Merges two Value objects into a single Value object by combining their coins and multiassets.
@@ -13,11 +14,11 @@ export function merge(a: Value, b: Value): Value {
     ma = b.multiasset();
   } else {
     ma = a.multiasset()!;
-    let bma = b.multiasset();
+    const bma = b.multiasset();
     if (bma) {
       for (const key of bma.keys()) {
-        let a = ma.get(key);
-        let b = bma.get(key)!;
+        const a = ma.get(key);
+        const b = bma.get(key)!;
         if (a) {
           ma.set(key, a + b);
         } else {
@@ -36,8 +37,8 @@ export function merge(a: Value, b: Value): Value {
  * @returns {Value} - The resulting Value object after negation.
  */
 export function negate(v: Value): Value {
-  let entries = v.multiasset()?.entries();
-  let tokenMap: TokenMap = new Map();
+  const entries = v.multiasset()?.entries();
+  const tokenMap: TokenMap = new Map();
   if (entries) {
     for (const entry of entries) {
       tokenMap.set(entry[0], -entry[1]);
@@ -66,8 +67,8 @@ export function sub(a: Value, b: Value): Value {
  */
 export function intersect(a: Value, b: Value): number {
   let count = a.coin() != 0n && b.coin() != 0n ? 1 : 0;
-  let multiAssetA = a.multiasset();
-  let multiAssetB = b.multiasset();
+  const multiAssetA = a.multiasset();
+  const multiAssetB = b.multiasset();
   if (multiAssetA && multiAssetB) {
     for (const [asset] of multiAssetA) {
       if (multiAssetB.get(asset) != undefined) {
@@ -85,9 +86,9 @@ export function intersect(a: Value, b: Value): number {
  * @returns {Value} - A new Value object containing only positive values.
  */
 export function positives(v: Value): Value {
-  let entries = v.multiasset()?.entries();
-  let coin = v.coin() > 0n ? v.coin() : 0n;
-  let tokenMap: TokenMap = new Map();
+  const entries = v.multiasset()?.entries();
+  const coin = v.coin() > 0n ? v.coin() : 0n;
+  const tokenMap: TokenMap = new Map();
   if (entries) {
     for (const entry of entries) {
       if (entry[1] > 0n) {
@@ -105,9 +106,9 @@ export function positives(v: Value): Value {
  * @returns {Value} - A new Value object containing only negative values.
  */
 export function negatives(v: Value): Value {
-  let entries = v.multiasset()?.entries();
-  let coin = v.coin() < 0n ? v.coin() : 0n;
-  let tokenMap: TokenMap = new Map();
+  const entries = v.multiasset()?.entries();
+  const coin = v.coin() < 0n ? v.coin() : 0n;
+  const tokenMap: TokenMap = new Map();
   if (entries) {
     for (const entry of entries) {
       if (entry[1] < 0n) {
@@ -126,7 +127,7 @@ export function negatives(v: Value): Value {
  */
 export function assets(v: Value): (AssetId | "lovelace")[] {
   const assets: (AssetId | "lovelace")[] = v.coin() == 0n ? [] : ["lovelace"];
-  let assetKeys = v.multiasset()?.keys();
+  const assetKeys = v.multiasset()?.keys();
   if (assetKeys) {
     for (const asset of assetKeys) {
       assets.push(asset);
@@ -143,11 +144,11 @@ export function assets(v: Value): (AssetId | "lovelace")[] {
  */
 export function assetTypes(v: Value): number {
   let count = v.coin() == 0n ? 0 : 1;
-  let entries = v.multiasset()?.entries();
+  const entries = v.multiasset();
   if (entries) {
-    for (const _entry of entries) {
+    entries.forEach(() => {
       count += 1;
-    }
+    });
   }
   return count;
 }
@@ -183,7 +184,7 @@ export function makeValue(
   if (assets.length == 0) {
     return Value.fromCore({ coins: lovelace });
   }
-  let tokenMap: Map<AssetId, bigint> = new Map();
+  const tokenMap: Map<AssetId, bigint> = new Map();
   for (const [asset, qty] of assets) {
     tokenMap.set(AssetId(asset), qty);
   }

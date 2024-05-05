@@ -1,4 +1,4 @@
-import {
+import type {
   Address,
   HexBlob,
   NetworkId,
@@ -8,7 +8,7 @@ import {
   TransactionUnspentOutput,
   TransactionWitnessSet,
   Value,
-} from "@blazecardano/core";
+} from "@blaze-cardano/core";
 
 type CoseSign1CborHex = HexBlob;
 type CoseKeyCborHex = HexBlob;

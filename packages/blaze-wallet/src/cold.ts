@@ -1,4 +1,4 @@
-import {
+import type {
   Address,
   NetworkId,
   RewardAddress,
@@ -7,10 +7,10 @@ import {
   TransactionWitnessSet,
   Value,
   Transaction,
-} from "@blazecardano/core";
-import { Provider } from "@blazecardano/query";
-import { Wallet, CIP30DataSignature } from "./types";
-import * as value from "@blazecardano/tx/value";
+} from "@blaze-cardano/core";
+import type { Provider } from "@blaze-cardano/query";
+import type { Wallet, CIP30DataSignature } from "./types";
+import * as value from "@blaze-cardano/tx/value";
 
 /**
  * Wallet class that interacts with the ColdWallet.
@@ -26,14 +26,10 @@ export class ColdWallet implements Wallet {
    * @param {NetworkId} networkId - The network ID of the wallet.
    * @param {Provider} provider - The provider of the wallet.
    */
-  constructor(
-    address: Address,
-    networkId: NetworkId,
-    provider: Provider,
-  ) {
+  constructor(address: Address, networkId: NetworkId, provider: Provider) {
     this.networkId = networkId;
 
-    this.address = address
+    this.address = address;
     this.provider = provider;
   }
 
@@ -59,7 +55,7 @@ export class ColdWallet implements Wallet {
    */
   async getBalance(): Promise<Value> {
     let balance = value.zero();
-    let utxos = await this.getUnspentOutputs();
+    const utxos = await this.getUnspentOutputs();
     for (const utxo of utxos) {
       balance = value.merge(balance, utxo.output().amount());
     }
@@ -124,9 +120,7 @@ export class ColdWallet implements Wallet {
     _address: Address,
     _payload: string,
   ): Promise<CIP30DataSignature> {
-    throw new Error(
-      "ColdWallet signData: Cold wallet cannot sign data!",
-    );
+    throw new Error("ColdWallet signData: Cold wallet cannot sign data!");
   }
 
   /**

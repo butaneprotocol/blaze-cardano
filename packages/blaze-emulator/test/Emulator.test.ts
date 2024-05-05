@@ -1,3 +1,5 @@
+import type {
+  Ed25519PrivateNormalKeyHex} from "@blaze-cardano/core";
 import {
   derivePublicKey,
   Address,
@@ -6,11 +8,10 @@ import {
   blake2b_224,
   HexBlob,
   NetworkId,
-  Ed25519PrivateNormalKeyHex,
   TransactionInput,
   TransactionId,
-} from "@blazecardano/core";
-import { HotWallet } from "@blazecardano/wallet";
+} from "@blaze-cardano/core";
+import { HotWallet } from "@blaze-cardano/wallet";
 import { Emulator } from "../src";
 import { EmulatorProvider } from "../src/provider";
 import {

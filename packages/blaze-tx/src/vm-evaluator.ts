@@ -1,15 +1,16 @@
+import type {
+  Evaluator,
+  ProtocolParameters,
+  Transaction,
+  TransactionUnspentOutput} from "@blaze-cardano/core";
 import {
   Costmdls,
-  Evaluator,
   HexBlob,
-  ProtocolParameters,
   Redeemer,
   Redeemers,
-  Transaction,
-  TransactionUnspentOutput,
   fromHex,
   toHex,
-} from "@blazecardano/core";
+} from "@blaze-cardano/core";
 import * as U from "uplc-node";
 
 const SLOT_CONFIG_NETWORK = {
@@ -63,12 +64,12 @@ export function makeUplcEvaluator(
       SLOT_CONFIG_NETWORK.Mainnet.slotLength // Network-specific slot length.
     );
 
-    let redeemerValues: Redeemer[] = []; // Initialize an array to hold the updated redeemers.
+    const redeemerValues: Redeemer[] = []; // Initialize an array to hold the updated redeemers.
 
     // Iterate over the results from the UPLC evaluator.
     for (const redeemerBytes of uplcResults) {
-      let redeemer = Redeemer.fromCbor(HexBlob(toHex(redeemerBytes))); // Convert each result back from CBOR to a Redeemer object.
-      let exUnits = redeemer.exUnits(); // Extract the execution units from the redeemer.
+      const redeemer = Redeemer.fromCbor(HexBlob(toHex(redeemerBytes))); // Convert each result back from CBOR to a Redeemer object.
+      const exUnits = redeemer.exUnits(); // Extract the execution units from the redeemer.
 
       // Adjust the execution units based on overestimation factors.
       exUnits.setSteps(
@@ -83,7 +84,7 @@ export function makeUplcEvaluator(
     }
 
     // Create a new Redeemers object and set its values to the updated redeemers.
-    let redeemers: Redeemers = Redeemers.fromCore([]);
+    const redeemers: Redeemers = Redeemers.fromCore([]);
     redeemers.setValues(redeemerValues);
     return Promise.resolve(redeemers);
   };

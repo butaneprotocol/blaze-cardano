@@ -1,19 +1,21 @@
 import * as C from "@cardano-sdk/core";
-import { HexBlob, OpaqueString, typedHex } from "@cardano-sdk/util";
-import {
+import type { OpaqueString} from "@cardano-sdk/util";
+import { HexBlob, typedHex } from "@cardano-sdk/util";
+import type {
   PolicyId,
+  PaymentAddress,
+  Script,
+  NetworkId,
+  Credential,
+  Ed25519PrivateExtendedKeyHex,
+  Ed25519PrivateNormalKeyHex} from "./types";
+import {
   Hash28ByteBase16,
   Ed25519PublicKeyHex,
   Address,
-  PaymentAddress,
-  Script,
   CredentialType,
   AddressType,
-  NetworkId,
-  Credential,
   Hash32ByteBase16,
-  Ed25519PrivateExtendedKeyHex,
-  Ed25519PrivateNormalKeyHex,
   Ed25519SignatureHex,
 } from "./types";
 import { sha256 } from "@noble/hashes/sha256";
@@ -245,4 +247,5 @@ export type CborSet<A, B extends CborSerializable<A>> = C.Serialization.CborSet<
 /**
  * Exporting HexBlob, OpaqueString, and typedHex.
  */
-export { HexBlob, OpaqueString, typedHex };
+export type { OpaqueString };
+export { HexBlob, typedHex };
