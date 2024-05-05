@@ -1,7 +1,4 @@
 {
-  "name": "blaze",
-  "type": "module",
-  "module": "index.ts",
   "workspaces": [
     "packages/*"
   ],
@@ -10,7 +7,7 @@
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "clean": "turbo run clean",
+    "clean": "turbo run clean && rm -rf .turbo && rm -rf node_modules",
     "docs": "typedoc --skipErrorChecking && mkdir docs/logo && cp logo/blaze.svg docs/logo/blaze.svg",
     "fmt": "prettier -w .",
     "changeset": "changeset",
@@ -18,16 +15,10 @@
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
-    "@blaze-cardano/tsconfig": "workspace:*",
-    "@blaze-cardano/jest-config": "workspace:*",
-    "@blaze-cardano/sdk": "workspace:*",
     "@changesets/cli": "^2.27.1",
-    "@types/jest": "^29.5.5",
     "@types/node": "^20.12.7",
     "eslint": "^8.57.0",
-    "jest": "^29.7.0",
     "prettier": "^3.2.5",
-    "ts-jest": "^29.1.1",
     "turbo": "^1.13.3",
     "typedoc": "^0.25.13",
     "typescript": "^5.3.3"

@@ -1,0 +1,13 @@
+{
+  "name": "send-lovelace",
+  "version": "0.1.0",
+  "description": "Send lovelace from one address to another",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "send": "node index.js"
+  },
+  "dependencies": {
+    "@blaze-cardano/sdk": "^0.0.1"
+  }
+}

@@ -599,7 +599,9 @@ export class Emulator {
 
       if (output.amount().coin() < minAda)
         throw new Error(
-          `Output ${index} does not meet the minADA requirement. Output: ${output.amount().coin()}, MinADA: ${minAda}`,
+          `Output ${index} does not meet the minADA requirement. Output: ${output
+            .amount()
+            .coin()}, MinADA: ${minAda}`,
         );
 
       const length = output.toCbor().length / 2;
@@ -634,7 +636,9 @@ export class Emulator {
           );
           if (!providedRedeemer) {
             throw new Error(
-              `Missing redeemer: Purpose ${redeemer.toCore().purpose}, Index ${redeemer.index()})`,
+              `Missing redeemer: Purpose ${
+                redeemer.toCore().purpose
+              }, Index ${redeemer.index()})`,
             );
           }
           const { memory, steps } = redeemer.exUnits().toCore();
@@ -642,7 +646,11 @@ export class Emulator {
             providedRedeemer.exUnits().toCore();
           if (providedMemory < memory || providedSteps < steps)
             throw new Error(
-              `Underestimated budget (${redeemer.toCore().purpose} ${redeemer.index()}): ${providedMemory - memory} Memory, ${providedSteps - steps} Steps`,
+              `Underestimated budget (${
+                redeemer.toCore().purpose
+              } ${redeemer.index()}): ${providedMemory - memory} Memory, ${
+                providedSteps - steps
+              } Steps`,
             );
           return (
             acc +
@@ -676,7 +684,9 @@ export class Emulator {
     netValue = V.sub(netValue, new Value(fee));
     if (!V.empty(netValue))
       throw new Error(
-        `Value not conserved. Leftover Value: ${netValue.coin()}, ${netValue.multiasset()?.entries() ?? ""}`,
+        `Value not conserved. Leftover Value: ${netValue.coin()}, ${
+          netValue.multiasset()?.entries() ?? ""
+        }`,
       );
 
     this.acceptTransaction(tx);
