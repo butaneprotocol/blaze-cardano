@@ -9,7 +9,7 @@ import {
   TransactionUnspentOutput,
   fromHex,
   toHex,
-} from "@blazecardano/core";
+} from "@blaze-cardano/core";
 import * as U from "uplc-node";
 
 const SLOT_CONFIG_NETWORK = {

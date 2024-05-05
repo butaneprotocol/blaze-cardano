@@ -1,4 +1,4 @@
-import { TransactionUnspentOutput, Value } from "@blazecardano/core";
+import { TransactionUnspentOutput, Value } from "@blaze-cardano/core";
 import * as value from "./value";
 
 /**

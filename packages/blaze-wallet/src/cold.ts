@@ -7,10 +7,10 @@ import {
   TransactionWitnessSet,
   Value,
   Transaction,
-} from "@blazecardano/core";
-import { Provider } from "@blazecardano/query";
+} from "@blaze-cardano/core";
+import { Provider } from "@blaze-cardano/query";
 import { Wallet, CIP30DataSignature } from "./types";
-import * as value from "@blazecardano/tx/value";
+import * as value from "@blaze-cardano/tx/value";
 
 /**
  * Wallet class that interacts with the ColdWallet.

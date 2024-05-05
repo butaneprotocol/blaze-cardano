@@ -1,6 +1,6 @@
 /* big todo. likely leave this for an external contributor! */
 
-import {
+import type {
   TransactionUnspentOutput,
   Address,
   AssetId,
@@ -10,11 +10,12 @@ import {
   TransactionId,
   Transaction,
   ProtocolParameters,
-  PlutusLanguageVersion,
   Credential,
-  Redeemers,
-} from "@blazecardano/core";
-import { Provider } from "./types";
+  Redeemers} from "@blaze-cardano/core";
+import {
+  PlutusLanguageVersion
+} from "@blaze-cardano/core";
+import type { Provider } from "./types";
 
 export class Blockfrost implements Provider {
   url: string;

@@ -1,6 +1,6 @@
-import { Provider } from "@blazecardano/query";
-import { TxBuilder } from "@blazecardano/tx";
-import { Wallet } from "@blazecardano/wallet";
+import type { Provider } from "@blaze-cardano/query";
+import { TxBuilder } from "@blaze-cardano/tx";
+import type { Wallet } from "@blaze-cardano/wallet";
 
 /**
  * The Blaze class is used to create and manage Cardano transactions.

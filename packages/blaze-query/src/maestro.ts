@@ -1,25 +1,26 @@
+import type {
+  AssetId,
+  DatumHash,
+  Transaction,
+  ProtocolParameters,
+  CostModels,
+  Credential,
+  RedeemerTag} from "@blaze-cardano/core";
 import {
   TransactionUnspentOutput,
   Address,
-  AssetId,
   TransactionInput,
-  DatumHash,
   PlutusData,
   TransactionId,
-  Transaction,
   TransactionOutput,
   HexBlob,
-  ProtocolParameters,
   PlutusLanguageVersion,
-  CostModels,
   fromHex,
-  Credential,
   AddressType,
   Redeemers,
-  ExUnits,
-  RedeemerTag,
-} from "@blazecardano/core";
-import { Provider } from "./types";
+  ExUnits
+} from "@blaze-cardano/core";
+import type { Provider } from "./types";
 
 export class Maestro implements Provider {
   private url: string;
@@ -65,8 +66,8 @@ export class Maestro implements Provider {
           for (const cm of Object.keys(
             params.cost_models,
           ) as MaestroLanguageVersions[]) {
-            let costModel: number[] = [];
-            let keys = Object.keys(params.cost_models[cm]).sort();
+            const costModel: number[] = [];
+            const keys = Object.keys(params.cost_models[cm]).sort();
             for (const key of keys) {
               costModel.push(params.cost_models[cm][key]!);
             }
@@ -122,19 +123,19 @@ export class Maestro implements Provider {
       .then((resp) => resp.json())
       .then((json) => {
         if (json) {
-          let response = json as MaestroResponse<MaestroUTxOResponse>;
+          const response = json as MaestroResponse<MaestroUTxOResponse>;
           if ("message" in response) {
             throw new Error(
               `getUnspentOutputs: Maestro threw "${response.message}"`,
             );
           }
-          let utxos: TransactionUnspentOutput[] = [];
+          const utxos: TransactionUnspentOutput[] = [];
           for (const maestroUTxO of response.data) {
-            let txIn = new TransactionInput(
+            const txIn = new TransactionInput(
               TransactionId(maestroUTxO.tx_hash),
               BigInt(maestroUTxO.index),
             );
-            let txOut = TransactionOutput.fromCbor(
+            const txOut = TransactionOutput.fromCbor(
               HexBlob(maestroUTxO.txout_cbor),
             );
             utxos.push(new TransactionUnspentOutput(txIn, txOut));
@@ -172,19 +173,19 @@ export class Maestro implements Provider {
       .then((resp) => resp.json())
       .then((json) => {
         if (json) {
-          let response = json as MaestroResponse<MaestroUTxOResponse>;
+          const response = json as MaestroResponse<MaestroUTxOResponse>;
           if ("message" in response) {
             throw new Error(
               `getUnspentOutputs: Maestro threw "${response.message}"`,
             );
           }
-          let utxos: TransactionUnspentOutput[] = [];
+          const utxos: TransactionUnspentOutput[] = [];
           for (const maestroUTxO of response.data) {
-            let txIn = new TransactionInput(
+            const txIn = new TransactionInput(
               TransactionId(maestroUTxO.tx_hash),
               BigInt(maestroUTxO.index),
             );
-            let txOut = TransactionOutput.fromCbor(
+            const txOut = TransactionOutput.fromCbor(
               HexBlob(maestroUTxO.txout_cbor),
             );
             utxos.push(new TransactionUnspentOutput(txIn, txOut));
@@ -205,13 +206,13 @@ export class Maestro implements Provider {
       .then((resp) => resp.json())
       .then((json) => {
         if (json) {
-          let response = json as MaestroResponse<MaestroUTxOResponse>;
+          const response = json as MaestroResponse<MaestroUTxOResponse>;
           if ("message" in response) {
             throw new Error(
               `getUnspentOutputs: Maestro threw "${response.message}"`,
             );
           }
-          let utxos: TransactionUnspentOutput[] = [];
+          const utxos: TransactionUnspentOutput[] = [];
           for (const maestroUTxO of response.data) {
             const txIn = new TransactionInput(
               TransactionId(maestroUTxO.tx_hash),
@@ -226,7 +227,7 @@ export class Maestro implements Provider {
               .then((resp) => resp.json())
               .then((json) => {
                 if (json) {
-                  let response =
+                  const response =
                     json as MaestroResponse<MaestroOneUTxOResponse>;
                   if ("message" in response) {
                     throw new Error(
@@ -403,11 +404,11 @@ export class Maestro implements Provider {
         return resp.json();
       })
       .then((result) => {
-        let redeemers = tx.witnessSet().redeemers()?.values();
+        const redeemers = tx.witnessSet().redeemers()?.values();
         if (!redeemers) {
           throw new Error("Cannot evaluate without redeemers!");
         }
-        let lightRedeemers = result as MaestroRedeemer[];
+        const lightRedeemers = result as MaestroRedeemer[];
         for (const redeemerData of lightRedeemers) {
           const index = BigInt(redeemerData.redeemer_index);
           const purpose = purposeFromTag(redeemerData.redeemer_tag);
@@ -416,7 +417,7 @@ export class Maestro implements Provider {
             steps: redeemerData.ex_units.steps,
           });
 
-          let redeemer = redeemers.find(
+          const redeemer = redeemers.find(
             (x) => x.tag() == purpose && x.index() == index,
           );
           if (!redeemer) {

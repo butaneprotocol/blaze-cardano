@@ -1,14 +1,15 @@
-import {
-  TransactionUnspentOutput,
+import type {
   ProtocolParameters,
   TransactionOutput,
-  Transaction,
+  Transaction} from "@blaze-cardano/core";
+import {
+  TransactionUnspentOutput,
   TransactionId,
   TransactionInput,
   RewardAccount,
   NetworkId,
-} from "@blazecardano/core";
-import { hardCodedProtocolParams } from "@blazecardano/core";
+} from "@blaze-cardano/core";
+import { hardCodedProtocolParams } from "@blaze-cardano/core";
 
 export class LedgerTimer {
   block: number = 0;
@@ -30,7 +31,7 @@ export class Emulator {
   /**
    * The map of reward accounts and their balances.
    */
-  accounts: Map<RewardAccount, BigInt> = new Map();
+  accounts: Map<RewardAccount, bigint> = new Map();
 
   /**
    * The protocol parameters of the ledger.
@@ -65,7 +66,7 @@ export class Emulator {
     params: ProtocolParameters = hardCodedProtocolParams,
   ) {
     for (let i = 0; i < genesisOutputs.length; i++) {
-      let txIn = new TransactionInput(
+      const txIn = new TransactionInput(
         TransactionId("00".repeat(32)),
         BigInt(i),
       );
