@@ -1,5 +1,13 @@
 # @blaze-cardano/tx
 
+## 0.0.3
+
+### Patch Changes
+
+- c4302ee: chore: export types
+- Updated dependencies [c4302ee]
+  - @blaze-cardano/core@0.1.1
+
 ## 0.0.2
 
 ### Patch Changes

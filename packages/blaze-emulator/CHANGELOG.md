@@ -1,5 +1,16 @@
 # @blaze-cardano/emulator
 
+## 0.1.1
+
+### Patch Changes
+
+- c4302ee: chore: export types
+- Updated dependencies [c4302ee]
+  - @blaze-cardano/core@0.1.1
+  - @blaze-cardano/tx@0.0.3
+  - @blaze-cardano/query@0.0.3
+  - @blaze-cardano/wallet@0.0.3
+
 ## 0.1.0
 
 ### Minor Changes
