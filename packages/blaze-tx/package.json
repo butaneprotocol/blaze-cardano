@@ -13,6 +13,7 @@
       "require": "./dist/value.js"
     }
   },
+  "types": "./dist/index.d.ts",
   "files": [
     "dist/**"
   ],
