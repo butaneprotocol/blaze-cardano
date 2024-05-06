@@ -1,5 +1,12 @@
 # @blaze-cardano/sdk
 
+## 0.0.4
+
+### Patch Changes
+
+- Updated dependencies [3ad1ff0]
+  - @blaze-cardano/emulator@0.1.2
+
 ## 0.0.3
 
 ### Patch Changes
