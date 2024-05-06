@@ -1,5 +1,11 @@
 # @blaze-cardano/emulator
 
+## 0.1.2
+
+### Patch Changes
+
+- 3ad1ff0: chore: export provider
+
 ## 0.1.1
 
 ### Patch Changes
