@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.1.1
+
+### Patch Changes
+
+- c4302ee: chore: export types
+
 ## 0.1.0
 
 ### Minor Changes
