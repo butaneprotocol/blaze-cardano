@@ -11,8 +11,7 @@ import {
   TransactionId,
 } from "@blaze-cardano/core";
 import { HotWallet } from "@blaze-cardano/wallet";
-import { Emulator } from "../src";
-import { EmulatorProvider } from "../src/provider";
+import { Emulator, EmulatorProvider } from "../src";
 import {
   generateGenesisUtxos,
   generateSeedPhrase,
