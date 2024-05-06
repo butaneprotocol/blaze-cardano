@@ -1,4 +1,4 @@
-import { Blockfrost } from "../packages/blaze-query/dist/index";
+import { Blockfrost } from "./../../packages/blaze-query/dist/index.js";
 
 const sendLovelace = async () => {
   const projectId = process.env["BLOCKFROST_PROJECT_ID"];

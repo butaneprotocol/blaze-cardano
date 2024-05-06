@@ -1,0 +1,10 @@
+{
+  "name": "blockfrost",
+  "version": "1.0.0",
+  "description": "Using the Blockfrost provider",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "query": "node index.js"
+  }
+}
