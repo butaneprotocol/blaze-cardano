@@ -29,6 +29,7 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
     const myUtxos = await this.wallet.getUnspentOutputs();
     const changeAddress = await this.wallet.getChangeAddress();
     return new TxBuilder(params)
+      .setNetworkId(await this.wallet.getNetworkId())
       .addUnspentOutputs(myUtxos)
       .setChangeAddress(changeAddress)
       .useEvaluator((x, y) => this.provider.evaluateTransaction(x, y));

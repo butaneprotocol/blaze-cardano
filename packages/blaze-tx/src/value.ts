@@ -19,10 +19,11 @@ export function merge(a: Value, b: Value): Value {
       for (const key of bma.keys()) {
         const a = ma.get(key);
         const b = bma.get(key)!;
-        if (a) {
-          ma.set(key, a + b);
+        const newVal = a ? a + b : b;
+        if (newVal == 0n) {
+          ma.delete(key);
         } else {
-          ma.set(key, b);
+          ma.set(key, newVal);
         }
       }
     }
@@ -186,6 +187,10 @@ export function makeValue(
   }
   const tokenMap: Map<AssetId, bigint> = new Map();
   for (const [asset, qty] of assets) {
+    if (qty == 0n)
+      throw new Error(
+        "Cannot create a Value object with a zero quantity asset.",
+      );
     tokenMap.set(AssetId(asset), qty);
   }
   return Value.fromCore({
