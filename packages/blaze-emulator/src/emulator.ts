@@ -120,6 +120,8 @@ export class Emulator {
     }
     this.params = params;
     this.evaluator = evaluator ?? makeUplcEvaluator(params, 1, 1);
+    this.addUtxo = this.addUtxo.bind(this);
+    this.removeUtxo = this.removeUtxo.bind(this);
   }
 
   stepForwardBlock(): void {
@@ -570,7 +572,7 @@ export class Emulator {
 
     // Minimum collateral amount included
     const minCollateral = BigInt(
-      this.params.collateralPercentage * Number(body.fee()),
+      Math.ceil(this.params.collateralPercentage * Number(body.fee())),
     );
 
     // If any scripts have been invoked, minimum collateral must be included
@@ -604,7 +606,7 @@ export class Emulator {
             .coin()}, MinADA: ${minAda}`,
         );
 
-      const length = output.toCbor().length / 2;
+      const length = output.amount().toCbor().length / 2;
       if (length > this.params.maxValueSize)
         throw new Error(
           `Output ${index}'s value exceeds the maximum allowed size. Output: ${length} bytes, Maximum: ${this.params.maxValueSize} bytes`,
@@ -684,9 +686,9 @@ export class Emulator {
     netValue = V.sub(netValue, new Value(fee));
     if (!V.empty(netValue))
       throw new Error(
-        `Value not conserved. Leftover Value: ${netValue.coin()}, ${
-          netValue.multiasset()?.entries() ?? ""
-        }`,
+        `Value not conserved. Leftover Value: ${netValue.coin()}, ${Array.from(
+          netValue.multiasset()?.entries() ?? [],
+        )}`,
       );
 
     this.acceptTransaction(tx);

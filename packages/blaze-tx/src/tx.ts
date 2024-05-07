@@ -16,6 +16,7 @@ import type {
   Slot,
   PoolId,
   StakeDelegationCertificate,
+  NetworkId,
 } from "@blaze-cardano/core";
 import {
   CborSet,
@@ -53,6 +54,7 @@ import {
   StakeDelegation,
   CertificateType,
   blake2b_256,
+  RedeemerTag,
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
@@ -101,6 +103,7 @@ export class TxBuilder {
   private scriptSeen: Set<ScriptHash> = new Set(); // A set of script hashes that have been processed.
   private changeAddress?: Address; // The address to send change to, if any.
   private rewardAddress?: Address; // The reward address to delegate from, if any.
+  private networkId?: NetworkId; // The network ID for the transaction.
   private changeOutputIndex?: number; // The index of the change output in the transaction.
   private plutusData: TransactionWitnessPlutusData = new Set(); // A set of Plutus data for witness purposes.
   private requiredWitnesses: Set<Ed25519PublicKeyHex> = new Set(); // A set of public keys required for witnessing the transaction.
@@ -116,6 +119,10 @@ export class TxBuilder {
   private additionalSigners = 0;
   private evaluator?: Evaluator;
 
+  private consumedMintHashes: Hash28ByteBase16[] = [];
+  private consumedWithdrawalHashes: Hash28ByteBase16[] = [];
+  private consumedSpendInputs: string[] = [];
+
   /**
    * Constructs a new instance of the TxBuilder class.
    * Initializes a new transaction body with an empty set of inputs, outputs, and no fee.
@@ -128,6 +135,16 @@ export class TxBuilder {
       0n,
       undefined,
     );
+  }
+
+  private insertSorted<T extends string>(arr: T[], el: T) {
+    const index = arr.findIndex((x) => x.localeCompare(el) > 0);
+    if (index == -1) {
+      arr.push(el);
+    } else {
+      arr.splice(index, 0, el);
+    }
+    return index;
   }
 
   /**
@@ -156,6 +173,11 @@ export class TxBuilder {
 
   useEvaluator(evaluator: Evaluator) {
     this.evaluator = evaluator;
+    return this;
+  }
+
+  setNetworkId(networkId: NetworkId) {
+    this.networkId = networkId;
     return this;
   }
 
@@ -234,6 +256,8 @@ export class TxBuilder {
     redeemer?: PlutusData,
     unhashDatum?: PlutusData,
   ) {
+    const oref = utxo.input().transactionId() + utxo.input().index().toString();
+    const insertIdx = this.insertSorted(this.consumedSpendInputs, oref);
     // Retrieve the current inputs from the transaction body for manipulation.
     const inputs = this.body.inputs();
     const values = [...inputs.values()];
@@ -245,9 +269,7 @@ export class TxBuilder {
           val.transactionId() == utxo.input().transactionId(),
       )
     ) {
-      throw new Error(
-        "Cannot add duplicate reference input to the transaction",
-      );
+      throw new Error("Cannot add duplicate input to the transaction");
     }
     // Add the new input to the array of inputs and update the transaction body.
     values.push(utxo.input());
@@ -287,9 +309,17 @@ export class TxBuilder {
       }
       // Prepare and add the redeemer to the transaction, including execution units estimation.
       const redeemers = [...this.redeemers.values()];
+      for (const redeemer of redeemers) {
+        if (
+          redeemer.tag() == RedeemerTag.Spend &&
+          redeemer.index() >= insertIdx
+        ) {
+          redeemer.setIndex(redeemer.index() + 1n);
+        }
+      }
       redeemers.push(
         Redeemer.fromCore({
-          index: 256,
+          index: insertIdx,
           purpose: RedeemerPurpose["spend"],
           data: redeemer.toCore(),
           executionUnits: {
@@ -337,6 +367,10 @@ export class TxBuilder {
     assets: Map<AssetName, bigint>,
     redeemer?: PlutusData,
   ) {
+    const insertIdx = this.insertSorted(
+      this.consumedMintHashes,
+      PolicyIdToHash(policy),
+    );
     // Retrieve the current mint map from the transaction body, or initialize a new one if none exists.
     const mint: TokenMap = this.body.mint() ?? new Map();
     // Iterate over the assets map and add each asset to the mint map under the specified policy.
@@ -352,11 +386,19 @@ export class TxBuilder {
       this.requiredPlutusScripts.add(PolicyIdToHash(policy));
       // Retrieve the current list of redeemers and prepare to add a new one.
       const redeemers = [...this.redeemers.values()];
+      for (const redeemer of redeemers) {
+        if (
+          redeemer.tag() == RedeemerTag.Mint &&
+          redeemer.index() >= insertIdx
+        ) {
+          redeemer.setIndex(redeemer.index() + 1n);
+        }
+      }
       // Create and add a new redeemer for the minting action, specifying execution units.
       // Note: Execution units are placeholders and are replaced with actual values during the evaluation phase.
       redeemers.push(
         Redeemer.fromCore({
-          index: 256,
+          index: insertIdx,
           purpose: RedeemerPurpose["mint"], // Specify the purpose of the redeemer as minting.
           data: redeemer.toCore(), // Convert the provided PlutusData redeemer to its core representation.
           executionUnits: {
@@ -992,6 +1034,12 @@ export class TxBuilder {
         "Cannot complete transaction without setting change address",
       );
     }
+    if (!this.networkId) {
+      throw new Error(
+        "Cannot complete transaction without setting a network id",
+      );
+    }
+    this.body.setNetworkId(this.networkId);
     // Gather all inputs from the transaction body.
     const inputs = [...this.body.inputs().values()];
     // Perform initial checks and preparations for coin selection.
@@ -1212,6 +1260,17 @@ export class TxBuilder {
    * @throws {Error} If the reward account does not have a stake credential or if any other error occurs.
    */
   addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData) {
+    const withdrawalHash =
+      Address.fromBech32(address).getProps().delegationPart?.hash;
+    if (!withdrawalHash) {
+      throw new Error(
+        "addWithdrawal: The RewardAccount provided does not have an associated stake credential.",
+      );
+    }
+    const insertIdx = this.insertSorted(
+      this.consumedWithdrawalHashes,
+      withdrawalHash,
+    );
     // Retrieve existing withdrawals or initialize a new map if none exist.
     const withdrawals: Map<RewardAccount, bigint> =
       this.body.withdrawals() ?? new Map();
@@ -1222,11 +1281,19 @@ export class TxBuilder {
     // If a redeemer is provided, process it for script validation.
     if (redeemer) {
       const redeemers = [...this.redeemers.values()];
+      for (const redeemer of redeemers) {
+        if (
+          redeemer.tag() == RedeemerTag.Reward &&
+          redeemer.index() >= insertIdx
+        ) {
+          redeemer.setIndex(redeemer.index() + 1n);
+        }
+      }
       // Add the redeemer to the list of redeemers with execution units based on transaction parameters.
       redeemers.push(
         Redeemer.fromCore({
-          index: 256, // TODO: Determine the correct index for the redeemer.
-          purpose: RedeemerPurpose["mint"], // TODO: Confirm the purpose of the redeemer.
+          index: insertIdx,
+          purpose: RedeemerPurpose["withdrawal"], // TODO: Confirm the purpose of the redeemer.
           data: redeemer.toCore(),
           executionUnits: {
             memory: this.params.maxExecutionUnitsPerTransaction.memory,
