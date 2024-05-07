@@ -1,5 +1,15 @@
 # @blaze-cardano/sdk
 
+## 0.0.5
+
+### Patch Changes
+
+- b3aefec: Values enforce no 0-quantity assets, redeemers have correct indexes, transaction network id is attached, various emulator patches
+- Updated dependencies [b3aefec]
+  - @blaze-cardano/emulator@0.1.3
+  - @blaze-cardano/tx@0.0.4
+  - @blaze-cardano/wallet@0.0.4
+
 ## 0.0.4
 
 ### Patch Changes
