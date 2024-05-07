@@ -1034,7 +1034,7 @@ export class TxBuilder {
         "Cannot complete transaction without setting change address",
       );
     }
-    if (!this.networkId) {
+    if (this.networkId === undefined) {
       throw new Error(
         "Cannot complete transaction without setting a network id",
       );
