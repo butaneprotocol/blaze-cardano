@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.5
+
+### Patch Changes
+
+- 7a4c9fe: patch for transaction Network ID setting
+
 ## 0.0.4
 
 ### Patch Changes
