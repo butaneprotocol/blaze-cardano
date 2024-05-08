@@ -118,6 +118,9 @@ importers:
       '@blaze-cardano/jest-config':
         specifier: workspace:*
         version: link:../blaze-jest-config
+      '@blaze-cardano/sdk':
+        specifier: workspace:*
+        version: link:../blaze-sdk
       '@blaze-cardano/tsconfig':
         specifier: workspace:*
         version: link:../blaze-tsconfig
@@ -187,9 +190,6 @@ importers:
       '@blaze-cardano/core':
         specifier: workspace:*
         version: link:../blaze-core
-      '@blaze-cardano/emulator':
-        specifier: workspace:*
-        version: link:../blaze-emulator
       '@blaze-cardano/query':
         specifier: workspace:*
         version: link:../blaze-query

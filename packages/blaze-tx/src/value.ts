@@ -9,26 +9,16 @@ import { Value, AssetId } from "@blaze-cardano/core";
  * @returns {Value} - The resulting Value object after merging.
  */
 export function merge(a: Value, b: Value): Value {
-  let ma: TokenMap | undefined;
-  if (!a.multiasset()) {
-    ma = b.multiasset();
-  } else {
-    ma = a.multiasset()!;
-    const bma = b.multiasset();
-    if (bma) {
-      for (const key of bma.keys()) {
-        const a = ma.get(key);
-        const b = bma.get(key)!;
-        const newVal = a ? a + b : b;
-        if (newVal == 0n) {
-          ma.delete(key);
-        } else {
-          ma.set(key, newVal);
-        }
-      }
+  const ma = a.multiasset() ?? new Map();
+  b.multiasset()?.forEach((v, k) => {
+    const newVal = (ma.get(k) ?? 0n) + v;
+    if (newVal == 0n) {
+      ma.delete(k);
+    } else {
+      ma.set(k, newVal);
     }
-  }
-  return new Value(a.coin() + b.coin(), ma);
+  });
+  return new Value(a.coin() + b.coin(), ma.size > 0 ? ma : undefined);
 }
 
 /**

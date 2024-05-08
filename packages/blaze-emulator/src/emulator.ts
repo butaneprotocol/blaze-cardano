@@ -282,8 +282,9 @@ export class Emulator {
     const body = tx.body();
     const witnessSet = tx.witnessSet();
 
-    if (body.networkId() !== NetworkId.Testnet)
-      throw new Error("Invalid network ID, Emulator must use Testnet.");
+    // TODO: Potential bug with js SDK where setting the network to testnet causes the tx body CBOR to fail
+    // if (body.networkId() !== NetworkId.Testnet)
+    //   throw new Error("Invalid network ID, Emulator must use Testnet.");
 
     const validFrom = body.validityStartInterval() ?? -Infinity;
     const validUntil = body.ttl() ?? Infinity;
@@ -368,6 +369,8 @@ export class Emulator {
       ) {
         consumed.add(hash);
       } else {
+        console.log(plutusHashes);
+        console.log(redeemers.map((r) => r.toCore()));
         throw new Error(`Script (hash ${hash}) not found in witness set.`);
       }
     };
@@ -434,7 +437,7 @@ export class Emulator {
           );
 
         const stakeCred =
-          Address.fromBech32(rewardAddr).getProps().delegationPart!;
+          Address.fromBech32(rewardAddr).getProps().paymentPart!;
         consumeCred(stakeCred, RedeemerTag.Reward, BigInt(index));
         netValue = V.merge(netValue, new Value(amount));
       },
@@ -497,8 +500,13 @@ export class Emulator {
         return acc + out.amount().coin();
       }, 0n) ?? 0n;
 
-    if (collateral?.length ?? 0 > this.params.maxCollateralInputs)
-      throw new Error("Collateral inputs exceed the maximum allowed.");
+    if (
+      collateral?.length &&
+      collateral.length > this.params.maxCollateralInputs
+    )
+      throw new Error(
+        `Collateral inputs exceed the maximum allowed. Provided: ${collateral?.length}, Maximum: ${this.params.maxCollateralInputs}`,
+      );
 
     const usedInputs: TransactionUnspentOutput[] = [];
 
@@ -683,7 +691,7 @@ export class Emulator {
         `Insufficient transaction fee. Supplied: ${body.fee()}, Required: ${fee}`,
       );
 
-    netValue = V.sub(netValue, new Value(fee));
+    netValue = V.sub(netValue, new Value(body.fee()));
     if (!V.empty(netValue))
       throw new Error(
         `Value not conserved. Leftover Value: ${netValue.coin()}, ${Array.from(
