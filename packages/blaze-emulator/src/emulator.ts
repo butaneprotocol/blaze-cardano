@@ -369,8 +369,6 @@ export class Emulator {
       ) {
         consumed.add(hash);
       } else {
-        console.log(plutusHashes);
-        console.log(redeemers.map((r) => r.toCore()));
         throw new Error(`Script (hash ${hash}) not found in witness set.`);
       }
     };

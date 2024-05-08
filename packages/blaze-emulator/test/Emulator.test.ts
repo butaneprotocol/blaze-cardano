@@ -132,11 +132,9 @@ describe("Emulator", () => {
       hash: alwaysTrueScript.hash(),
       type: CredentialType.ScriptHash,
     });
-    console.log(rewardAddr.toAddress().toBech32());
     const rewardAccount = RewardAccount(rewardAddr.toAddress().toBech32());
 
     emulator.accounts.set(rewardAccount, 10_000_000n);
-    console.log(alwaysTrueScript.hash());
 
     const tx = await (
       await blaze.newTransaction()
