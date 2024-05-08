@@ -1058,7 +1058,7 @@ export class TxBuilder {
     }
     // TODO: Potential bug with js SDK where setting the network to testnet causes the tx body CBOR to fail
     // this.body.setNetworkId(this.networkId);
-    
+
     // Gather all inputs from the transaction body.
     const inputs = [...this.body.inputs().values()];
     // Perform initial checks and preparations for coin selection.
