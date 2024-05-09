@@ -385,6 +385,114 @@ export class Emulator {
       }
     };
 
+    // Input Validation
+    // -- Collateral Inputs
+    const collateral = body.collateral()?.values();
+    const collateralAmount =
+      collateral?.reduce((acc, input) => {
+        const out = this.getOutput(input);
+        if (!out) {
+          throw new Error(
+            `Collateral input ${input.toCore()} not found in the ledger.`,
+          );
+        }
+        const paymentCred = out.address().getProps().paymentPart!;
+        if (paymentCred.type !== CredentialType.KeyHash) {
+          throw new Error(
+            `Collateral input ${input.toCore()} must contain a vkey.`,
+          );
+        }
+        consumeVkey(paymentCred.hash);
+        return acc + out.amount().coin();
+      }, 0n) ?? 0n;
+
+    if (
+      collateral?.length &&
+      collateral.length > this.params.maxCollateralInputs
+    )
+      throw new Error(
+        `Collateral inputs exceed the maximum allowed. Provided: ${collateral?.length}, Maximum: ${this.params.maxCollateralInputs}`,
+      );
+
+    const usedInputs: TransactionUnspentOutput[] = [];
+
+    const refInputs = body.referenceInputs()?.values();
+    const inputs = body.inputs().values();
+
+    // Collect hashes
+    [...inputs, ...(refInputs ?? [])].forEach((input) => {
+      const out = this.getOutput(input);
+
+      if (!out) {
+        throw new Error(`Input ${input.toCore()} not found in the ledger.`);
+      }
+
+      usedInputs.push(new TransactionUnspentOutput(input, out));
+
+      if (out.datum()?.kind() == DatumKind.DataHash) {
+        consumed.add(out.datum()!.asDataHash()!);
+      }
+
+      const scriptRef = out.scriptRef();
+      if (scriptRef) {
+        if (scriptRef.language()) {
+          // Native
+          nativeHashes.add(scriptRef.hash());
+        } else {
+          plutusHashes.add(scriptRef.hash());
+        }
+      }
+    });
+
+    [...inputs]
+      .sort(
+        (a, b) =>
+          a.transactionId().localeCompare(b.transactionId()) ||
+          Number(a.index() - b.index()),
+      )
+      .forEach((input, index) => {
+        const out = this.getOutput(input)!;
+        const paymentCred = out.address().getProps().paymentPart!;
+        consumeCred(paymentCred, RedeemerTag.Spend, BigInt(index));
+        netValue = V.merge(netValue, out.amount());
+      });
+
+    if (inputs.length === 0) {
+      throw new Error("Inputs must not be an empty set.");
+    }
+
+    // Disjointness of inputs and reference inputs
+    if (
+      inputs.some((input) =>
+        refInputs?.some(
+          (ref) =>
+            ref.transactionId() === input.transactionId() &&
+            ref.index() === input.index(),
+        ),
+      )
+    ) {
+      throw new Error("Inputs and reference inputs must be disjoint.");
+    }
+
+    // Minimum collateral amount included
+    const minCollateral = BigInt(
+      Math.ceil(this.params.collateralPercentage * Number(body.fee())),
+    );
+
+    // If any scripts have been invoked, minimum collateral must be included
+    if (witnessSet.redeemers()) {
+      if (
+        collateralAmount - (body.collateralReturn()?.amount().coin() ?? 0n) <
+        minCollateral
+      ) {
+        throw new Error("Collateral inputs are insufficient.");
+      }
+
+      if (!tx.isValid()) {
+        throw new Error("Transaction 'isValid' field must be true.");
+      }
+    }
+
     // Witnesses
     // -- Certificates
     body
@@ -476,124 +584,6 @@ export class Emulator {
 
     if (validFrom >= validUntil)
       throw new Error("Validity interval is invalid.");
-
-    // Input Validation
-    // -- Collateral Inputs
-    const collateral = body.collateral()?.values();
-    const collateralAmount =
-      collateral?.reduce((acc, input) => {
-        const out = this.getOutput(input);
-        if (!out) {
-          throw new Error(
-            `Collateral input ${input.toCore()} not found in the ledger.`,
-          );
-        }
-        const paymentCred = out.address().getProps().paymentPart!;
-        if (paymentCred.type !== CredentialType.KeyHash) {
-          throw new Error(
-            `Collateral input ${input.toCore()} must contain a vkey.`,
-          );
-        }
-        consumeVkey(paymentCred.hash);
-        return acc + out.amount().coin();
-      }, 0n) ?? 0n;
-
-    if (
-      collateral?.length &&
-      collateral.length > this.params.maxCollateralInputs
-    )
-      throw new Error(
-        `Collateral inputs exceed the maximum allowed. Provided: ${collateral?.length}, Maximum: ${this.params.maxCollateralInputs}`,
-      );
-
-    const usedInputs: TransactionUnspentOutput[] = [];
-
-    const checkInput = (
-      input: TransactionInput,
-      index: number,
-      spent: boolean,
-    ) => {
-      const out = this.getOutput(input);
-      if (!out) {
-        throw new Error(`Input ${input.toCore()} not found in the ledger.`);
-      }
-
-      usedInputs.push(new TransactionUnspentOutput(input, out));
-
-      if (out.datum()?.kind() == DatumKind.DataHash) {
-        consumed.add(out.datum()!.asDataHash()!);
-      }
-
-      const scriptRef = out.scriptRef();
-      if (scriptRef) {
-        if (scriptRef.language()) {
-          // Native
-          nativeHashes.add(scriptRef.hash());
-        } else {
-          plutusHashes.add(scriptRef.hash());
-        }
-      }
-
-      if (spent) {
-        const paymentCred = out.address().getProps().paymentPart!;
-        consumeCred(paymentCred, RedeemerTag.Spend, BigInt(index));
-        netValue = V.merge(netValue, out.amount());
-      }
-    };
-
-    // -- Reference Inputs
-    const refInputs = body.referenceInputs()?.values();
-    const checkInputReferenced = (input: TransactionInput, index: number) =>
-      checkInput(input, index, false);
-    refInputs?.forEach(checkInputReferenced);
-
-    // -- Inputs
-    const inputs = body.inputs().values();
-    const checkInputSpent = (input: TransactionInput, index: number) =>
-      checkInput(input, index, true);
-    [...inputs]
-      .sort(
-        (a, b) =>
-          a.transactionId().localeCompare(b.transactionId()) ||
-          Number(a.index() - b.index()),
-      )
-      .forEach(checkInputSpent);
-
-    if (inputs.length === 0) {
-      throw new Error("Inputs must not be an empty set.");
-    }
-
-    // Disjointness of inputs and reference inputs
-    if (
-      inputs.some((input) =>
-        refInputs?.some(
-          (ref) =>
-            ref.transactionId() === input.transactionId() &&
-            ref.index() === input.index(),
-        ),
-      )
-    ) {
-      throw new Error("Inputs and reference inputs must be disjoint.");
-    }
-
-    // Minimum collateral amount included
-    const minCollateral = BigInt(
-      Math.ceil(this.params.collateralPercentage * Number(body.fee())),
-    );
-
-    // If any scripts have been invoked, minimum collateral must be included
-    if (witnessSet.redeemers()) {
-      if (
-        collateralAmount - (body.collateralReturn()?.amount().coin() ?? 0n) <
-        minCollateral
-      ) {
-        throw new Error("Collateral inputs are insufficient.");
-      }
-
-      if (!tx.isValid()) {
-        throw new Error("Transaction 'isValid' field must be true.");
-      }
-    }
 
     // Outputs
     body.outputs().forEach((output, index) => {

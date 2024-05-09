@@ -338,6 +338,13 @@ export class TxBuilder {
         this.requiredWitnesses.add(HashAsPubKeyHex(key.hash));
       }
     }
+
+    const scriptRef = utxo.output().scriptRef();
+    if (scriptRef) {
+      this.scriptScope.add(scriptRef);
+      this.scriptSeen.add(scriptRef.hash());
+    }
+
     return this;
   }
 

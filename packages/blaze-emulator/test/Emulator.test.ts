@@ -16,6 +16,7 @@ import {
 import { HotWallet } from "@blaze-cardano/wallet";
 import { Emulator, EmulatorProvider } from "../src";
 import {
+  DEPLOYMENT_ADDR,
   ONE_PLUTUS_DATA,
   VOID_PLUTUS_DATA,
   alwaysTrueScript,
@@ -52,7 +53,6 @@ describe("Emulator", () => {
       ...generateGenesisUtxos(address1),
       ...generateGenesisUtxos(address2),
     ]);
-    // TODO: mock
     provider = new EmulatorProvider(emulator);
     wallet1 = new HotWallet(privateKeyHex1, NetworkId.Testnet, provider);
     wallet2 = new HotWallet(privateKeyHex2, NetworkId.Testnet, provider);
@@ -104,6 +104,92 @@ describe("Emulator", () => {
     const spendTx = await (await blaze.newTransaction())
       .addInput(new TransactionUnspentOutput(inp, out), VOID_PLUTUS_DATA)
       .provideScript(alwaysTrueScript)
+      .complete();
+    const spendTxHash = await signAndSubmit(spendTx, blaze);
+    emulator.awaitTransactionConfirmation(spendTxHash);
+    const out2 = emulator.getOutput(new TransactionInput(spendTxHash, 0n));
+    isDefined(out2);
+    expect(out2.address()).toEqual(wallet1.address);
+  });
+
+  test("Should be able to spend from a script with a reference input", async () => {
+    const refTx = await (await blaze.newTransaction())
+      .lockAssets(
+        DEPLOYMENT_ADDR,
+        makeValue(1_000_000_000n),
+        ONE_PLUTUS_DATA,
+        alwaysTrueScript,
+      )
+      .complete();
+    const refTxHash = await signAndSubmit(refTx, blaze);
+    emulator.awaitTransactionConfirmation(refTxHash);
+    const refIn = new TransactionInput(refTxHash, 0n);
+    const refUtxo = new TransactionUnspentOutput(
+      refIn,
+      emulator.getOutput(refIn)!,
+    );
+
+    const tx = await (
+      await blaze.newTransaction()
+    )
+      .lockAssets(
+        addressFromCredential(
+          NetworkId.Testnet,
+          Credential.fromCore({
+            type: CredentialType.ScriptHash,
+            hash: alwaysTrueScript.hash(),
+          }),
+        ),
+        makeValue(1_000_000_000n),
+        ONE_PLUTUS_DATA,
+      )
+      .complete();
+
+    const txHash = await signAndSubmit(tx, blaze);
+    emulator.awaitTransactionConfirmation(txHash);
+    const inp = new TransactionInput(txHash, 0n);
+    const out = emulator.getOutput(inp);
+
+    isDefined(out);
+
+    const spendTx = await (await blaze.newTransaction())
+      .addInput(new TransactionUnspentOutput(inp, out), VOID_PLUTUS_DATA)
+      .addReferenceInput(refUtxo)
+      .complete();
+    const spendTxHash = await signAndSubmit(spendTx, blaze);
+    emulator.awaitTransactionConfirmation(spendTxHash);
+    const out2 = emulator.getOutput(new TransactionInput(spendTxHash, 0n));
+    isDefined(out2);
+    expect(out2.address()).toEqual(wallet1.address);
+  });
+
+  test("Should be able to spend a UTxO with a self-reference script", async () => {
+    const addr = addressFromCredential(
+      NetworkId.Testnet,
+      Credential.fromCore({
+        type: CredentialType.ScriptHash,
+        hash: alwaysTrueScript.hash(),
+      }),
+    );
+
+    const tx = await (await blaze.newTransaction())
+      .lockAssets(
+        addr,
+        makeValue(1_000_000_000n),
+        ONE_PLUTUS_DATA,
+        alwaysTrueScript,
+      )
+      .complete();
+
+    const txHash = await signAndSubmit(tx, blaze);
+    emulator.awaitTransactionConfirmation(txHash);
+    const inp = new TransactionInput(txHash, 0n);
+    const out = emulator.getOutput(inp);
+
+    isDefined(out);
+
+    const spendTx = await (await blaze.newTransaction())
+      .addInput(new TransactionUnspentOutput(inp, out), VOID_PLUTUS_DATA)
       .complete();
     const spendTxHash = await signAndSubmit(spendTx, blaze);
     emulator.awaitTransactionConfirmation(spendTxHash);

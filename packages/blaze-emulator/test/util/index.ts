@@ -16,6 +16,9 @@ import {
   Script,
   PlutusV2Script,
   PlutusData,
+  Credential,
+  Hash28ByteBase16,
+  addressFromCredential,
 } from "@blaze-cardano/core";
 import type { Provider } from "@blaze-cardano/query";
 import type { Blaze } from "@blaze-cardano/sdk";
@@ -26,6 +29,17 @@ export const generateSeedPhrase = () => generateMnemonic(wordlist);
 
 export const VOID_PLUTUS_DATA = PlutusData.fromCbor(HexBlob("00"));
 export const ONE_PLUTUS_DATA = PlutusData.fromCbor(HexBlob("01"));
+
+// From https://cardano-tools.io/burn-address
+export const LOCK_SCRIPT_HASH =
+  "bbece14f554b0020fe2715d05801f4680ebd40d11a58f14740b9f2c5";
+export const DEPLOYMENT_ADDR = addressFromCredential(
+  NetworkId.Testnet,
+  Credential.fromCore({
+    hash: Hash28ByteBase16(LOCK_SCRIPT_HASH),
+    type: CredentialType.ScriptHash,
+  }),
+);
 
 export const SAMPLE_PLUTUS_DATA = PlutusData.fromCore(
   new Uint8Array([1, 2, 3]),
