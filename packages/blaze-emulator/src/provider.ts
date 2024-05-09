@@ -33,8 +33,9 @@ export class EmulatorProvider implements Provider {
 
   getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {
     const utxos: TransactionUnspentOutput[] = [];
+    const addressBytes = address.toBytes();
     for (const utxo of this.emulator.utxos()) {
-      if (utxo.output().address() == address) {
+      if (utxo.output().address().toBytes() == addressBytes) {
         utxos.push(utxo);
       }
     }

@@ -144,7 +144,7 @@ export class TxBuilder {
     } else {
       arr.splice(index, 0, el);
     }
-    return index;
+    return index == -1 ? arr.length - 1 : index;
   }
 
   /**
@@ -256,8 +256,6 @@ export class TxBuilder {
     redeemer?: PlutusData,
     unhashDatum?: PlutusData,
   ) {
-    const oref = utxo.input().transactionId() + utxo.input().index().toString();
-    const insertIdx = this.insertSorted(this.consumedSpendInputs, oref);
     // Retrieve the current inputs from the transaction body for manipulation.
     const inputs = this.body.inputs();
     const values = [...inputs.values()];
@@ -281,7 +279,10 @@ export class TxBuilder {
     if (!key) {
       throw new Error("addInput: Somehow the UTxO payment key is missing!");
     }
-    if (redeemer) {
+    if (redeemer !== undefined) {
+      const oref =
+        utxo.input().transactionId() + utxo.input().index().toString();
+      const insertIdx = this.insertSorted(this.consumedSpendInputs, oref);
       if (key.type == CredentialType.KeyHash) {
         throw new Error(
           "addInput: Cannot spend with redeemer for KeyHash credential!",
@@ -628,12 +629,8 @@ export class TxBuilder {
       const exUnits = redeemer.exUnits();
 
       // Calculate the fee contribution from this redeemer and add it to the total fee.
-      fee +=
-        this.params.maxExecutionUnitsPerTransaction.steps *
-        Number(exUnits.steps());
-      fee +=
-        this.params.maxExecutionUnitsPerTransaction.memory *
-        Number(exUnits.mem());
+      fee += this.params.prices.memory * Number(exUnits.steps());
+      fee += this.params.prices.steps * Number(exUnits.mem());
     }
 
     // Create a new Redeemers object and set its values to the updated redeemers.
@@ -770,7 +767,7 @@ export class TxBuilder {
     // Calculate withdrawal amounts.
     let withdrawalAmount = 0n;
     const withdrawals = this.body.withdrawals();
-    if (withdrawals != undefined) {
+    if (withdrawals !== undefined) {
       for (const account of withdrawals.keys()) {
         withdrawalAmount += withdrawals.get(account)!;
       }
@@ -946,7 +943,11 @@ export class TxBuilder {
       const utxo = scope.find((x) => x.input() == input);
       if (utxo) {
         // Check if the UTXO amount is sufficient for collateral.
-        if (utxo.output().amount().coin() >= 10n * 10n ** 6n) {
+        if (
+          utxo.output().amount().coin() >= 10n * 10n ** 6n &&
+          utxo.output().address().getProps().paymentPart?.type ==
+            CredentialType.KeyHash
+        ) {
           const ranking = value.assetTypes(utxo.output().amount());
           // Update the best UTXO and its ranking if it's a better candidate.
           if (ranking < rank) {
@@ -958,9 +959,25 @@ export class TxBuilder {
         throw new Error("prepareCollateral: could not resolve some input");
       }
     }
-    // Throw an error if no suitable collateral UTXO is found.
     if (!best) {
-      throw new Error("prepareCollateral: could not find enough collateral");
+      for (const utxo of this.utxos.values()) {
+        if (
+          utxo.output().amount().coin() >= 10n * 10n ** 6n &&
+          utxo.output().address().getProps().paymentPart?.type ==
+            CredentialType.KeyHash
+        ) {
+          const ranking = value.assetTypes(utxo.output().amount());
+          if (ranking < rank) {
+            rank = ranking;
+            best = utxo;
+          }
+        }
+      }
+      if (best) {
+        this.utxoScope.add(best);
+      } else {
+        throw new Error("prepareCollateral: could not find enough collateral");
+      }
     }
     // Set the selected UTXO as collateral in the transaction body.
     const tis = CborSet.fromCore([], TransactionInput.fromCore);
@@ -1039,7 +1056,9 @@ export class TxBuilder {
         "Cannot complete transaction without setting a network id",
       );
     }
-    this.body.setNetworkId(this.networkId);
+    // TODO: Potential bug with js SDK where setting the network to testnet causes the tx body CBOR to fail
+    // this.body.setNetworkId(this.networkId);
+
     // Gather all inputs from the transaction body.
     const inputs = [...this.body.inputs().values()];
     // Perform initial checks and preparations for coin selection.
@@ -1077,7 +1096,7 @@ export class TxBuilder {
     // Balance the change output with the updated excess value.
     this.balanceChange(excessValue);
     // Ensure a change output index has been set after balancing.
-    if (!this.changeOutputIndex) {
+    if (this.changeOutputIndex === undefined) {
       throw new Error(
         "Unreachable! Somehow change balancing succeeded but still failed.",
       );
@@ -1261,7 +1280,7 @@ export class TxBuilder {
    */
   addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData) {
     const withdrawalHash =
-      Address.fromBech32(address).getProps().delegationPart?.hash;
+      Address.fromBech32(address).getProps().paymentPart?.hash;
     if (!withdrawalHash) {
       throw new Error(
         "addWithdrawal: The RewardAccount provided does not have an associated stake credential.",
@@ -1280,6 +1299,7 @@ export class TxBuilder {
     this.body.setWithdrawals(withdrawals);
     // If a redeemer is provided, process it for script validation.
     if (redeemer) {
+      this.requiredPlutusScripts.add(withdrawalHash);
       const redeemers = [...this.redeemers.values()];
       for (const redeemer of redeemers) {
         if (
@@ -1305,7 +1325,7 @@ export class TxBuilder {
       this.redeemers.setValues(redeemers);
     } else {
       // If no redeemer is provided, process the address for required scripts or witnesses.
-      const key = Address.fromBech32(address).getProps().delegationPart;
+      const key = Address.fromBech32(address).getProps().paymentPart;
       if (!key) {
         throw new Error(
           "addWithdrawal: The RewardAccount provided does not have an associated stake credential.",
