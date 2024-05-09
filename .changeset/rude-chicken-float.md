@@ -1,6 +1,6 @@
 ---
-"@blaze-cardano/emulator": minor
-"@blaze-cardano/tx": minor
+"@blaze-cardano/emulator": patch
+"@blaze-cardano/tx": patch
 ---
 
 Transaction logic fixes
