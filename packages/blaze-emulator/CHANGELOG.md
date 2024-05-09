@@ -1,5 +1,14 @@
 # @blaze-cardano/emulator
 
+## 0.1.6
+
+### Patch Changes
+
+- 4379725: Reference script handling patch
+- Updated dependencies [4379725]
+  - @blaze-cardano/tx@0.0.7
+  - @blaze-cardano/wallet@0.0.7
+
 ## 0.1.5
 
 ### Patch Changes

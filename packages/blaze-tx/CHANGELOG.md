@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.7
+
+### Patch Changes
+
+- 4379725: Reference script handling patch
+
 ## 0.0.6
 
 ### Patch Changes
