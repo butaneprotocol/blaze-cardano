@@ -1,5 +1,14 @@
 # @blaze-cardano/emulator
 
+## 0.1.5
+
+### Patch Changes
+
+- e3d6daa: Transaction logic fixes
+- Updated dependencies [e3d6daa]
+  - @blaze-cardano/tx@0.0.6
+  - @blaze-cardano/wallet@0.0.6
+
 ## 0.1.4
 
 ### Patch Changes

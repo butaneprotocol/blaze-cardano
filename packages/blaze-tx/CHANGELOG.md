@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.6
+
+### Patch Changes
+
+- e3d6daa: Transaction logic fixes
+
 ## 0.0.5
 
 ### Patch Changes
