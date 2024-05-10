@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="100px" src="./logo/blaze.svg" align="center"/>
+  <img width="100px" src="./logo/BLAZE_LOGO2.svg" align="center"/>
   <h1 align="center">Blaze</h1>
   <p align="center"><a href="https://github.com/butaneprotocol/blaze" _target="blank">Blaze</a> is a library, which allows you to create Cardano transactions and off-chain code for your Aiken contracts in JavaScript.<br/><br/>
   Built with ❤️ by the Butane Team.
