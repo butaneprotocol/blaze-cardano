@@ -5,9 +5,12 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "send": "node index.js"
+    "send": "tsx index.ts"
   },
   "dependencies": {
     "@blaze-cardano/sdk": "^0.0.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.9.4"
   }
 }
