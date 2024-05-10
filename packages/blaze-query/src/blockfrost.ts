@@ -1,17 +1,18 @@
 /* big todo. likely leave this for an external contributor! */
 
 import type {
-  TransactionUnspentOutput,
   Address,
   AssetId,
-  TransactionInput,
+  CostModels,
+  Credential,
   DatumHash,
   PlutusData,
-  TransactionId,
-  Transaction,
   ProtocolParameters,
-  Credential,
   Redeemers,
+  Transaction,
+  TransactionId,
+  TransactionInput,
+  TransactionUnspentOutput,
 } from "@blaze-cardano/core";
 import { PlutusLanguageVersion } from "@blaze-cardano/core";
 import type { Provider } from "./types";
@@ -24,7 +25,11 @@ export class Blockfrost implements Provider {
     network,
     projectId,
   }: {
-    network: "cardano-sanchonet";
+    network:
+      | "cardano-preview"
+      | "cardano-preprod"
+      | "cardano-mainnet"
+      | "cardano-sanchonet";
     projectId: string;
   }) {
     this.url = `https://${network}.blockfrost.io/api/v0/`;
@@ -35,8 +40,76 @@ export class Blockfrost implements Provider {
     return { project_id: this.projectId };
   }
 
+  /**
+   * This method fetches the protocol parameters from the Blockfrost API.
+   * It constructs the query URL, sends a GET request with the appropriate headers, and processes the response.
+   * The response is parsed into a ProtocolParameters object, which is then returned.
+   * If the response is not in the expected format, an error is thrown.
+   * @returns A Promise that resolves to a ProtocolParameters object.
+   */
   getParameters(): Promise<ProtocolParameters> {
-    throw new Error("unimplemented");
+    const query = "epochs/latest/parameters";
+    return fetch(`${this.url}${query}`, { headers: this.headers() })
+      .then((resp) => resp.json())
+      .then((json) => {
+        if (json) {
+          const response =
+            json as BlockfrostResponse<BlockfrostProtocolParametersResponse>;
+          if ("message" in response) {
+            throw new Error(
+              `getParameters: Blockfrost threw "${response.message}"`,
+            );
+          }
+          const costModels: CostModels = new Map();
+          for (const cm of Object.keys(
+            response.cost_models,
+          ) as BlockfrostLanguageVersions[]) {
+            const costModel: number[] = [];
+            const keys = Object.keys(response.cost_models[cm]).sort();
+            for (const key of keys) {
+              costModel.push(response.cost_models[cm][key]!);
+            }
+            costModels.set(fromBlockfrostLanguageVersion(cm), costModel);
+          }
+          return {
+            coinsPerUtxoByte: response.coins_per_utxo_size,
+            maxTxSize: response.max_tx_size,
+            minFeeCoefficient: response.min_fee_a,
+            minFeeConstant: response.min_fee_b,
+            maxBlockBodySize: response.max_block_size,
+            maxBlockHeaderSize: response.max_block_header_size,
+            stakeKeyDeposit: response.key_deposit,
+            poolDeposit: response.pool_deposit,
+            poolRetirementEpochBound: response.e_max,
+            desiredNumberOfPools: response.n_opt,
+            poolInfluence: response.a0,
+            monetaryExpansion: response.rho,
+            treasuryExpansion: response.tau,
+            minPoolCost: response.min_pool_cost,
+            protocolVersion: {
+              major: response.protocol_major_ver,
+              minor: response.protocol_minor_ver,
+            },
+            maxValueSize: response.max_val_size,
+            collateralPercentage: response.collateral_percent / 100,
+            maxCollateralInputs: response.max_collateral_inputs,
+            costModels: costModels,
+            prices: {
+              memory: parseFloat(response.price_mem) / 10000,
+              steps: parseFloat(response.price_step) / 10000,
+            },
+            maxExecutionUnitsPerTransaction: {
+              memory: response.max_tx_ex_mem,
+              steps: response.max_tx_ex_steps,
+            },
+            maxExecutionUnitsPerBlock: {
+              memory: response.max_block_ex_mem,
+              steps: response.max_block_ex_steps,
+            },
+          };
+        }
+        throw new Error("getParameters: Could not parse response json");
+      });
   }
 
   getUnspentOutputs(
@@ -94,39 +167,41 @@ export const fromBlockfrostLanguageVersion = (
   } else if (x == "PlutusV3") {
     return PlutusLanguageVersion.V3;
   }
-  throw new Error("fromMaestroLanguageVersion: Unreachable!");
+  throw new Error("fromBlockfrostLanguageVersion: Unreachable!");
 };
 
-export interface BlockfrostProtocolParameters {
+export interface BlockfrostProtocolParametersResponse {
   epoch: number;
   min_fee_a: number;
   min_fee_b: number;
   max_block_size: number;
   max_tx_size: number;
   max_block_header_size: number;
-  key_deposit: string;
-  pool_deposit: string;
+  key_deposit: number;
+  pool_deposit: number;
   e_max: number;
   n_opt: number;
-  a0: number;
-  rho: number;
-  tau: number;
+  a0: string;
+  rho: string;
+  tau: string;
   decentralisation_param: number;
   extra_entropy: null;
   protocol_major_ver: number;
   protocol_minor_ver: number;
   min_utxo: string;
-  min_pool_cost: string;
+  min_pool_cost: number;
   nonce: string;
   cost_models: Record<BlockfrostLanguageVersions, { [key: string]: number }>;
-  price_mem: number;
-  price_step: number;
-  max_tx_ex_mem: string;
-  max_tx_ex_steps: string;
-  max_block_ex_mem: string;
-  max_block_ex_steps: string;
-  max_val_size: string;
+  price_mem: string;
+  price_step: string;
+  max_tx_ex_mem: number;
+  max_tx_ex_steps: number;
+  max_block_ex_mem: number;
+  max_block_ex_steps: number;
+  max_val_size: number;
   collateral_percent: number;
   max_collateral_inputs: number;
-  coins_per_utxo_size: string;
+  coins_per_utxo_size: number;
 }
+
+type BlockfrostResponse<SomeResponse> = SomeResponse | { message: string };
