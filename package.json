@@ -8,7 +8,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "clean": "turbo run clean && rm -rf .turbo && rm -rf node_modules",
-    "docs": "typedoc --skipErrorChecking && mkdir docs/logo && cp logo/blaze.svg docs/logo/blaze.svg",
+    "docs": "typedoc --skipErrorChecking && mkdir docs/logo && cp logo/BLAZE_LOGO2.svg docs/logo/BLAZE_LOGO2.svg",
     "fmt": "prettier -w .",
     "changeset": "changeset",
     "release": "turbo run build && changeset publish"
