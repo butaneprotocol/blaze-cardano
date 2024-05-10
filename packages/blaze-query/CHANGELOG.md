@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.0.4
+
+### Patch Changes
+
+- a4af5f6: blockfrost fetch parameters
+
 ## 0.0.3
 
 ### Patch Changes
