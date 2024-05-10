@@ -4,9 +4,22 @@
   <p align="center"><a href="https://github.com/butaneprotocol/blaze" _target="blank">Blaze</a> is a library, which allows you to create Cardano transactions and off-chain code for your Aiken contracts in JavaScript.<br/><br/>
   Built with ❤️ by the Butane Team.
 <p align="center">
-    <img src="https://img.shields.io/github/commit-activity/m/butaneprotocol/blaze?style=for-the-badge" />
+    <img src="https://img.shields.io/github/commit-activity/m/butaneprotocol/blaze-cardano?style=for-the-badge" />
+    <a href="https://www.npmjs.com/package/@blaze-cardano/sdk">
+      <img src="https://img.shields.io/npm/v/@blaze-cardano/sdk?style=for-the-badge" />
+    </a>
+     <a href="https://blaze.butane.dev">
+      <img src="https://img.shields.io/readthedocs/cardano-lucid?style=for-the-badge" />
+    </a>
+    <a href="https://www.npmjs.com/package/@blaze-cardano/sdk">
+      <img src="https://img.shields.io/npm/dw/@blaze-cardano/sdk?style=for-the-badge" />
+    </a>
+    <img src="https://img.shields.io/github/license/butaneprotocol/blaze-cardano?style=for-the-badge" />
     <a href="https://twitter.com/butaneprotocol">
       <img src="https://img.shields.io/twitter/follow/butaneprotocol?style=for-the-badge&logo=twitter" />
+    </a>
+    <a href="https://discord.gg/4hUAdHAexb">
+      <img src="https://img.shields.io/discord/946071061567529010?style=for-the-badge&logo=discord&label=chat%20with%20us" />
     </a>
   </p>
 </p>
