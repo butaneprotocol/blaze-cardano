@@ -1,5 +1,12 @@
 # @blaze-cardano/tx
 
+## 0.0.8
+
+### Patch Changes
+
+- Updated dependencies [fcc6773]
+  - @blaze-cardano/core@0.1.2
+
 ## 0.0.7
 
 ### Patch Changes
