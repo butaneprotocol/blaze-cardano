@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.1.2
+
+### Patch Changes
+
+- fcc6773: export txcbor for alex
+
 ## 0.1.1
 
 ### Patch Changes
