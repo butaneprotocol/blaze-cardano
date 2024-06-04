@@ -35,6 +35,12 @@ export class LedgerTimer {
   block: number = 0;
   slot: number = 0;
   time: number = 0;
+
+  constructor() {
+    const now = Date.now()
+    this.slot = Math.floor(now / 1000);
+    this.time = now;
+  }
 }
 
 type SerialisedInput = `${TransactionId}:${bigint}`;

@@ -636,8 +636,8 @@ export class TxBuilder {
       const exUnits = redeemer.exUnits();
 
       // Calculate the fee contribution from this redeemer and add it to the total fee.
-      fee += this.params.prices.memory * Number(exUnits.steps());
-      fee += this.params.prices.steps * Number(exUnits.mem());
+      fee += this.params.prices.memory * Number(exUnits.mem());
+      fee += this.params.prices.steps * Number(exUnits.steps());
     }
 
     // Create a new Redeemers object and set its values to the updated redeemers.
