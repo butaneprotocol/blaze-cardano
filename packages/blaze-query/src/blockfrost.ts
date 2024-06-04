@@ -1,7 +1,8 @@
 /* big todo. likely leave this for an external contributor! */
 
-import type {
+import {
   Address,
+  AddressType,
   AssetId,
   CostModels,
   Credential,
@@ -12,7 +13,9 @@ import type {
   Transaction,
   TransactionId,
   TransactionInput,
+  TransactionOutput,
   TransactionUnspentOutput,
+  Value,
 } from "@blaze-cardano/core";
 import { PlutusLanguageVersion } from "@blaze-cardano/core";
 import type { Provider } from "./types";
@@ -112,11 +115,67 @@ export class Blockfrost implements Provider {
       });
   }
 
+  /**
+   * This method fetches the UTxOs under a given address.
+   * It constructs the query URL, sends a GET request with the appropriate headers, and processes the response.
+   * The response is parsed into a TransactionUnspentOutput[] type, which is then returned.
+   * If the response is not in the expected format, an error is thrown.
+   * @returns A Promise that resolves to TransactionUnspentOutput[].
+   */
   getUnspentOutputs(
-    _address: Address | Credential,
+    address: Address | Credential,
   ): Promise<TransactionUnspentOutput[]> {
     /* todo: paginate */
-    throw new Error("unimplemented");
+    const bech32 =
+      address instanceof Address
+        ? address.toBech32()
+        : new Address({
+            type: AddressType.EnterpriseKey,
+            paymentPart: address.toCore(),
+          }).toBech32();
+
+    return fetch(`${this.url}/addresses/${bech32}/utxos`, {
+      headers: this.headers(),
+    })
+      .then((resp) => resp.json())
+      .then((json) => {
+        if (json) {
+          const response = json as BlockfrostResponse<
+            BlockfrostUnspentOutputResolution[]
+          >;
+          if ("message" in response) {
+            throw new Error(
+              `getUnspentOutputs: Blockfrost threw "${response.message}"`,
+            );
+          }
+          const utxos: TransactionUnspentOutput[] = [];
+          for (const blockfrostUTxO of response) {
+            const txIn = new TransactionInput(
+              TransactionId(blockfrostUTxO.tx_hash),
+              BigInt(blockfrostUTxO.output_index),
+            );
+
+            const tokenMap = new Map<AssetId, bigint>();
+            let lovelace = 0n;
+
+            for (const { unit, quantity } of blockfrostUTxO.amount) {
+              if (unit === "lovelace") {
+                lovelace = quantity;
+              } else {
+                tokenMap.set(unit as AssetId, quantity);
+              }
+            }
+            const value = new Value(lovelace, tokenMap);
+            const txOut = new TransactionOutput(
+              Address.fromBech32(bech32),
+              value,
+            );
+            utxos.push(new TransactionUnspentOutput(txIn, txOut));
+          }
+          return utxos;
+        }
+        throw new Error("getUnspentOutputs: Could not parse response json");
+      });
   }
 
   getUnspentOutputsWithAsset(
@@ -205,3 +264,17 @@ export interface BlockfrostProtocolParametersResponse {
 }
 
 type BlockfrostResponse<SomeResponse> = SomeResponse | { message: string };
+
+interface BlockfrostUnspentOutputResolution {
+  address: string;
+  tx_hash: string;
+  output_index: number;
+  amount: {
+    unit: string;
+    quantity: bigint;
+  }[];
+  block: string;
+  data_hash?: string;
+  inline_datum?: string;
+  reference_script_hash?: string;
+}

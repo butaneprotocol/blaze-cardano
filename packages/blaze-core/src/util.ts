@@ -183,7 +183,7 @@ export const mnemonicToEntropy = bip39.mnemonicToEntropy;
  * @param {string} bech32 - The Bech32 string to create the Address from.
  * @returns {Address} The created Address.
  */
-// export const addressFromBech32 = Address.fromBech32;
+export const addressFromBech32 = Address.fromBech32;
 
 /**
  * Function to create an Address from a validator script.

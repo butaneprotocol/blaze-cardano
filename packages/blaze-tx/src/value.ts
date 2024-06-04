@@ -18,7 +18,10 @@ export function merge(a: Value, b: Value): Value {
       ma.set(k, newVal);
     }
   });
-  return new Value(a.coin() + b.coin(), ma.size > 0 ? ma : undefined);
+  return new Value(
+    BigInt(a.coin()) + BigInt(b.coin()),
+    ma.size > 0 ? ma : undefined,
+  );
 }
 
 /**
