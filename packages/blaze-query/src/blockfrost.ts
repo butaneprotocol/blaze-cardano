@@ -1,16 +1,17 @@
 /* big todo. likely leave this for an external contributor! */
-
-import {
-  Address,
-  AddressType,
+import type {
   AssetId,
-  CostModels,
   Credential,
+  CostModels,
   DatumHash,
   PlutusData,
   ProtocolParameters,
   Redeemers,
   Transaction,
+} from "@blaze-cardano/core";
+import {
+  Address,
+  AddressType,
   TransactionId,
   TransactionInput,
   TransactionOutput,
