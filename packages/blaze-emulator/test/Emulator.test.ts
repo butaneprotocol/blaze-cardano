@@ -21,7 +21,7 @@ import {
   VOID_PLUTUS_DATA,
   alwaysTrueScript,
   generateAccount,
-  generateGenesisUtxos,
+  generateGenesisOutputs,
   signAndSubmit,
 } from "./util";
 import { Blaze, makeValue } from "@blaze-cardano/sdk";
@@ -50,8 +50,8 @@ describe("Emulator", () => {
 
   beforeEach(() => {
     emulator = new Emulator([
-      ...generateGenesisUtxos(address1),
-      ...generateGenesisUtxos(address2),
+      ...generateGenesisOutputs(address1),
+      ...generateGenesisOutputs(address2),
     ]);
     provider = new EmulatorProvider(emulator);
     wallet1 = new HotWallet(privateKeyHex1, NetworkId.Testnet, provider);
