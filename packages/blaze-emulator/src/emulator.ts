@@ -674,10 +674,6 @@ export class Emulator {
         ),
       );
 
-    console.log(
-      `Insufficient transaction fee. Supplied: ${body.fee()}, Required: ${fee}`,
-    );
-
     if (fee > body.fee())
       throw new Error(
         `Insufficient transaction fee. Supplied: ${body.fee()}, Required: ${fee}`,
