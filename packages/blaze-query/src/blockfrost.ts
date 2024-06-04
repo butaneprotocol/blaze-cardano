@@ -140,9 +140,7 @@ export class Blockfrost implements Provider {
       .then((resp) => resp.json())
       .then((json) => {
         if (json) {
-          const response = json as BlockfrostResponse<
-            BlockfrostUnspentOutputResolution[]
-          >;
+          const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
           if ("message" in response) {
             throw new Error(
               `getUnspentOutputs: Blockfrost threw "${response.message}"`,
@@ -154,10 +152,10 @@ export class Blockfrost implements Provider {
               TransactionId(blockfrostUTxO.tx_hash),
               BigInt(blockfrostUTxO.output_index),
             );
-
+            // No tx output CBOR available from Blockfrost,
+            // so TransactionOutput must be manually constructed.
             const tokenMap = new Map<AssetId, bigint>();
             let lovelace = 0n;
-
             for (const { unit, quantity } of blockfrostUTxO.amount) {
               if (unit === "lovelace") {
                 lovelace = quantity;
@@ -165,13 +163,13 @@ export class Blockfrost implements Provider {
                 tokenMap.set(unit as AssetId, quantity);
               }
             }
-            const value = new Value(lovelace, tokenMap);
             const txOut = new TransactionOutput(
               Address.fromBech32(bech32),
-              value,
+              new Value(lovelace, tokenMap),
             );
             utxos.push(new TransactionUnspentOutput(txIn, txOut));
           }
+
           return utxos;
         }
         throw new Error("getUnspentOutputs: Could not parse response json");
@@ -265,7 +263,7 @@ export interface BlockfrostProtocolParametersResponse {
 
 type BlockfrostResponse<SomeResponse> = SomeResponse | { message: string };
 
-interface BlockfrostUnspentOutputResolution {
+interface BlockfrostUTxO {
   address: string;
   tx_hash: string;
   output_index: number;
