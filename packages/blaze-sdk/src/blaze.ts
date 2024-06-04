@@ -1,4 +1,4 @@
-import type { Transaction} from "@blaze-cardano/core";
+import type { Transaction } from "@blaze-cardano/core";
 import { CborSet, VkeyWitness } from "@blaze-cardano/core";
 import type { Provider } from "@blaze-cardano/query";
 import { TxBuilder } from "@blaze-cardano/tx";
@@ -49,7 +49,9 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
 
     const signedKeys = signed.vkeys();
     if (!signedKeys) {
-      throw new Error("signTransaction: no signed keys in wallet witness response");
+      throw new Error(
+        "signTransaction: no signed keys in wallet witness response",
+      );
     }
 
     if (
@@ -59,7 +61,10 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
     }
 
     ws.setVkeys(
-      CborSet.fromCore([...signedKeys.toCore(), ...vkeys], VkeyWitness.fromCore)
+      CborSet.fromCore(
+        [...signedKeys.toCore(), ...vkeys],
+        VkeyWitness.fromCore,
+      ),
     );
     tx.setWitnessSet(ws);
     return tx;

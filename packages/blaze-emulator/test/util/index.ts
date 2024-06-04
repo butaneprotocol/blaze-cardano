@@ -59,7 +59,7 @@ export const alwaysTrueScript = Script.newPlutusV2Script(
   new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
 );
 
-export function generateGenesisUtxos(address: Address): TransactionOutput[] {
+export function generateGenesisOutputs(address: Address): TransactionOutput[] {
   return Array(10).fill(
     new TransactionOutput(address, makeValue(1_000_000_000n)),
   );
