@@ -1,5 +1,15 @@
 # @blaze-cardano/sdk
 
+## 0.0.11
+
+### Patch Changes
+
+- 4b9211d: Fixed bug in script fee calc, added transaction signing util to SDK
+- Updated dependencies [4b9211d]
+- Updated dependencies [4b9211d]
+  - @blaze-cardano/tx@0.0.9
+  - @blaze-cardano/wallet@0.0.10
+
 ## 0.0.10
 
 ### Patch Changes
