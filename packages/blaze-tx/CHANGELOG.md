@@ -1,5 +1,12 @@
 # @blaze-cardano/tx
 
+## 0.0.9
+
+### Patch Changes
+
+- 4b9211d: Fixed bug in script fee calc, added transaction signing util to SDK
+- 4b9211d: Fixed collateral required signers bug
+
 ## 0.0.8
 
 ### Patch Changes
