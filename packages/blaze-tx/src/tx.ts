@@ -727,26 +727,21 @@ export class TxBuilder {
       tw.setPlutusV3Scripts(cborSet);
     }
     // Process vkey witnesses
-    const vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore);
-    const requiredWitnesses: VkeyWitness[] = [];
+    // const vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore);
+    const requiredWitnesses: [Ed25519PublicKeyHex, Ed25519SignatureHex][] = [];
     this.requiredWitnesses.forEach((_) => {
-      requiredWitnesses.push(
-        VkeyWitness.fromCore([
-          Ed25519PublicKeyHex("0".repeat(64)),
-          Ed25519SignatureHex("0".repeat(128)),
-        ]),
-      );
+      requiredWitnesses.push([
+        Ed25519PublicKeyHex("0".repeat(64)),
+        Ed25519SignatureHex("0".repeat(128)),
+      ]);
     });
     for (let i = 0; i < this.additionalSigners; i++) {
-      requiredWitnesses.push(
-        VkeyWitness.fromCore([
-          Ed25519PublicKeyHex("0".repeat(64)),
-          Ed25519SignatureHex("0".repeat(128)),
-        ]),
-      );
+      requiredWitnesses.push([
+        Ed25519PublicKeyHex("0".repeat(64)),
+        Ed25519SignatureHex("0".repeat(128)),
+      ]);
     }
-    vkeyWitnesses.setValues(requiredWitnesses);
-    tw.setVkeys(vkeyWitnesses);
+    tw.setVkeys(CborSet.fromCore(requiredWitnesses, VkeyWitness.fromCore));
     tw.setRedeemers(this.redeemers);
     // Process Plutus data
     const plutusData = CborSet.fromCore([], PlutusData.fromCore);
@@ -990,6 +985,13 @@ export class TxBuilder {
     const tis = CborSet.fromCore([], TransactionInput.fromCore);
     tis.setValues([best.input()]);
     this.body.setCollateral(tis);
+
+    const key = best.output().address().getProps().paymentPart!;
+    if (key.type == CredentialType.ScriptHash) {
+      this.requiredNativeScripts.add(key.hash);
+    } else {
+      this.requiredWitnesses.add(HashAsPubKeyHex(key.hash));
+    }
     // Also set the collateral return to the output of the selected UTXO.
     this.body.setCollateralReturn(best.output());
   }
@@ -1110,7 +1112,7 @@ export class TxBuilder {
     }
     // Build the transaction witness set for fee estimation and script validation.
     //excessValue = this.getPitch(false)
-    const tw = this.buildTransactionWitnessSet();
+    let tw = this.buildTransactionWitnessSet();
     // Calculate and set the script data hash if necessary.
     {
       const scriptDataHash = this.getScriptDataHash(tw);
@@ -1122,16 +1124,18 @@ export class TxBuilder {
     // Create a draft transaction for fee calculation.
     const draft_tx = new Transaction(this.body, tw);
     // Calculate and set the transaction fee.
-    const draft_size = draft_tx.toCbor().length / 2;
+    let draft_size = draft_tx.toCbor().length / 2;
     this.calculateFees(draft_tx);
     excessValue = value.merge(excessValue, new Value(-this.fee));
     this.balanceChange(excessValue);
     if (this.redeemers.size() > 0) {
       this.prepareCollateral();
+      tw = this.buildTransactionWitnessSet();
       const evaluationFee = await this.evaluate(draft_tx);
       this.fee += evaluationFee;
       excessValue = value.merge(excessValue, new Value(-evaluationFee));
       tw.setRedeemers(this.redeemers);
+      draft_tx.setWitnessSet(tw);
     }
     {
       const scriptDataHash = this.getScriptDataHash(tw);
@@ -1139,21 +1143,22 @@ export class TxBuilder {
         this.body.setScriptDataHash(scriptDataHash);
       }
     }
-    this.body.setFee(this.fee);
-    if (this.body.collateral()) {
-      // Merge the fee with the excess value and rebalance the change.
-      this.balanceCollateralChange();
-    }
-    const final_size = draft_tx.toCbor().length / 2;
-    this.fee += BigInt(
-      Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
-    );
-    excessValue = this.getPitch(false);
-    this.body.setFee(this.fee);
-    this.balanceChange(excessValue);
-    if (this.body.collateral()) {
-      this.balanceCollateralChange();
-    }
+
+    let final_size = draft_tx.toCbor().length / 2;
+    do {
+      this.fee += BigInt(
+        Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
+      );
+      excessValue = this.getPitch(false);
+      this.body.setFee(this.fee);
+      this.balanceChange(excessValue);
+      if (this.body.collateral()) {
+        this.balanceCollateralChange();
+      }
+      draft_tx.setBody(this.body);
+      draft_size = final_size;
+      final_size = draft_tx.toCbor().length / 2;
+    } while (final_size != draft_size);
     // Return the fully constructed transaction.
     tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore));
     return new Transaction(this.body, tw);
