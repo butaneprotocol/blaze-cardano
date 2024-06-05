@@ -1,4 +1,3 @@
-/* big todo. likely leave this for an external contributor! */
 import type {
   AssetId,
   Credential,
@@ -7,6 +6,7 @@ import type {
   PlutusData,
   ProtocolParameters,
   Redeemers,
+  TokenMap,
   Transaction,
 } from "@blaze-cardano/core";
 import {
@@ -123,10 +123,13 @@ export class Blockfrost implements Provider {
    * If the response is not in the expected format, an error is thrown.
    * @returns A Promise that resolves to TransactionUnspentOutput[].
    */
-  getUnspentOutputs(
+  async getUnspentOutputs(
     address: Address | Credential,
   ): Promise<TransactionUnspentOutput[]> {
-    /* todo: paginate */
+    // 100 per page is max allowed by Blockfrost
+    const maxPageCount = 100;
+    let page = 1;
+
     const bech32 =
       address instanceof Address
         ? address.toBech32()
@@ -135,46 +138,58 @@ export class Blockfrost implements Provider {
             paymentPart: address.toCore(),
           }).toBech32();
 
-    return fetch(`${this.url}/addresses/${bech32}/utxos`, {
-      headers: this.headers(),
-    })
-      .then((resp) => resp.json())
-      .then((json) => {
-        if (json) {
-          const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
-          if ("message" in response) {
-            throw new Error(
-              `getUnspentOutputs: Blockfrost threw "${response.message}"`,
-            );
-          }
-          const utxos: TransactionUnspentOutput[] = [];
-          for (const blockfrostUTxO of response) {
-            const txIn = new TransactionInput(
-              TransactionId(blockfrostUTxO.tx_hash),
-              BigInt(blockfrostUTxO.output_index),
-            );
-            // No tx output CBOR available from Blockfrost,
-            // so TransactionOutput must be manually constructed.
-            const tokenMap = new Map<AssetId, bigint>();
-            let lovelace = 0n;
-            for (const { unit, quantity } of blockfrostUTxO.amount) {
-              if (unit === "lovelace") {
-                lovelace = quantity;
-              } else {
-                tokenMap.set(unit as AssetId, quantity);
-              }
-            }
-            const txOut = new TransactionOutput(
-              Address.fromBech32(bech32),
-              new Value(lovelace, tokenMap),
-            );
-            utxos.push(new TransactionUnspentOutput(txIn, txOut));
-          }
+    const utxos: TransactionUnspentOutput[] = [];
 
-          return utxos;
+    for (;;) {
+      const json = await fetch(
+        `${this.url}/addresses/${bech32}/utxos?count=${maxPageCount}&page=${page}`,
+        {
+          headers: this.headers(),
+        },
+      ).then((resp) => resp.json());
+
+      if (json) {
+        const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
+        if ("message" in response) {
+          throw new Error(
+            `getUnspentOutputs: Blockfrost threw "${response.message}"`,
+          );
         }
+
+        for (const blockfrostUTxO of response) {
+          const txIn = new TransactionInput(
+            TransactionId(blockfrostUTxO.tx_hash),
+            BigInt(blockfrostUTxO.output_index),
+          );
+          // No tx output CBOR available from Blockfrost,
+          // so TransactionOutput must be manually constructed.
+          const tokenMap: TokenMap = new Map<AssetId, bigint>();
+          let lovelace = 0n;
+          for (const { unit, quantity } of blockfrostUTxO.amount) {
+            if (unit === "lovelace") {
+              lovelace = quantity;
+            } else {
+              tokenMap.set(unit as AssetId, quantity);
+            }
+          }
+          const txOut = new TransactionOutput(
+            Address.fromBech32(bech32),
+            new Value(lovelace, tokenMap),
+          );
+          utxos.push(new TransactionUnspentOutput(txIn, txOut));
+        }
+
+        if (response.length < maxPageCount) {
+          break;
+        } else {
+          page = page + 1;
+        }
+      } else {
         throw new Error("getUnspentOutputs: Could not parse response json");
-      });
+      }
+    }
+
+    return utxos;
   }
 
   getUnspentOutputsWithAsset(
