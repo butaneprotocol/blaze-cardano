@@ -1,5 +1,14 @@
 # @blaze-cardano/emulator
 
+## 0.1.10
+
+### Patch Changes
+
+- e73e3f4: Custom slot configs in emulator and VM evaluator
+- Updated dependencies [e73e3f4]
+  - @blaze-cardano/tx@0.0.10
+  - @blaze-cardano/wallet@0.0.11
+
 ## 0.1.9
 
 ### Patch Changes
