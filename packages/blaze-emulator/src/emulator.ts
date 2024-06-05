@@ -29,12 +29,23 @@ import {
   Value,
   blake2b_256,
 } from "@blaze-cardano/core";
+import type { SlotConfig } from "@blaze-cardano/tx";
 import { makeUplcEvaluator, Value as V } from "@blaze-cardano/tx";
 
 export class LedgerTimer {
-  block: number = 0;
-  slot: number = 0;
-  time: number = 0;
+  block: number;
+  slot: number;
+  time: number;
+  slotLength: number;
+
+  constructor(
+    slotConfig: SlotConfig = { zeroTime: 0, zeroSlot: 0, slotLength: 1000 },
+  ) {
+    this.block = 0;
+    this.slot = slotConfig.zeroSlot;
+    this.time = slotConfig.zeroTime;
+    this.slotLength = slotConfig.slotLength;
+  }
 }
 
 type SerialisedInput = `${TransactionId}:${bigint}`;
@@ -47,6 +58,11 @@ const deserialiseInput = (input: SerialisedInput): TransactionInput => {
   return new TransactionInput(TransactionId(txId!), BigInt(index!));
 };
 
+export interface EmulatorOptions {
+  evaluator?: Evaluator;
+  slotConfig?: SlotConfig;
+}
+
 /**
  * The Emulator class is used to simulate the behavior of a ledger.
  * It maintains a ledger of unspent transaction outputs, reward accounts, protocol parameters, and a clock.
@@ -56,12 +72,12 @@ export class Emulator {
   /**
    * The ledger of unspent transaction outputs.
    */
-  private _ledger: Record<SerialisedInput, TransactionOutput> = {};
+  #ledger: Record<SerialisedInput, TransactionOutput> = {};
 
   /**
    * A pending pool of transactions to be confirmed in the next block.
    */
-  private _mempool: Record<
+  #mempool: Record<
     TransactionId,
     {
       inputs: Set<TransactionInput>;
@@ -82,7 +98,7 @@ export class Emulator {
   /**
    * The clock of the ledger.
    */
-  clock: LedgerTimer = new LedgerTimer();
+  clock: LedgerTimer;
 
   /**
    * The event loop for the ledger.
@@ -109,36 +125,38 @@ export class Emulator {
   constructor(
     genesisOutputs: TransactionOutput[],
     params: ProtocolParameters = hardCodedProtocolParams,
-    evaluator?: Evaluator,
+    { evaluator, slotConfig }: EmulatorOptions = {},
   ) {
     for (let i = 0; i < genesisOutputs.length; i++) {
       const txIn = new TransactionInput(
         TransactionId("00".repeat(32)),
         BigInt(i),
       );
-      this._ledger[serialiseInput(txIn)] = genesisOutputs[i]!;
+      this.#ledger[serialiseInput(txIn)] = genesisOutputs[i]!;
     }
+    this.clock = new LedgerTimer(slotConfig);
     this.params = params;
-    this.evaluator = evaluator ?? makeUplcEvaluator(params, 1, 1);
+    this.evaluator = evaluator ?? makeUplcEvaluator(params, 1, 1, slotConfig);
     this.addUtxo = this.addUtxo.bind(this);
     this.removeUtxo = this.removeUtxo.bind(this);
   }
 
   stepForwardBlock(): void {
     this.clock.block++;
-    this.clock.slot += 20;
-    this.clock.time += 20_000;
+    const blockMs = 20_000;
+    this.clock.time += blockMs;
+    this.clock.slot += Math.floor(blockMs / this.clock.slotLength);
 
-    Object.values(this._mempool).forEach(({ inputs, outputs }) => {
+    Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
       inputs.forEach(this.removeUtxo);
       outputs.forEach(this.addUtxo);
     });
 
-    this._mempool = {};
+    this.#mempool = {};
   }
 
   awaitTransactionConfirmation(txId: TransactionId) {
-    if (this._mempool[txId]) {
+    if (this.#mempool[txId]) {
       this.stepForwardBlock();
     }
   }
@@ -174,7 +192,7 @@ export class Emulator {
    * @param utxo - The UTxO to add to the ledger.
    */
   addUtxo(utxo: TransactionUnspentOutput): void {
-    this._ledger[serialiseInput(utxo.input())] = utxo.output();
+    this.#ledger[serialiseInput(utxo.input())] = utxo.output();
   }
 
   /**
@@ -183,7 +201,7 @@ export class Emulator {
    * @param inp - The input to remove from the ledger.
    */
   removeUtxo(inp: TransactionInput): void {
-    delete this._ledger[serialiseInput(inp)];
+    delete this.#ledger[serialiseInput(inp)];
   }
 
   /**
@@ -194,7 +212,7 @@ export class Emulator {
    */
   getOutput(inp: TransactionInput): TransactionOutput | undefined {
     // Should utxos in the mempool be considered?
-    return this._ledger[serialiseInput(inp)];
+    return this.#ledger[serialiseInput(inp)];
   }
 
   /**
@@ -202,7 +220,7 @@ export class Emulator {
    * @returns The full list of UTxOs in the Emulator's ledger.
    */
   utxos(): TransactionUnspentOutput[] {
-    return Object.entries(this._ledger).map(([key, value]) => {
+    return Object.entries(this.#ledger).map(([key, value]) => {
       return new TransactionUnspentOutput(
         deserialiseInput(key as SerialisedInput),
         value,
@@ -707,7 +725,7 @@ export class Emulator {
     const outputs = tx.body().outputs();
     const txId = tx.getId();
 
-    this._mempool[txId] = {
+    this.#mempool[txId] = {
       inputs: new Set(inputs),
       outputs: new Set(
         outputs.map(
