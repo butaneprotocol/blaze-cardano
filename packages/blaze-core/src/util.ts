@@ -210,12 +210,64 @@ export const addressFromValidator = (
 export const addressFromCredential = (
   network: NetworkId,
   credential: Credential,
-): Address =>
-  new Address({
+): Address => {
+  const cred = credential.toCore();
+  let type: AddressType;
+  if (cred.type == CredentialType.KeyHash) {
+    type = AddressType.EnterpriseKey;
+  } else {
+    type = AddressType.EnterpriseScript;
+  }
+  return new Address({
     paymentPart: credential.toCore(),
-    type: AddressType.EnterpriseScript,
+    type,
     networkId: network,
   });
+};
+
+/**
+ * Function to create an Address from payment and optional delegation credentials.
+ * @param {NetworkId} network - The network ID of the Address.
+ * @param {Credential} paymentCredential - The payment credential to create the Address from.
+ * @param {Credential} [delegationCredential] - The optional delegation credential to create the Address from.
+ * @returns {Address} The created Address.
+ */
+export const addressFromCredentials = (
+  network: NetworkId,
+  paymentCredential: Credential,
+  delegationCredential?: Credential,
+): Address => {
+  const pCred = paymentCredential.toCore();
+  const dCred = delegationCredential?.toCore();
+  let type: AddressType;
+  if (!dCred) {
+    if (pCred.type == CredentialType.KeyHash) {
+      type = AddressType.EnterpriseKey;
+    } else {
+      type = AddressType.EnterpriseScript;
+    }
+  } else {
+    if (pCred.type == CredentialType.KeyHash) {
+      if (dCred.type == CredentialType.KeyHash) {
+        type = AddressType.BasePaymentKeyStakeKey;
+      } else {
+        type = AddressType.BasePaymentKeyStakeScript;
+      }
+    } else {
+      if (dCred.type == CredentialType.KeyHash) {
+        type = AddressType.BasePaymentScriptStakeKey;
+      } else {
+        type = AddressType.BasePaymentScriptStakeScript;
+      }
+    }
+  }
+  return new Address({
+    paymentPart: paymentCredential.toCore(),
+    delegationPart: delegationCredential?.toCore(),
+    type,
+    networkId: network,
+  });
+};
 
 /**
  * Interface for objects that can be serialized to CBOR.
