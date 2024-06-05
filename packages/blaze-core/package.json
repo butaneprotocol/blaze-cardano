@@ -19,14 +19,14 @@
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
     "eslint": "^8.57.0",
-    "tsup": "^8.0.2",
-    "typescript": "^5.3.3"
+    "tsup": "^8.1.0",
+    "typescript": "^5.4.5"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "@cardano-sdk/core": "^0.30.0",
+    "@cardano-sdk/core": "^0.30.2",
     "@cardano-sdk/crypto": "^0.1.23",
     "@cardano-sdk/util": "^0.15.1",
     "@noble/curves": "^1.4.0",
