@@ -1215,7 +1215,7 @@ export class TxBuilder {
         "TxBuilder addDelegation: failing to attach redeemer to a non-script delegation!",
       );
     } else {
-      this.requiredWitnesses.add(HashAsPubKeyHex(delegatorCredential.hash))
+      this.requiredWitnesses.add(HashAsPubKeyHex(delegatorCredential.hash));
     }
     return this;
   }
