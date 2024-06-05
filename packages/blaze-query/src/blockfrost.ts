@@ -1,7 +1,7 @@
 import type {
   AssetId,
-  Credential,
   CostModels,
+  Credential,
   DatumHash,
   PlutusData,
   ProtocolParameters,
