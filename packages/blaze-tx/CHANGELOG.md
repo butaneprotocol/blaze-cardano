@@ -1,5 +1,14 @@
 # @blaze-cardano/tx
 
+## 0.0.13
+
+### Patch Changes
+
+- 5368bcb: fix: space for delegator witnesses
+- a9f45f6: feat: auxiliary-data, fix: validity intervals returns
+- Updated dependencies [a9f45f6]
+  - @blaze-cardano/core@0.2.2
+
 ## 0.0.12
 
 ### Patch Changes

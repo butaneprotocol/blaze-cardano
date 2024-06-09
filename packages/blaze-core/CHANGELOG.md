@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.2.2
+
+### Patch Changes
+
+- a9f45f6: feat: auxiliary-data, fix: validity intervals returns
+
 ## 0.2.1
 
 ### Patch Changes
