@@ -1255,31 +1255,35 @@ export class TxBuilder {
   addRetirePool() {}
 
   /**
-   * Specifies the exact time when the transaction becomes valid
+   * Specifies the exact time when the transaction becomes valid.
    *
-   * @param {Slot} validFrom - The slot from which the transaction becomes valid
-   * @throws {Error} If the validity start interval is already set
+   * @param {Slot} validFrom - The slot from which the transaction becomes valid.
+   * @throws {Error} If the validity start interval is already set.
+   * @returns {TxBuilder} The instance of this TxBuilder for chaining.
    */
-  setValidFrom(validFrom: Slot) {
+  setValidFrom(validFrom: Slot): TxBuilder {
     if (this.body.validityStartInterval() !== undefined) {
       throw new Error(
         "TxBuilder setValidFrom: Validity start interval is already set",
       );
     }
     this.body.setValidityStartInterval(validFrom);
+    return this;
   }
 
   /**
-   * Specifies the exact time when the transaction expires
+   * Specifies the exact time when the transaction expires.
    *
-   * @param {Slot} validUntil - The slot until which the transaction is valid
-   * @throws {Error} If the time to live is already set
+   * @param {Slot} validUntil - The slot until which the transaction is valid.
+   * @throws {Error} If the time to live is already set.
+   * @returns {TxBuilder} The instance of this TxBuilder for chaining.
    */
-  setValidUntil(validUntil: Slot) {
+  setValidUntil(validUntil: Slot): TxBuilder {
     if (this.body.ttl() !== undefined) {
       throw new Error("TxBuilder setValidUntil: Time to live is already set");
     }
     this.body.setTtl(validUntil);
+    return this;
   }
 
   /**
