@@ -45,6 +45,18 @@ export type TransactionWitnessPlutusData = Set<PlutusData>;
 export const PlutusData = C.Serialization.PlutusData;
 export type PlutusData = C.Serialization.PlutusData;
 
+export const ConstrPlutusData = C.Serialization.ConstrPlutusData;
+export type ConstrPlutusData = C.Serialization.ConstrPlutusData;
+
+export const PlutusList = C.Serialization.PlutusList;
+export type PlutusList = C.Serialization.PlutusList;
+
+export const PlutusMap = C.Serialization.PlutusMap;
+export type PlutusMap = C.Serialization.PlutusMap;
+
+export const PlutusDataKind = C.Serialization.PlutusDataKind;
+export type PlutusDataKind = C.Serialization.PlutusDataKind;
+
 export const Redeemers = C.Serialization.Redeemers;
 export type Redeemers = C.Serialization.Redeemers;
 
@@ -194,3 +206,18 @@ export type Evaluator = (
   tx: Transaction,
   additionalUtxos: TransactionUnspentOutput[],
 ) => Promise<Redeemers>;
+
+export const Metadata = C.Serialization.GeneralTransactionMetadata;
+export type Metadata = C.Serialization.GeneralTransactionMetadata;
+
+export const Metadatum = C.Serialization.TransactionMetadatum;
+export type Metadatum = C.Serialization.TransactionMetadatum;
+
+export const MetadatumMap = C.Serialization.MetadatumMap;
+export type MetadatumMap = C.Serialization.MetadatumMap;
+
+export const MetadatumList = C.Serialization.MetadatumList;
+export type MetadatumList = C.Serialization.MetadatumList;
+
+export const TransactionMetadatumKind = C.Serialization.TransactionMetadatumKind;
+export type TransactionMetadatumKind = C.Serialization.TransactionMetadatumKind;
