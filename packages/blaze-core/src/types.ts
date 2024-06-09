@@ -207,8 +207,8 @@ export type Evaluator = (
   additionalUtxos: TransactionUnspentOutput[],
 ) => Promise<Redeemers>;
 
-export const AuxiliaryData = C.Serialization.AuxiliaryData
-export type AuxiliaryData = C.Serialization.AuxiliaryData
+export const AuxiliaryData = C.Serialization.AuxiliaryData;
+export type AuxiliaryData = C.Serialization.AuxiliaryData;
 
 export const Metadata = C.Serialization.GeneralTransactionMetadata;
 export type Metadata = C.Serialization.GeneralTransactionMetadata;
@@ -222,5 +222,6 @@ export type MetadatumMap = C.Serialization.MetadatumMap;
 export const MetadatumList = C.Serialization.MetadatumList;
 export type MetadatumList = C.Serialization.MetadatumList;
 
-export const TransactionMetadatumKind = C.Serialization.TransactionMetadatumKind;
+export const TransactionMetadatumKind =
+  C.Serialization.TransactionMetadatumKind;
 export type TransactionMetadatumKind = C.Serialization.TransactionMetadatumKind;

@@ -17,7 +17,7 @@ import type {
   PoolId,
   StakeDelegationCertificate,
   NetworkId,
-  AuxiliaryData
+  AuxiliaryData,
 } from "@blaze-cardano/core";
 import {
   CborSet,
@@ -1123,15 +1123,19 @@ export class TxBuilder {
       }
     }
     // Verify and set the auxiliary data
-    const auxiliaryData = this.auxiliaryData
-    if (auxiliaryData){
-      const auxiliaryDataHash = this.getAuxiliaryDataHash(auxiliaryData)
-      if (auxiliaryDataHash != this.body.auxiliaryDataHash()){
-        throw new Error("TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash")
+    const auxiliaryData = this.auxiliaryData;
+    if (auxiliaryData) {
+      const auxiliaryDataHash = this.getAuxiliaryDataHash(auxiliaryData);
+      if (auxiliaryDataHash != this.body.auxiliaryDataHash()) {
+        throw new Error(
+          "TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash",
+        );
       }
-    }else{
-      if (this.body.auxiliaryDataHash() != undefined){
-        throw new Error("TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash")
+    } else {
+      if (this.body.auxiliaryDataHash() != undefined) {
+        throw new Error(
+          "TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash",
+        );
       }
     }
     this.balanceChange(excessValue);
@@ -1229,7 +1233,7 @@ export class TxBuilder {
         "TxBuilder addDelegation: failing to attach redeemer to a non-script delegation!",
       );
     } else {
-      this.requiredWitnesses.add(HashAsPubKeyHex(delegatorCredential.hash))
+      this.requiredWitnesses.add(HashAsPubKeyHex(delegatorCredential.hash));
     }
     return this;
   }
@@ -1396,29 +1400,29 @@ export class TxBuilder {
 
   /**
    * Computes the hash of the auxiliary data if it exists.
-   * 
+   *
    * @param {AuxiliaryData} auxiliaryData - The auxiliary data to hash.
    * @returns {Hash32ByteBase16 | undefined} The hash of the auxiliary data or undefined if no auxiliary data is provided.
    */
-  private getAuxiliaryDataHash(auxiliaryData: AuxiliaryData): Hash32ByteBase16 | undefined {
-    return auxiliaryData
-        ? blake2b_256(auxiliaryData.toCbor())
-        : undefined;
+  private getAuxiliaryDataHash(
+    auxiliaryData: AuxiliaryData,
+  ): Hash32ByteBase16 | undefined {
+    return auxiliaryData ? blake2b_256(auxiliaryData.toCbor()) : undefined;
   }
 
   /**
    * Sets the auxiliary data for the transaction and updates the transaction's auxiliary data hash.
-   * 
+   *
    * @param {AuxiliaryData} auxiliaryData - The auxiliary data to set.
    * @returns {TxBuilder} The same transaction builder
    */
   setAuxiliaryData(auxiliaryData: AuxiliaryData): TxBuilder {
-    const auxiliaryDataHash = this.getAuxiliaryDataHash(auxiliaryData)
-    if (auxiliaryDataHash){
-      this.body.setAuxiliaryDataHash(auxiliaryDataHash)
+    const auxiliaryDataHash = this.getAuxiliaryDataHash(auxiliaryData);
+    if (auxiliaryDataHash) {
+      this.body.setAuxiliaryDataHash(auxiliaryDataHash);
     }
-    this.auxiliaryData = auxiliaryData
-    return this
+    this.auxiliaryData = auxiliaryData;
+    return this;
   }
 
   /**
