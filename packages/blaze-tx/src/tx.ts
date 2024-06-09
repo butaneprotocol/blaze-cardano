@@ -17,6 +17,7 @@ import type {
   PoolId,
   StakeDelegationCertificate,
   NetworkId,
+  AuxiliaryData
 } from "@blaze-cardano/core";
 import {
   CborSet,
@@ -94,6 +95,7 @@ constraints:
 export class TxBuilder {
   readonly params: ProtocolParameters;
   private body: TransactionBody; // The main body of the transaction containing inputs, outputs, etc.
+  private auxiliaryData?: AuxiliaryData;
   private redeemers: Redeemers = Redeemers.fromCore([]); // A collection of redeemers for script validation.
   private utxos: Set<TransactionUnspentOutput> =
     new Set<TransactionUnspentOutput>(); // A set of unspent transaction outputs.
@@ -1120,9 +1122,21 @@ export class TxBuilder {
         this.body.setScriptDataHash(scriptDataHash);
       }
     }
+    // Verify and set the auxiliary data
+    const auxiliaryData = this.auxiliaryData
+    if (auxiliaryData){
+      const auxiliaryDataHash = this.getAuxiliaryDataHash(auxiliaryData)
+      if (auxiliaryDataHash != this.body.auxiliaryDataHash()){
+        throw new Error("TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash")
+      }
+    }else{
+      if (this.body.auxiliaryDataHash() != undefined){
+        throw new Error("TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash")
+      }
+    }
     this.balanceChange(excessValue);
     // Create a draft transaction for fee calculation.
-    const draft_tx = new Transaction(this.body, tw);
+    const draft_tx = new Transaction(this.body, tw, auxiliaryData);
     // Calculate and set the transaction fee.
     let draft_size = draft_tx.toCbor().length / 2;
     this.calculateFees(draft_tx);
@@ -1378,6 +1392,33 @@ export class TxBuilder {
     // Update the transaction body with the new set of required signers.
     this.body.setRequiredSigners(signers);
     return this;
+  }
+
+  /**
+   * Computes the hash of the auxiliary data if it exists.
+   * 
+   * @param {AuxiliaryData} auxiliaryData - The auxiliary data to hash.
+   * @returns {Hash32ByteBase16 | undefined} The hash of the auxiliary data or undefined if no auxiliary data is provided.
+   */
+  private getAuxiliaryDataHash(auxiliaryData: AuxiliaryData): Hash32ByteBase16 | undefined {
+    return auxiliaryData
+        ? blake2b_256(auxiliaryData.toCbor())
+        : undefined;
+  }
+
+  /**
+   * Sets the auxiliary data for the transaction and updates the transaction's auxiliary data hash.
+   * 
+   * @param {AuxiliaryData} auxiliaryData - The auxiliary data to set.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  setAuxiliaryData(auxiliaryData: AuxiliaryData): TxBuilder {
+    const auxiliaryDataHash = this.getAuxiliaryDataHash(auxiliaryData)
+    if (auxiliaryDataHash){
+      this.body.setAuxiliaryDataHash(auxiliaryDataHash)
+    }
+    this.auxiliaryData = auxiliaryData
+    return this
   }
 
   /**
