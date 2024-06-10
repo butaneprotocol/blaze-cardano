@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.14
+
+### Patch Changes
+
+- dd2f05b: Started to bring in plutus data serialisation
+
 ## 0.0.13
 
 ### Patch Changes
