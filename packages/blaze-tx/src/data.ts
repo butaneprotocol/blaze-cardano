@@ -109,7 +109,7 @@ export const Data = {
   castTo,
   to,
   from,
-  void: () =>
+  void: (): PlutusData =>
     PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, new PlutusList())),
 };
 
