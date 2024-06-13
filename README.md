@@ -39,7 +39,7 @@ npm i @blaze-cardano/sdk
 ```ts
 //  In this example we:
 //  - prepare the provider (Maestro), wallet, blaze,
-//  - build a transaction paying out 50 ada to an external wallet
+//  - build a transaction paying out 5 ada to an external wallet
 //  - dump the transaction cbor
 import { ColdWallet, Core, Blaze, Maestro } from "@blaze-cardano/sdk";
 import * as readline from "node:readline/promises";

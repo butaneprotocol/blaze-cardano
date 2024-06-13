@@ -277,7 +277,6 @@ export class Emulator {
    *   - Valid field matters for scripts/collateral: Check that the valid field is true for scripts and collateral.
    *      - The valid field tells you whether the tx should be passed as a collateral forfeit or if the tx should succeed.
    *      - I believe when the valid field is true, even if the tx fails, the node will reject it, but a malicious node could accept and propagate it.
-   *      - You can reduce the witness set as only the collateral input needs to be signed for.
    *   - Babbage Missing Scripts: Check for missing scripts according to the Babbage rules. Reference scripts get counted for free, in conway the constitution script is given for free, others need to be included in witnesses.
    *   - Scripts Well Formed: Ensure that all scripts are well-formed.
    *   - Check scripts needed: Check that all needed scripts are provided.
