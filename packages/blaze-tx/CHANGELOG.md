@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.15
+
+### Patch Changes
+
+- 2e49c71: Better type checking for plutus data serialisation and JSON Schema builders with Data. Uses Lucid's patterns for now
+
 ## 0.0.14
 
 ### Patch Changes
