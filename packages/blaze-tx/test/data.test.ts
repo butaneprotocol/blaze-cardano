@@ -22,7 +22,7 @@ describe("Data Serialisation", () => {
 
     const serialised = Data.to(data, stringDataSchema);
     const deserialised = Data.from(serialised, stringDataSchema);
-    expect(deserialised).toEqual(data);
+    expect(deserialised).toEqual<stringData>(data);
   });
 
   it("Should be able to serialise and deserialise string from blueprint", () => {

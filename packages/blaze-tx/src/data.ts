@@ -338,8 +338,8 @@ function to<T>(data: Exact<T>, type: T): PlutusData {
   return castTo(data, type as unknown as TSchema);
 }
 
-function from<T>(data: PlutusData, type: T) {
-  return castFrom(data, type as unknown as TSchema);
+function from<T>(data: PlutusData, type: T): Exact<T> {
+  return castFrom(data, type as unknown as TSchema) as Exact<T>;
 }
 
 function castTo<T extends TSchema>(struct: Exact<T>, schema: T): PlutusData {
