@@ -8,6 +8,7 @@ import { HexBlob, fromHex, toHex } from "@blaze-cardano/core";
 
 /*
   This is intended to be a clean-room of UPLC from spec however the real implementation functionally differs.
+  * blame rvcas/microproofs for polluting the clean-room (helping me)
   Inconsistencies are noted:
     - Integer representation is not strictly lists, parseList2 fixes this
   Arbitrary:
