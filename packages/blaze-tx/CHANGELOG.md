@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.16
+
+### Patch Changes
+
+- 88ab934: Fixed spend redeemer ordering and data casting return type
+
 ## 0.0.15
 
 ### Patch Changes
