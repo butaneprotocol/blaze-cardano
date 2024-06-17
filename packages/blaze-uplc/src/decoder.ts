@@ -3,16 +3,17 @@ import { Parser as FlatDecoder } from "./flat";
 import type { Byte, Data, ParsedProgram, ParsedTerm, SemVer } from "./types";
 import { BuiltinFunctions, DataType, TermNames, termTags } from "./types";
 import { HexBlob, fromHex, toHex } from "@blaze-cardano/core";
-/*
-  This is intended to be a clean-room of UPLC from spec however the real implementation functionally differs.
-  * blame rvcas/microproofs for polluting the clean-room (helping me)
-  Inconsistencies are noted:
-    - Integer representation is not strictly lists, parseList2 fixes this
-  Arbitrary:
-    - Unit is Constr(0, []) simply because I know this is how aiken does it
-*/
 
+/**
+ * This class provides decoding functionality for UPLC (Untyped Plutus Core) programs.
+ * It extends the FlatDecoder class to handle the specific structure of UPLC programs.
+ * The decoding process involves interpreting binary data into structured UPLC terms and types.
+ */
 export class UPLCDecoder extends FlatDecoder {
+  /**
+   * Decodes a version number from the binary stream.
+   * @returns {SemVer} The decoded semantic versioning number as a string.
+   */
   #decodeVersion(): SemVer {
     const major = this.popByte();
     const minor = this.popByte();
@@ -20,6 +21,12 @@ export class UPLCDecoder extends FlatDecoder {
     return `${major}.${minor}.${patch}`;
   }
 
+  /**
+   * Decodes a list of items from the binary stream.
+   * @template Item The type of items in the list.
+   * @param {() => Item} decodeItem A function to decode a single item.
+   * @returns {Item[]} The decoded list of items.
+   */
   #decodeList<Item>(decodeItem: () => Item): Item[] {
     const list: Item[] = [];
     let cont = this.popBit();
@@ -30,6 +37,12 @@ export class UPLCDecoder extends FlatDecoder {
     return list;
   }
 
+  /**
+   * Decodes a list of items where the list is expected to have at least one item.
+   * @template Item The type of items in the list.
+   * @param {() => Item} decodeItem A function to decode a single item.
+   * @returns {Item[]} The decoded list of items.
+   */
   #decodeList2<Item>(decodeItem: () => Item): Item[] {
     const list: Item[] = [];
     let cont = this.popBit();
@@ -41,6 +54,10 @@ export class UPLCDecoder extends FlatDecoder {
     return list;
   }
 
+  /**
+   * Decodes a natural number from the binary stream.
+   * @returns {bigint} The decoded natural number.
+   */
   #decodeNatural() {
     const bytes = this.#decodeList2(() => this.popBits(7) as number);
     let val = 0n;
@@ -50,6 +67,10 @@ export class UPLCDecoder extends FlatDecoder {
     return val;
   }
 
+  /**
+   * Decodes an integer from the binary stream.
+   * @returns {bigint} The decoded integer.
+   */
   #decodeInteger() {
     const nat = this.#decodeNatural();
     if (nat % 2n === 0n) {
@@ -59,6 +80,10 @@ export class UPLCDecoder extends FlatDecoder {
     }
   }
 
+  /**
+   * Decodes a byte string from the binary stream.
+   * @returns {Uint8Array} The decoded byte array.
+   */
   #decodeByteString() {
     this.skipByte();
     let blockLength: number = this.popByte();
@@ -86,16 +111,29 @@ export class UPLCDecoder extends FlatDecoder {
     return arr;
   }
 
+  /**
+   * Decodes a boolean value from the binary stream.
+   * @returns {object} The decoded boolean value as a UPLC data structure.
+   */
   #decodeBool() {
     return { constructor: this.popBit() == 0 ? 0n : 1n, items: [] };
   }
 
+  /**
+   * Decodes CBOR data from the binary stream.
+   * @returns {Data} The decoded data in Plutus core format.
+   */
   #decodeCborData() {
     return Serialization.PlutusData.fromCbor(
       HexBlob(toHex(this.#decodeByteString())),
     ).toCore();
   }
 
+  /**
+   * Decodes data based on the specified data type.
+   * @param {DataType} dataType The type of data to decode.
+   * @returns {Data} The decoded data.
+   */
   #decodeData(dataType: DataType): Data {
     if (dataType == "Integer") {
       return this.#decodeInteger();
@@ -124,6 +162,11 @@ export class UPLCDecoder extends FlatDecoder {
     }
   }
 
+  /**
+   * Decodes a type from the binary stream.
+   * @param {Byte[]} type The binary representation of the type.
+   * @returns {[DataType, Byte[]]} The decoded data type and the remaining bytes.
+   */
   #decodeType(type: Byte[]): [DataType, Byte[]] {
     if (type.length == 0) {
       return ["Unit", type];
@@ -147,6 +190,10 @@ export class UPLCDecoder extends FlatDecoder {
     }
   }
 
+  /**
+   * Decodes a constant from the binary stream.
+   * @returns {Data} The decoded constant.
+   */
   #decodeConst() {
     const bits = this.#decodeList(() => this.popBits(4));
     const [dataType, remainder] = this.#decodeType(bits);
@@ -157,6 +204,11 @@ export class UPLCDecoder extends FlatDecoder {
     return result;
   }
 
+  /**
+   * Decodes a term from the binary stream.
+   * @param {bigint} lamDepth The current lambda depth in the term structure.
+   * @returns {ParsedTerm} The decoded term.
+   */
   #decodeTerm(lamDepth: bigint): ParsedTerm {
     const termTag = this.popBits(4);
     const maybeTerm = Object.entries(
@@ -223,6 +275,10 @@ export class UPLCDecoder extends FlatDecoder {
     }
   }
 
+  /**
+   * Decodes the entire UPLC program from the binary stream.
+   * @returns {ParsedProgram} The decoded program.
+   */
   #decodeProgram(): ParsedProgram {
     const version = this.#decodeVersion();
     const body = this.#decodeTerm(0n);
@@ -232,11 +288,32 @@ export class UPLCDecoder extends FlatDecoder {
     };
   }
 
+  /**
+   * Public method to decode a UPLC program from the UPLCDecoder instance
+   * @returns {ParsedProgram} The decoded UPLC program.
+   */
   decode(): ParsedProgram {
     return this.#decodeProgram();
   }
 
+  /**
+   * Creates a UPLCDecoder instance from a hexadecimal string.
+   * @param {string} hex Hexadecimal string of a UPLC program's binary data.
+   * @returns {UPLCDecoder} Initialized UPLCDecoder with the decoded data.
+   */
   static override fromHex(hex: string) {
     return new UPLCDecoder(fromHex(hex));
+  }
+
+  /**
+   * Decodes a UPLC program from a hexadecimal string.
+   * This method utilizes the `fromHex` method to create an instance of UPLCDecoder
+   * and then decodes the program using the `decode` method.
+   *
+   * @param {string} hex - The hexadecimal string representing the binary data of a UPLC program.
+   * @returns {ParsedProgram} - The decoded UPLC program.
+   */
+  static decodeFromHex(hex: string): ParsedProgram {
+    return this.fromHex(hex).decode();
   }
 }
