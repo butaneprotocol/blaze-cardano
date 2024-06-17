@@ -78,14 +78,6 @@ export class Parser {
     this.#index += 1;
     this.#bitAccessor = 128;
   }
-
-  getIndex() {
-    return this.#index;
-  }
-
-  getAlign() {
-    return this.#bitAccessor;
-  }
 }
 
 export class Encoder {
