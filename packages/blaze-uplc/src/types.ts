@@ -1,9 +1,14 @@
 import { Serialization } from "@cardano-sdk/core";
 export const { CborReader, PlutusData } = Serialization;
 
-export interface Some<T> {
-  value: T;
-}
+export type Bit = 0 | 1;
+export type Byte = number & { __opaqueNumber: "Byte" };
+export const Byte = (number: number): Byte => {
+  if (!Number.isInteger(number) || number < 0 || number > 255) {
+    throw new Error("Number must be an integer within the byte range 0-255");
+  }
+  return number as Byte;
+};
 
 export const TermNames = {
   var: "Var",
@@ -21,6 +26,24 @@ export type TermNames = typeof TermNames;
 
 export type Data = ReturnType<Serialization.PlutusData["toCore"]>;
 
+export const DataType = {
+  0: "Integer",
+  1: "ByteString",
+  2: "String",
+  3: "Unit",
+  4: "Bool",
+  8: "Data",
+} as Record<Byte, DataType>;
+export type DataType =
+  | "Integer"
+  | "ByteString"
+  | "String"
+  | "Unit"
+  | "Bool"
+  | "Data"
+  | { pair: [DataType, DataType] }
+  | { list: DataType };
+
 export type Term<name, fun> =
   | { type: TermNames["var"]; name: name }
   | { type: TermNames["lam"]; name: name; body: Term<name, fun> }
@@ -29,7 +52,7 @@ export type Term<name, fun> =
       function: Term<name, fun>;
       argument: Term<name, fun>;
     }
-  | { type: TermNames["const"]; value: Some<Data> }
+  | { type: TermNames["const"]; value: Data }
   | { type: TermNames["builtin"]; function: fun }
   | { type: TermNames["delay"]; term: Term<name, fun> }
   | { type: TermNames["force"]; term: Term<name, fun> }
@@ -116,7 +139,7 @@ export const BuiltinFunctions = [
   "verifySchnorrSecp256k1Signature",
 ] as const;
 export type BuiltinFunctions = typeof BuiltinFunctions;
-export type BuiltinFunction = BuiltinFunctions[keyof BuiltinFunctions];
+export type BuiltinFunction = (typeof BuiltinFunctions)[number];
 
 export type ParsedTerm = Term<bigint, BuiltinFunction>;
 export type ParsedProgram = Program<bigint, BuiltinFunction>;

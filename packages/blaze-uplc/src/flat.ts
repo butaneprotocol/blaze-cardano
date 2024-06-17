@@ -1,13 +1,5 @@
-import Hex from "hex-encoding"
-
-export type Bit = 0 | 1;
-export type Byte = number & { __opaqueNumber: "Byte" };
-export const Byte = (number: number): Byte => {
-  if (!Number.isInteger(number) || number < 0 || number > 255) {
-    throw new Error("Number must be an integer within the byte range 0-255");
-  }
-  return number as Byte;
-};
+import { fromHex } from "@blaze-cardano/core";
+import { type Bit, Byte } from "./types";
 
 export class Parser {
   #bytes: Uint8Array;
@@ -19,7 +11,7 @@ export class Parser {
   }
 
   static fromHex(hex: string) {
-    return new this(Hex.decode(hex));
+    return new this(fromHex(hex));
   }
 
   popBit(): Bit {
@@ -79,11 +71,102 @@ export class Parser {
   }
 
   skipByte(): void {
+    if (this.#bitAccessor < 1) {
+      this.#bitAccessor = 128;
+      this.#index += 1;
+    }
     this.#index += 1;
     this.#bitAccessor = 128;
   }
 
   getIndex() {
-    return this.#index
+    return this.#index;
+  }
+
+  getAlign() {
+    return this.#bitAccessor;
+  }
+}
+
+export class Encoder {
+  #bytes: Uint8Array;
+  #index: number;
+  #bitAccessor: number;
+  #arraySize: number;
+
+  constructor() {
+    this.#arraySize = 1024; // Initial size
+    this.#bytes = new Uint8Array(this.#arraySize);
+    this.#index = 0;
+    this.#bitAccessor = 128;
+  }
+
+  #ensureCapacity(requiredCapacity: number): void {
+    if (requiredCapacity > this.#arraySize) {
+      while (this.#arraySize < requiredCapacity) {
+        this.#arraySize *= 2;
+      }
+      const newBytes = new Uint8Array(this.#arraySize);
+      newBytes.set(this.#bytes);
+      this.#bytes = newBytes;
+    }
+  }
+
+  pushBit(bit: number): void {
+    if (this.#bitAccessor === 128) {
+      this.#ensureCapacity(this.#index + 1);
+      this.#bitAccessor = 1;
+      this.#bytes[this.#index] = 0;
+    } else {
+      this.#bitAccessor <<= 1;
+    }
+
+    if (bit) {
+      this.#bytes[this.#index] |= this.#bitAccessor;
+    }
+
+    if (this.#bitAccessor === 128) {
+      this.#index++;
+    }
+  }
+
+  pushBits(bits: number, n: number): void {
+    for (let i = 0; i < n; i++) {
+      this.pushBit((bits & (1 << i)) !== 0 ? 1 : 0);
+    }
+  }
+
+  pushByte(byte: number): void {
+    this.#ensureCapacity(this.#index + 1);
+    if (this.#bitAccessor !== 128) {
+      this.#index++;
+      this.#bitAccessor = 128;
+    }
+    this.#bytes[this.#index] = byte;
+    this.#index++;
+  }
+
+  pushBytes(bytes: Uint8Array): void {
+    this.#ensureCapacity(this.#index + bytes.length);
+    if (this.#bitAccessor !== 128) {
+      this.#index++;
+      this.#bitAccessor = 128;
+    }
+    bytes.forEach((byte) => {
+      this.#bytes[this.#index] = byte;
+      this.#index++;
+    });
+  }
+
+  pad(): void {
+    while (this.#bitAccessor !== 128) {
+      this.pushBit(0);
+    }
+    this.#bitAccessor >>= 1;
+    this.#bytes[this.#index] |= this.#bitAccessor;
+  }
+
+  getBytes(): Uint8Array {
+    return this.#bytes.slice(0, this.#index);
   }
 }

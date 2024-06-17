@@ -1,12 +1,10 @@
 /* This package has basic UPLC manipulation but does not yet implement a machine */
 import { Serialization } from "@cardano-sdk/core";
-import { Parser as FlatParser } from "./flat";
-import Hex from "hex-encoding"
-import {type Byte} from "./flat"
-import type { Data, ParsedProgram, ParsedTerm, SemVer, Some } from "./types";
-import { BuiltinFunctions, TermNames, termTags } from "./types";
+import { Parser as FlatParser, Encoder as FlatEncoder } from "./flat";
+import type { Byte, Data, ParsedProgram, ParsedTerm, SemVer } from "./types";
+import { BuiltinFunctions, DataType, TermNames, termTags } from "./types";
 export const { CborReader, PlutusData, PlutusList } = Serialization;
-import { HexBlob, toHex } from "@blaze-cardano/core";
+import { HexBlob, fromHex, toHex } from "@blaze-cardano/core";
 
 /*
   This is intended to be a clean-room of UPLC from spec however the real implementation functionally differs.
@@ -65,7 +63,7 @@ export class UPLCParser extends FlatParser {
 
   #parseByteString() {
     this.skipByte();
-    let blockLength = this.popByte();
+    let blockLength: number = this.popByte();
     if (blockLength == 0) {
       return new Uint8Array();
     }
@@ -80,7 +78,7 @@ export class UPLCParser extends FlatParser {
         newArray.set(takenSlice, arr.length);
         arr = newArray;
       }
-      blockLength = this.popByte();
+      blockLength = this.takeBytes(1)[0]!;
     }
     if (arr == undefined) {
       throw new Error(
@@ -90,56 +88,75 @@ export class UPLCParser extends FlatParser {
     return arr;
   }
 
-  #parsePData(bits: Byte[], d: number): Some<Data> {
-    const [constantType, ...bits2] = bits
-    //console.log(`Parsing ${constantType}`)
-    if (constantType == 0) {
-      return { value: this.#parseInteger() };
-    } else if (constantType == 1) {
-      return { value: this.#parseByteString() };
-    } else if (constantType == 3) {
-      return { value: 0n };
-    } else if (constantType == 4) {
+  #parseBool() {
+    return { constructor: this.popBit() == 0 ? 0n : 1n, items: [] };
+  }
+
+  #parseCborData() {
+    return PlutusData.fromCbor(
+      HexBlob(toHex(this.#parseByteString())),
+    ).toCore();
+  }
+
+  #parseData(dataType: DataType): Data {
+    if (dataType == "Integer") {
+      return this.#parseInteger();
+    } else if (dataType == "ByteString") {
+      return this.#parseByteString();
+    } else if (dataType == "String") {
+      console.warn("ByteString needs to be decoded to string");
+      return this.#parseByteString();
+    } else if (dataType == "Unit") {
+      return 0n;
+    } else if (dataType == "Bool") {
+      return this.#parseBool();
+    } else if (dataType == "Data") {
+      return this.#parseCborData();
+    } else if ("list" in dataType) {
+      return { items: this.#parseList(() => this.#parseData(dataType.list)) };
+    } else if (typeof dataType == "object" && "pair" in dataType) {
       return {
-        value: {
-          constructor: this.popBit() == 0 ? 0n : 1n,
-          fields: { items: [] },
-        },
-      };
-    } else if (constantType == 7){
-      const [a,b] = bits2
-      if (a==5){
-        //console.log(`Parsing a list of ${b}, depth ${d}`)
-        return {
-          value: {
-            items: this.#parseList(() => this.#parsePData([b!], d+1)).map((x) => x.value),
-          },
-        }
-      }else if (a == 7 && b==6){
-        //console.log(`loading pairs 2 ${bits}`)
-        // const a = this.#parsePData([], d+1).value;
-        // const b = this.#parsePData([], d+1).value;
-        // return { value: { items: [a, b] } };
-        throw new Error("No pairs!")
-      }else{
-        //return this.#parsePData()
-        throw new Error(`Type application cannot use tags ${bits}`)
-      }
-    } else if (constantType == 8) {
-      return {
-        value: PlutusData.fromCbor(
-          HexBlob(toHex(this.#parseByteString())),
-        ).toCore(),
+        items: [
+          this.#parseData(dataType.pair[0]),
+          this.#parseData(dataType.pair[1]),
+        ],
       };
     } else {
-      throw new Error(`Cannot parse type ${constantType}`);
+      throw new Error(`Cannot parse type ${JSON.stringify(dataType)}`);
     }
   }
 
-  #parseConst(){
+  #parseType(type: Byte[]): [DataType, Byte[]] {
+    if (type.length == 0) {
+      return ["Unit", type];
+    } else {
+      const head = type.at(0);
+      if (head == 7) {
+        const subtype = type.at(1);
+        if (subtype == 5) {
+          const [innerType, remainer] = this.#parseType(type.slice(2));
+          return [{ list: innerType }, remainer];
+        } else if (subtype == 7 && type.at(2) == 6) {
+          const [innerType, remainer] = this.#parseType(type.slice(3));
+          const [innerType2, remainer2] = this.#parseType(remainer);
+          return [{ pair: [innerType, innerType2] }, remainer2];
+        } else {
+          throw new Error("UPLCParser #parseType: invalid type application");
+        }
+      } else {
+        return [DataType[head!]! as DataType, type.slice(1)];
+      }
+    }
+  }
+
+  #parseConst() {
     const bits = this.#parseList(() => this.popBits(4));
-    console.log(`Parsing with type ${bits}`)
-    return this.#parsePData(bits, 0)
+    const [dataType, remainder] = this.#parseType(bits);
+    if (remainder.length != 0) {
+      throw new Error("UPLCParser #parseConst: invalid type application");
+    }
+    const result = this.#parseData(dataType);
+    return result;
   }
 
   #parseTerm(lamDepth: bigint): ParsedTerm {
@@ -222,6 +239,109 @@ export class UPLCParser extends FlatParser {
   }
 
   static override fromHex(hex: string) {
-    return new UPLCParser(Hex.decode(hex));
+    return new UPLCParser(fromHex(hex));
+  }
+}
+
+export class UPLCEncoder extends FlatEncoder {
+  // Implementation of UPLCEncoder extending FlatEncoder
+
+  encodeProgram(program: ParsedProgram): Uint8Array {
+    this.encodeVersion(program.version);
+    this.encodeTerm(program.body);
+    this.pad();
+    return this.getBytes();
+  }
+
+  encodeVersion(version: ParsedProgram["version"]) {
+    // Parsing version from string format 'major.minor.patch' to Uint8Array
+    const versionParts = version.split(".").map(Number);
+    versionParts.forEach((part) => this.pushByte(part));
+  }
+
+  encodeList<Item>(list: Item[], encoder: (item: Item) => void) {
+    this.pushBit(1);
+    for (const item of list) {
+      encoder(item);
+      this.pushBit(1);
+    }
+    this.pushBit(0);
+  }
+
+  encodeList2<Item>(list: Item[], encoder: (item: Item) => void) {
+    this.pushBit(1);
+    const lastIndex = list.length - 1;
+    for (const [index, item] of list.entries()) {
+      encoder(item);
+      if (index !== lastIndex) {
+        this.pushBit(1);
+      }
+    }
+    this.pushBit(0);
+  }
+
+  encodeNatural(natural: bigint) {
+    const bytes = [];
+    let value = natural;
+    while (value > 0n) {
+      bytes.push(Number(value & 0x7fn));
+      value >>= 7n;
+    }
+    if (bytes.length === 0) {
+      bytes.push(0);
+    }
+    this.encodeList(bytes, (byte) => this.pushBits(byte, 7));
+  }
+
+  encodeInteger(integer: bigint) {
+    const natural = integer >= 0 ? integer * 2n : -integer * 2n - 1n;
+    this.encodeNatural(natural);
+  }
+
+  encodeByteString(byteString: Uint8Array) {
+    this.pushBit(1); // Start of byte string marker
+    this.encodeNatural(BigInt(byteString.length)); // Encode the length of the byte string
+    for (const byte of byteString) {
+      this.pushByte(byte); // Encode each byte
+    }
+    this.pushBit(0); // End of byte string marker
+  }
+
+  // encodeData(data: Data) {
+  //   const { value } = data;
+  //   if (typeof value === 'bigint') {
+  //     this.encodeInteger(value);
+  //   } else if (typeof value === 'string') {
+  //     this.encodeByteString(value);
+  //   }
+  // }
+
+  encodeTerm(term: ParsedTerm) {
+    const termTag = termTags[term.type];
+    this.pushBits(termTag, 4);
+
+    if (term.type == TermNames["var"]) {
+      this.encodeNatural(term.name);
+    } else if (term.type === TermNames["lam"]) {
+      this.encodeTerm(term.body);
+    } else if (term.type === TermNames["const"]) {
+      // this.encodeTerm()
+    } else if (term.type == TermNames["builtin"]) {
+      const builtinIndex = BuiltinFunctions.indexOf(term.function);
+      this.encodeNatural(BigInt(builtinIndex));
+    } else if (term.type === TermNames["apply"]) {
+      this.encodeTerm(term.function);
+      this.encodeTerm(term.argument);
+    } else if (term.type === TermNames["delay"]) {
+      this.encodeTerm(term.term);
+    } else if (term.type === TermNames["force"]) {
+      this.encodeTerm(term.term);
+    } else if (term.type === TermNames["error"]) {
+      return;
+    } else {
+      throw new Error(
+        `UPLCEncoder: No encoder implemented for term type ${term.type}`,
+      );
+    }
   }
 }
