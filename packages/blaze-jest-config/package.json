@@ -4,5 +4,8 @@
   "license": "MIT",
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "ts-jest": "^29.1.1"
   }
 }

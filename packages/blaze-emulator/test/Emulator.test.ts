@@ -101,8 +101,21 @@ describe("Emulator", () => {
     const out = emulator.getOutput(inp);
     isDefined(out);
     isDefined(out.datum());
-    const spendTx = await (await blaze.newTransaction())
+    const spendTx = await (
+      await blaze.newTransaction()
+    )
       .addInput(new TransactionUnspentOutput(inp, out), VOID_PLUTUS_DATA)
+      .lockAssets(
+        addressFromCredential(
+          NetworkId.Testnet,
+          Credential.fromCore({
+            type: CredentialType.ScriptHash,
+            hash: alwaysTrueScript.hash(),
+          }),
+        ),
+        makeValue(1_000_000_000n),
+        ONE_PLUTUS_DATA,
+      )
       .provideScript(alwaysTrueScript)
       .complete();
     const spendTxHash = await signAndSubmit(spendTx, blaze);

@@ -276,15 +276,26 @@ export class TxBuilder {
     inputs.setValues(values);
     this.utxoScope.add(utxo);
     this.body.setInputs(inputs);
+
+    const oref = utxo.input().transactionId() + utxo.input().index().toString();
+    const insertIdx = this.insertSorted(this.consumedSpendInputs, oref);
+
+    const redeemers = [...this.redeemers.values()];
+    for (const redeemer of redeemers) {
+      if (
+        redeemer.tag() == RedeemerTag.Spend &&
+        redeemer.index() >= BigInt(insertIdx)
+      ) {
+        redeemer.setIndex(redeemer.index() + 1n);
+      }
+    }
+
     // Process the redeemer and datum logic for Plutus script-locked UTxOs.
     const key = utxo.output().address().getProps().paymentPart;
     if (!key) {
       throw new Error("addInput: Somehow the UTxO payment key is missing!");
     }
     if (redeemer !== undefined) {
-      const oref =
-        utxo.input().transactionId() + utxo.input().index().toString();
-      const insertIdx = this.insertSorted(this.consumedSpendInputs, oref);
       if (key.type == CredentialType.KeyHash) {
         throw new Error(
           "addInput: Cannot spend with redeemer for KeyHash credential!",
@@ -311,15 +322,6 @@ export class TxBuilder {
         this.plutusData.add(unhashDatum!);
       }
       // Prepare and add the redeemer to the transaction, including execution units estimation.
-      const redeemers = [...this.redeemers.values()];
-      for (const redeemer of redeemers) {
-        if (
-          redeemer.tag() == RedeemerTag.Spend &&
-          redeemer.index() >= insertIdx
-        ) {
-          redeemer.setIndex(redeemer.index() + 1n);
-        }
-      }
       redeemers.push(
         Redeemer.fromCore({
           index: insertIdx,
