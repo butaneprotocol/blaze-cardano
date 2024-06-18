@@ -6,25 +6,25 @@ const sundae =
 describe("Script Deserialisation", () => {
   it("Should be able to parse the spec example", () => {
     const spend = "0500023371C911071A5F783625EE8C004838B40181".toLowerCase();
-    const AST = UPLCDecoder.fromHex(spend);
+    const AST = UPLCDecoder.decodeFromHex(spend);
     expect(AST).toBeTruthy();
   });
 
   it("Should be able to parse the spec example", () => {
     const spend = "010000480081".toLowerCase();
-    const AST = UPLCDecoder.fromHex(spend);
+    const AST = UPLCDecoder.decodeFromHex(spend);
     expect(AST).toBeTruthy();
   });
 
   it("Should be able to parse the optimised spend validator", () => {
     const spend =
       "01000032323232322222323330010010053756601260146014601460146014601460106EA8C024C020DD5001111299980419BAF3009300B00100214984CCC00C00C008C0300055CD2AB9D5573CAE855D11".toLowerCase();
-    const AST = UPLCDecoder.fromHex(spend);
+    const AST = UPLCDecoder.decodeFromHex(spend);
     expect(AST).toBeTruthy();
   });
 
   it("Should be able to parse the Sundae validator", () => {
-    const AST = UPLCDecoder.fromHex(sundae);
+    const AST = UPLCDecoder.decodeFromHex(sundae);
     expect(AST).toBeTruthy();
   });
 });
@@ -33,7 +33,7 @@ describe("Parsing benchmark", () => {
   it("Should be able to parse the Sundae validator", () => {
     const startTime = Date.now();
     for (let i = 0; i < 100; i++) {
-      const AST = UPLCDecoder.fromHex(sundae);
+      const AST = UPLCDecoder.decodeFromHex(sundae);
       expect(AST).toBeTruthy();
     }
     const endTime = Date.now();
