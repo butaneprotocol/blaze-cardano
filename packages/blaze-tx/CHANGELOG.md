@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.17
+
+### Patch Changes
+
+- b7cba8b: feat: tx.setMinimumFee
+
 ## 0.0.16
 
 ### Patch Changes
