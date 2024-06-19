@@ -124,6 +124,7 @@ export class TxBuilder {
   private consumedMintHashes: Hash28ByteBase16[] = [];
   private consumedWithdrawalHashes: Hash28ByteBase16[] = [];
   private consumedSpendInputs: string[] = [];
+  private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -192,6 +193,18 @@ export class TxBuilder {
    */
   addAdditionalSigners(amount: number) {
     this.additionalSigners += amount;
+    return this;
+  }
+
+  /**
+   * Sets the minimum fee for the transaction.
+   * This fee will be used during the transaction building process.
+   *
+   * @param {bigint} fee - The minimum fee to be set.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  setMinimumFee(fee: bigint) {
+    this.minimumFee = fee;
     return this;
   }
 
@@ -928,7 +941,7 @@ export class TxBuilder {
       ),
     );
     // Update the transaction body with the calculated fee.
-    this.body.setFee(this.fee);
+    this.body.setFee(BigIntMax(this.fee, this.minimumFee));
   }
 
   /**
@@ -1170,7 +1183,7 @@ export class TxBuilder {
         Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
       );
       excessValue = this.getPitch(false);
-      this.body.setFee(this.fee);
+      this.body.setFee(BigIntMax(this.fee, this.minimumFee));
       this.balanceChange(excessValue);
       if (this.body.collateral()) {
         this.balanceCollateralChange();
@@ -1473,4 +1486,14 @@ function assertLockAddress(address: Address) {
       "assertLockAddress: address payment credential must be a script hash!",
     );
   }
+}
+
+/**
+ * Returns the maximum of two BigInt values.
+ * @param {bigint} a - The first bigint value.
+ * @param {bigint} b - The second bigint value.
+ * @returns {bigint} The maximum value.
+ */
+function BigIntMax(a: bigint, b: bigint): bigint {
+  return a > b ? a : b;
 }
