@@ -1,5 +1,13 @@
 # @blaze-cardano/emulator
 
+## 0.1.18
+
+### Patch Changes
+
+- Updated dependencies [f56ac1d]
+  - @blaze-cardano/tx@0.0.18
+  - @blaze-cardano/wallet@0.0.19
+
 ## 0.1.17
 
 ### Patch Changes
