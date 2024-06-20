@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.18
+
+### Patch Changes
+
+- f56ac1d: duplicate mint/withdrawals caught
+
 ## 0.0.17
 
 ### Patch Changes
