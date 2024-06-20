@@ -1,5 +1,11 @@
 # @blaze-cardano/emulator
 
+## 0.1.19
+
+### Patch Changes
+
+- dedfbc1: fix: guarantee emulator immutability at provider interface
+
 ## 0.1.18
 
 ### Patch Changes
