@@ -398,6 +398,12 @@ export class TxBuilder {
     );
     // Retrieve the current mint map from the transaction body, or initialize a new one if none exists.
     const mint: TokenMap = this.body.mint() ?? new Map();
+    // Sanity check  duplicates
+    for (const asset of mint.keys()){
+      if (AssetId.getPolicyId(asset) == policy){
+        throw new Error("addMint: Duplicate policy!");
+      }
+    }
     // Iterate over the assets map and add each asset to the mint map under the specified policy.
     for (const [key, amount] of assets.entries()) {
       mint.set(AssetId.fromParts(policy, key), amount);
@@ -1275,17 +1281,37 @@ export class TxBuilder {
     return this;
   }
 
-  // Adds a certificate to register a staker
-  addRegisterStake() {}
+  /**
+   * Adds a certificate to register a staker.
+   * @throws {Error} Method not implemented.
+   */
+  addRegisterStake() {
+    throw new Error("Method not implemented.");
+  }
 
-  // Adds a certificate to deregister a staker
-  addDeregisterStake() {}
+  /**
+   * Adds a certificate to deregister a staker.
+   * @throws {Error} Method not implemented.
+   */
+  addDeregisterStake() {
+    throw new Error("Method not implemented.");
+  }
 
-  // Adds a certificate to register a pool
-  addRegisterPool() {}
+  /**
+   * Adds a certificate to register a pool.
+   * @throws {Error} Method not implemented.
+   */
+  addRegisterPool() {
+    throw new Error("Method not implemented.");
+  }
 
-  // Adds a certificate to retire a pool
-  addRetirePool() {}
+  /**
+   * Adds a certificate to retire a pool.
+   * @throws {Error} Method not implemented.
+   */
+  addRetirePool() {
+    throw new Error("Method not implemented.");
+  }
 
   /**
    * Specifies the exact time when the transaction becomes valid.
@@ -1344,6 +1370,10 @@ export class TxBuilder {
     // Retrieve existing withdrawals or initialize a new map if none exist.
     const withdrawals: Map<RewardAccount, bigint> =
       this.body.withdrawals() ?? new Map();
+    // Sanity check duplicates
+    if (withdrawals.has(address)) {
+      throw new Error("addWithdrawal: Withdrawal for this address already exists.");
+    }
     // Set the withdrawal amount for the specified address.
     withdrawals.set(address, amount);
     // Update the transaction body with the new or updated withdrawals map.
