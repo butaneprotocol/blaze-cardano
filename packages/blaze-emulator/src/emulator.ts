@@ -220,11 +220,10 @@ export class Emulator {
    * @returns The full list of UTxOs in the Emulator's ledger.
    */
   utxos(): TransactionUnspentOutput[] {
-    return Object.entries(this.#ledger).map(([key, value]) => {
-      return new TransactionUnspentOutput(
-        deserialiseInput(key as SerialisedInput),
-        value,
-      );
+    return (
+      Object.entries(this.#ledger) as [SerialisedInput, TransactionOutput][]
+    ).map(([key, value]) => {
+      return new TransactionUnspentOutput(deserialiseInput(key), value);
     });
   }
 

@@ -2,15 +2,17 @@ import type {
   Address,
   ProtocolParameters,
   AssetId,
-  TransactionInput,
-  PlutusData,
   TransactionId,
   Transaction,
   Redeemers,
   DatumHash,
 } from "@blaze-cardano/core";
+import {
+  TransactionInput,
+  PlutusData,
+  TransactionOutput,
+} from "@blaze-cardano/core";
 import { TransactionUnspentOutput } from "@blaze-cardano/core";
-
 import type { Provider } from "@blaze-cardano/query";
 import type { Emulator } from "./emulator";
 
@@ -36,7 +38,7 @@ export class EmulatorProvider implements Provider {
     const addressBytes = address.toBytes();
     for (const utxo of this.emulator.utxos()) {
       if (utxo.output().address().toBytes() == addressBytes) {
-        utxos.push(utxo);
+        utxos.push(TransactionUnspentOutput.fromCore(utxo.toCore()));
       }
     }
     return Promise.resolve(utxos);
@@ -47,12 +49,13 @@ export class EmulatorProvider implements Provider {
     unit: AssetId,
   ): Promise<TransactionUnspentOutput[]> {
     const utxos: TransactionUnspentOutput[] = [];
+    const addressBytes = address.toBytes();
     for (const utxo of this.emulator.utxos()) {
       if (
-        utxo.output().address() == address &&
+        utxo.output().address().toBytes() == addressBytes &&
         utxo.output().amount().multiasset()?.get(unit) !== undefined
       ) {
-        utxos.push(utxo);
+        utxos.push(TransactionUnspentOutput.fromCore(utxo.toCore()));
       }
     }
     return Promise.resolve(utxos);
@@ -61,7 +64,9 @@ export class EmulatorProvider implements Provider {
   getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput> {
     for (const utxo of this.emulator.utxos()) {
       if (utxo.output().amount().multiasset()?.get(unit) != undefined) {
-        return Promise.resolve(utxo);
+        return Promise.resolve(
+          TransactionUnspentOutput.fromCore(utxo.toCore()),
+        );
       }
     }
     return Promise.reject(
@@ -75,13 +80,21 @@ export class EmulatorProvider implements Provider {
     const utxos = [];
     for (const txIn of txIns) {
       const out = this.emulator.getOutput(txIn);
-      if (out) utxos.push(new TransactionUnspentOutput(txIn, out));
+      if (out)
+        utxos.push(
+          new TransactionUnspentOutput(
+            TransactionInput.fromCore(txIn.toCore()),
+            TransactionOutput.fromCore(out.toCore()),
+          ),
+        );
     }
     return Promise.resolve(utxos);
   }
 
   resolveDatum(datumHash: DatumHash): Promise<PlutusData> {
-    return Promise.resolve(this.emulator.datumHashes[datumHash]!);
+    return Promise.resolve(
+      PlutusData.fromCore(this.emulator.datumHashes[datumHash]!.toCore()),
+    );
   }
 
   awaitTransactionConfirmation(
