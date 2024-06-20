@@ -399,8 +399,8 @@ export class TxBuilder {
     // Retrieve the current mint map from the transaction body, or initialize a new one if none exists.
     const mint: TokenMap = this.body.mint() ?? new Map();
     // Sanity check  duplicates
-    for (const asset of mint.keys()){
-      if (AssetId.getPolicyId(asset) == policy){
+    for (const asset of mint.keys()) {
+      if (AssetId.getPolicyId(asset) == policy) {
         throw new Error("addMint: Duplicate policy!");
       }
     }
@@ -1372,7 +1372,9 @@ export class TxBuilder {
       this.body.withdrawals() ?? new Map();
     // Sanity check duplicates
     if (withdrawals.has(address)) {
-      throw new Error("addWithdrawal: Withdrawal for this address already exists.");
+      throw new Error(
+        "addWithdrawal: Withdrawal for this address already exists.",
+      );
     }
     // Set the withdrawal amount for the specified address.
     withdrawals.set(address, amount);
