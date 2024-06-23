@@ -153,9 +153,9 @@ export function derivePublicKey(
  */
 export function signMessage(
   message: HexBlob,
-  privateKey: Ed25519PrivateNormalKeyHex,
+  privateKey: Ed25519PrivateNormalKeyHex | Ed25519PrivateExtendedKeyHex,
 ): Ed25519SignatureHex {
-  return Ed25519SignatureHex(toHex(ed.sign(message, privateKey)));
+  return Ed25519SignatureHex(toHex(ed.sign(message, privateKey.slice(0, 64))));
 }
 
 /**

@@ -7,11 +7,8 @@ import {
   TransactionOutput,
   AddressType,
   CredentialType,
-  Ed25519PrivateNormalKeyHex,
   HexBlob,
   NetworkId,
-  blake2b_224,
-  derivePublicKey,
   Address,
   Script,
   PlutusV2Script,
@@ -23,7 +20,7 @@ import {
 import type { Provider } from "@blaze-cardano/query";
 import type { Blaze } from "@blaze-cardano/sdk";
 import { makeValue } from "@blaze-cardano/tx";
-import type { Wallet } from "@blaze-cardano/wallet";
+import { HotWallet, type Wallet } from "@blaze-cardano/wallet";
 
 export const generateSeedPhrase = () => generateMnemonic(wordlist);
 
@@ -45,13 +42,13 @@ export const SAMPLE_PLUTUS_DATA = PlutusData.fromCore(
   new Uint8Array([1, 2, 3]),
 );
 
-export async function privateKeyFromMnenomic(mnemonic: string) {
+export async function masterkeyFromMnenomic(mnemonic: string) {
   const entropy = mnemonicToEntropy(mnemonic, wordlist);
-  const bip32priv = await Bip32PrivateKey.fromBip39Entropy(
+  const masterkey = Bip32PrivateKey.fromBip39Entropy(
     Buffer.from(entropy),
     "",
   );
-  return bip32priv.toRawKey();
+  return masterkey;
   //   return new HotWallet(ed25519priv.hex(), NetworkId.Testnet, emulatorProvider);
 }
 
@@ -65,33 +62,26 @@ export function generateGenesisOutputs(address: Address): TransactionOutput[] {
   );
 }
 
-export async function generateAccount() {
+export async function generateAccount(
+  addressType: AddressType = AddressType.BasePaymentKeyStakeKey
+) {
   const mnemonic = generateMnemonic(wordlist);
-  const extendedPrivateKeyHex = (await privateKeyFromMnenomic(mnemonic)).hex();
+  const masterkey = await masterkeyFromMnenomic(mnemonic);
 
-  const publicKey = derivePublicKey(extendedPrivateKeyHex);
-  const privateKeyHex = Ed25519PrivateNormalKeyHex(
-    extendedPrivateKeyHex.slice(0, 64),
+  const { address } = await HotWallet.generateAccountAddressFromMasterkey(
+    masterkey,
+    NetworkId.Testnet,
+    addressType
   );
-
-  const address = new Address({
-    type: AddressType.EnterpriseKey,
-    networkId: NetworkId.Testnet,
-    paymentPart: {
-      type: CredentialType.KeyHash,
-      hash: blake2b_224(HexBlob(publicKey)),
-    },
-  });
-
   return {
-    privateKeyHex,
     address,
+    masterkeyHex: masterkey.hex(),
   };
 }
 
 export async function signAndSubmit(
   tx: Transaction,
-  blaze: Blaze<Provider, Wallet>,
+  blaze: Blaze<Provider, Wallet>
 ): Promise<TransactionId> {
   const signed = await blaze.wallet.signTransaction(tx, true);
   const ws = tx.witnessSet();
