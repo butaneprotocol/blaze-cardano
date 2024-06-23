@@ -1,12 +1,13 @@
 import type {
   Ed25519PublicKeyHex,
   Ed25519PrivateNormalKeyHex,
-  NetworkId,
   RewardAddress,
   TransactionId,
   TransactionUnspentOutput,
   Value,
   Transaction,
+  Bip32PrivateKeyHex,
+  Ed25519PrivateExtendedKeyHex,
 } from "@blaze-cardano/core";
 import {
   Address,
@@ -16,10 +17,11 @@ import {
   VkeyWitness,
   Ed25519SignatureHex,
   CborSet,
-  blake2b_224,
   HexBlob,
-  derivePublicKey,
   signMessage,
+  Bip32PrivateKey,
+  NetworkId,
+  Hash28ByteBase16,
 } from "@blaze-cardano/core";
 import type { Provider } from "@blaze-cardano/query";
 import type { Wallet, CIP30DataSignature } from "./types";
@@ -30,37 +32,118 @@ import * as value from "@blaze-cardano/tx/value";
  */
 export class HotWallet implements Wallet {
   private provider: Provider;
-  private privateKey: Ed25519PrivateNormalKeyHex;
+  private signingKey: Ed25519PrivateNormalKeyHex;
   private publicKey: Ed25519PublicKeyHex;
   readonly address: Address;
+  readonly rewardAddress: RewardAddress | undefined;
   readonly networkId: NetworkId;
 
   /**
    * Constructs a new instance of the HotWallet class.
-   * @param {Ed25519PrivateNormalKeyHex} privateKey - The private key of the wallet.
-   * @param {NetworkId} networkId - The network ID of the wallet.
+   * @param {Address} address - the wallets's address
+   * @param {RewardAddress} rewardAddress - the wallet's reward address if there is any
+   * @param {Ed25519PrivateNormalKeyHex} signingKey - The signing key of the derived account's of wallet.
+   * @param {Ed25519PublicKeyHex} publicKey - The public key of the derived account's of the wallet.
    * @param {Provider} provider - The provider of the wallet.
    */
-  constructor(
-    privateKey: Ed25519PrivateNormalKeyHex,
-    networkId: NetworkId,
-    provider: Provider,
+  private constructor(
+    address: Address,
+    rewardAddress: RewardAddress | undefined,
+    signingKey: Ed25519PrivateNormalKeyHex,
+    publicKey: Ed25519PublicKeyHex,
+    provider: Provider
   ) {
-    this.networkId = networkId;
-    // Set private key (raw bytes)
-    this.privateKey = privateKey;
-    // Use noble derive public key
-    this.publicKey = derivePublicKey(this.privateKey);
+    this.address = address;
+    this.rewardAddress = rewardAddress;
+    this.networkId = this.address.getNetworkId() as NetworkId;
+    this.signingKey = signingKey;
+    this.publicKey = publicKey;
+    this.provider = provider;
+  }
 
-    this.address = new Address({
-      type: AddressType.EnterpriseKey,
-      networkId: this.networkId,
+  private static harden = (num: number): number => 0x80000000 + num;
+
+  static async generateAccountAddressFromMasterkey(
+    masterkey: Bip32PrivateKey,
+    networkId: NetworkId = NetworkId.Testnet,
+    addressType: AddressType = AddressType.BasePaymentKeyStakeKey
+  ): Promise<{
+    address: Address;
+    paymentKey: Ed25519PrivateExtendedKeyHex;
+    publicKey: Ed25519PublicKeyHex;
+  }> {
+    if (
+      addressType !== AddressType.BasePaymentKeyStakeKey &&
+      addressType !== AddressType.EnterpriseKey
+    ) {
+      throw new Error(
+        "Hot wallets only support the BasePaymentKeyStakeKey and EnterpriseKey adresses!"
+      );
+    }
+
+    const accountKey = await masterkey.derive([
+      this.harden(1852),
+      this.harden(1815),
+      this.harden(0),
+    ]);
+
+    // 1852H/1815H/0H/0/0
+    const paymentKey = await accountKey.derive([0, 0]);
+
+    const address = new Address({
+      type: addressType,
+      networkId: networkId,
       paymentPart: {
         type: CredentialType.KeyHash,
-        hash: blake2b_224(HexBlob(this.publicKey)),
+        hash: Hash28ByteBase16.fromEd25519KeyHashHex(
+          (await (await paymentKey.toPublic()).toRawKey().hash()).hex()
+        ),
       },
+      delegationPart:
+        addressType === AddressType.EnterpriseKey
+          ? undefined
+          : {
+              type: CredentialType.KeyHash,
+              // 1852H/1815H/0H/2/0
+              hash: Hash28ByteBase16.fromEd25519KeyHashHex(
+                (
+                  await (await (await accountKey.derive([2, 0])).toPublic())
+                    .toRawKey()
+                    .hash()
+                ).hex()
+              ),
+            },
     });
-    this.provider = provider;
+
+    return {
+      address,
+      paymentKey: paymentKey.toRawKey().hex(),
+      publicKey: (await paymentKey.toPublic()).toRawKey().hex(),
+    };
+  }
+
+  static async fromMasterkey(
+    masterkey: Bip32PrivateKeyHex,
+    provider: Provider,
+    networkId: NetworkId = NetworkId.Testnet,
+    addressType: AddressType = AddressType.BasePaymentKeyStakeKey
+  ): Promise<HotWallet> {
+    const rootKey = Bip32PrivateKey.fromHex(masterkey);
+
+    const { address, paymentKey, publicKey } =
+      await this.generateAccountAddressFromMasterkey(
+        rootKey,
+        networkId,
+        addressType
+      );
+
+    return new HotWallet(
+      address,
+      address.asReward(),
+      paymentKey,
+      publicKey,
+      provider
+    );
   }
 
   /**
@@ -97,7 +180,7 @@ export class HotWallet implements Wallet {
    * @returns {Promise<Address[]>} - The used addresses controlled by the wallet.
    */
   async getUsedAddresses(): Promise<Address[]> {
-    return Promise.resolve([this.address]);
+    return [this.address];
   }
 
   /**
@@ -121,8 +204,7 @@ export class HotWallet implements Wallet {
    * @returns {Promise<RewardAddress[]>} - The reward addresses controlled by the wallet.
    */
   async getRewardAddresses(): Promise<RewardAddress[]> {
-    // todo!
-    return [];
+    return this.rewardAddress ? [this.rewardAddress] : [];
   }
 
   /**
@@ -140,7 +222,7 @@ export class HotWallet implements Wallet {
         "signTx: Hot wallet only supports partial signing = true",
       );
     }
-    const signature = signMessage(HexBlob(tx.getId()), this.privateKey);
+    const signature = signMessage(HexBlob(tx.getId()), this.signingKey);
     const tws = new TransactionWitnessSet();
     const vkw = new VkeyWitness(this.publicKey, Ed25519SignatureHex(signature));
     tws.setVkeys(CborSet.fromCore([vkw.toCore()], VkeyWitness.fromCore));
