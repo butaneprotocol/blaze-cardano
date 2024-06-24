@@ -4,10 +4,10 @@ export const { CborReader, PlutusData } = Serialization;
 export type Bit = 0 | 1;
 export type Byte = number & { __opaqueNumber: "Byte" };
 export const Byte = (number: number): Byte => {
-  if (!Number.isInteger(number) || number < 0 || number > 255) {
-    throw new Error("Number must be an integer within the byte range 0-255");
+  if (Number.isInteger(number) && number >= 0 && number <= 255) {
+    return number as Byte;
   }
-  return number as Byte;
+  throw new Error("Number must be an integer within the byte range 0-255");
 };
 
 export const TermNames = {
@@ -52,7 +52,7 @@ export type Term<name, fun> =
       function: Term<name, fun>;
       argument: Term<name, fun>;
     }
-  | { type: TermNames["const"]; value: Data }
+  | { type: TermNames["const"]; valueType: DataType; value: Data }
   | { type: TermNames["builtin"]; function: fun }
   | { type: TermNames["delay"]; term: Term<name, fun> }
   | { type: TermNames["force"]; term: Term<name, fun> }

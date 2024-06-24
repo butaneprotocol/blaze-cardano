@@ -81,84 +81,51 @@ export class Parser {
 }
 
 export class Encoder {
-  #bytes: Uint8Array;
-  #index: number;
-  #bitAccessor: number;
-  #arraySize: number;
+  private buffer: number[] = [];
+  private currentByte: number = 0;
+  private bitIndex: number = 0;
 
-  constructor() {
-    this.#arraySize = 1024; // Initial size
-    this.#bytes = new Uint8Array(this.#arraySize);
-    this.#index = 0;
-    this.#bitAccessor = 128;
-  }
+  pushBit(bit: 0 | 1): void {
+    this.currentByte = (this.currentByte << 1) | bit;
+    this.bitIndex++;
 
-  #ensureCapacity(requiredCapacity: number): void {
-    if (requiredCapacity > this.#arraySize) {
-      while (this.#arraySize < requiredCapacity) {
-        this.#arraySize *= 2;
-      }
-      const newBytes = new Uint8Array(this.#arraySize);
-      newBytes.set(this.#bytes);
-      this.#bytes = newBytes;
+    if (this.bitIndex === 8) {
+      this.buffer.push(this.currentByte);
+      this.currentByte = 0;
+      this.bitIndex = 0;
     }
   }
 
-  pushBit(bit: number): void {
-    if (this.#bitAccessor === 128) {
-      this.#ensureCapacity(this.#index + 1);
-      this.#bitAccessor = 1;
-      this.#bytes[this.#index] = 0;
-    } else {
-      this.#bitAccessor <<= 1;
-    }
-
-    if (bit) {
-      this.#bytes[this.#index] |= this.#bitAccessor;
-    }
-
-    if (this.#bitAccessor === 128) {
-      this.#index++;
-    }
-  }
-
-  pushBits(bits: number, n: number): void {
-    for (let i = 0; i < n; i++) {
-      this.pushBit((bits & (1 << i)) !== 0 ? 1 : 0);
+  pushBits(value: number, numBits: number): void {
+    for (let i = numBits - 1; i >= 0; i--) {
+      this.pushBit(((value >> i) & 1) as 0 | 1);
     }
   }
 
   pushByte(byte: number): void {
-    this.#ensureCapacity(this.#index + 1);
-    if (this.#bitAccessor !== 128) {
-      this.#index++;
-      this.#bitAccessor = 128;
+    if (this.bitIndex !== 0) {
+      this.buffer.push(this.currentByte);
+      throw new Error(
+        "pushByte called when not byte-aligned. This may lead to unexpected results.",
+      );
     }
-    this.#bytes[this.#index] = byte;
-    this.#index++;
-  }
-
-  pushBytes(bytes: Uint8Array): void {
-    this.#ensureCapacity(this.#index + bytes.length);
-    if (this.#bitAccessor !== 128) {
-      this.#index++;
-      this.#bitAccessor = 128;
-    }
-    bytes.forEach((byte) => {
-      this.#bytes[this.#index] = byte;
-      this.#index++;
-    });
+    this.buffer.push(byte);
+    this.currentByte = 0;
+    this.bitIndex = 0;
   }
 
   pad(): void {
-    while (this.#bitAccessor !== 128) {
+    if (this.bitIndex === 0) {
+      this.pushByte(1);
+      return;
+    }
+    while (this.bitIndex < 7) {
       this.pushBit(0);
     }
-    this.#bitAccessor >>= 1;
-    this.#bytes[this.#index] |= this.#bitAccessor;
+    this.pushBit(1);
   }
 
   getBytes(): Uint8Array {
-    return this.#bytes.slice(0, this.#index);
+    return new Uint8Array(this.buffer);
   }
 }

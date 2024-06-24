@@ -1,8 +1,8 @@
-import { Serialization } from "@cardano-sdk/core";
+import { type Cardano } from "@cardano-sdk/core";
 import { Parser as FlatDecoder } from "./flat";
 import type { Byte, Data, ParsedProgram, ParsedTerm, SemVer } from "./types";
-import { BuiltinFunctions, DataType, TermNames, termTags } from "./types";
-import { HexBlob, fromHex, toHex } from "@blaze-cardano/core";
+import { BuiltinFunctions, DataType, type TermNames, termTags } from "./types";
+import { fromHex } from "@blaze-cardano/core";
 
 /**
  * This class provides decoding functionality for UPLC (Untyped Plutus Core) programs.
@@ -58,7 +58,7 @@ export class UPLCDecoder extends FlatDecoder {
    * Decodes a natural number from the binary stream.
    * @returns {bigint} The decoded natural number.
    */
-  #decodeNatural() {
+  #decodeNatural(): bigint {
     const bytes = this.#decodeList2(() => this.popBits(7) as number);
     let val = 0n;
     for (let i = 0; i < bytes.length; i += 1) {
@@ -71,20 +71,16 @@ export class UPLCDecoder extends FlatDecoder {
    * Decodes an integer from the binary stream.
    * @returns {bigint} The decoded integer.
    */
-  #decodeInteger() {
+  #decodeInteger(): bigint {
     const nat = this.#decodeNatural();
-    if (nat % 2n === 0n) {
-      return nat / 2n;
-    } else {
-      return -((nat + 1n) / 2n);
-    }
+    return nat % 2n === 0n ? nat / 2n : -((nat + 1n) / 2n);
   }
 
   /**
    * Decodes a byte string from the binary stream.
    * @returns {Uint8Array} The decoded byte array.
    */
-  #decodeByteString() {
+  #decodeByteString(): Uint8Array {
     this.skipByte();
     let blockLength: number = this.popByte();
     if (blockLength == 0) {
@@ -105,7 +101,7 @@ export class UPLCDecoder extends FlatDecoder {
     }
     if (arr == undefined) {
       throw new Error(
-        "UPLCParser #decodeByteString: failed to decode any length.",
+        "UPLCDecoder #decodeByteString: failed to decode any length.",
       );
     }
     return arr;
@@ -115,18 +111,19 @@ export class UPLCDecoder extends FlatDecoder {
    * Decodes a boolean value from the binary stream.
    * @returns {object} The decoded boolean value as a UPLC data structure.
    */
-  #decodeBool() {
-    return { constructor: this.popBit() == 0 ? 0n : 1n, items: [] };
+  #decodeBool(): Cardano.ConstrPlutusData {
+    return { constructor: this.popBit() == 0 ? 0n : 1n, fields: { items: [] } };
   }
 
   /**
    * Decodes CBOR data from the binary stream.
    * @returns {Data} The decoded data in Plutus core format.
    */
-  #decodeCborData() {
-    return Serialization.PlutusData.fromCbor(
-      HexBlob(toHex(this.#decodeByteString())),
-    ).toCore();
+  #decodeCborData(): Cardano.PlutusData {
+    return this.#decodeByteString();
+    // return Serialization.PlutusData.fromCbor(
+    //   HexBlob(toHex(this.#decodeByteString())),
+    // ).toCore();
   }
 
   /**
@@ -182,7 +179,7 @@ export class UPLCDecoder extends FlatDecoder {
           const [innerType2, remainer2] = this.#decodeType(remainer);
           return [{ pair: [innerType, innerType2] }, remainer2];
         } else {
-          throw new Error("UPLCParser #decodeType: invalid type application");
+          throw new Error("UPLCDecoder #decodeType: invalid type application");
         }
       } else {
         return [DataType[head!]! as DataType, type.slice(1)];
@@ -194,14 +191,14 @@ export class UPLCDecoder extends FlatDecoder {
    * Decodes a constant from the binary stream.
    * @returns {Data} The decoded constant.
    */
-  #decodeConst() {
+  #decodeConst(): [DataType, Data] {
     const bits = this.#decodeList(() => this.popBits(4));
     const [dataType, remainder] = this.#decodeType(bits);
     if (remainder.length != 0) {
-      throw new Error("UPLCParser #decodeConst: invalid type application");
+      throw new Error("UPLCDecoder #decodeConst: invalid type application");
     }
     const result = this.#decodeData(dataType);
-    return result;
+    return [dataType, result];
   }
 
   /**
@@ -217,61 +214,65 @@ export class UPLCDecoder extends FlatDecoder {
       | [TermNames[keyof TermNames], number]
       | undefined;
     if (!maybeTerm) {
-      throw new Error(`UPLCParser: could not decode the term tag ${termTag}`);
+      throw new Error(`UPLCDecoder: could not decode the term tag ${termTag}`);
     }
     const term = maybeTerm[0];
     if (term == "Var") {
       return {
-        type: TermNames["var"],
+        type: "Var",
         name: this.#decodeNatural(),
       };
     }
     if (term == "Lambda") {
       return {
-        type: TermNames["lam"],
+        type: "Lambda",
         name: lamDepth,
         body: this.#decodeTerm(lamDepth + 1n),
       };
     } else if (term == "Apply") {
       return {
-        type: TermNames["apply"],
+        type: "Apply",
         function: this.#decodeTerm(lamDepth),
         argument: this.#decodeTerm(lamDepth),
       };
     } else if (term == "Constant") {
+      const result = this.#decodeConst();
       return {
-        type: TermNames["const"],
-        value: this.#decodeConst(),
+        type: "Constant",
+        valueType: result[0],
+        value: result[1],
       };
     } else if (term == "Builtin") {
       return {
-        type: TermNames["builtin"],
+        type: "Builtin",
         function: BuiltinFunctions[this.popBits(7)]!,
       };
     } else if (term == "Delay") {
       return {
-        type: TermNames["delay"],
+        type: "Delay",
         term: this.#decodeTerm(lamDepth),
       };
     } else if (term == "Force") {
       return {
-        type: TermNames["force"],
+        type: "Force",
         term: this.#decodeTerm(lamDepth),
       };
     } else if (term == "Constr") {
       throw new Error(
-        `UPLCParser: decoder is not implemented for tag ${termTag} or term (${term})`,
+        `UPLCDecoder: decoder is not implemented for tag ${termTag} or term (${term})`,
       );
     } else if (term == "Case") {
       throw new Error(
-        `UPLCParser: decoder is not implemented for tag ${termTag} or term (${term})`,
+        `UPLCDecoder: decoder is not implemented for tag ${termTag} or term (${term})`,
       );
     } else if (term == "Error") {
       return {
-        type: TermNames["error"],
+        type: "Error",
       };
     } else {
-      throw new Error("UPLCParser: decoder no matching termType, UNREACHABLE!");
+      throw new Error(
+        "UPLCDecoder: decoder no matching termType, UNREACHABLE!",
+      );
     }
   }
 
