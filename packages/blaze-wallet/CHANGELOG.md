@@ -1,5 +1,18 @@
 # @blaze-cardano/wallet
 
+## 0.1.0
+
+### Minor Changes
+
+- ebc2eb5: fix: Corrected HotWallet address initialization to proper HD address. @ilap
+
+### Patch Changes
+
+- Updated dependencies [ebc2eb5]
+  - @blaze-cardano/core@0.2.3
+  - @blaze-cardano/query@0.0.9
+  - @blaze-cardano/tx@0.0.19
+
 ## 0.0.19
 
 ### Patch Changes
