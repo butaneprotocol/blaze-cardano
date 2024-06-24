@@ -43,7 +43,7 @@ describe("Emulator", () => {
   let provider: EmulatorProvider;
 
   beforeAll(async () => {
-    ({ address: address1, masterkeyHex: masterkeyHex1 } = 
+    ({ address: address1, masterkeyHex: masterkeyHex1 } =
       await generateAccount());
     ({ address: address2, masterkeyHex: masterkeyHex2 } =
       await generateAccount());

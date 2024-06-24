@@ -51,7 +51,7 @@ export class HotWallet implements Wallet {
     rewardAddress: RewardAddress | undefined,
     signingKey: Ed25519PrivateNormalKeyHex,
     publicKey: Ed25519PublicKeyHex,
-    provider: Provider
+    provider: Provider,
   ) {
     this.address = address;
     this.rewardAddress = rewardAddress;
@@ -66,7 +66,7 @@ export class HotWallet implements Wallet {
   static async generateAccountAddressFromMasterkey(
     masterkey: Bip32PrivateKey,
     networkId: NetworkId = NetworkId.Testnet,
-    addressType: AddressType = AddressType.BasePaymentKeyStakeKey
+    addressType: AddressType = AddressType.BasePaymentKeyStakeKey,
   ): Promise<{
     address: Address;
     paymentKey: Ed25519PrivateExtendedKeyHex;
@@ -77,7 +77,7 @@ export class HotWallet implements Wallet {
       addressType !== AddressType.EnterpriseKey
     ) {
       throw new Error(
-        "Hot wallets only support the BasePaymentKeyStakeKey and EnterpriseKey adresses!"
+        "Hot wallets only support the BasePaymentKeyStakeKey and EnterpriseKey adresses!",
       );
     }
 
@@ -96,7 +96,7 @@ export class HotWallet implements Wallet {
       paymentPart: {
         type: CredentialType.KeyHash,
         hash: Hash28ByteBase16.fromEd25519KeyHashHex(
-          (await (await paymentKey.toPublic()).toRawKey().hash()).hex()
+          (await (await paymentKey.toPublic()).toRawKey().hash()).hex(),
         ),
       },
       delegationPart:
@@ -110,7 +110,7 @@ export class HotWallet implements Wallet {
                   await (await (await accountKey.derive([2, 0])).toPublic())
                     .toRawKey()
                     .hash()
-                ).hex()
+                ).hex(),
               ),
             },
     });
@@ -126,7 +126,7 @@ export class HotWallet implements Wallet {
     masterkey: Bip32PrivateKeyHex,
     provider: Provider,
     networkId: NetworkId = NetworkId.Testnet,
-    addressType: AddressType = AddressType.BasePaymentKeyStakeKey
+    addressType: AddressType = AddressType.BasePaymentKeyStakeKey,
   ): Promise<HotWallet> {
     const rootKey = Bip32PrivateKey.fromHex(masterkey);
 
@@ -134,7 +134,7 @@ export class HotWallet implements Wallet {
       await this.generateAccountAddressFromMasterkey(
         rootKey,
         networkId,
-        addressType
+        addressType,
       );
 
     return new HotWallet(
@@ -142,7 +142,7 @@ export class HotWallet implements Wallet {
       address.asReward(),
       paymentKey,
       publicKey,
-      provider
+      provider,
     );
   }
 

@@ -44,10 +44,7 @@ export const SAMPLE_PLUTUS_DATA = PlutusData.fromCore(
 
 export async function masterkeyFromMnenomic(mnemonic: string) {
   const entropy = mnemonicToEntropy(mnemonic, wordlist);
-  const masterkey = Bip32PrivateKey.fromBip39Entropy(
-    Buffer.from(entropy),
-    "",
-  );
+  const masterkey = Bip32PrivateKey.fromBip39Entropy(Buffer.from(entropy), "");
   return masterkey;
   //   return new HotWallet(ed25519priv.hex(), NetworkId.Testnet, emulatorProvider);
 }
@@ -63,7 +60,7 @@ export function generateGenesisOutputs(address: Address): TransactionOutput[] {
 }
 
 export async function generateAccount(
-  addressType: AddressType = AddressType.BasePaymentKeyStakeKey
+  addressType: AddressType = AddressType.BasePaymentKeyStakeKey,
 ) {
   const mnemonic = generateMnemonic(wordlist);
   const masterkey = await masterkeyFromMnenomic(mnemonic);
@@ -71,7 +68,7 @@ export async function generateAccount(
   const { address } = await HotWallet.generateAccountAddressFromMasterkey(
     masterkey,
     NetworkId.Testnet,
-    addressType
+    addressType,
   );
   return {
     address,
@@ -81,7 +78,7 @@ export async function generateAccount(
 
 export async function signAndSubmit(
   tx: Transaction,
-  blaze: Blaze<Provider, Wallet>
+  blaze: Blaze<Provider, Wallet>,
 ): Promise<TransactionId> {
   const signed = await blaze.wallet.signTransaction(tx, true);
   const ws = tx.witnessSet();

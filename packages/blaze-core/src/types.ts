@@ -114,9 +114,8 @@ export const Ed25519PrivateExtendedKeyHex = (
 ): Ed25519PrivateExtendedKeyHex => typedHex(value, 128);
 
 export type Bip32PrivateKeyHex = OpaqueString<"Bip32PrivateKeyHex">;
-export const Bip32PrivateKeyHex = (
-  value: string,
-): Bip32PrivateKeyHex => typedHex(value, 192);
+export const Bip32PrivateKeyHex = (value: string): Bip32PrivateKeyHex =>
+  typedHex(value, 192);
 
 export const Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
 export type Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
