@@ -9,6 +9,7 @@ import {
   Address,
   AssetId,
   fromHex,
+  TransactionInput,
 } from "../../packages/blaze-core/dist/index.js";
 import { Blockfrost } from "./../../packages/blaze-query/dist/index.js";
 import {
@@ -79,6 +80,31 @@ const nftUTXO = await provider.getUnspentOutputByNFT(nft);
 
 console.log(`\n${nftName} Asset (NFT) found on the following UTxO:`);
 const nftUtxoRef = `${nftUTXO.input().transactionId()}#${nftUTXO.input().index()} `;
-console.log(nftUtxoRef);
+console.log(nftUtxoRef + "\n");
+
+const txIns = [
+  new TransactionInput(
+    "74baf638a18a6ab54798cac310112af61cb1f1d6eacb8c893a10b6877cf71a8d",
+    1,
+  ),
+];
+
+const resolvedOutputs = await provider.resolveUnspentOutputs(txIns);
+
+for (const utxo of resolvedOutputs) {
+  const amountADA = utxo.output().amount().coin();
+  console.log(`Amount of ADA: ${amountADA / 1000000}`);
+
+  const multiAssetMap = utxo.output().amount().multiasset();
+  for (const [asset, amount] of multiAssetMap.entries()) {
+    const assetId = AssetId(asset);
+    const assetName = Buffer.from(
+      AssetId.getAssetName(assetId),
+      "hex",
+    ).toString();
+
+    console.log(`Amount of ${assetName}: ${amount}`);
+  }
+}
 
 process.exit(0);
