@@ -1,13 +1,11 @@
 import type {
-  Ed25519PublicKeyHex,
-  Ed25519PrivateNormalKeyHex,
   RewardAddress,
   TransactionId,
   TransactionUnspentOutput,
   Value,
   Transaction,
   Bip32PrivateKeyHex,
-  Ed25519PrivateExtendedKeyHex,
+  Bip32PublicKey,
 } from "@blaze-cardano/core";
 import {
   Address,
@@ -15,10 +13,8 @@ import {
   TransactionWitnessSet,
   CredentialType,
   VkeyWitness,
-  Ed25519SignatureHex,
   CborSet,
   HexBlob,
-  signMessage,
   Bip32PrivateKey,
   NetworkId,
   Hash28ByteBase16,
@@ -32,8 +28,8 @@ import * as value from "@blaze-cardano/tx/value";
  */
 export class HotWallet implements Wallet {
   private provider: Provider;
-  private signingKey: Ed25519PrivateNormalKeyHex;
-  private publicKey: Ed25519PublicKeyHex;
+  private signingKey: Bip32PrivateKey;
+  private publicKey: Bip32PublicKey;
   readonly address: Address;
   readonly rewardAddress: RewardAddress | undefined;
   readonly networkId: NetworkId;
@@ -49,8 +45,8 @@ export class HotWallet implements Wallet {
   private constructor(
     address: Address,
     rewardAddress: RewardAddress | undefined,
-    signingKey: Ed25519PrivateNormalKeyHex,
-    publicKey: Ed25519PublicKeyHex,
+    signingKey: Bip32PrivateKey,
+    publicKey: Bip32PublicKey,
     provider: Provider,
   ) {
     this.address = address;
@@ -69,8 +65,8 @@ export class HotWallet implements Wallet {
     addressType: AddressType = AddressType.BasePaymentKeyStakeKey,
   ): Promise<{
     address: Address;
-    paymentKey: Ed25519PrivateExtendedKeyHex;
-    publicKey: Ed25519PublicKeyHex;
+    paymentKey: Bip32PrivateKey;
+    publicKey: Bip32PublicKey;
   }> {
     if (
       addressType !== AddressType.BasePaymentKeyStakeKey &&
@@ -117,8 +113,8 @@ export class HotWallet implements Wallet {
 
     return {
       address,
-      paymentKey: paymentKey.toRawKey().hex(),
-      publicKey: (await paymentKey.toPublic()).toRawKey().hex(),
+      paymentKey: paymentKey,
+      publicKey: await paymentKey.toPublic(),
     };
   }
 
@@ -222,9 +218,15 @@ export class HotWallet implements Wallet {
         "signTx: Hot wallet only supports partial signing = true",
       );
     }
-    const signature = signMessage(HexBlob(tx.getId()), this.signingKey);
+
+    const signature = await this.signingKey
+      .toRawKey()
+      .sign(HexBlob(tx.getId()));
     const tws = new TransactionWitnessSet();
-    const vkw = new VkeyWitness(this.publicKey, Ed25519SignatureHex(signature));
+    const vkw = new VkeyWitness(
+      this.publicKey.toRawKey().hex(),
+      signature.hex(),
+    );
     tws.setVkeys(CborSet.fromCore([vkw.toCore()], VkeyWitness.fromCore));
     return tws;
   }
