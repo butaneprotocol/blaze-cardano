@@ -251,7 +251,7 @@ export class Blockfrost implements Provider {
   buildTransactionUnspentOutput(
     address: Address,
   ): (blockfrostUTxO: BlockfrostUTxO) => TransactionUnspentOutput {
-    return (blockfrostUTxO: BlockfrostUTxO): TransactionUnspentOutput => {
+    return (blockfrostUTxO) => {
       const txIn = new TransactionInput(
         TransactionId(blockfrostUTxO.tx_hash),
         BigInt(blockfrostUTxO.output_index),
