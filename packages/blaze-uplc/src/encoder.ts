@@ -8,6 +8,7 @@ import type {
   SemVer,
   DataType as DataTypeType,
 } from "./types";
+import { PlutusData, fromHex } from "@blaze-cardano/core";
 
 /**
  * UPLCEncoder class for encoding Untyped Plutus Core (UPLC) programs.
@@ -110,7 +111,7 @@ export class UPLCEncoder extends FlatEncoder {
     } else if (type === "Bool") {
       this.encodeBool((data as Cardano.ConstrPlutusData).constructor === 1n);
     } else if (type === "Data") {
-      this.encodeByteString(data as Uint8Array);
+      this.encodeByteString(fromHex(PlutusData.fromCore(data).toCbor()));
     } else if (typeof type === "object" && "list" in type) {
       const list = (data as Cardano.PlutusList).items;
       for (let i = 0; i < list.length; i++) {

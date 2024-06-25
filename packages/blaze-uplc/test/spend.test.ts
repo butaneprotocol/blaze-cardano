@@ -57,11 +57,11 @@ describe("Apply params", () => {
     ];
     const paramsList = new PlutusList();
     params.forEach(x => paramsList.add(x));
-    const cmlApply = apply_params_to_script(
+    const aikenApply = apply_params_to_script(
       fromHex(paramsList.toCbor()),
       fromHex(script)
     );
     const blazeApply = applyParams(script, ...params);
-    expect(toHex(cmlApply).toUpperCase()).toBe(blazeApply.toUpperCase());
+    expect(toHex(aikenApply).toUpperCase()).toBe(blazeApply.toUpperCase());
   });
 });
