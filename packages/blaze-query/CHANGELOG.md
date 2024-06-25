@@ -1,5 +1,12 @@
 # @blaze-cardano/query
 
+## 0.0.10
+
+### Patch Changes
+
+- Updated dependencies [b25fc8a]
+  - @blaze-cardano/core@0.2.4
+
 ## 0.0.9
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.2.4
+
+### Patch Changes
+
+- b25fc8a: uplc applyParams release @ezepze, hotwallet fixes @ilap
+
 ## 0.2.3
 
 ### Patch Changes
