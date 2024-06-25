@@ -13,6 +13,8 @@ import {
   Address,
   AddressType,
   AssetId,
+  PaymentAddress,
+  RewardAccount,
   TransactionId,
   TransactionInput,
   TransactionOutput,
@@ -139,6 +141,8 @@ export class Blockfrost implements Provider {
             paymentPart: address.toCore(),
           }).toBech32();
 
+    const buildTxUnspentOutput = this.buildTransactionUnspentOutput(bech32);
+
     const utxos: TransactionUnspentOutput[] = [];
 
     for (;;) {
@@ -158,26 +162,7 @@ export class Blockfrost implements Provider {
         }
 
         for (const blockfrostUTxO of response) {
-          const txIn = new TransactionInput(
-            TransactionId(blockfrostUTxO.tx_hash),
-            BigInt(blockfrostUTxO.output_index),
-          );
-          // No tx output CBOR available from Blockfrost,
-          // so TransactionOutput must be manually constructed.
-          const tokenMap: TokenMap = new Map<AssetId, bigint>();
-          let lovelace = 0n;
-          for (const { unit, quantity } of blockfrostUTxO.amount) {
-            if (unit === "lovelace") {
-              lovelace = quantity;
-            } else {
-              tokenMap.set(unit as AssetIdType, quantity);
-            }
-          }
-          const txOut = new TransactionOutput(
-            Address.fromBech32(bech32),
-            new Value(lovelace, tokenMap),
-          );
-          utxos.push(new TransactionUnspentOutput(txIn, txOut));
+          utxos.push(buildTxUnspentOutput(blockfrostUTxO));
         }
 
         if (response.length < maxPageCount) {
@@ -218,6 +203,8 @@ export class Blockfrost implements Provider {
             paymentPart: address.toCore(),
           }).toBech32();
 
+    const buildTxUnspentOutput = this.buildTransactionUnspentOutput(bech32);
+
     const asset = AssetId.getPolicyId(unit) + AssetId.getAssetName(unit);
 
     const utxos: TransactionUnspentOutput[] = [];
@@ -239,26 +226,7 @@ export class Blockfrost implements Provider {
         }
 
         for (const blockfrostUTxO of response) {
-          // TODO: consider extracting this logic out to new function.
-          const txIn = new TransactionInput(
-            TransactionId(blockfrostUTxO.tx_hash),
-            BigInt(blockfrostUTxO.output_index),
-          );
-
-          const tokenMap: TokenMap = new Map<AssetId, bigint>();
-          let lovelace = 0n;
-          for (const { unit, quantity } of blockfrostUTxO.amount) {
-            if (unit === "lovelace") {
-              lovelace = quantity;
-            } else {
-              tokenMap.set(unit as AssetId, quantity);
-            }
-          }
-          const txOut = new TransactionOutput(
-            Address.fromBech32(bech32),
-            new Value(lovelace, tokenMap),
-          );
-          utxos.push(new TransactionUnspentOutput(txIn, txOut));
+          utxos.push(buildTxUnspentOutput(blockfrostUTxO));
         }
 
         if (response.length < maxPageCount) {
@@ -274,6 +242,36 @@ export class Blockfrost implements Provider {
     }
 
     return utxos;
+  }
+
+  // Partially applies address in order to avoid sending it
+  // as argument repeatedly when building TransactionUnspentOutput
+  buildTransactionUnspentOutput(
+    bech32: PaymentAddress | RewardAccount,
+  ): (blockfrostUTxO: BlockfrostUTxO) => TransactionUnspentOutput {
+    return (blockfrostUTxO: BlockfrostUTxO): TransactionUnspentOutput => {
+      const txIn = new TransactionInput(
+        TransactionId(blockfrostUTxO.tx_hash),
+        BigInt(blockfrostUTxO.output_index),
+      );
+      // No tx output CBOR available from Blockfrost,
+      // so TransactionOutput must be manually constructed.
+      const tokenMap: TokenMap = new Map<AssetId, bigint>();
+      let lovelace = 0n;
+      for (const { unit, quantity } of blockfrostUTxO.amount) {
+        if (unit === "lovelace") {
+          lovelace = quantity;
+        } else {
+          tokenMap.set(unit as AssetId, quantity);
+        }
+      }
+      const txOut = new TransactionOutput(
+        Address.fromBech32(bech32),
+        new Value(lovelace, tokenMap),
+      );
+
+      return new TransactionUnspentOutput(txIn, txOut);
+    };
   }
 
   getUnspentOutputByNFT(_unit: AssetId): Promise<TransactionUnspentOutput> {
