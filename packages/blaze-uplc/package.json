@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@blaze-cardano/uplc",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Blaze untyped plutus core library",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
