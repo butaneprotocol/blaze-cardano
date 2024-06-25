@@ -5,7 +5,7 @@ import {
   fromHex,
   toHex,
 } from "@blaze-cardano/core";
-import {  applyParams } from "../src/index";
+import { applyParams } from "../src/index";
 import { apply_params_to_script } from "uplc-node";
 import { UPLCDecoder } from "../src/decoder";
 import { UPLCEncoder } from "../src/encoder";
@@ -51,17 +51,17 @@ describe("Decode . Encode = Identity", () => {
 describe("Apply params", () => {
   it("Should be able to apply parameters to a script", () => {
     const script = HexBlob(
-      "5866010000323232323232223222533300632330010013756601660186018601860186018601860126ea8c02cc024dd50011129998058008a5013253330093375e0106014601a00429444cc00c00c004c03400452613656375a002ae6955ceaab9e5573eae855d11"
+      "5866010000323232323232223222533300632330010013756601660186018601860186018601860126ea8c02cc024dd50011129998058008a5013253330093375e0106014601a00429444cc00c00c004c03400452613656375a002ae6955ceaab9e5573eae855d11",
     );
     const params = [
       PlutusData.newBytes(fromHex("abcdef")),
       PlutusData.newInteger(BigInt(123)),
     ];
     const paramsList = new PlutusList();
-    params.forEach(x => paramsList.add(x));
+    params.forEach((x) => paramsList.add(x));
     const aikenApply = apply_params_to_script(
       fromHex(paramsList.toCbor()),
-      fromHex(script)
+      fromHex(script),
     );
     const blazeApply = applyParams(script, ...params);
     expect(toHex(aikenApply).toUpperCase()).toBe(blazeApply.toUpperCase());

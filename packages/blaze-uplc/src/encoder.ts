@@ -135,7 +135,6 @@ export class UPLCEncoder extends FlatEncoder {
    * @throws {Error} If the type cannot be encoded.
    */
   encodeType(type: DataTypeType): number[] {
-    // console.log(type)
     if (typeof type === "string") {
       const typeCode = Object.entries(DataType).find(
         ([, v]) => v === type,
@@ -192,7 +191,6 @@ export class UPLCEncoder extends FlatEncoder {
       this.encodeTerm(term.function);
       this.encodeTerm(term.argument);
     } else if (term.type === TermNames.const) {
-      console.dir(term, {depth: null})
       this.encodeConst(term.valueType, term.value);
     } else if (term.type === TermNames.builtin) {
       const builtinIndex = BuiltinFunctions.indexOf(term.function);
