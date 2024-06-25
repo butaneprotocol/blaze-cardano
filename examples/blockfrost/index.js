@@ -58,7 +58,7 @@ const assetId = AssetId(btnUnit);
 const assetName = Buffer.from(AssetId.getAssetName(assetId), "hex").toString();
 
 const utxos = await provider.getUnspentOutputsWithAsset(address, assetId);
-console.log(`UTxOs with asset ${assetName}:`);
+console.log(`UTxOs with ${assetName} Asset (FT):`);
 for (const utxo of utxos) {
   const utxoRef = `${utxo.input().transactionId()}#${utxo.input().index()}`;
   console.log(utxoRef);
@@ -69,5 +69,16 @@ for (const utxo of utxos) {
   const amountBTN = utxo.output().amount().multiasset().get(btnUnit);
   console.log(`Amount of ${assetName}: ${amountBTN / 1000000}`);
 }
+
+// Some NFT on Preview
+const nft = AssetId(
+  "594ec0fba6c3caa9cb74b3513de95c35738f60aa20beca658e243342.000de1404a554e474c452d4e4654",
+);
+const nftName = Buffer.from(AssetId.getAssetName(nft), "hex").toString();
+const nftUTXO = await provider.getUnspentOutputByNFT(nft);
+
+console.log(`\n${nftName} Asset (NFT) found on the following UTxO:`);
+const nftUtxoRef = `${nftUTXO.input().transactionId()}#${nftUTXO.input().index()} `;
+console.log(nftUtxoRef);
 
 process.exit(0);

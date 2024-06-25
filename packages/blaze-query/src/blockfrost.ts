@@ -276,8 +276,44 @@ export class Blockfrost implements Provider {
     };
   }
 
-  getUnspentOutputByNFT(_unit: AssetId): Promise<TransactionUnspentOutput> {
-    throw new Error("unimplemented");
+  async getUnspentOutputByNFT(
+    unit: AssetId,
+  ): Promise<TransactionUnspentOutput> {
+    const asset = AssetId.getPolicyId(unit) + AssetId.getAssetName(unit);
+    // Fetch addresses holding the asset. Since it's an NFT, a single
+    // address is expected to be returned
+    const json = await fetch(`${this.url}/assets/${asset}/addresses`, {
+      headers: this.headers(),
+    }).then((resp) => resp.json());
+    if (!json) {
+      throw new Error("getUnspentOutputByNFT: Could not parse response json");
+    }
+
+    const response = json as BlockfrostResponse<BlockfrostAddress[]>;
+    if ("message" in response) {
+      throw new Error(
+        `getUnspentOutputByNFT: Blockfrost threw "${response.message}"`,
+      );
+    }
+    // Ensures a single address is returned
+    if (response.length !== 1) {
+      throw new Error(
+        "getUnspentOutputByNFT: Asset must be held by only one address. Multiple found.",
+      );
+    }
+
+    const utxo = response[0] as BlockfrostAddress;
+    const address = Address.fromBech32(utxo.address);
+    // A second call to Blockfrost is needed in order to fetch utxo information
+    const utxos = await this.getUnspentOutputsWithAsset(address, unit);
+    // Ensures a single UTxO holds the asset
+    if (utxos.length !== 1) {
+      throw new Error(
+        "getUnspentOutputByNFT: Asset must be present in only one UTxO. Multiple found.",
+      );
+    }
+
+    return utxos[0]!;
   }
 
   async resolveUnspentOutputs(
@@ -368,4 +404,9 @@ interface BlockfrostUTxO {
   data_hash?: string;
   inline_datum?: string;
   reference_script_hash?: string;
+}
+
+interface BlockfrostAddress {
+  address: string;
+  quantity: number;
 }
