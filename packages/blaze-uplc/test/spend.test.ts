@@ -5,8 +5,10 @@ import {
   fromHex,
   toHex,
 } from "@blaze-cardano/core";
-import { UPLCDecoder, UPLCEncoder, applyParams } from "../src/index";
+import {  applyParams } from "../src/index";
 import { apply_params_to_script } from "uplc-node";
+import { UPLCDecoder } from "../src/decoder";
+import { UPLCEncoder } from "../src/encoder";
 
 describe("Script Deserialisation", () => {
   it("Should be able to parse the spec example", () => {
