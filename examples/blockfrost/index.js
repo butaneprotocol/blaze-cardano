@@ -1,8 +1,15 @@
+// Run example from project top level with the following commands:
+// $ pnpm install && pnpm build
+// $ BLOCKFROST_PROJECT_ID="..." bun run examples/blockfrost/index.js
 import * as readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 const rl = readline.createInterface({ input: stdin, output: stdout });
 
-import { Address } from "../../packages/blaze-core/dist/index.js";
+import {
+  Address,
+  AssetId,
+  fromHex,
+} from "../../packages/blaze-core/dist/index.js";
 import { Blockfrost } from "./../../packages/blaze-query/dist/index.js";
 import {
   Blaze,
@@ -20,24 +27,47 @@ const provider = new Blockfrost({
   projectId,
 });
 
+// Preview address with BTN
 let address = Core.addressFromBech32(
-  await rl.question("Please enter your bech32 cardano address: "),
+  "addr_test1qrks8q2cvl7084pnnc82t8rkrhq464567urqfjvgavc3u56hnq4zmgv8h5g8e3hh8e0wdsa8509e2fxnkgtwsax75naskdzynd",
 );
 
 const wallet = new ColdWallet(address, 0, provider);
 const blaze = new Blaze(provider, wallet);
 
-const tx = await (await blaze.newTransaction())
+const tx = await (
+  await blaze.newTransaction()
+)
   .payLovelace(
     Address.fromBech32(
-      await rl.question(
-        "Please enter the destination bech32 cardano address: ",
-      ),
+      // Some other preview address with BTN
+      "addr_test1qp7sdszpnc09mj4x9k0830lwkeexyqm04qdhsvs88kkxdndvyd9zpxkg8hrchyrmdvnpe0fuljl6spgdg3xeuhjgj4ksncykcq",
     ),
     5_000_000n,
   )
   .complete();
 
 console.log("Balanced and unwitnessed transaction CBOR:");
-console.log(tx.toCbor());
+console.log(tx.toCbor() + "\n");
+
+// BTN on Preview
+const btnUnit =
+  "cf36b40b08ec2e215d026bb117bc044e245b95aeedff0c12ebaa4d7a42544e";
+const assetId = AssetId(btnUnit);
+
+const assetName = Buffer.from(AssetId.getAssetName(assetId), "hex").toString();
+
+const utxos = await provider.getUnspentOutputsWithAsset(address, assetId);
+console.log(`UTxOs with asset ${assetName}:`);
+for (const utxo of utxos) {
+  const utxoRef = `${utxo.input().transactionId()}#${utxo.input().index()}`;
+  console.log(utxoRef);
+
+  const amountADA = utxo.output().amount().coin();
+  console.log(`Amount of ADA: ${amountADA / 1000000}`);
+
+  const amountBTN = utxo.output().amount().multiasset().get(btnUnit);
+  console.log(`Amount of ${assetName}: ${amountBTN / 1000000}`);
+}
+
 process.exit(0);
