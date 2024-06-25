@@ -1,10 +1,11 @@
-import type { Transaction, TransactionId } from "@blaze-cardano/core";
 import {
   generateMnemonic,
   wordlist,
   mnemonicToEntropy,
   Bip32PrivateKey,
   TransactionOutput,
+  Transaction,
+  TransactionId,
   AddressType,
   CredentialType,
   HexBlob,
