@@ -113,6 +113,10 @@ export const Ed25519PrivateExtendedKeyHex = (
   value: string,
 ): Ed25519PrivateExtendedKeyHex => typedHex(value, 128);
 
+export type Bip32PrivateKeyHex = OpaqueString<"Bip32PrivateKeyHex">;
+export const Bip32PrivateKeyHex = (value: string): Bip32PrivateKeyHex =>
+  typedHex(value, 192);
+
 export const Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
 export type Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
 
@@ -156,6 +160,9 @@ export type Ed25519Signature = Crypto.Ed25519Signature;
 
 export const Bip32PrivateKey = Crypto.Bip32PrivateKey;
 export type Bip32PrivateKey = Crypto.Bip32PrivateKey;
+
+export const Bip32PublicKey = Crypto.Bip32PublicKey;
+export type Bip32PublicKey = Crypto.Bip32PublicKey;
 
 export const PlutusLanguageVersion = C.Cardano.PlutusLanguageVersion;
 export type PlutusLanguageVersion = C.Cardano.PlutusLanguageVersion;

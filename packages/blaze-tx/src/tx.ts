@@ -124,6 +124,7 @@ export class TxBuilder {
   private consumedMintHashes: Hash28ByteBase16[] = [];
   private consumedWithdrawalHashes: Hash28ByteBase16[] = [];
   private consumedSpendInputs: string[] = [];
+  private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -192,6 +193,18 @@ export class TxBuilder {
    */
   addAdditionalSigners(amount: number) {
     this.additionalSigners += amount;
+    return this;
+  }
+
+  /**
+   * Sets the minimum fee for the transaction.
+   * This fee will be used during the transaction building process.
+   *
+   * @param {bigint} fee - The minimum fee to be set.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  setMinimumFee(fee: bigint) {
+    this.minimumFee = fee;
     return this;
   }
 
@@ -276,15 +289,26 @@ export class TxBuilder {
     inputs.setValues(values);
     this.utxoScope.add(utxo);
     this.body.setInputs(inputs);
+
+    const oref = utxo.input().transactionId() + utxo.input().index().toString();
+    const insertIdx = this.insertSorted(this.consumedSpendInputs, oref);
+
+    const redeemers = [...this.redeemers.values()];
+    for (const redeemer of redeemers) {
+      if (
+        redeemer.tag() == RedeemerTag.Spend &&
+        redeemer.index() >= BigInt(insertIdx)
+      ) {
+        redeemer.setIndex(redeemer.index() + 1n);
+      }
+    }
+
     // Process the redeemer and datum logic for Plutus script-locked UTxOs.
     const key = utxo.output().address().getProps().paymentPart;
     if (!key) {
       throw new Error("addInput: Somehow the UTxO payment key is missing!");
     }
     if (redeemer !== undefined) {
-      const oref =
-        utxo.input().transactionId() + utxo.input().index().toString();
-      const insertIdx = this.insertSorted(this.consumedSpendInputs, oref);
       if (key.type == CredentialType.KeyHash) {
         throw new Error(
           "addInput: Cannot spend with redeemer for KeyHash credential!",
@@ -311,15 +335,6 @@ export class TxBuilder {
         this.plutusData.add(unhashDatum!);
       }
       // Prepare and add the redeemer to the transaction, including execution units estimation.
-      const redeemers = [...this.redeemers.values()];
-      for (const redeemer of redeemers) {
-        if (
-          redeemer.tag() == RedeemerTag.Spend &&
-          redeemer.index() >= insertIdx
-        ) {
-          redeemer.setIndex(redeemer.index() + 1n);
-        }
-      }
       redeemers.push(
         Redeemer.fromCore({
           index: insertIdx,
@@ -383,6 +398,12 @@ export class TxBuilder {
     );
     // Retrieve the current mint map from the transaction body, or initialize a new one if none exists.
     const mint: TokenMap = this.body.mint() ?? new Map();
+    // Sanity check  duplicates
+    for (const asset of mint.keys()) {
+      if (AssetId.getPolicyId(asset) == policy) {
+        throw new Error("addMint: Duplicate policy!");
+      }
+    }
     // Iterate over the assets map and add each asset to the mint map under the specified policy.
     for (const [key, amount] of assets.entries()) {
       mint.set(AssetId.fromParts(policy, key), amount);
@@ -926,7 +947,7 @@ export class TxBuilder {
       ),
     );
     // Update the transaction body with the calculated fee.
-    this.body.setFee(this.fee);
+    this.body.setFee(BigIntMax(this.fee, this.minimumFee));
   }
 
   /**
@@ -1168,7 +1189,7 @@ export class TxBuilder {
         Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
       );
       excessValue = this.getPitch(false);
-      this.body.setFee(this.fee);
+      this.body.setFee(BigIntMax(this.fee, this.minimumFee));
       this.balanceChange(excessValue);
       if (this.body.collateral()) {
         this.balanceCollateralChange();
@@ -1260,17 +1281,37 @@ export class TxBuilder {
     return this;
   }
 
-  // Adds a certificate to register a staker
-  addRegisterStake() {}
+  /**
+   * Adds a certificate to register a staker.
+   * @throws {Error} Method not implemented.
+   */
+  addRegisterStake() {
+    throw new Error("Method not implemented.");
+  }
 
-  // Adds a certificate to deregister a staker
-  addDeregisterStake() {}
+  /**
+   * Adds a certificate to deregister a staker.
+   * @throws {Error} Method not implemented.
+   */
+  addDeregisterStake() {
+    throw new Error("Method not implemented.");
+  }
 
-  // Adds a certificate to register a pool
-  addRegisterPool() {}
+  /**
+   * Adds a certificate to register a pool.
+   * @throws {Error} Method not implemented.
+   */
+  addRegisterPool() {
+    throw new Error("Method not implemented.");
+  }
 
-  // Adds a certificate to retire a pool
-  addRetirePool() {}
+  /**
+   * Adds a certificate to retire a pool.
+   * @throws {Error} Method not implemented.
+   */
+  addRetirePool() {
+    throw new Error("Method not implemented.");
+  }
 
   /**
    * Specifies the exact time when the transaction becomes valid.
@@ -1329,6 +1370,12 @@ export class TxBuilder {
     // Retrieve existing withdrawals or initialize a new map if none exist.
     const withdrawals: Map<RewardAccount, bigint> =
       this.body.withdrawals() ?? new Map();
+    // Sanity check duplicates
+    if (withdrawals.has(address)) {
+      throw new Error(
+        "addWithdrawal: Withdrawal for this address already exists.",
+      );
+    }
     // Set the withdrawal amount for the specified address.
     withdrawals.set(address, amount);
     // Update the transaction body with the new or updated withdrawals map.
@@ -1471,4 +1518,14 @@ function assertLockAddress(address: Address) {
       "assertLockAddress: address payment credential must be a script hash!",
     );
   }
+}
+
+/**
+ * Returns the maximum of two BigInt values.
+ * @param {bigint} a - The first bigint value.
+ * @param {bigint} b - The second bigint value.
+ * @returns {bigint} The maximum value.
+ */
+function BigIntMax(a: bigint, b: bigint): bigint {
+  return a > b ? a : b;
 }

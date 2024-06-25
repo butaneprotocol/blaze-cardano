@@ -1,5 +1,54 @@
 # @blaze-cardano/emulator
 
+## 0.1.20
+
+### Patch Changes
+
+- ebc2eb5: fix: Corrected HotWallet address initialization to proper HD address. @ilap
+- Updated dependencies [ebc2eb5]
+  - @blaze-cardano/wallet@0.1.0
+  - @blaze-cardano/core@0.2.3
+  - @blaze-cardano/query@0.0.9
+  - @blaze-cardano/tx@0.0.19
+
+## 0.1.19
+
+### Patch Changes
+
+- dedfbc1: fix: guarantee emulator immutability at provider interface
+
+## 0.1.18
+
+### Patch Changes
+
+- Updated dependencies [f56ac1d]
+  - @blaze-cardano/tx@0.0.18
+  - @blaze-cardano/wallet@0.0.19
+
+## 0.1.17
+
+### Patch Changes
+
+- Updated dependencies [b7cba8b]
+  - @blaze-cardano/tx@0.0.17
+  - @blaze-cardano/wallet@0.0.18
+
+## 0.1.16
+
+### Patch Changes
+
+- Updated dependencies [88ab934]
+  - @blaze-cardano/tx@0.0.16
+  - @blaze-cardano/wallet@0.0.17
+
+## 0.1.15
+
+### Patch Changes
+
+- Updated dependencies [2e49c71]
+  - @blaze-cardano/tx@0.0.15
+  - @blaze-cardano/wallet@0.0.16
+
 ## 0.1.14
 
 ### Patch Changes

@@ -1,5 +1,36 @@
 # @blaze-cardano/tx
 
+## 0.0.19
+
+### Patch Changes
+
+- Updated dependencies [ebc2eb5]
+  - @blaze-cardano/core@0.2.3
+
+## 0.0.18
+
+### Patch Changes
+
+- f56ac1d: duplicate mint/withdrawals caught
+
+## 0.0.17
+
+### Patch Changes
+
+- b7cba8b: feat: tx.setMinimumFee
+
+## 0.0.16
+
+### Patch Changes
+
+- 88ab934: Fixed spend redeemer ordering and data casting return type
+
+## 0.0.15
+
+### Patch Changes
+
+- 2e49c71: Better type checking for plutus data serialisation and JSON Schema builders with Data. Uses Lucid's patterns for now
+
 ## 0.0.14
 
 ### Patch Changes

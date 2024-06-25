@@ -1,10 +1,11 @@
-import type { Ed25519PrivateNormalKeyHex, Address } from "@blaze-cardano/core";
+import type { Bip32PrivateKeyHex } from "@blaze-cardano/core";
 import {
   NetworkId,
   TransactionInput,
   TransactionId,
   PolicyId,
   AssetName,
+  Address,
   AssetId,
   addressFromCredential,
   Credential,
@@ -32,30 +33,30 @@ function isDefined<T>(value: T | undefined): asserts value is T {
 
 describe("Emulator", () => {
   let emulator: Emulator;
-  let privateKeyHex1: Ed25519PrivateNormalKeyHex;
+  let masterkeyHex1: Bip32PrivateKeyHex;
   let address1: Address;
   let wallet1: HotWallet;
-  let privateKeyHex2: Ed25519PrivateNormalKeyHex;
+  let masterkeyHex2: Bip32PrivateKeyHex;
   let address2: Address;
   let wallet2: HotWallet;
   let blaze: Blaze<EmulatorProvider, HotWallet>;
   let provider: EmulatorProvider;
 
   beforeAll(async () => {
-    ({ address: address1, privateKeyHex: privateKeyHex1 } =
+    ({ address: address1, masterkeyHex: masterkeyHex1 } =
       await generateAccount());
-    ({ address: address2, privateKeyHex: privateKeyHex2 } =
+    ({ address: address2, masterkeyHex: masterkeyHex2 } =
       await generateAccount());
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     emulator = new Emulator([
       ...generateGenesisOutputs(address1),
       ...generateGenesisOutputs(address2),
     ]);
     provider = new EmulatorProvider(emulator);
-    wallet1 = new HotWallet(privateKeyHex1, NetworkId.Testnet, provider);
-    wallet2 = new HotWallet(privateKeyHex2, NetworkId.Testnet, provider);
+    wallet1 = await HotWallet.fromMasterkey(masterkeyHex1, provider);
+    wallet2 = await HotWallet.fromMasterkey(masterkeyHex2, provider);
     blaze = new Blaze(provider, wallet1);
   });
 
@@ -101,8 +102,21 @@ describe("Emulator", () => {
     const out = emulator.getOutput(inp);
     isDefined(out);
     isDefined(out.datum());
-    const spendTx = await (await blaze.newTransaction())
+    const spendTx = await (
+      await blaze.newTransaction()
+    )
       .addInput(new TransactionUnspentOutput(inp, out), VOID_PLUTUS_DATA)
+      .lockAssets(
+        addressFromCredential(
+          NetworkId.Testnet,
+          Credential.fromCore({
+            type: CredentialType.ScriptHash,
+            hash: alwaysTrueScript.hash(),
+          }),
+        ),
+        makeValue(1_000_000_000n),
+        ONE_PLUTUS_DATA,
+      )
       .provideScript(alwaysTrueScript)
       .complete();
     const spendTxHash = await signAndSubmit(spendTx, blaze);

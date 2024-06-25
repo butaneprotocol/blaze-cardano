@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@blaze-cardano/tx",
-  "version": "0.0.14",
+  "version": "0.0.19",
   "description": "Blaze cardano transaction building library",
   "exports": {
     ".": {
@@ -29,9 +29,10 @@
     "@blaze-cardano/jest-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
     "@types/jest": "^29.5.5",
+    "eslint": "^8.57.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.1",
-    "eslint": "^8.57.0",
+    "ts-node": "^10.9.2",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
   },
@@ -40,6 +41,7 @@
   },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
+    "@sinclair/typebox": "^0.32.32",
     "uplc-node": "^0.0.3"
   }
 }
