@@ -289,20 +289,20 @@ export class Blockfrost implements Provider {
       throw new Error("getUnspentOutputByNFT: Could not parse response json");
     }
 
-    const response = json as BlockfrostResponse<BlockfrostAddress[]>;
+    const response = json as BlockfrostResponse<BlockfrostAssetAddress[]>;
     if ("message" in response) {
       throw new Error(
         `getUnspentOutputByNFT: Blockfrost threw "${response.message}"`,
       );
     }
-    // Ensures a single address is returned
+    // Ensures a single asset address is returned
     if (response.length !== 1) {
       throw new Error(
         "getUnspentOutputByNFT: Asset must be held by only one address. Multiple found.",
       );
     }
 
-    const utxo = response[0] as BlockfrostAddress;
+    const utxo = response[0] as BlockfrostAssetAddress;
     const address = Address.fromBech32(utxo.address);
     // A second call to Blockfrost is needed in order to fetch utxo information
     const utxos = await this.getUnspentOutputsWithAsset(address, unit);
@@ -406,7 +406,7 @@ interface BlockfrostUTxO {
   reference_script_hash?: string;
 }
 
-interface BlockfrostAddress {
+interface BlockfrostAssetAddress {
   address: string;
-  quantity: number;
+  quantity: string;
 }
