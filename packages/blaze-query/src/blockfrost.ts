@@ -3,11 +3,9 @@ import type {
   CostModels,
   Credential,
   DatumHash,
-  PaymentAddress,
   PlutusData,
   ProtocolParameters,
   Redeemers,
-  RewardAccount,
   TokenMap,
   Transaction,
 } from "@blaze-cardano/core";
@@ -141,7 +139,9 @@ export class Blockfrost implements Provider {
             paymentPart: address.toCore(),
           }).toBech32();
 
-    const buildTxUnspentOutput = this.buildTransactionUnspentOutput(bech32);
+    const buildTxUnspentOutput = this.buildTransactionUnspentOutput(
+      Address.fromBech32(bech32),
+    );
 
     const utxos: TransactionUnspentOutput[] = [];
 
@@ -203,7 +203,9 @@ export class Blockfrost implements Provider {
             paymentPart: address.toCore(),
           }).toBech32();
 
-    const buildTxUnspentOutput = this.buildTransactionUnspentOutput(bech32);
+    const buildTxUnspentOutput = this.buildTransactionUnspentOutput(
+      Address.fromBech32(bech32),
+    );
 
     const asset = AssetId.getPolicyId(unit) + AssetId.getAssetName(unit);
 
@@ -247,7 +249,7 @@ export class Blockfrost implements Provider {
   // Partially applies address in order to avoid sending it
   // as argument repeatedly when building TransactionUnspentOutput
   buildTransactionUnspentOutput(
-    bech32: PaymentAddress | RewardAccount,
+    address: Address,
   ): (blockfrostUTxO: BlockfrostUTxO) => TransactionUnspentOutput {
     return (blockfrostUTxO: BlockfrostUTxO): TransactionUnspentOutput => {
       const txIn = new TransactionInput(
@@ -266,7 +268,7 @@ export class Blockfrost implements Provider {
         }
       }
       const txOut = new TransactionOutput(
-        Address.fromBech32(bech32),
+        address,
         new Value(lovelace, tokenMap),
       );
 
