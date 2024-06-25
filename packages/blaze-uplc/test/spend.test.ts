@@ -1,5 +1,12 @@
-import { toHex } from "@blaze-cardano/core";
-import { UPLCDecoder, UPLCEncoder } from "../src/index";
+import {
+  HexBlob,
+  PlutusData,
+  PlutusList,
+  fromHex,
+  toHex,
+} from "@blaze-cardano/core";
+import { UPLCDecoder, UPLCEncoder, applyParams } from "../src/index";
+import { apply_params_to_script } from "uplc-node";
 
 describe("Script Deserialisation", () => {
   it("Should be able to parse the spec example", () => {
@@ -36,5 +43,25 @@ describe("Decode . Encode = Identity", () => {
       expect(toHex(reencoded).toUpperCase()).toBe(rtExample.toUpperCase());
       expect(toHex(reencoded).length).toBe(rtExample.length);
     }
+  });
+});
+
+describe("Apply params", () => {
+  it("Should be able to apply parameters to a script", () => {
+    const script = HexBlob(
+      "5866010000323232323232223222533300632330010013756601660186018601860186018601860126ea8c02cc024dd50011129998058008a5013253330093375e0106014601a00429444cc00c00c004c03400452613656375a002ae6955ceaab9e5573eae855d11"
+    );
+    const params = [
+      PlutusData.newBytes(fromHex("abcdef")),
+      PlutusData.newInteger(BigInt(123)),
+    ];
+    const paramsList = new PlutusList();
+    params.forEach(x => paramsList.add(x));
+    const cmlApply = apply_params_to_script(
+      fromHex(paramsList.toCbor()),
+      fromHex(script)
+    );
+    const blazeApply = applyParams(script, ...params);
+    expect(toHex(cmlApply).toUpperCase()).toBe(blazeApply.toUpperCase());
   });
 });
