@@ -36,6 +36,8 @@ let address = Core.addressFromBech32(
 const wallet = new ColdWallet(address, 0, provider);
 const blaze = new Blaze(provider, wallet);
 
+console.log(await provider.getParameters());
+
 const tx = await (
   await blaze.newTransaction()
 )
@@ -106,5 +108,10 @@ for (const utxo of resolvedOutputs) {
     console.log(`Amount of ${assetName}: ${amount}`);
   }
 }
+
+const datumHash =
+  "6331cbcd2e8bd43057c6d77985007226a562edfe9475acb1648ad7a54eb2c12b";
+const resolvedDatum = await provider.resolveDatum(datumHash);
+console.log(`\nDatum CBOR: ${resolvedDatum.asList().toCbor()}`);
 
 process.exit(0);

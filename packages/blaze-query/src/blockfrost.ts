@@ -3,7 +3,6 @@ import type {
   CostModels,
   Credential,
   DatumHash,
-  PlutusData,
   ProtocolParameters,
   Redeemers,
   TokenMap,
@@ -13,6 +12,8 @@ import {
   Address,
   AddressType,
   AssetId,
+  HexBlob,
+  PlutusData,
   TransactionId,
   TransactionInput,
   TransactionOutput,
@@ -52,76 +53,79 @@ export class Blockfrost implements Provider {
    * If the response is not in the expected format, an error is thrown.
    * @returns A Promise that resolves to a ProtocolParameters object.
    */
-  getParameters(): Promise<ProtocolParameters> {
+  async getParameters(): Promise<ProtocolParameters> {
     const query = "epochs/latest/parameters";
-    return fetch(`${this.url}${query}`, { headers: this.headers() })
-      .then((resp) => resp.json())
-      .then((json) => {
-        if (json) {
-          const response =
-            json as BlockfrostResponse<BlockfrostProtocolParametersResponse>;
-          if ("message" in response) {
-            throw new Error(
-              `getParameters: Blockfrost threw "${response.message}"`,
-            );
-          }
-          const costModels: CostModels = new Map();
-          for (const cm of Object.keys(
-            response.cost_models,
-          ) as BlockfrostLanguageVersions[]) {
-            const costModel: number[] = [];
-            const keys = Object.keys(response.cost_models[cm]).sort();
-            for (const key of keys) {
-              costModel.push(response.cost_models[cm][key]!);
-            }
-            costModels.set(fromBlockfrostLanguageVersion(cm), costModel);
-          }
-          return {
-            coinsPerUtxoByte: response.coins_per_utxo_size,
-            maxTxSize: response.max_tx_size,
-            minFeeCoefficient: response.min_fee_a,
-            minFeeConstant: response.min_fee_b,
-            maxBlockBodySize: response.max_block_size,
-            maxBlockHeaderSize: response.max_block_header_size,
-            stakeKeyDeposit: response.key_deposit,
-            poolDeposit: response.pool_deposit,
-            poolRetirementEpochBound: response.e_max,
-            desiredNumberOfPools: response.n_opt,
-            poolInfluence: response.a0,
-            monetaryExpansion: response.rho,
-            treasuryExpansion: response.tau,
-            minPoolCost: response.min_pool_cost,
-            protocolVersion: {
-              major: response.protocol_major_ver,
-              minor: response.protocol_minor_ver,
-            },
-            maxValueSize: response.max_val_size,
-            collateralPercentage: response.collateral_percent / 100,
-            maxCollateralInputs: response.max_collateral_inputs,
-            costModels: costModels,
-            prices: {
-              memory: parseFloat(response.price_mem) / 10000,
-              steps: parseFloat(response.price_step) / 10000,
-            },
-            maxExecutionUnitsPerTransaction: {
-              memory: response.max_tx_ex_mem,
-              steps: response.max_tx_ex_steps,
-            },
-            maxExecutionUnitsPerBlock: {
-              memory: response.max_block_ex_mem,
-              steps: response.max_block_ex_steps,
-            },
-          };
-        }
-        throw new Error("getParameters: Could not parse response json");
-      });
+    const json = await fetch(`${this.url}${query}`, {
+      headers: this.headers(),
+    }).then((resp) => resp.json());
+
+    if (!json) {
+      throw new Error("getParameters: Could not parse response json");
+    }
+
+    const response =
+      json as BlockfrostResponse<BlockfrostProtocolParametersResponse>;
+
+    if ("message" in response) {
+      throw new Error(`getParameters: Blockfrost threw "${response.message}"`);
+    }
+    // Build cost models
+    const costModels: CostModels = new Map();
+    for (const cm of Object.keys(
+      response.cost_models,
+    ) as BlockfrostLanguageVersions[]) {
+      const costModel: number[] = [];
+      const keys = Object.keys(response.cost_models[cm]).sort();
+      for (const key of keys) {
+        costModel.push(response.cost_models[cm][key]!);
+      }
+      costModels.set(fromBlockfrostLanguageVersion(cm), costModel);
+    }
+
+    return {
+      coinsPerUtxoByte: response.coins_per_utxo_size,
+      maxTxSize: response.max_tx_size,
+      minFeeCoefficient: response.min_fee_a,
+      minFeeConstant: response.min_fee_b,
+      maxBlockBodySize: response.max_block_size,
+      maxBlockHeaderSize: response.max_block_header_size,
+      stakeKeyDeposit: response.key_deposit,
+      poolDeposit: response.pool_deposit,
+      poolRetirementEpochBound: response.e_max,
+      desiredNumberOfPools: response.n_opt,
+      poolInfluence: response.a0,
+      monetaryExpansion: response.rho,
+      treasuryExpansion: response.tau,
+      minPoolCost: response.min_pool_cost,
+      protocolVersion: {
+        major: response.protocol_major_ver,
+        minor: response.protocol_minor_ver,
+      },
+      maxValueSize: response.max_val_size,
+      collateralPercentage: response.collateral_percent / 100,
+      maxCollateralInputs: response.max_collateral_inputs,
+      costModels: costModels,
+      prices: {
+        memory: parseFloat(response.price_mem) / 10000,
+        steps: parseFloat(response.price_step) / 10000,
+      },
+      maxExecutionUnitsPerTransaction: {
+        memory: response.max_tx_ex_mem,
+        steps: response.max_tx_ex_steps,
+      },
+      maxExecutionUnitsPerBlock: {
+        memory: response.max_block_ex_mem,
+        steps: response.max_block_ex_steps,
+      },
+    };
   }
 
   /**
    * This method fetches the UTxOs under a given address.
-   * It constructs the query URL, sends a GET request with the appropriate headers, and processes the response.
-   * The response is parsed into a TransactionUnspentOutput[] type, which is then returned.
+   * The response is parsed into a TransactionUnspentOutput[] type, which is
+   * then returned.
    * If the response is not in the expected format, an error is thrown.
+   * @param address The Address or Payment Credential
    * @returns A Promise that resolves to TransactionUnspentOutput[].
    */
   async getUnspentOutputs(
@@ -146,32 +150,31 @@ export class Blockfrost implements Provider {
     const results: Set<TransactionUnspentOutput> = new Set();
 
     for (;;) {
-      const json = await fetch(
-        `${this.url}/addresses/${bech32}/utxos?count=${maxPageCount}&page=${page}`,
-        {
-          headers: this.headers(),
-        },
-      ).then((resp) => resp.json());
+      const query = `/addresses/${bech32}/utxos?count=${maxPageCount}&page=${page}`;
+      const json = await fetch(`${this.url}${query}`, {
+        headers: this.headers(),
+      }).then((resp) => resp.json());
 
-      if (json) {
-        const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
-        if ("message" in response) {
-          throw new Error(
-            `getUnspentOutputs: Blockfrost threw "${response.message}"`,
-          );
-        }
-
-        for (const blockfrostUTxO of response) {
-          results.add(buildTxUnspentOutput(blockfrostUTxO));
-        }
-
-        if (response.length < maxPageCount) {
-          break;
-        } else {
-          page = page + 1;
-        }
-      } else {
+      if (!json) {
         throw new Error("getUnspentOutputs: Could not parse response json");
+      }
+
+      const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
+
+      if ("message" in response) {
+        throw new Error(
+          `getUnspentOutputs: Blockfrost threw "${response.message}"`,
+        );
+      }
+
+      for (const blockfrostUTxO of response) {
+        results.add(buildTxUnspentOutput(blockfrostUTxO));
+      }
+
+      if (response.length < maxPageCount) {
+        break;
+      } else {
+        page = page + 1;
       }
     }
 
@@ -181,6 +184,9 @@ export class Blockfrost implements Provider {
   /**
    * This method fetches the UTxOs under a given address that hold
    * a particular asset.
+   * The response is parsed into a TransactionUnspentOutput[] type, which is
+   * then returned.
+   * If the response is not in the expected format, an error is thrown.
    * @param address Address or Payment Credential.
    * @param unit The AssetId
    * @returns A Promise that resolves to TransactionUnspentOutput[].
@@ -210,34 +216,33 @@ export class Blockfrost implements Provider {
     const results: Set<TransactionUnspentOutput> = new Set();
 
     for (;;) {
-      const json = await fetch(
-        `${this.url}/addresses/${bech32}/utxos/${asset}?count=${maxPageCount}&page=${page}`,
-        {
-          headers: this.headers(),
-        },
-      ).then((resp) => resp.json());
+      const query = `/addresses/${bech32}/utxos/${asset}?count=${maxPageCount}&page=${page}`;
+      const json = await fetch(`${this.url}${query}`, {
+        headers: this.headers(),
+      }).then((resp) => resp.json());
 
-      if (json) {
-        const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
-        if ("message" in response) {
-          throw new Error(
-            `getUnspentOutputsWithAsset: Blockfrost threw "${response.message}"`,
-          );
-        }
-
-        for (const blockfrostUTxO of response) {
-          results.add(buildTxUnspentOutput(blockfrostUTxO));
-        }
-
-        if (response.length < maxPageCount) {
-          break;
-        } else {
-          page = page + 1;
-        }
-      } else {
+      if (!json) {
         throw new Error(
-          "getUnspentOutputsWithAssetx: Could not parse response json",
+          "getUnspentOutputsWithAsset: Could not parse response json",
         );
+      }
+
+      const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
+
+      if ("message" in response) {
+        throw new Error(
+          `getUnspentOutputsWithAsset: Blockfrost threw "${response.message}"`,
+        );
+      }
+
+      for (const blockfrostUTxO of response) {
+        results.add(buildTxUnspentOutput(blockfrostUTxO));
+      }
+
+      if (response.length < maxPageCount) {
+        break;
+      } else {
+        page = page + 1;
       }
     }
 
@@ -245,24 +250,29 @@ export class Blockfrost implements Provider {
   }
 
   /**
-   * This method fetches the UTxO that holds a particular NFT.
-   * @param unit The AssetId for the NFT
+   * This method fetches the UTxO that holds a particular NFT given as
+   * argument.
+   * The response is parsed into a TransactionUnspentOutput type, which is
+   * then returned.
+   * If the response is not in the expected format, an error is thrown.
+   * @param nft The AssetId for the NFT
    * @returns A Promise that resolves to TransactionUnspentOutput.
    */
-  async getUnspentOutputByNFT(
-    unit: AssetId,
-  ): Promise<TransactionUnspentOutput> {
-    const asset = AssetId.getPolicyId(unit) + AssetId.getAssetName(unit);
+  async getUnspentOutputByNFT(nft: AssetId): Promise<TransactionUnspentOutput> {
+    const asset = AssetId.getPolicyId(nft) + AssetId.getAssetName(nft);
     // Fetch addresses holding the asset. Since it's an NFT, a single
     // address is expected to be returned
-    const json = await fetch(`${this.url}/assets/${asset}/addresses`, {
+    const query = `/assets/${asset}/addresses`;
+    const json = await fetch(`${this.url}${query}`, {
       headers: this.headers(),
     }).then((resp) => resp.json());
+
     if (!json) {
       throw new Error("getUnspentOutputByNFT: Could not parse response json");
     }
 
     const response = json as BlockfrostResponse<BlockfrostAssetAddress[]>;
+
     if ("message" in response) {
       throw new Error(
         `getUnspentOutputByNFT: Blockfrost threw "${response.message}"`,
@@ -278,7 +288,7 @@ export class Blockfrost implements Provider {
     const utxo = response[0] as BlockfrostAssetAddress;
     const address = Address.fromBech32(utxo.address);
     // A second call to Blockfrost is needed in order to fetch utxo information
-    const utxos = await this.getUnspentOutputsWithAsset(address, unit);
+    const utxos = await this.getUnspentOutputsWithAsset(address, nft);
     // Ensures a single UTxO holds the asset
     if (utxos.length !== 1) {
       throw new Error(
@@ -292,6 +302,9 @@ export class Blockfrost implements Provider {
   /**
    * This methods resolves transaction outputs from a list of transaction
    * inputs given as argument.
+   * The response is parsed into a TransactionUnspentOutput[] type, which is
+   * then returned.
+   * If the response is not in the expected format, an error is thrown.
    * @param txIns A list of TransactionInput
    * @returns A Promise that resolves to TransactionUnspentOutput[].
    */
@@ -301,20 +314,17 @@ export class Blockfrost implements Provider {
     const results: Set<TransactionUnspentOutput> = new Set();
 
     for (const txIn of txIns) {
-      const json = await fetch(
-        `${this.url}/txs/${txIn.transactionId()}/utxos`,
-        {
-          headers: this.headers(),
-        },
-      ).then((resp) => resp.json());
+      const query = `/txs/${txIn.transactionId()}/utxos`;
+      const json = await fetch(`${this.url}${query}`, {
+        headers: this.headers(),
+      }).then((resp) => resp.json());
 
       if (!json) {
         throw new Error("resolveUnspentOutputs: Could not parse response json");
       }
 
-      const response = json as BlockfrostResponse<{
-        outputs: BlockfrostUTxO[];
-      }>;
+      const response =
+        json as BlockfrostResponse<BlockfrostUnspentOutputResolution>;
 
       if ("message" in response) {
         throw new Error(
@@ -330,7 +340,7 @@ export class Blockfrost implements Provider {
           // the index we are looking for
           continue;
         }
-
+        // Blockfrost API does not return tx hash, so it must be manually set
         blockfrostUTxO.tx_hash = txIn.transactionId();
 
         const buildTxUnspentOutput = buildTransactionUnspentOutput(
@@ -344,8 +354,30 @@ export class Blockfrost implements Provider {
     return Array.from(results);
   }
 
-  resolveDatum(_datumHash: DatumHash): Promise<PlutusData> {
-    throw new Error("unimplemented");
+  /**
+   * This methods returns the datum for the datum hash given as argument.
+   * The response is parsed into a PlutusData type, which is then returned.
+   * If the response is not in the expected format, an error is thrown.
+   * @param datumHash The hash of a datum
+   * @returns A Promise that resolves to PlutusData
+   */
+  async resolveDatum(datumHash: DatumHash): Promise<PlutusData> {
+    const query = `/scripts/datum/${datumHash}/cbor`;
+    const json = await fetch(`${this.url}${query}`, {
+      headers: this.headers(),
+    }).then((resp) => resp.json());
+
+    if (!json) {
+      throw new Error("resolveDatum: Could not parse response json");
+    }
+
+    const response = json as BlockfrostResponse<BlockfrostDatumHashResolution>;
+
+    if ("message" in response) {
+      throw new Error(`resolveDatum: Blockfrost threw "${response.message}"`);
+    }
+
+    return PlutusData.fromCbor(HexBlob(response.cbor));
   }
 
   async awaitTransactionConfirmation(
@@ -458,4 +490,12 @@ interface BlockfrostUTxO {
 interface BlockfrostAssetAddress {
   address: string;
   quantity: string;
+}
+
+interface BlockfrostUnspentOutputResolution {
+  outputs: BlockfrostUTxO[];
+}
+
+interface BlockfrostDatumHashResolution {
+  cbor: string;
 }
