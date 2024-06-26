@@ -125,7 +125,7 @@ export class Blockfrost implements Provider {
    * The response is parsed into a TransactionUnspentOutput[] type, which is
    * then returned.
    * If the response is not in the expected format, an error is thrown.
-   * @param address The Address or Payment Credential
+   * @param address - The Address or Payment Credential
    * @returns A Promise that resolves to TransactionUnspentOutput[].
    */
   async getUnspentOutputs(
@@ -188,8 +188,8 @@ export class Blockfrost implements Provider {
    * The response is parsed into a TransactionUnspentOutput[] type, which is
    * then returned.
    * If the response is not in the expected format, an error is thrown.
-   * @param address Address or Payment Credential.
-   * @param unit The AssetId
+   * @param address - Address or Payment Credential.
+   * @param unit - The AssetId
    * @returns A Promise that resolves to TransactionUnspentOutput[].
    */
   async getUnspentOutputsWithAsset(
@@ -257,7 +257,7 @@ export class Blockfrost implements Provider {
    * The response is parsed into a TransactionUnspentOutput type, which is
    * then returned.
    * If the response is not in the expected format, an error is thrown.
-   * @param nft The AssetId for the NFT
+   * @param nft - The AssetId for the NFT
    * @returns A Promise that resolves to TransactionUnspentOutput.
    */
   async getUnspentOutputByNFT(nft: AssetId): Promise<TransactionUnspentOutput> {
@@ -307,7 +307,7 @@ export class Blockfrost implements Provider {
    * The response is parsed into a TransactionUnspentOutput[] type, which is
    * then returned.
    * If the response is not in the expected format, an error is thrown.
-   * @param txIns A list of TransactionInput
+   * @param txIns - A list of TransactionInput
    * @returns A Promise that resolves to TransactionUnspentOutput[].
    */
   async resolveUnspentOutputs(
@@ -360,7 +360,7 @@ export class Blockfrost implements Provider {
    * This methods returns the datum for the datum hash given as argument.
    * The response is parsed into a PlutusData type, which is then returned.
    * If the response is not in the expected format, an error is thrown.
-   * @param datumHash The hash of a datum
+   * @param datumHash - The hash of a datum
    * @returns A Promise that resolves to PlutusData
    */
   async resolveDatum(datumHash: DatumHash): Promise<PlutusData> {
@@ -382,11 +382,58 @@ export class Blockfrost implements Provider {
     return PlutusData.fromCbor(HexBlob(response.cbor));
   }
 
+  /**
+   * This methods awaits confirmation of a transaction given as argument.
+   * The response is parsed into a boolean, which is then returned.
+   * If tx is not confirmed at first and no value for timeout is provided,
+   * then false is returned.
+   * If tx is not confirmed at first and a value for timeout (in ms) is given,
+   * then subsequent checks will be performed at a 20 second interval until
+   * timeout is reached.
+   * @param txId - The hash of a transaction
+   * @param timeout - An optional timeout for waiting for confirmation. This
+   * value should be greater than average block time of 20000 ms
+   * @returns A Promise that resolves to a boolean
+   */
   async awaitTransactionConfirmation(
-    _txId: TransactionId,
-    _timeout?: number,
+    txId: TransactionId,
+    timeout?: number,
   ): Promise<boolean> {
-    throw new Error("unimplemented");
+    const averageBlockTime = 20_000;
+
+    if (timeout && timeout < averageBlockTime) {
+      console.log("Warning: timeout given is less than average block time.");
+    }
+
+    const query = `/txs/${txId}/metadata/cbor`;
+    const startTime = Date.now();
+
+    const delay = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+
+    const checkConfirmation = async () => {
+      const response = await fetch(`${this.url}${query}`, {
+        headers: this.headers(),
+      });
+
+      return response.ok;
+    };
+
+    if (await checkConfirmation()) {
+      return true;
+    }
+
+    if (timeout) {
+      while (Date.now() - startTime < timeout) {
+        await delay(averageBlockTime);
+
+        if (await checkConfirmation()) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   async postTransactionToChain(_tx: Transaction): Promise<TransactionId> {

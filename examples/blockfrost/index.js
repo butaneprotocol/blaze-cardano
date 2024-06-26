@@ -114,4 +114,10 @@ const datumHash =
 const resolvedDatum = await provider.resolveDatum(datumHash);
 console.log(`\nDatum CBOR: ${resolvedDatum.asList().toCbor()}`);
 
+const txCompleted =
+  "7523354f3e46889a36b46fa09a18d87075bf1608e0bbb6eb760d5816e9c31a04";
+
+const isTxConfirmed = await provider.awaitTransactionConfirmation(txCompleted);
+console.log(`Transaction confirmed ? ${isTxConfirmed}`);
+
 process.exit(0);
