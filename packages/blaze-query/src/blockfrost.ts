@@ -150,7 +150,8 @@ export class Blockfrost implements Provider {
     const results: Set<TransactionUnspentOutput> = new Set();
 
     for (;;) {
-      const query = `/addresses/${bech32}/utxos?count=${maxPageCount}&page=${page}`;
+      const pagination = `count=${maxPageCount}&page=${page}`;
+      const query = `/addresses/${bech32}/utxos?${pagination}`;
       const json = await fetch(`${this.url}${query}`, {
         headers: this.headers(),
       }).then((resp) => resp.json());
@@ -216,7 +217,8 @@ export class Blockfrost implements Provider {
     const results: Set<TransactionUnspentOutput> = new Set();
 
     for (;;) {
-      const query = `/addresses/${bech32}/utxos/${asset}?count=${maxPageCount}&page=${page}`;
+      const pagination = `count=${maxPageCount}&page=${page}`;
+      const query = `/addresses/${bech32}/utxos/${asset}?${pagination}`;
       const json = await fetch(`${this.url}${query}`, {
         headers: this.headers(),
       }).then((resp) => resp.json());
