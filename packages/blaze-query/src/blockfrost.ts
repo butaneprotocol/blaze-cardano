@@ -302,7 +302,7 @@ export class Blockfrost implements Provider {
   }
 
   /**
-   * This methods resolves transaction outputs from a list of transaction
+   * This method resolves transaction outputs from a list of transaction
    * inputs given as argument.
    * The response is parsed into a TransactionUnspentOutput[] type, which is
    * then returned.
@@ -357,7 +357,7 @@ export class Blockfrost implements Provider {
   }
 
   /**
-   * This methods returns the datum for the datum hash given as argument.
+   * This method returns the datum for the datum hash given as argument.
    * The response is parsed into a PlutusData type, which is then returned.
    * If the response is not in the expected format, an error is thrown.
    * @param datumHash - The hash of a datum
