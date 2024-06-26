@@ -1,5 +1,11 @@
 # @blaze-cardano/uplc
 
+## 0.0.4
+
+### Patch Changes
+
+- acfcad6: fix: blaze-uplc export
+
 ## 0.0.2
 
 ### Patch Changes
