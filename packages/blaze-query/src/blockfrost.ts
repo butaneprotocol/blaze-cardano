@@ -383,7 +383,7 @@ export class Blockfrost implements Provider {
   }
 
   /**
-   * This methods awaits confirmation of a transaction given as argument.
+   * This method awaits confirmation of the transaction given as argument.
    * The response is parsed into a boolean, which is then returned.
    * If tx is not confirmed at first and no value for timeout is provided,
    * then false is returned.
