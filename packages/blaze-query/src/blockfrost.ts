@@ -12,6 +12,7 @@ import {
   Address,
   AddressType,
   AssetId,
+  fromHex,
   HexBlob,
   PlutusData,
   TransactionId,
@@ -436,8 +437,32 @@ export class Blockfrost implements Provider {
     return false;
   }
 
-  async postTransactionToChain(_tx: Transaction): Promise<TransactionId> {
-    throw new Error("unimplemented");
+  /**
+   * This method submits a transaction to the chain.
+   * @param tx - The Transaction
+   * @returns A Promise that resolves to a TransactionId type
+   */
+  async postTransactionToChain(tx: Transaction): Promise<TransactionId> {
+    const query = "/tx/submit";
+    const response = await fetch(`${this.url}${query}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/cbor",
+        Accept: "text/plain",
+        ...this.headers(),
+      },
+      body: fromHex(tx.toCbor()),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(
+        `postTransactionToChain: failed to submit transaction to Blockfrost endpoint.\nError ${error}`,
+      );
+    }
+
+    const txId = await response.text();
+    return TransactionId(txId);
   }
 
   async evaluateTransaction(_tx: Transaction): Promise<Redeemers> {
