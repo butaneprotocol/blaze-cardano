@@ -468,15 +468,20 @@ export class Blockfrost implements Provider {
     return TransactionId(txId);
   }
 
+  /**
+   * This method evaluates how much execution units a transaction requires.
+   * Optionally, additional outputs can be provided. These are added to the
+   * evaluation without checking for their presence on-chain. This is useful
+   * when performing transaction chaining, where some outputs used as inputs
+   * to a transaction will have not been submitted to the network.
+   * @param tx - The Transaction
+   * @param additionalUtxos - Optional utxos to be added to the evaluation.
+   * @returns A Promise that resolves to a Redeemers type
+   */
   async evaluateTransaction(
     tx: Transaction,
     additionalUtxos?: TransactionUnspentOutput[],
   ): Promise<Redeemers> {
-    // TODO: implement support for additionalUtxos
-    if (additionalUtxos && additionalUtxos.length > 0) {
-      throw new Error("Support for additional UTxOs not yet implemented");
-    }
-
     const currentRedeemers = tx.witnessSet().redeemers()?.values();
     if (!currentRedeemers || currentRedeemers.length === 0) {
       throw new Error(
@@ -484,27 +489,57 @@ export class Blockfrost implements Provider {
       );
     }
 
-    const query = "/utils/txs/evaluate";
+    const additionalUtxoSet = new Set();
+    for (const utxo of additionalUtxos || []) {
+      const txIn = {
+        txId: utxo.input().transactionId(),
+        index: utxo.input().index(),
+      };
+
+      const output = utxo.output();
+      const value = output.amount();
+
+      const txOut = {
+        address: output.address(),
+        value: {
+          coins: value.coin(),
+          assets: value.multiasset(),
+        },
+        datum_hash: output.datum()?.asDataHash(),
+        datum: output.datum()?.asInlineData()?.toCbor(),
+        script: output.scriptRef()?.toCbor(),
+      };
+
+      additionalUtxoSet.add([txIn, txOut]);
+    }
+
+    const payload = {
+      cbor: tx.toCbor(),
+      additionalUtxoset: Array.from(additionalUtxoSet),
+    };
+
+    const query = "/utils/txs/evaluate/utxos";
     const response = await fetch(`${this.url}${query}`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/cbor",
+        "Content-Type": "application/json",
         Accept: "application/json",
         ...this.headers(),
       },
-      body: tx.toCbor(),
+      body: JSON.stringify(payload, (_, value) =>
+        typeof value === "bigint" ? value.toString() : value,
+      ),
     });
 
     if (!response.ok) {
       const error = await response.text();
       throw new Error(
-        `evaluateTransaction: failed to evaluate transaction in Blockfrost endpoint.\nError ${error}`,
+        `evaluateTransaction: failed to evaluate transaction with additional UTxO set in Blockfrost endpoint.\nError ${error}`,
       );
     }
 
     const json =
       (await response.json()) as BlockfrostResponse<BlockfrostRedeemer>;
-
     if ("message" in json) {
       throw new Error(
         `evaluateTransaction: Blockfrost threw "${json.message}"`,
@@ -560,7 +595,6 @@ function purposeFromTag(tag: string): RedeemerTag {
   const normalizedTag = tag.toLowerCase();
 
   if (normalizedTag in tagMap) {
-    // TODO: check for null here
     return tagMap[normalizedTag]!;
   } else {
     throw new Error(`Invalid tag: ${tag}.`);
@@ -589,7 +623,6 @@ function buildTransactionUnspentOutput(
       }
     }
     const txOut = new TransactionOutput(address, new Value(lovelace, tokenMap));
-
     return new TransactionUnspentOutput(txIn, txOut);
   };
 }
