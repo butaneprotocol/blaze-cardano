@@ -4,7 +4,7 @@ import type {
   Credential,
   DatumHash,
   ProtocolParameters,
-  Redeemers,
+  Redeemer,
   TokenMap,
   Transaction,
 } from "@blaze-cardano/core";
@@ -12,9 +12,12 @@ import {
   Address,
   AddressType,
   AssetId,
+  ExUnits,
   fromHex,
   HexBlob,
   PlutusData,
+  Redeemers,
+  RedeemerTag,
   TransactionId,
   TransactionInput,
   TransactionOutput,
@@ -465,8 +468,102 @@ export class Blockfrost implements Provider {
     return TransactionId(txId);
   }
 
-  async evaluateTransaction(_tx: Transaction): Promise<Redeemers> {
-    throw new Error("unimplemented");
+  async evaluateTransaction(
+    tx: Transaction,
+    additionalUtxos?: TransactionUnspentOutput[],
+  ): Promise<Redeemers> {
+    // TODO: implement support for additionalUtxos
+    if (additionalUtxos && additionalUtxos.length > 0) {
+      throw new Error("Support for additional UTxOs not yet implemented");
+    }
+
+    const currentRedeemers = tx.witnessSet().redeemers()?.values();
+    if (!currentRedeemers || currentRedeemers.length === 0) {
+      throw new Error(
+        `evaluateTransaction: No Redeemers found in transaction"`,
+      );
+    }
+
+    const query = "/utils/txs/evaluate";
+    const response = await fetch(`${this.url}${query}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/cbor",
+        Accept: "application/json",
+        ...this.headers(),
+      },
+      body: tx.toCbor(),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(
+        `evaluateTransaction: failed to evaluate transaction in Blockfrost endpoint.\nError ${error}`,
+      );
+    }
+
+    const json =
+      (await response.json()) as BlockfrostResponse<BlockfrostRedeemer>;
+
+    if ("message" in json) {
+      throw new Error(
+        `evaluateTransaction: Blockfrost threw "${json.message}"`,
+      );
+    }
+
+    const evaledRedeemers: Set<Redeemer> = new Set();
+
+    const result = json.result.EvaluationResult;
+    for (const redeemerPointer in result) {
+      const [pTag, pIndex] = redeemerPointer.split(":");
+      const purpose = purposeFromTag(pTag!);
+      const index = BigInt(pIndex!);
+      const data = result[redeemerPointer]!;
+      const exUnits = ExUnits.fromCore({
+        memory: data.memory,
+        steps: data.steps,
+      });
+
+      const redeemer = currentRedeemers!.find(
+        (x: Redeemer) => x.tag() == purpose && x.index() == index,
+      );
+
+      if (!redeemer) {
+        throw new Error(
+          "evaluateTransaction: Blockfrost endpoint had extraneous redeemer data",
+        );
+      }
+      // Manually set exUnits for redeemer
+      redeemer.setExUnits(exUnits);
+      // Add redeemer to result set
+      evaledRedeemers.add(redeemer);
+    }
+
+    // Build return value from evaluated result set
+    return Redeemers.fromCore(
+      Array.from(evaledRedeemers).map((x) => x.toCore()),
+    );
+  }
+}
+
+// builds proper type from string result from Blockfrost API
+function purposeFromTag(tag: string): RedeemerTag {
+  const tagMap: { [key: string]: RedeemerTag } = {
+    spend: RedeemerTag.Spend,
+    mint: RedeemerTag.Mint,
+    cert: RedeemerTag.Cert,
+    reward: RedeemerTag.Reward,
+    voting: RedeemerTag.Voting,
+    proposing: RedeemerTag.Proposing,
+  };
+
+  const normalizedTag = tag.toLowerCase();
+
+  if (normalizedTag in tagMap) {
+    // TODO: check for null here
+    return tagMap[normalizedTag]!;
+  } else {
+    throw new Error(`Invalid tag: ${tag}.`);
   }
 }
 
@@ -572,4 +669,15 @@ interface BlockfrostUnspentOutputResolution {
 
 interface BlockfrostDatumHashResolution {
   cbor: string;
+}
+
+interface BlockfrostRedeemer {
+  result: {
+    EvaluationResult: {
+      [key: string]: {
+        memory: number;
+        steps: number;
+      };
+    };
+  };
 }
