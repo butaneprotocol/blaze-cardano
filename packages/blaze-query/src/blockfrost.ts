@@ -473,7 +473,7 @@ export class Blockfrost implements Provider {
    * Optionally, additional outputs can be provided. These are added to the
    * evaluation without checking for their presence on-chain. This is useful
    * when performing transaction chaining, where some outputs used as inputs
-   * to a transaction will have not been submitted to the network.
+   * to a transaction will have not yet been submitted to the network.
    * @param tx - The Transaction
    * @param additionalUtxos - Optional utxos to be added to the evaluation.
    * @returns A Promise that resolves to a Redeemers type

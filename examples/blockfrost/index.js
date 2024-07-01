@@ -8,9 +8,9 @@ const rl = readline.createInterface({ input: stdin, output: stdout });
 import {
   Address,
   AssetId,
+  HexBlob,
   TransactionInput,
   Transaction,
-  HexBlob,
   TransactionUnspentOutput,
   TransactionOutput,
   Value,
