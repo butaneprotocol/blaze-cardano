@@ -8,8 +8,9 @@ const rl = readline.createInterface({ input: stdin, output: stdout });
 import {
   Address,
   AssetId,
-  fromHex,
   TransactionInput,
+  Transaction,
+  HexBlob,
 } from "../../packages/blaze-core/dist/index.js";
 import { Blockfrost } from "./../../packages/blaze-query/dist/index.js";
 import {
@@ -119,5 +120,17 @@ const txCompleted =
 
 const isTxConfirmed = await provider.awaitTransactionConfirmation(txCompleted);
 console.log(`Transaction confirmed ? ${isTxConfirmed}`);
+
+const cbor =
+  "84a80082825820232c8e27c806a0eea8049a6b8217f4325a7348f38ed4913e7adb9d127261fe6d00825820232c8e27c806a0eea8049a6b8217f4325a7348f38ed4913e7adb9d127261fe6d030181825839006bd95fcacb2373d68ae094fdefcc4811358e11ca0306a9f4b3bcbbe866499a2e015b6b02a783f0c5c8af0a9506a648725c951f8d4e2ecbc61a6e2cf031021a0002ae820b5820d9f3a918ad71f3416d150c3cc2224c4d4e371abcd02afb699b94cf45e8748e340d81825820232c8e27c806a0eea8049a6b8217f4325a7348f38ed4913e7adb9d127261fe6d0310825839006bd95fcacb2373d68ae094fdefcc4811358e11ca0306a9f4b3bcbbe866499a2e015b6b02a783f0c5c8af0a9506a648725c951f8d4e2ecbc61a6dfdd230111a000405c31281825820232c8e27c806a0eea8049a6b8217f4325a7348f38ed4913e7adb9d127261fe6d01a300818258205bb407d6f3a428c1102b0daf423b093a2e0cbf51517c30e63f2f003d06dd763a5840472a7b08e6400601f4bb2d596b0b0fc9b8113e06f45a7d8b7235e670b81acd20b20017e7c9c0f6a5da5e5f213b51213e02cab57174bbe5194dd6b663e59f5a03049fd87980ff0581840000d879808219044c1a000382d4f5f6";
+
+const evalTx = Transaction.fromCbor(HexBlob(cbor));
+const redeemers = await provider.evaluateTransaction(evalTx);
+
+console.log("\nEvaluate Tx:");
+for (const redeemer of redeemers.values()) {
+  console.log(`Memory - ${redeemer.exUnits().mem()}`);
+  console.log(`CPU - ${redeemer.exUnits().steps()}`);
+}
 
 process.exit(0);
