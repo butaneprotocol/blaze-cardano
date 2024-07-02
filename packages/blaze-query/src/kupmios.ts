@@ -1,9 +1,10 @@
 import type {
   ProtocolParameters,
   DatumHash,
-  PlutusData,
+  HexBlob,
+  ScriptHash,
+  Redeemer,
   Transaction,
-  Redeemers,
   TokenMap,
 } from "@blaze-cardano/core";
 
@@ -15,26 +16,41 @@ import {
   TransactionId,
   TransactionOutput,
   Value,
+  Redeemers,
+  PlutusData,
+  Datum,
+  ExUnits,
+  RedeemerPurpose,
+  Script,
+  NativeScript,
+  PlutusV1Script,
+  PlutusV2Script,
+  PlutusV3Script,
 } from "@blaze-cardano/core";
 import WebSocket from "ws";
-import type { QueryLedgerStateProtocolParametersResponse } from "@cardano-ogmios/schema";
+import type * as ogmios from "@cardano-ogmios/schema";
 import type { Provider } from "./types";
 
 export class Kupmios implements Provider {
   kupoUrl: string;
   ogmiosUrl: string;
-  headers?: any;
+
+  static readonly plutusVersions: string[] = [
+    "plutus:v1",
+    "plutus:v2",
+    "plutus:v3",
+  ];
+
+  static readonly confirmationTimeout: number = 20_000;
 
   /**
    * Constructor to initialize Kupmios instance.
    * @param kupoUrl - URL of the Kupo service.
    * @param ogmiosUrl - URL of the Ogmios service.
-   * @param headers - Optional headers for requests.
    */
-  constructor(kupoUrl: string, ogmiosUrl: string, headers?: any) {
+  constructor(kupoUrl: string, ogmiosUrl: string) {
     this.kupoUrl = kupoUrl;
     this.ogmiosUrl = ogmiosUrl;
-    this.headers = headers;
   }
 
   /**
@@ -51,11 +67,16 @@ export class Kupmios implements Provider {
     return new Promise((resolve, reject) => {
       client.once("open", () => {
         client.send(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            method,
-            params,
-          }),
+          JSON.stringify(
+            {
+              jsonrpc: "2.0",
+              method,
+              params,
+            },
+            // Todo: Will `Number(bigint)` work properly in browser or node? Not sure.
+            (_, value: any) =>
+              typeof value === "bigint" ? Number(value) : value,
+          ),
         );
         resolve(client);
       });
@@ -100,40 +121,64 @@ export class Kupmios implements Provider {
   }
 
   /**
-   * Fetches unspent outputs from Kupo.
+   * Fetches unspent outputs using Kupo API.
    * @param prefix - Prefix for the URL.
    * @param postfix - Postfix for the URL.
-   * @returns A promise that resolves to an array of unspent outputs.
+   * @returns A promise that resolves to an array of fully resolved unspent outputs.
    */
   private async _getUnspentOutputs(
     prefix: string | null,
     postfix: string | null,
   ): Promise<TransactionUnspentOutput[]> {
     const url = `${this.kupoUrl}/matches/${prefix ? prefix : "*"}?unspent${postfix ? postfix : ""}`;
-    console.log(`Fetching unspent outputs from ${url}`);
+    // Debug: console.log(`Fetching unspent outputs from ${url}`);
     const result: any = await fetch(url).then((res) => res.json());
 
-    return result.map((utxo: any) => {
-      const transactionId = utxo.transaction_id;
-      const outputIndex = BigInt(utxo.output_index);
-      const address = Address.fromBech32(utxo.address);
-      const coins = BigInt(utxo.value.coins);
-      const assets = utxo.value.assets;
+    return await Promise.all(
+      result.map(async (utxo: any) => {
+        // Input params
+        const transactionId = utxo.transaction_id;
+        const outputIndex = BigInt(utxo.output_index);
 
-      const tokenMap: TokenMap = new Map();
-      for (const unit in assets) {
-        if (Object.prototype.hasOwnProperty.call(assets, unit)) {
-          tokenMap.set(AssetId(unit), BigInt(assets[unit]));
+        // Output params
+        const address = Address.fromBech32(utxo.address);
+        const coins = BigInt(utxo.value.coins);
+        const assets = utxo.value.assets;
+
+        const tokenMap: TokenMap = Object.keys(assets).reduce((map, unit) => {
+          map.set(AssetId(unit), BigInt(assets[unit]));
+          return map;
+        }, new Map());
+
+        const value = new Value(coins, tokenMap);
+
+        const output = new TransactionOutput(address, value);
+
+        // Handle datums
+        // Todo: check if utxo has a datum_hash when plutus's script is used.
+        if (utxo.datum_hash) {
+          const datum =
+            utxo.datum_type === "hash"
+              ? new Datum(utxo.datum_hash, undefined)
+              : new Datum(undefined, await this.resolveDatum(utxo.datum_hash));
+
+          output.setDatum(datum);
         }
-      }
 
-      const value = new Value(coins, tokenMap);
+        // Handle script references
+        // Todo: this is a quite expensive operation.
+        if (utxo.script_hash) {
+          const scriptRef = await this.resolveScript(utxo.script_hash);
+          output.setScriptRef(scriptRef);
+        }
 
-      return new TransactionUnspentOutput(
-        new TransactionInput(TransactionId(transactionId), outputIndex),
-        new TransactionOutput(address, value),
-      );
-    });
+        // Return resolved unspent output
+        return new TransactionUnspentOutput(
+          new TransactionInput(TransactionId(transactionId), outputIndex),
+          output,
+        );
+      }),
+    );
   }
 
   /**
@@ -222,26 +267,25 @@ export class Kupmios implements Provider {
     );
 
     return this.handleWebSocketResponse<
-      QueryLedgerStateProtocolParametersResponse,
+      ogmios.QueryLedgerStateProtocolParametersResponse,
       ProtocolParameters
     >(client, (response) => {
       const result = response.result;
-      const createCostModels = (version: string) => (result: any) => ({
-        [version]: result.plutusCostModels?.[version]
-          ? Object.fromEntries(
-              result.plutusCostModels[version].map(
-                (val: number, idx: string) => [idx, val],
-              ),
-            )
-          : {},
-      });
 
-      const costModels = Object.assign(
-        {},
-        ...["plutus:v1", "plutus:v2", "plutus:v3"].map((version) =>
-          createCostModels(version)(result),
-        ),
-      );
+      const createCostModels = (versions: string[], result: any) => {
+        const costModels = new Map<number, number[]>();
+        versions.forEach((version, index) => {
+          costModels.set(
+            index,
+            result.plutusCostModels?.[version]
+              ? result.plutusCostModels[version].map((val: number) => val)
+              : [],
+          );
+        });
+        return costModels;
+      };
+
+      const costModels = createCostModels(Kupmios.plutusVersions, result);
 
       return {
         coinsPerUtxoByte: result.minUtxoDepositCoefficient,
@@ -295,7 +339,7 @@ export class Kupmios implements Provider {
     if (!result || !result.datum) {
       throw new Error(`No datum found for datum hash: ${datumHash}`);
     }
-    return result.datum;
+    return PlutusData.fromCbor(result.datum);
   }
 
   /**
@@ -306,22 +350,25 @@ export class Kupmios implements Provider {
    */
   async awaitTransactionConfirmation(
     txId: TransactionId,
-    timeout?: number,
+    // 5 times the Ogmios timeout.
+    timeout: number = 5 * Kupmios.confirmationTimeout,
   ): Promise<boolean> {
     const startTime = Date.now();
-    let confirmed = false;
 
-    const checkConfirmation = async () => {
+    const checkConfirmation = async (): Promise<boolean> => {
       const response = await fetch(`${this.kupoUrl}/matches/0@${txId}`);
       if (response.ok) {
-        confirmed = true;
-      } else if (Date.now() - startTime < (timeout || 0)) {
-        setTimeout(checkConfirmation, 20000);
+        return true;
+      } else if (Date.now() - startTime < timeout) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, Kupmios.confirmationTimeout),
+        );
+        return checkConfirmation();
       }
+      return false;
     };
 
-    await checkConfirmation();
-    return confirmed;
+    return await checkConfirmation();
   }
 
   /**
@@ -344,17 +391,168 @@ export class Kupmios implements Provider {
   }
 
   /**
+   * Resolves the scripts for a given script hash.
+   * @param scriptHash - Hash of the script to resolve.
+   * @returns A promise that resolves to the JSON represenation of the scrip.
+   * Note: we should reconsider creating a class for this as it could be expensive operation
+   */
+  private async resolveScript(scriptHash: ScriptHash): Promise<Script> {
+    const url = `${this.kupoUrl}/scripts/${scriptHash}`;
+    const result: any = await fetch(url).then((res) => res.json());
+    if (!result || !result.language || !result.script) {
+      throw new Error(`No script found for script hash: ${scriptHash}`);
+    }
+
+    switch (result.language) {
+      case "native":
+        return Script.newNativeScript(NativeScript.fromCbor(result.script));
+      case "plutus:v1":
+        return Script.newPlutusV1Script(PlutusV1Script.fromCbor(result.script));
+      case "plutus:v2":
+        return Script.newPlutusV2Script(PlutusV2Script.fromCbor(result.script));
+      case "plutus:v3":
+        return Script.newPlutusV3Script(PlutusV3Script.fromCbor(result.script));
+
+      default:
+        throw new Error(`Unsupported script language: ${result.language}`);
+    }
+  }
+
+  /**
    * Evaluates a transaction.
-   * @param _tx - Transaction to evaluate.
-   * @param _additionalUtxos - Additional UTXOs to consider.
+   * @param tx - Transaction to evaluate.
+   * @param additionalUtxos - Additional UTXOs to consider.
    * @returns A promise that resolves to the redeemers.
    */
   async evaluateTransaction(
-    _tx: Transaction,
-    _additionalUtxos: TransactionUnspentOutput[],
+    tx: Transaction,
+    additionalUtxos: TransactionUnspentOutput[],
   ): Promise<Redeemers> {
-    // Implementation logic to evaluate the transaction
-    // Placeholder implementation
-    return {} as Redeemers;
+    try {
+      // Quick fail if there are no redeemers
+      const redeemers = tx.witnessSet().redeemers()?.values();
+      if (!redeemers) {
+        throw new Error("Cannot evaluate without redeemers!");
+      }
+
+      // Serialize additional UTXOs to JSON format
+      const additional_utxos = Kupmios.serializeUtxos(additionalUtxos);
+      const client = await this.createWebSocketClient("evaluateTransaction", {
+        transaction: { cbor: tx.toCbor() },
+        additional_utxos,
+      });
+
+      // Handle the response
+      return this.handleWebSocketResponse<any, any>(client, (response) => {
+        if ("result" in response) {
+          // Example results: [{"validator":{"index":0,"purpose":"spend"},"budget":{"memory":2301,"cpu":586656}}]
+          const results: Array<any> = response.result;
+
+          // TODO: check whether all redeemers are required to be returned.
+          if (results.length !== redeemers.length) {
+            throw new Error(
+              "Kupmios endpoint returned inconsistent length of the redeemers",
+            );
+          }
+
+          const updatedRedeemers = results.map((redeemerData: any): any => {
+            const exUnits = ExUnits.fromCore({
+              memory: redeemerData.budget.memory,
+              steps: redeemerData.budget.cpu,
+            });
+
+            const redeemer: Redeemer | undefined = redeemers.find(
+              (x: Redeemer) =>
+                Number(x.index()) === redeemerData.validator.index &&
+                x.tag() ===
+                  Object.keys(RedeemerPurpose).indexOf(
+                    redeemerData.validator.purpose,
+                  ),
+            );
+
+            if (!redeemer) {
+              throw new Error(
+                "Kupmios endpoint returned extraneous redeemer data",
+              );
+            }
+
+            redeemer.setExUnits(exUnits);
+            return redeemer.toCore();
+          });
+
+          return Redeemers.fromCore(updatedRedeemers);
+        } else {
+          throw response.error;
+        }
+      });
+    } catch (error) {
+      console.error("Error evaluating transaction:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Serialize unspent outputs to JSON format.
+   * @param unspentOutputs - Unspent outputs to serialize.
+   * @returns the serialized unspent outputs.
+   */
+  static serializeUtxos(unspentOutputs: TransactionUnspentOutput[]): any[] {
+    return unspentOutputs.map((output) => {
+      const out = output.output();
+      const address = out.address().toBech32();
+
+      // Output parameters
+      const ada = out.amount().coin().valueOf();
+
+      const value: { [key: string]: any } = { ada: { lovelace: ada } };
+      const multiAsset = out.amount().multiasset?.();
+      if (multiAsset) {
+        multiAsset.forEach((assets, assetId) => {
+          const policyID = AssetId.getPolicyId(assetId);
+          const assetName = AssetId.getAssetName(assetId);
+
+          value[policyID] ??= {};
+          value[policyID][assetName] = assets;
+        });
+      }
+
+      // Handle optional datum and datumHash
+      const datumHash = out.datum()?.asDataHash()?.toString();
+      const datum = out.datum()?.asInlineData()?.toCbor();
+
+      // Handle optional script
+      const scriptRef = out.scriptRef();
+
+      let script:
+        | {
+            language: string;
+            cbor: HexBlob;
+            json?: { clause: string; from: string };
+          }
+        | undefined;
+      if (scriptRef) {
+        const language = Kupmios.plutusVersions[scriptRef.language()];
+
+        script = {
+          language: language || "native",
+          cbor: scriptRef.toCbor(),
+        };
+        if (!language) {
+          // Todo: handle native scripts properly.
+          throw new Error("unimplemented");
+        }
+      }
+      return {
+        transaction: {
+          id: output.input().transactionId().toString(),
+        },
+        index: Number(output.input().index()),
+        address,
+        value,
+        datumHash,
+        datum,
+        script,
+      };
+    });
   }
 }

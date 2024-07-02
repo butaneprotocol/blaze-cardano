@@ -197,6 +197,7 @@ export type Hash<T extends string> = C.Serialization.Hash<T>;
 export const DatumHash = Crypto.Hash32ByteBase16;
 export type DatumHash = Crypto.Hash32ByteBase16;
 
+export const Datum = C.Serialization.Datum;
 export type Datum = PlutusData | DatumHash;
 
 export type CostModels = C.Cardano.CostModels;
