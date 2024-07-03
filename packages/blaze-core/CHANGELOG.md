@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.2.5
+
+### Patch Changes
+
+- 3e2ac80: Complete Kupmios Provider
+
 ## 0.2.4
 
 ### Patch Changes

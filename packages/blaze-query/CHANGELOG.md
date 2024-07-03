@@ -1,5 +1,13 @@
 # @blaze-cardano/query
 
+## 0.1.1
+
+### Patch Changes
+
+- 3e2ac80: Complete Kupmios Provider
+- Updated dependencies [3e2ac80]
+  - @blaze-cardano/core@0.2.5
+
 ## 0.1.0
 
 ### Minor Changes

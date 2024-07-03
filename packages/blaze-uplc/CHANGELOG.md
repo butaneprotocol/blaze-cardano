@@ -1,5 +1,12 @@
 # @blaze-cardano/uplc
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [3e2ac80]
+  - @blaze-cardano/core@0.2.5
+
 ## 0.0.4
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/wallet",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Blaze cardano wallet library",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
