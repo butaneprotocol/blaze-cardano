@@ -1,5 +1,14 @@
 # @blaze-cardano/wallet
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [3e2ac80]
+  - @blaze-cardano/query@0.1.1
+  - @blaze-cardano/core@0.2.5
+  - @blaze-cardano/tx@0.0.21
+
 ## 0.1.2
 
 ### Patch Changes
