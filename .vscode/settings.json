@@ -1,0 +1,7 @@
+{
+  "jest.virtualFolders": [
+    { "name": "blaze-query", "rootPath": "packages/blaze-query" },
+    { "name": "blaze-emulator", "rootPath": "packages/blaze-emulator" }
+    // TODO: enable {      "name": "blaze-tx", "rootPath": "packages/blaze-tx"},
+  ]
+}
