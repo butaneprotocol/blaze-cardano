@@ -1,14 +1,16 @@
-import type {
-  TransactionUnspentOutput,
-  Address,
-  AssetId,
-  TransactionInput,
-  DatumHash,
-  PlutusData,
-  TransactionId,
-  Transaction,
-  ProtocolParameters,
-  Redeemers,
+import {
+  type TransactionUnspentOutput,
+  type Address,
+  type AssetId,
+  type TransactionInput,
+  type DatumHash,
+  type PlutusData,
+  type TransactionId,
+  type Transaction,
+  type ProtocolParameters,
+  type Redeemers,
+  RedeemerPurpose,
+  RedeemerTag,
 } from "@blaze-cardano/core";
 
 /**
@@ -106,3 +108,16 @@ export abstract class Provider {
     additionalUtxos: TransactionUnspentOutput[],
   ): Promise<Redeemers>;
 }
+
+/**
+ * Mapping of RedeemerPurpose to RedeemerTag.
+ * Ensures consistency between purpose strings and tag numbers.
+ */
+export const purposeToTag: { [key: string]: number } = {
+  [RedeemerPurpose.spend]: RedeemerTag.Spend,
+  [RedeemerPurpose.mint]: RedeemerTag.Mint,
+  [RedeemerPurpose.certificate]: RedeemerTag.Cert,
+  [RedeemerPurpose.withdrawal]: RedeemerTag.Reward,
+  [RedeemerPurpose.vote]: RedeemerTag.Voting,
+  [RedeemerPurpose.propose]: RedeemerTag.Proposing,
+};
