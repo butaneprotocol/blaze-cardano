@@ -872,7 +872,7 @@ export class TxBuilder {
       const usedCostModels = new Costmdls();
       // Populate the used cost models based on the languages used in the transaction.
       for (let i = 0; i <= Object.keys(this.usedLanguages).length; i++) {
-        if (i == 0) {
+        if (this.usedLanguages[i as PlutusLanguageVersion]) {
           // Retrieve the cost model for the current language version.
           const cm = this.params.costModels.get(i);
           // Throw an error if the cost model is missing.

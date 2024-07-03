@@ -1,0 +1,10 @@
+{
+  "name": "kupmios",
+  "version": "0.1.0",
+  "description": "Kupmios node example",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "query": "node index.js"
+  }
+}
