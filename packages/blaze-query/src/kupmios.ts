@@ -20,7 +20,6 @@ import {
   PlutusData,
   Datum,
   ExUnits,
-  RedeemerPurpose,
   Script,
   NativeScript,
   PlutusV1Script,
@@ -29,7 +28,7 @@ import {
 } from "@blaze-cardano/core";
 import WebSocket from "ws";
 import type * as ogmios from "@cardano-ogmios/schema";
-import type { Provider } from "./types";
+import { purposeToTag, type Provider } from "./types";
 
 export class Kupmios implements Provider {
   kupoUrl: string;
@@ -155,7 +154,7 @@ export class Kupmios implements Provider {
         const output = new TransactionOutput(address, value);
 
         // Handle datums
-        // Todo: check if utxo has a datum_hash when plutus's script is used.
+        // Todo: check if utxo has a datum_hash in the case when plutus's script is used.
         if (utxo.datum_hash) {
           const datum =
             utxo.datum_type === "hash"
@@ -464,10 +463,8 @@ export class Kupmios implements Provider {
             const redeemer: Redeemer | undefined = redeemers.find(
               (x: Redeemer) =>
                 Number(x.index()) === redeemerData.validator.index &&
-                x.tag() ===
-                  Object.keys(RedeemerPurpose).indexOf(
-                    redeemerData.validator.purpose,
-                  ),
+                // TODO: RedeemerPurpose enum's indexes are still inconsistent. They are not the same as RedeemerTag values.
+                x.tag() === purposeToTag[redeemerData.validator.purpose],
             );
 
             if (!redeemer) {
@@ -506,15 +503,13 @@ export class Kupmios implements Provider {
 
       const value: { [key: string]: any } = { ada: { lovelace: ada } };
       const multiAsset = out.amount().multiasset?.();
-      if (multiAsset) {
-        multiAsset.forEach((assets, assetId) => {
-          const policyID = AssetId.getPolicyId(assetId);
-          const assetName = AssetId.getAssetName(assetId);
+      multiAsset?.forEach((assets, assetId) => {
+        const policyID = AssetId.getPolicyId(assetId);
+        const assetName = AssetId.getAssetName(assetId);
 
-          value[policyID] ??= {};
-          value[policyID][assetName] = assets;
-        });
-      }
+        value[policyID] ??= {};
+        value[policyID][assetName] = assets;
+      });
 
       // Handle optional datum and datumHash
       const datumHash = out.datum()?.asDataHash()?.toString();
