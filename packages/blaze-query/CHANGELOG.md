@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.1.0
+
+### Minor Changes
+
+- e0f00d3: Complete Blockfrost provider
+
 ## 0.0.10
 
 ### Patch Changes
