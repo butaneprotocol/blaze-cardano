@@ -1,5 +1,11 @@
 # @blaze-cardano/wallet
 
+## 0.1.4
+
+### Patch Changes
+
+- 32590e5: feat: Hot Single Wallet
+
 ## 0.1.3
 
 ### Patch Changes
