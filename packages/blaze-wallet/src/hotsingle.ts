@@ -10,7 +10,7 @@ import {
   blake2b_224,
   CredentialType,
   signMessage,
-} from '@blaze-cardano/core'
+} from "@blaze-cardano/core";
 import {
   Address,
   AddressType,
@@ -20,10 +20,10 @@ import {
   NetworkId,
   Ed25519SignatureHex,
   derivePublicKey,
-} from '@blaze-cardano/core'
-import type { Provider } from '@blaze-cardano/query'
-import type { Wallet, CIP30DataSignature } from './types'
-import * as value from '@blaze-cardano/tx/value'
+} from "@blaze-cardano/core";
+import type { Provider } from "@blaze-cardano/query";
+import type { Wallet, CIP30DataSignature } from "./types";
+import * as value from "@blaze-cardano/tx/value";
 
 /**
  * Wallet class that interacts with the HotSingleWallet.
@@ -31,11 +31,11 @@ import * as value from '@blaze-cardano/tx/value'
  * Creates enterprise addresses.
  */
 export class HotSingleWallet implements Wallet {
-  private provider: Provider
-  private signingKey: Ed25519PrivateNormalKeyHex
-  private publicKey: Ed25519PublicKey
-  readonly address: Address
-  readonly networkId: NetworkId
+  private provider: Provider;
+  private signingKey: Ed25519PrivateNormalKeyHex;
+  private publicKey: Ed25519PublicKey;
+  readonly address: Address;
+  readonly networkId: NetworkId;
 
   /**
    * Constructs a new instance of the HotSingleWallet class.
@@ -48,9 +48,9 @@ export class HotSingleWallet implements Wallet {
     networkId: NetworkId,
     provider: Provider,
   ) {
-    this.networkId = networkId
-    this.signingKey = signingKey
-    this.publicKey = Ed25519PublicKey.fromHex(derivePublicKey(this.signingKey))
+    this.networkId = networkId;
+    this.signingKey = signingKey;
+    this.publicKey = Ed25519PublicKey.fromHex(derivePublicKey(this.signingKey));
     this.address = this.address = new Address({
       type: AddressType.EnterpriseKey,
       networkId: this.networkId,
@@ -58,8 +58,8 @@ export class HotSingleWallet implements Wallet {
         type: CredentialType.KeyHash,
         hash: blake2b_224(HexBlob(this.publicKey.hex())),
       },
-    })
-    this.provider = provider
+    });
+    this.provider = provider;
   }
 
   /**
@@ -67,7 +67,7 @@ export class HotSingleWallet implements Wallet {
    * @returns {Promise<NetworkId>} - The network ID of the currently connected account.
    */
   async getNetworkId(): Promise<NetworkId> {
-    return this.networkId
+    return this.networkId;
   }
 
   /**
@@ -75,7 +75,7 @@ export class HotSingleWallet implements Wallet {
    * @returns {Promise<TransactionUnspentOutput[]>} - The UTXO(s) controlled by the wallet.
    */
   async getUnspentOutputs(): Promise<TransactionUnspentOutput[]> {
-    return this.provider.getUnspentOutputs(this.address)
+    return this.provider.getUnspentOutputs(this.address);
   }
 
   /**
@@ -86,7 +86,7 @@ export class HotSingleWallet implements Wallet {
     return (await this.getUnspentOutputs()).reduce(
       (x, y) => value.merge(x, y.output().amount()),
       value.zero(),
-    )
+    );
   }
 
   /**
@@ -94,7 +94,7 @@ export class HotSingleWallet implements Wallet {
    * @returns {Promise<Address[]>} - The used addresses controlled by the wallet.
    */
   async getUsedAddresses(): Promise<Address[]> {
-    return [this.address]
+    return [this.address];
   }
 
   /**
@@ -102,7 +102,7 @@ export class HotSingleWallet implements Wallet {
    * @returns {Promise<Address[]>} - The unused addresses controlled by the wallet.
    */
   async getUnusedAddresses(): Promise<Address[]> {
-    return []
+    return [];
   }
 
   /**
@@ -110,7 +110,7 @@ export class HotSingleWallet implements Wallet {
    * @returns {Promise<Address>} - The change address.
    */
   async getChangeAddress(): Promise<Address> {
-    return this.address
+    return this.address;
   }
 
   /**
@@ -119,7 +119,7 @@ export class HotSingleWallet implements Wallet {
    * @returns {Promise<RewardAddress[]>} - The reward addresses controlled by the wallet.
    */
   async getRewardAddresses(): Promise<RewardAddress[]> {
-    return []
+    return [];
   }
 
   /**
@@ -134,18 +134,18 @@ export class HotSingleWallet implements Wallet {
   ): Promise<TransactionWitnessSet> {
     if (partialSign == false) {
       throw new Error(
-        'signTx: Hot single wallet only supports partial signing = true',
-      )
+        "signTx: Hot single wallet only supports partial signing = true",
+      );
     }
 
-    const signature = signMessage(HexBlob(tx.getId()), this.signingKey)
-    const tws = new TransactionWitnessSet()
+    const signature = signMessage(HexBlob(tx.getId()), this.signingKey);
+    const tws = new TransactionWitnessSet();
     const vkw = new VkeyWitness(
       this.publicKey.hex(),
       Ed25519SignatureHex(signature),
-    )
-    tws.setVkeys(CborSet.fromCore([vkw.toCore()], VkeyWitness.fromCore))
-    return tws
+    );
+    tws.setVkeys(CborSet.fromCore([vkw.toCore()], VkeyWitness.fromCore));
+    return tws;
   }
 
   /**
@@ -160,8 +160,8 @@ export class HotSingleWallet implements Wallet {
     _payload: string,
   ): Promise<CIP30DataSignature> {
     throw new Error(
-      'signData: Hot single wallet does not yet support data signing',
-    )
+      "signData: Hot single wallet does not yet support data signing",
+    );
   }
 
   /**
@@ -170,7 +170,7 @@ export class HotSingleWallet implements Wallet {
    * @returns {Promise<TransactionId>} - The ID of the submitted transaction.
    */
   async postTransaction(tx: Transaction): Promise<TransactionId> {
-    return this.provider.postTransactionToChain(tx)
+    return this.provider.postTransactionToChain(tx);
   }
 
   /**
@@ -178,6 +178,6 @@ export class HotSingleWallet implements Wallet {
    * @returns {Promise<TransactionUnspentOutput[]>} - The collateral for the wallet.
    */
   async getCollateral(): Promise<TransactionUnspentOutput[]> {
-    return []
+    return [];
   }
 }
