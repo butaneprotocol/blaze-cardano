@@ -43,7 +43,7 @@ export class HotSingleWallet implements Wallet {
    * @param {NetworkId} networkId - The network ID for the wallet.
    * @param {Provider} provider - The provider for the wallet.
    */
-  private constructor(
+  constructor(
     signingKey: Ed25519PrivateNormalKeyHex,
     networkId: NetworkId,
     provider: Provider,
