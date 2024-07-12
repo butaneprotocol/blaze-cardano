@@ -28,12 +28,15 @@ import * as value from "@blaze-cardano/tx/value";
 /**
  * Wallet class that interacts with the HotSingleWallet.
  * This is like HotWallet, but without key derivation.
- * Creates enterprise addresses.
  */
 export class HotSingleWallet implements Wallet {
   private provider: Provider;
-  private signingKey: Ed25519PrivateNormalKeyHex;
-  private publicKey: Ed25519PublicKey;
+  private paymentSigningKey: Ed25519PrivateNormalKeyHex;
+  private paymentPublicKey: Ed25519PublicKey;
+
+  private stakeSigningKey: Ed25519PrivateNormalKeyHex | undefined = undefined;
+  private stakePublicKey: Ed25519PublicKey | undefined = undefined;
+
   readonly address: Address;
   readonly networkId: NetworkId;
 
@@ -42,23 +45,42 @@ export class HotSingleWallet implements Wallet {
    * @param {Ed25519PrivateNormalKeyHex} signingKey - The private signing key of the wallet.
    * @param {NetworkId} networkId - The network ID for the wallet.
    * @param {Provider} provider - The provider for the wallet.
+   * @param {Ed25519PrivateNormalKeyHex} stakeSigningKey - An optional private signing key for the delegation part of the wallet. If not provided, the wallet will have an enterprise address.
    */
   constructor(
-    signingKey: Ed25519PrivateNormalKeyHex,
+    paymentSigningKey: Ed25519PrivateNormalKeyHex,
     networkId: NetworkId,
     provider: Provider,
+    stakeSigningKey?: Ed25519PrivateNormalKeyHex
   ) {
     this.networkId = networkId;
-    this.signingKey = signingKey;
-    this.publicKey = Ed25519PublicKey.fromHex(derivePublicKey(this.signingKey));
+    this.paymentSigningKey = paymentSigningKey;
+    this.paymentPublicKey = Ed25519PublicKey.fromHex(
+      derivePublicKey(this.paymentSigningKey)
+    );
+
+    if (stakeSigningKey) {
+      this.stakeSigningKey = stakeSigningKey;
+      this.stakePublicKey = Ed25519PublicKey.fromHex(
+        derivePublicKey(this.stakeSigningKey)
+      );
+    }
+
     this.address = this.address = new Address({
       type: AddressType.EnterpriseKey,
       networkId: this.networkId,
       paymentPart: {
         type: CredentialType.KeyHash,
-        hash: blake2b_224(HexBlob(this.publicKey.hex())),
+        hash: blake2b_224(HexBlob(this.paymentPublicKey.hex())),
       },
+      delegationPart: this.stakePublicKey
+        ? {
+            type: CredentialType.KeyHash,
+            hash: blake2b_224(HexBlob(this.stakePublicKey.hex())),
+          }
+        : undefined,
     });
+
     this.provider = provider;
   }
 
@@ -85,7 +107,7 @@ export class HotSingleWallet implements Wallet {
   async getBalance(): Promise<Value> {
     return (await this.getUnspentOutputs()).reduce(
       (x, y) => value.merge(x, y.output().amount()),
-      value.zero(),
+      value.zero()
     );
   }
 
@@ -130,19 +152,19 @@ export class HotSingleWallet implements Wallet {
    */
   async signTransaction(
     tx: Transaction,
-    partialSign: boolean = true,
+    partialSign: boolean = true
   ): Promise<TransactionWitnessSet> {
     if (partialSign == false) {
       throw new Error(
-        "signTx: Hot single wallet only supports partial signing = true",
+        "signTx: Hot single wallet only supports partial signing = true"
       );
     }
 
-    const signature = signMessage(HexBlob(tx.getId()), this.signingKey);
+    const signature = signMessage(HexBlob(tx.getId()), this.paymentSigningKey);
     const tws = new TransactionWitnessSet();
     const vkw = new VkeyWitness(
-      this.publicKey.hex(),
-      Ed25519SignatureHex(signature),
+      this.paymentPublicKey.hex(),
+      Ed25519SignatureHex(signature)
     );
     tws.setVkeys(CborSet.fromCore([vkw.toCore()], VkeyWitness.fromCore));
     return tws;
@@ -157,10 +179,10 @@ export class HotSingleWallet implements Wallet {
    */
   async signData(
     _address: Address,
-    _payload: string,
+    _payload: string
   ): Promise<CIP30DataSignature> {
     throw new Error(
-      "signData: Hot single wallet does not yet support data signing",
+      "signData: Hot single wallet does not yet support data signing"
     );
   }
 
