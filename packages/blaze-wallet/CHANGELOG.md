@@ -1,5 +1,12 @@
 # @blaze-cardano/wallet
 
+## 0.1.5
+
+### Patch Changes
+
+- 8bd2d1c: Remove private constructor from `HotSingleWallet`
+  Add staking key to `HotSingleWallet`
+
 ## 0.1.4
 
 ### Patch Changes
