@@ -1,5 +1,11 @@
 # @blaze-cardano/uplc
 
+## 0.0.6
+
+### Patch Changes
+
+- 9b9d636: fix: decodeCborData
+
 ## 0.0.5
 
 ### Patch Changes
