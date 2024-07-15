@@ -728,6 +728,25 @@ export class TxBuilder {
         );
       }
     }
+    // do native script check too
+    for (const requiredScriptHash of this.requiredNativeScripts) {
+      if (!this.scriptSeen.has(requiredScriptHash)) {
+        const script = scriptLookup[requiredScriptHash];
+        if (!script) {
+          throw new Error(
+            `complete: Could not resolve script hash ${requiredScriptHash}`,
+          );
+        } else {
+          if (script.asNative() != undefined) {
+            sn.push(script.asNative()!);
+          } else {
+            throw new Error(
+              "complete: Could not resolve script hash (was not native script)",
+            );
+          }
+        }
+      }
+    }
     // Add scripts to the transaction witness set
     if (sn.length != 0) {
       const cborSet = CborSet.fromCore([], NativeScript.fromCore);
