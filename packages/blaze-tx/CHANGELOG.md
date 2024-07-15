@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.22
+
+### Patch Changes
+
+- c96ec08: fix: nativescript support
+
 ## 0.0.21
 
 ### Patch Changes
