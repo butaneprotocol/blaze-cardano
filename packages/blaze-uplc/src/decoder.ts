@@ -120,10 +120,8 @@ export class UPLCDecoder extends FlatDecoder {
    * @returns {Cardano.PlutusData} The decoded data in Plutus core format.
    */
   #decodeCborData(): Cardano.PlutusData {
-    const cbor = this.#decodeByteString()
-    return Serialization.PlutusData.fromCbor(
-      HexBlob(toHex(cbor)),
-    ).toCore();
+    const cbor = this.#decodeByteString();
+    return Serialization.PlutusData.fromCbor(HexBlob(toHex(cbor))).toCore();
   }
 
   /**
