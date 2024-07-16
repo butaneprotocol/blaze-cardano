@@ -617,9 +617,9 @@ function buildTransactionUnspentOutput(
     let lovelace = 0n;
     for (const { unit, quantity } of blockfrostUTxO.amount) {
       if (unit === "lovelace") {
-        lovelace = quantity;
+        lovelace = BigInt(quantity);
       } else {
-        tokenMap.set(unit as AssetId, quantity);
+        tokenMap.set(unit as AssetId, BigInt(quantity));
       }
     }
     const txOut = new TransactionOutput(address, new Value(lovelace, tokenMap));
@@ -683,7 +683,7 @@ interface BlockfrostUTxO {
   output_index: number;
   amount: {
     unit: string;
-    quantity: bigint;
+    quantity: string;
   }[];
   block: string;
   data_hash?: string;
