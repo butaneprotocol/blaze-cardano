@@ -94,6 +94,7 @@ constraints:
  */
 export class TxBuilder {
   readonly params: ProtocolParameters;
+  private preCompleteHooks: ((tx: TxBuilder) => Promise<void>)[] = [];
   private body: TransactionBody; // The main body of the transaction containing inputs, outputs, etc.
   private auxiliaryData?: AuxiliaryData;
   private redeemers: Redeemers = Redeemers.fromCore([]); // A collection of redeemers for script validation.
@@ -1099,6 +1100,12 @@ export class TxBuilder {
    * @returns {Promise<Transaction>} A new Transaction object with all components set and ready for submission.
    */
   async complete(): Promise<Transaction> {
+    // Execute pre-complete hooks
+    if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
+      for (const hook of this.preCompleteHooks) {
+        await hook(this);
+      }
+    }
     // Ensure a change address has been set before proceeding.
     if (!this.changeAddress) {
       throw new Error(
@@ -1507,6 +1514,26 @@ export class TxBuilder {
    */
   provideScript(script: Script) {
     this.scriptScope.add(script);
+    return this;
+  }
+
+  /**
+   * Adds a pre-complete hook to the transaction builder. This hook will be executed
+   * before the transaction is finalized.
+   *
+   * Pre-complete hooks are useful for performing last-minute modifications or
+   * validations on the transaction before it's completed. Multiple hooks can be
+   * added, and they will be executed in the order they were added.
+   *
+   * @param {(tx: TxBuilder) => Promise<void>} hook - A function that takes the TxBuilder
+   * instance as an argument and performs some operation. The hook should be asynchronous.
+   * @returns {TxBuilder} The same transaction builder instance for method chaining.
+   */
+  addPreCompleteHook(hook: (tx: TxBuilder) => Promise<void>): TxBuilder {
+    if (!this.preCompleteHooks) {
+      this.preCompleteHooks = [];
+    }
+    this.preCompleteHooks.push(hook);
     return this;
   }
 }

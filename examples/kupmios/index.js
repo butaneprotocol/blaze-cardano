@@ -21,10 +21,11 @@ const entropy = mnemonicToEntropy(mnemonic, wordlist);
 const masterkey = Bip32PrivateKey.fromBip39Entropy(Buffer.from(entropy), "");
 
 const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
-const blaze = new Blaze(provider, wallet);
+const blaze = await Blaze.from(provider, wallet);
 
 const address = wallet.address;
-const tx = await (await blaze.newTransaction())
+const tx = await blaze
+  .newTransaction()
   .payLovelace(address, 5_000_000n)
   .complete();
 

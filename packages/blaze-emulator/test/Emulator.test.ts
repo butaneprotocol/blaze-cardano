@@ -1,11 +1,10 @@
-import type { Bip32PrivateKeyHex } from "@blaze-cardano/core";
+import type { Bip32PrivateKeyHex, Address } from "@blaze-cardano/core";
 import {
   NetworkId,
   TransactionInput,
   TransactionId,
   PolicyId,
   AssetName,
-  Address,
   AssetId,
   addressFromCredential,
   Credential,
@@ -57,7 +56,7 @@ describe("Emulator", () => {
     provider = new EmulatorProvider(emulator);
     wallet1 = await HotWallet.fromMasterkey(masterkeyHex1, provider);
     wallet2 = await HotWallet.fromMasterkey(masterkeyHex2, provider);
-    blaze = new Blaze(provider, wallet1);
+    blaze = await Blaze.from(provider, wallet1);
   });
 
   test("Should be able to get a genesis UTxO", async () => {

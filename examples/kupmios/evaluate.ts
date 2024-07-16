@@ -38,7 +38,7 @@ const masterkey: Bip32PrivateKey = Bip32PrivateKey.fromBip39Entropy(
 );
 
 const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
-const blaze = new Blaze(provider, wallet);
+const blaze = await Blaze.from(provider, wallet);
 
 const alwaysTrueScript: Script = Script.newPlutusV2Script(
   new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
@@ -46,12 +46,12 @@ const alwaysTrueScript: Script = Script.newPlutusV2Script(
 
 const scriptAddress = addressFromValidator(NetworkId.Testnet, alwaysTrueScript);
 
-const tx = await (await blaze.newTransaction())
+const txId = await blaze
+  .newTransaction()
   .lockLovelace(scriptAddress, 50_000_000n, PlutusData.fromCbor(HexBlob("01")))
-  .complete();
-
-const signed = await blaze.signTransaction(tx);
-const txId = await blaze.provider.postTransactionToChain(signed);
+  .complete()
+  .then(blaze.signTransaction)
+  .then(blaze.submitTransaction);
 
 console.log(
   `Transaction with ID ${txId} has been successfully submitted to the blockchain.`,
@@ -67,15 +67,14 @@ await sleep(sleeptime);
 
 const scriptUtxos = await blaze.provider.getUnspentOutputs(scriptAddress);
 
-const stx = await (
-  await blaze.newTransaction()
-)
+const txId1 = await blaze
+  .newTransaction()
   .addInput(scriptUtxos[0], PlutusData.fromCbor(HexBlob("00")))
   .provideScript(alwaysTrueScript)
-  .complete();
+  .complete()
+  .then(blaze.signTransaction)
+  .then(blaze.submitTransaction);
 
-const signed1 = await blaze.signTransaction(stx);
-const txId1 = await blaze.provider.postTransactionToChain(signed1);
 const confirmed1 = await blaze.provider.awaitTransactionConfirmation(txId1);
 
 console.log(

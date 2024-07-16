@@ -38,13 +38,12 @@ let address = Core.addressFromBech32(
 );
 
 const wallet = new ColdWallet(address, 0, provider);
-const blaze = new Blaze(provider, wallet);
+const blaze = await Blaze.from(provider, wallet);
 
 console.log(await provider.getParameters());
 
-const tx = await (
-  await blaze.newTransaction()
-)
+const tx = await blaze
+  .newTransaction()
   .payLovelace(
     Address.fromBech32(
       // Some other preview address with BTN
