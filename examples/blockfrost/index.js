@@ -70,10 +70,10 @@ for (const utxo of utxos) {
   console.log(utxoRef);
 
   const amountADA = utxo.output().amount().coin();
-  console.log(`Amount of ADA: ${amountADA / 1000000}`);
+  console.log(`Amount of ADA: ${amountADA / 1000000n}`);
 
   const amountBTN = utxo.output().amount().multiasset().get(btnUnit);
-  console.log(`Amount of ${assetName}: ${amountBTN / 1000000}`);
+  console.log(`Amount of ${assetName}: ${amountBTN / 1000000n}`);
 }
 
 // Some NFT on Preview
@@ -98,7 +98,7 @@ const resolvedOutputs = await provider.resolveUnspentOutputs(txIns);
 
 for (const utxo of resolvedOutputs) {
   const amountADA = utxo.output().amount().coin();
-  console.log(`Amount of ADA: ${amountADA / 1000000}`);
+  console.log(`Amount of ADA: ${amountADA / 1000000n}`);
 
   const multiAssetMap = utxo.output().amount().multiasset();
   for (const [asset, amount] of multiAssetMap.entries()) {
