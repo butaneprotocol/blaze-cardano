@@ -1055,7 +1055,10 @@ export class TxBuilder {
     const scope = [...this.utxoScope.values()];
     // Calculate the total collateral based on the transaction fee and collateral percentage.
     const totalCollateral = BigInt(
-      Math.ceil(this.params.collateralPercentage * Number(BigIntMax(this.fee, this.minimumFee))),
+      Math.ceil(
+        this.params.collateralPercentage *
+          Number(BigIntMax(this.fee, this.minimumFee)),
+      ),
     );
     // Calculate the collateral value by summing up the amounts from collateral inputs.
     const collateralValue = this.body
@@ -1184,7 +1187,10 @@ export class TxBuilder {
     // Calculate and set the transaction fee.
     let draft_size = draft_tx.toCbor().length / 2;
     this.calculateFees(draft_tx);
-    excessValue = value.merge(excessValue, new Value(-BigIntMax(this.fee, this.minimumFee)));
+    excessValue = value.merge(
+      excessValue,
+      new Value(-BigIntMax(this.fee, this.minimumFee)),
+    );
     this.balanceChange(excessValue);
     if (this.redeemers.size() > 0) {
       this.prepareCollateral();
