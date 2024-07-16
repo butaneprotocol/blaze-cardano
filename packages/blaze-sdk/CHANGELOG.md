@@ -1,5 +1,14 @@
 # @blaze-cardano/sdk
 
+## 0.0.29
+
+### Patch Changes
+
+- 1623e94: feat: newTransaction improved via precomplete hooks
+- Updated dependencies [1623e94]
+  - @blaze-cardano/tx@0.0.24
+  - @blaze-cardano/wallet@0.1.8
+
 ## 0.0.28
 
 ### Patch Changes

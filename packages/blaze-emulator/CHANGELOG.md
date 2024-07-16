@@ -1,5 +1,14 @@
 # @blaze-cardano/emulator
 
+## 0.1.28
+
+### Patch Changes
+
+- 1623e94: feat: newTransaction improved via precomplete hooks
+- Updated dependencies [1623e94]
+  - @blaze-cardano/tx@0.0.24
+  - @blaze-cardano/wallet@0.1.8
+
 ## 0.1.27
 
 ### Patch Changes
