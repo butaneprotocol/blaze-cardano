@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.23
+
+### Patch Changes
+
+- a99e113: fix: minimum fee used in collateral calc
+
 ## 0.0.22
 
 ### Patch Changes
