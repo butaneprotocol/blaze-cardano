@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.1.2
+
+### Patch Changes
+
+- df3c0f5: Fix BlockfrostUTxO type mismatch
+
 ## 0.1.1
 
 ### Patch Changes
