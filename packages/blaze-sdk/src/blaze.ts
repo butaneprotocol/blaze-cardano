@@ -14,7 +14,7 @@ import type { Wallet } from "@blaze-cardano/wallet";
  */
 export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
   readonly provider: ProviderType;
-  readonly wallet: WalletType;
+  wallet: WalletType;
   readonly params: ProtocolParameters;
 
   /**
