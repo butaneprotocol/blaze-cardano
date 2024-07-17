@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.1.3
+
+### Patch Changes
+
+- ac597b1: Release @joacohoyos @ilap PRs
+
 ## 0.1.2
 
 ### Patch Changes
