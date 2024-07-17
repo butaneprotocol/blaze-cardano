@@ -1232,7 +1232,7 @@ export class TxBuilder {
     } while (final_size != draft_size);
     // Return the fully constructed transaction.
     tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore));
-    return new Transaction(this.body, tw);
+    return new Transaction(this.body, tw, this.auxiliaryData);
   }
 
   /**
