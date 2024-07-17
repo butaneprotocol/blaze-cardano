@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.25
+
+### Patch Changes
+
+- ac597b1: Release @joacohoyos @ilap PRs
+
 ## 0.0.24
 
 ### Patch Changes
