@@ -1,4 +1,4 @@
-import { ProtocolParameters, Address, TransactionUnspentOutput, AssetId, TransactionInput, DatumHash, PlutusData, TransactionId, Transaction, Redeemers, TransactionOutput, HexBlob, Value, TokenMap, PolicyId, AssetName } from "@blaze-cardano/core";
+import { ProtocolParameters, Address, TransactionUnspentOutput, AssetId, TransactionInput, DatumHash, PlutusData, TransactionId, Transaction, Redeemers, TransactionOutput, HexBlob, Value, TokenMap, PolicyId, AssetName, Datum } from "@blaze-cardano/core";
 import { Provider } from "./types";
 import { CardanoQueryClient } from "@utxorpc/sdk";
 import * as Cardano from "@utxorpc/spec/lib/utxorpc/v1alpha/cardano/cardano_pb.js";
@@ -27,10 +27,7 @@ export class U5C implements Provider {
                 BigInt(item.outputIndex),
             );
 
-            const output = new TransactionOutput(
-                Address.fromBytes(HexBlob.fromBytes(item.asOutput?.address ?? new Uint8Array())),
-                this._rpcTxOutToCoreValue(item.asOutput ?? new Cardano.TxOutput()),
-            );
+            const output = this._rpcTxOutToCoreTxOut(item.asOutput ?? new Cardano.TxOutput());
 
             return new TransactionUnspentOutput(
                 input,
@@ -52,10 +49,7 @@ export class U5C implements Provider {
                 BigInt(item.outputIndex),
             );
 
-            const output = new TransactionOutput(
-                Address.fromBytes(HexBlob.fromBytes(item.asOutput?.address ?? new Uint8Array())),
-                this._rpcTxOutToCoreValue(item.asOutput ?? new Cardano.TxOutput()),
-            );
+            const output = this._rpcTxOutToCoreTxOut(item.asOutput ?? new Cardano.TxOutput());
 
             return new TransactionUnspentOutput(
                 input,
@@ -85,10 +79,7 @@ export class U5C implements Provider {
             BigInt(item.outputIndex),
         );
 
-        const output = new TransactionOutput(
-            Address.fromBytes(HexBlob.fromBytes(item.asOutput?.address ?? new Uint8Array())),
-            this._rpcTxOutToCoreValue(item.asOutput ?? new Cardano.TxOutput()),
-        );
+        const output = this._rpcTxOutToCoreTxOut(item.asOutput ?? new Cardano.TxOutput());
 
         return new TransactionUnspentOutput(
             input,
@@ -111,10 +102,11 @@ export class U5C implements Provider {
                 BigInt(item.outputIndex),
             );
 
-            const output = new TransactionOutput(
-                Address.fromBytes(HexBlob.fromBytes(item.asOutput?.address ?? new Uint8Array())),
-                this._rpcTxOutToCoreValue(item.asOutput ?? new Cardano.TxOutput()),
-            );
+            if (item.asOutput === undefined || item.asOutput === null) {
+                throw new Error(`Error fetching unspent outputs`);
+            }
+
+            const output = this._rpcTxOutToCoreTxOut(item.asOutput);
 
             return new TransactionUnspentOutput(
                 input,
@@ -143,16 +135,30 @@ export class U5C implements Provider {
         throw new Error("Method not implemented.");
     }
 
-    private _rpcTxOutToCoreValue(value: Cardano.TxOutput): Value {
+    private _rpcTxOutToCoreTxOut(rpcTxOutput: Cardano.TxOutput): TransactionOutput {
+        const output = new TransactionOutput(
+            Address.fromBytes(HexBlob.fromBytes(rpcTxOutput.address)),
+            this._rpcTxOutToCoreValue(rpcTxOutput)
+        );
+
+        // output.setDatum(new Datum(
+        //     DatumHash(Buffer.from(rpcTxOutput.datumHash).toString('hex'))
+        // ))
+        // Would be convient to have a Datum.fromBytes() method since blaze a PlutusData.fromCbor
+        console.log(rpcTxOutput.datum);
+        return output;
+    }
+
+    private _rpcTxOutToCoreValue(rpcTxOutput: Cardano.TxOutput): Value {
         return new Value(
-            BigInt(value.coin),
-            this._rpcMultiAssetOutputToTokenMap(value.assets)
+            BigInt(rpcTxOutput.coin),
+            this._rpcMultiAssetOutputToTokenMap(rpcTxOutput.assets)
         );
     }
 
-    private _rpcMultiAssetOutputToTokenMap(value: Cardano.Multiasset[]): TokenMap {
+    private _rpcMultiAssetOutputToTokenMap(multiAsset: Cardano.Multiasset[]): TokenMap {
         const tokenMap: TokenMap = new Map();
-        value.forEach((ma) => {
+        multiAsset.forEach((ma) => {
             ma.assets.forEach((asset) => {
                 const assetId = AssetId.fromParts(
                     PolicyId(Buffer.from(ma.policyId).toString('hex')),
