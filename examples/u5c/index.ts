@@ -12,21 +12,17 @@ const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
 console.log("Address", wallet.address.toBytes().toString());
 
 const utxos = await provider.getUnspentOutputs(wallet.address);
-
 utxos.forEach(utxo => console.log(utxo.toCore()));
-console.log("Utxos", utxos.length);
 
 const utxosByAsset = await provider.getUnspentOutputsWithAsset(
-    wallet.address, 
+    wallet.address,
     Core.AssetId.fromParts(PolicyId("8b05e87a51c1d4a0fa888d2bb14dbc25e8c343ea379a171b63aa84a0"), AssetName("434e4354"))
 );
-utxosByAsset.forEach(utxo => console.log(utxo.toCore()));
-console.log("Utxos by asset", utxosByAsset.length);
+utxosByAsset.forEach(utxo => console.log(utxo));
 
 const utxosByNft = await provider.getUnspentOutputByNFT(
     Core.AssetId.fromParts(PolicyId("8b05e87a51c1d4a0fa888d2bb14dbc25e8c343ea379a171b63aa84a0"), AssetName("434e4354"))
 );
-console.log("Utxos by NFT", utxosByNft.toCore());
 
 const utxosByOutputRef1 = await provider.resolveUnspentOutputs([
     new TransactionInput(TransactionId("f8f1338d0eadd9033c585b5451b2f38d7aca5a7556af1f600f5323a6c68c7973"), 0n)
@@ -35,8 +31,11 @@ const utxosByOutputRef2 = await provider.resolveUnspentOutputs([
     new TransactionInput(TransactionId("a7a4d76d314c50ad4374f34b616dc9a063cf322ce150b35459b711c147ee7e8d"), 0n)
 ]);
 
-console.log("Utxos by output ref", utxosByOutputRef1[0]);
-console.log("Utxos by output ref", utxosByOutputRef2[0]);
+console.log("Utxos", utxos.length);
+console.log("Utxos by asset", utxosByAsset.length);
+console.log("Utxos by NFT", utxosByNft.toCore());
+console.log("Utxos by output ref", utxosByOutputRef1.length, utxosByOutputRef1[0]?.toCore());
+console.log("Utxos by output ref", utxosByOutputRef2.length, utxosByOutputRef2[0]?.toCore());
 
 
 // const blaze = new Blaze(provider, wallet);
