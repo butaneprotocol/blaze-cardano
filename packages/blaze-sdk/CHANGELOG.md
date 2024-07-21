@@ -1,5 +1,12 @@
 # @blaze-cardano/sdk
 
+## 0.0.33
+
+### Patch Changes
+
+- Updated dependencies [cb7800c]
+  - @blaze-cardano/blueprint@0.1.0
+
 ## 0.0.32
 
 ### Patch Changes
