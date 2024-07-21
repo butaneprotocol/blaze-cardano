@@ -50,6 +50,12 @@ importers:
       '@cardano-sdk/core':
         specifier: ^0.35.0
         version: 0.35.0(rxjs@7.8.1)
+      '@commander-js/extra-typings':
+        specifier: ^12.1.0
+        version: 12.1.0(commander@12.1.0)
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
     devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
@@ -737,6 +743,11 @@ packages:
 
   '@changesets/write@0.3.1':
     resolution: {integrity: sha512-SyGtMXzH3qFqlHKcvFY2eX+6b0NGiFcNav8AFsYwy5l8hejOeoeTDemu5Yjmke2V5jpzY+pBvM0vCCQ3gdZpfw==}
+
+  '@commander-js/extra-typings@12.1.0':
+    resolution: {integrity: sha512-wf/lwQvWAA0goIghcb91dQYpkLBcyhOhQNqG/VgWhnKzgt+UOMvra7EX/2fv70arm5RW+PUHoQHHDa6/p77Eqg==}
+    peerDependencies:
+      commander: ~12.1.0
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -1843,6 +1854,10 @@ packages:
 
   comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
+
+  commander@12.1.0:
+    resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
+    engines: {node: '>=18'}
 
   commander@4.1.1:
     resolution: {integrity: sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==}
@@ -5129,6 +5144,10 @@ snapshots:
       human-id: 1.0.2
       prettier: 2.8.8
 
+  '@commander-js/extra-typings@12.1.0(commander@12.1.0)':
+    dependencies:
+      commander: 12.1.0
+
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
@@ -6276,6 +6295,8 @@ snapshots:
       delayed-stream: 1.0.0
 
   comma-separated-tokens@2.0.3: {}
+
+  commander@12.1.0: {}
 
   commander@4.1.1: {}
 

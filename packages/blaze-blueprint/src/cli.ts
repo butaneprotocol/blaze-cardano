@@ -1,41 +1,34 @@
-import { generateBlueprint } from "./index";
+#!/usr/bin/env node
+
+import { Command } from "@commander-js/extra-typings";
 import * as path from "path";
+
+import { generateBlueprint } from "./index";
+import * as packageJson from "../package.json";
+
+const command = new Command();
+
+command
+  .version(packageJson.version)
+  .argument("<blueprint>", "plutus.json file")
+  .requiredOption("-o, --outfile <file>", "output file")
+  .action((infile, { outfile }) => {
+    validateFilePaths(infile, outfile);
+
+    generateBlueprint({ infile, outfile });
+
+    console.log(`Blueprint generated at ${outfile}`);
+  });
 
 function isValidFilePath(filePath: string | undefined): boolean {
   if (!filePath) return false;
+
   try {
     path.parse(filePath);
     return true;
   } catch (error) {
     return false;
   }
-}
-
-function parseArguments(args: string[]): {
-  infile: string | undefined;
-  outfile: string | undefined;
-} {
-  let infile: string | undefined;
-  let outfile: string | undefined;
-
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === "-o") {
-      if (i + 1 < args.length) {
-        outfile = args[i + 1];
-        i++; // Skip the next argument as it's the outfile path
-      } else {
-        console.error("Error: Output file path is missing after -o option");
-        process.exit(1);
-      }
-    } else if (infile === undefined) {
-      infile = args[i];
-    } else {
-      console.error("Error: Unexpected argument:", args[i]);
-      process.exit(1);
-    }
-  }
-
-  return { infile, outfile };
 }
 
 function validateFilePaths(
@@ -53,12 +46,4 @@ function validateFilePaths(
   }
 }
 
-function main() {
-  const args = process.argv.slice(2);
-  const { infile, outfile } = parseArguments(args);
-  validateFilePaths(infile, outfile);
-
-  generateBlueprint({ infile, outfile });
-}
-
-main();
+command.parse();
