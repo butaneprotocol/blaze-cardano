@@ -20,7 +20,7 @@ export class U5C implements Provider {
     }
 
     async getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {
-        const utxoSearchResult = await this.queryClient.getUtxosByAddress(new Uint8Array(Buffer.from(address.toBytes().toString(), 'hex')));
+        const utxoSearchResult = await this.queryClient.searchUtxosByAddress(new Uint8Array(Buffer.from(address.toBytes().toString(), 'hex')));
         const utxos = utxoSearchResult.map(item => {
             const input = new TransactionInput(
                 TransactionId(Buffer.from(item.txHash).toString('hex')),
@@ -41,12 +41,9 @@ export class U5C implements Provider {
     }
 
     async getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]> {
-        const policyId = AssetId.getPolicyId(unit).toString();
-        const assetName = AssetId.getAssetName(unit).toString();
-        const policyIdBytes = new Uint8Array(Buffer.from(policyId, 'hex'));
-        const assetNameBytes = new Uint8Array(Buffer.from(assetName, 'hex'));
         const addressBytes = new Uint8Array(Buffer.from(address.toBytes().toString(), 'hex'));
-        const utxoSearchResult = await this.queryClient.getUtxosByAddressAsset(addressBytes, policyIdBytes, assetNameBytes);
+        const unitBytes = new Uint8Array(Buffer.from(unit.toString(), 'hex'));
+        const utxoSearchResult = await this.queryClient.searchUtxosByAddressAsset(addressBytes, undefined, unitBytes);
         return utxoSearchResult.map(item => {
             const input = new TransactionInput(
                 TransactionId(Buffer.from(item.txHash).toString('hex')),
@@ -56,7 +53,7 @@ export class U5C implements Provider {
             if (item.asOutput === undefined || item.asOutput === null) {
                 throw new Error(`Error fetching unspent outputs`);
             }
-    
+
             const output = this._rpcTxOutToCoreTxOut(item.asOutput);
 
             return new TransactionUnspentOutput(
@@ -67,11 +64,8 @@ export class U5C implements Provider {
     }
 
     async getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput> {
-        const policyId = AssetId.getPolicyId(unit).toString();
-        const assetName = AssetId.getAssetName(unit).toString();
-        const policyIdBytes = new Uint8Array(Buffer.from(policyId, 'hex'));
-        const assetNameBytes = new Uint8Array(Buffer.from(assetName, 'hex'));
-        const utxoSearchResult = await this.queryClient.getUtxosByNft(policyIdBytes, assetNameBytes);
+        const unitBytes = new Uint8Array(Buffer.from(unit.toString(), 'hex'));
+        const utxoSearchResult = await this.queryClient.searchUtxosByAsset(undefined, unitBytes);
 
         if (utxoSearchResult.length <= 0) {
             throw new Error(`Error fetching unspent outputs`);
@@ -107,7 +101,7 @@ export class U5C implements Provider {
                 outputIndex: Number(txIn.index().toString())
             }
         });
-        const utxoSearchResult = await this.queryClient.getUtxoByOutputRef(references);
+        const utxoSearchResult = await this.queryClient.readUtxosByOutputRef(references);
         return utxoSearchResult?.map(item => {
             const input = new TransactionInput(
                 TransactionId(Buffer.from(item.txHash).toString('hex')),

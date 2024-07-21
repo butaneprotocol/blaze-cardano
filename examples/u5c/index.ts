@@ -25,7 +25,7 @@ const utxosByNft = await provider.getUnspentOutputByNFT(
 );
 
 const utxosByOutputRef1 = await provider.resolveUnspentOutputs([
-    new TransactionInput(TransactionId("f8f1338d0eadd9033c585b5451b2f38d7aca5a7556af1f600f5323a6c68c7973"), 0n)
+    new TransactionInput(TransactionId("f8f1338d0eadd9033c585b5451b2f38d7aca5a7556af1f600f5323a6c68c7973"), 1n)
 ]);
 const utxosByOutputRef2 = await provider.resolveUnspentOutputs([
     new TransactionInput(TransactionId("a7a4d76d314c50ad4374f34b616dc9a063cf322ce150b35459b711c147ee7e8d"), 0n)
