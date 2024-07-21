@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.2.0
+
+### Minor Changes
+
+- 7a49bf4: add commander to cli for help menu
+
 ## 0.1.1
 
 ### Patch Changes
