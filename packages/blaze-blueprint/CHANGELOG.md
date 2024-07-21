@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.1.0
+
+### Minor Changes
+
+- cb7800c: Blueprint generation
+
 ## 0.0.1
 
 ### Patch Changes
