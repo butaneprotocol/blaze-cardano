@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.1.1
+
+### Patch Changes
+
+- 56c7034: testing: cli deploy
+
 ## 0.1.0
 
 ### Minor Changes
