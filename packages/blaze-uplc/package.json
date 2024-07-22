@@ -36,7 +36,7 @@
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
-    "@cardano-sdk/core": "^0.30.2",
+    "@cardano-sdk/core": "^0.35.0",
     "hex-encoding": "^2.0.2"
   }
 }

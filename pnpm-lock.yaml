@@ -341,8 +341,8 @@ importers:
         specifier: workspace:*
         version: link:../blaze-tx
       '@cardano-sdk/core':
-        specifier: ^0.30.2
-        version: 0.30.2(rxjs@7.8.1)
+        specifier: ^0.35.0
+        version: 0.35.0(rxjs@7.8.1)
       hex-encoding:
         specifier: ^2.0.2
         version: 2.0.2
@@ -617,16 +617,8 @@ packages:
   '@braintree/sanitize-url@6.0.4':
     resolution: {integrity: sha512-s3jaWicZd0pkP0jf5ysyHUI/RE7MHos6qlToFcGWXVp+ykHOy77OUMrfbgJ9it2C5bow7OIQwYYaHjk9XlBQ2A==}
 
-  '@cardano-ogmios/client@5.6.0':
-    resolution: {integrity: sha512-F0kWQ+TTc3OvSsp9CmxAPqo7fpB9yjrK+Lp52IqGG2YJVwyIynvHwlOW0cZNsRLO+KXwJrSoKdj9rHI0Vix4iw==}
-    engines: {node: '>=14'}
-
   '@cardano-ogmios/client@6.3.0':
     resolution: {integrity: sha512-nWaZ76n/R+p8nxBfRCetOuoDH8o5QToL5zWhRUu9EwHDJqM/0rzvYEk9JYCikAcVlC1qt6+3CcG4nCpG0dsptw==}
-    engines: {node: '>=14'}
-
-  '@cardano-ogmios/schema@5.6.0':
-    resolution: {integrity: sha512-JTlh/gOS5iM4b7CKc3dFRs2UC6fY+PeLiOv6fKxFSOSRMZ59sLgv+oGqjnzyVeZFUt6o683C9zFmBzh60l8KnA==}
     engines: {node: '>=14'}
 
   '@cardano-ogmios/schema@6.3.0':
@@ -636,15 +628,6 @@ packages:
   '@cardano-ogmios/schema@6.4.0':
     resolution: {integrity: sha512-l4qQJtdnyvkBadOuTR3B449txpc4W7gO/3aVYtI1IK1Num4FI2kNFfIj/zJ0V3a3JGg1jaFvN8A9SWPaNPqOSg==}
     engines: {node: '>=14'}
-
-  '@cardano-sdk/core@0.30.2':
-    resolution: {integrity: sha512-aFlLfM0pqjhjAE5oMyUcnhl+mhpzXva9bAOuTGvOUDQbIRPZtvr2UVv3rXpqFy6FvtNr8WIA7moSrePRPm9aCA==}
-    engines: {node: '>=16.20.2'}
-    peerDependencies:
-      rxjs: ^7.4.0
-    peerDependenciesMeta:
-      rxjs:
-        optional: true
 
   '@cardano-sdk/core@0.35.0':
     resolution: {integrity: sha512-5rVR/EbvSSGY3gCsWqEyNvdf58m+nq/AvP7gDI2dzUrOhvxK0LrIH5jJV5NDsxdzYNMwvU5iMKKBq4gtVxyJnA==}
@@ -4806,22 +4789,6 @@ snapshots:
 
   '@braintree/sanitize-url@6.0.4': {}
 
-  '@cardano-ogmios/client@5.6.0':
-    dependencies:
-      '@cardano-ogmios/schema': 5.6.0
-      '@cardanosolutions/json-bigint': 1.0.1
-      '@types/json-bigint': 1.0.4
-      cross-fetch: 3.1.8
-      fastq: 1.17.1
-      isomorphic-ws: 4.0.1(ws@7.5.10)
-      nanoid: 3.3.7
-      ts-custom-error: 3.3.1
-      ws: 7.5.10
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - utf-8-validate
-
   '@cardano-ogmios/client@6.3.0':
     dependencies:
       '@cardano-ogmios/schema': 6.3.0
@@ -4839,35 +4806,9 @@ snapshots:
       - encoding
       - utf-8-validate
 
-  '@cardano-ogmios/schema@5.6.0': {}
-
   '@cardano-ogmios/schema@6.3.0': {}
 
   '@cardano-ogmios/schema@6.4.0': {}
-
-  '@cardano-sdk/core@0.30.2(rxjs@7.8.1)':
-    dependencies:
-      '@cardano-ogmios/client': 5.6.0
-      '@cardano-ogmios/schema': 5.6.0
-      '@cardano-sdk/crypto': 0.1.25
-      '@cardano-sdk/util': 0.15.2
-      '@foxglove/crc': 0.0.3
-      '@scure/base': 1.1.7
-      fraction.js: 4.0.1
-      ip-address: 8.1.0
-      lodash: 4.17.21
-      ts-custom-error: 3.3.1
-      ts-log: 2.2.5
-      web-encoding: 1.1.5
-    optionalDependencies:
-      rxjs: 7.8.1
-    transitivePeerDependencies:
-      - '@dcspark/cardano-multiplatform-lib-asmjs'
-      - '@dcspark/cardano-multiplatform-lib-browser'
-      - '@dcspark/cardano-multiplatform-lib-nodejs'
-      - bufferutil
-      - encoding
-      - utf-8-validate
 
   '@cardano-sdk/core@0.35.0(rxjs@7.8.1)':
     dependencies:
