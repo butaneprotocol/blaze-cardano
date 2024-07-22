@@ -1,5 +1,11 @@
 # @blaze-cardano/uplc
 
+## 0.0.7
+
+### Patch Changes
+
+- 28e72b8: Bump cjs-core
+
 ## 0.0.6
 
 ### Patch Changes
