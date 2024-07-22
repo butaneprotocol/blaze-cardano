@@ -56,6 +56,7 @@ import {
   CertificateType,
   blake2b_256,
   RedeemerTag,
+  StakeRegistration,
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
@@ -1315,10 +1316,21 @@ export class TxBuilder {
 
   /**
    * Adds a certificate to register a staker.
+   * @param {Credential} credential - The credential to register.
    * @throws {Error} Method not implemented.
    */
-  addRegisterStake() {
-    throw new Error("Method not implemented.");
+  addRegisterStake(credential: Credential) {
+    const stakeRegistration: StakeRegistration = new StakeRegistration(
+      credential.toCore(),
+    );
+    const registrationCertificate: Certificate =
+      Certificate.newStakeRegistration(stakeRegistration);
+    const certs =
+      this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const vals = [...certs.values(), registrationCertificate];
+    certs.setValues(vals);
+    this.body.setCerts(certs);
+    return this;
   }
 
   /**
