@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.26
+
+### Patch Changes
+
+- 99ce4a5: feat: addRegisterStake
+
 ## 0.0.25
 
 ### Patch Changes
