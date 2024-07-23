@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.1.4
+
+### Patch Changes
+
+- ce03f8e: patch: maestro+blockfrost eval, params
+
 ## 0.1.3
 
 ### Patch Changes
