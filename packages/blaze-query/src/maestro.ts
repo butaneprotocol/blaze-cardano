@@ -5,8 +5,8 @@ import type {
   ProtocolParameters,
   CostModels,
   Credential,
-  RedeemerTag,
 } from "@blaze-cardano/core";
+import { RedeemerTag } from "@blaze-cardano/core";
 import {
   TransactionUnspentOutput,
   Address,
@@ -74,6 +74,11 @@ export class Maestro implements Provider {
             }
             costModels.set(fromMaestroLanguageVersion(cm), costModel);
           }
+          const parseRatio = (ratio: string): number => {
+            const [numerator, denominator] = ratio.split("/").map(Number);
+            return numerator! / denominator!;
+          };
+
           return {
             coinsPerUtxoByte: params.coins_per_utxo_byte,
             maxTxSize: params.max_tx_size,
@@ -95,8 +100,8 @@ export class Maestro implements Provider {
             maxCollateralInputs: params.max_collateral_inputs,
             costModels: costModels,
             prices: {
-              memory: parseFloat(params.prices.memory) / 10000,
-              steps: parseFloat(params.prices.steps) / 10000,
+              memory: parseRatio(params.prices.memory),
+              steps: parseRatio(params.prices.steps),
             },
             maxExecutionUnitsPerTransaction:
               params.max_execution_units_per_transaction,
@@ -376,16 +381,18 @@ export class Maestro implements Provider {
     additionalUtxos: TransactionUnspentOutput[],
   ): Promise<Redeemers> {
     const query = `/transactions/evaluate`;
-    const request: { additional_utxos: MaestroAdditionalUTxO[]; cbor: string } =
-      {
-        additional_utxos: additionalUtxos.map((x) => ({
-          txout_cbor: x.output().toCbor(),
-          index: Number(x.input().index()),
-          tx_hash: x.input().transactionId(),
-        })),
-        cbor: tx.toCbor(),
-      };
-    return fetch(`${this.url}${query}`, {
+    const request: {
+      additional_utxos: MaestroAdditionalUTxO[];
+      cbor: string;
+    } = {
+      additional_utxos: additionalUtxos.map((x) => ({
+        txout_cbor: x.output().toCbor(),
+        index: Number(x.input().index()),
+        tx_hash: x.input().transactionId(),
+      })),
+      cbor: tx.toCbor(),
+    };
+    const response = await fetch(`${this.url}${query}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -393,45 +400,43 @@ export class Maestro implements Provider {
         ...this.headers(),
       },
       body: JSON.stringify(request),
-    })
-      .then(async (resp) => {
-        if (!resp.ok) {
-          console.log(JSON.stringify(resp));
-          const body = await resp.text();
-          throw new Error(
-            `evaluateTransaction: failed to evaluate transaction with Maestro endpoint. Status code ${body}`,
-          );
-        }
-        return resp.json();
-      })
-      .then((result) => {
-        const redeemers = tx.witnessSet().redeemers()?.values();
-        if (!redeemers) {
-          throw new Error("Cannot evaluate without redeemers!");
-        }
-        const lightRedeemers = result as MaestroRedeemer[];
-        for (const redeemerData of lightRedeemers) {
-          const index = BigInt(redeemerData.redeemer_index);
-          const purpose = purposeFromTag(redeemerData.redeemer_tag);
-          const exUnits = ExUnits.fromCore({
-            memory: redeemerData.ex_units.mem,
-            steps: redeemerData.ex_units.steps,
-          });
+    });
 
-          const redeemer = redeemers.find(
-            (x) => x.tag() == purpose && x.index() == index,
-          );
-          if (!redeemer) {
-            throw new Error(
-              "evaluateTransaction: Maestro endpoint had extraneous redeemer data",
-            );
-          }
-          redeemer.setExUnits(exUnits);
-          // For extra verification: could make sure that the set of index,purposes is equal to the input set,
-          // this would guarantee no cost calculations are missing
-        }
-        return Redeemers.fromCore(redeemers.map((x) => x.toCore()));
+    if (!response.ok) {
+      console.log(JSON.stringify(response));
+      const body = await response.text();
+      throw new Error(
+        `evaluateTransaction: failed to evaluate transaction with Maestro endpoint. Status code ${body}`,
+      );
+    }
+
+    const result = await response.json();
+    const redeemers = tx.witnessSet().redeemers()?.values();
+    if (!redeemers) {
+      throw new Error("Cannot evaluate without redeemers!");
+    }
+    const lightRedeemers = result as MaestroRedeemer[];
+    for (const redeemerData of lightRedeemers) {
+      const index = BigInt(redeemerData.redeemer_index);
+      const purpose = purposeFromTag(redeemerData.redeemer_tag);
+      const exUnits = ExUnits.fromCore({
+        memory: redeemerData.ex_units.mem,
+        steps: redeemerData.ex_units.steps,
       });
+
+      const redeemer = redeemers.find(
+        (x) => x.tag() == purpose && x.index() == index,
+      );
+      if (!redeemer) {
+        throw new Error(
+          "evaluateTransaction: Maestro endpoint had extraneous redeemer data",
+        );
+      }
+      redeemer.setExUnits(exUnits);
+      // For extra verification: could make sure that the set of index,purposes is equal to the input set,
+      // this would guarantee no cost calculations are missing
+    }
+    return Redeemers.fromCore(redeemers.map((x) => x.toCore()));
   }
 }
 
@@ -563,6 +568,19 @@ interface MaestroAdditionalUTxO {
   txout_cbor: string;
 }
 
-function purposeFromTag(_tag: string): RedeemerTag {
-  throw new Error("unimplemented");
+function purposeFromTag(tag: string): RedeemerTag {
+  const tagMap: { [key: string]: RedeemerTag } = {
+    spend: RedeemerTag.Spend,
+    mint: RedeemerTag.Mint,
+    cert: RedeemerTag.Cert,
+    wdrl: RedeemerTag.Reward,
+  };
+
+  const normalizedTag = tag.toLowerCase();
+
+  if (normalizedTag in tagMap) {
+    return tagMap[normalizedTag]!;
+  } else {
+    throw new Error(`Invalid tag: ${tag}.`);
+  }
 }

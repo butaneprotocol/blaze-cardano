@@ -110,8 +110,8 @@ export class Blockfrost implements Provider {
       maxCollateralInputs: response.max_collateral_inputs,
       costModels: costModels,
       prices: {
-        memory: parseFloat(response.price_mem) / 10000,
-        steps: parseFloat(response.price_step) / 10000,
+        memory: parseFloat(response.price_mem),
+        steps: parseFloat(response.price_step),
       },
       maxExecutionUnitsPerTransaction: {
         memory: response.max_tx_ex_mem,
@@ -548,6 +548,11 @@ export class Blockfrost implements Provider {
 
     const evaledRedeemers: Set<Redeemer> = new Set();
 
+    if (!("EvaluationResult" in json.result)) {
+      throw new Error(
+        `evaluateTransaction: Blockfrost endpoint returned evaluation failure.`,
+      );
+    }
     const result = json.result.EvaluationResult;
     for (const redeemerPointer in result) {
       const [pTag, pIndex] = redeemerPointer.split(":");
@@ -705,12 +710,16 @@ interface BlockfrostDatumHashResolution {
 }
 
 interface BlockfrostRedeemer {
-  result: {
-    EvaluationResult: {
-      [key: string]: {
-        memory: number;
-        steps: number;
+  result:
+    | {
+        EvaluationResult: {
+          [key: string]: {
+            memory: number;
+            steps: number;
+          };
+        };
+      }
+    | {
+        CannotCreateEvaluationContext: any;
       };
-    };
-  };
 }
