@@ -11,7 +11,6 @@ import {
   CredentialType,
   TransactionUnspentOutput,
   RewardAccount,
-  RewardAddress,
 } from "@blaze-cardano/core";
 import { HotWallet } from "@blaze-cardano/wallet";
 import { Emulator, EmulatorProvider } from "../src";
@@ -226,18 +225,37 @@ describe("Emulator", () => {
     expect(out.amount().multiasset()?.get(AssetId(policy))).toEqual(1n);
   });
 
-  test("Should be able to withdraw from a script", async () => {
-    const rewardAddr = RewardAddress.fromCredentials(NetworkId.Testnet, {
+  test("Should be able to register stake for a script", async () => {
+    const cred = {
       hash: alwaysTrueScript.hash(),
       type: CredentialType.ScriptHash,
-    });
-    const rewardAccount = RewardAccount(rewardAddr.toAddress().toBech32());
+    };
+    const rewardAccount = RewardAccount.fromCredential(cred, NetworkId.Testnet);
+    expect(emulator.accounts).not.toHaveProperty(rewardAccount);
+
+    const tx = await blaze
+      .newTransaction()
+      .addRegisterStake(Credential.fromCore(cred))
+      .complete();
+
+    const txHash = await signAndSubmit(tx, blaze);
+    emulator.awaitTransactionConfirmation(txHash);
+
+    expect(emulator.accounts.get(rewardAccount)).toEqual(0n);
+  });
+
+  test("Should be able to withdraw from a script", async () => {
+    const rewardAccount = RewardAccount.fromCredential(
+      {
+        hash: alwaysTrueScript.hash(),
+        type: CredentialType.ScriptHash,
+      },
+      NetworkId.Testnet,
+    );
 
     emulator.accounts.set(rewardAccount, 10_000_000n);
-
-    const tx = await (
-      await blaze.newTransaction()
-    )
+    const tx = await blaze
+      .newTransaction()
       .addWithdrawal(rewardAccount, 10_000_000n, VOID_PLUTUS_DATA)
       .provideScript(alwaysTrueScript)
       // TODO: fix coin selection so you don't have to do this

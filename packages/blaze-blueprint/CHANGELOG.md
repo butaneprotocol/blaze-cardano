@@ -1,5 +1,21 @@
 # @blaze-cardano/blueprint
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [a28ff6a]
+  - @blaze-cardano/tx@0.0.27
+  - @blaze-cardano/uplc@0.0.9
+
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [99ce4a5]
+  - @blaze-cardano/tx@0.0.26
+  - @blaze-cardano/uplc@0.0.8
+
 ## 0.2.1
 
 ### Patch Changes

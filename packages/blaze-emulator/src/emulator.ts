@@ -28,6 +28,7 @@ import {
   TransactionUnspentOutput,
   Value,
   blake2b_256,
+  CertificateKind,
 } from "@blaze-cardano/core";
 import type { SlotConfig } from "@blaze-cardano/tx";
 import { makeUplcEvaluator, Value as V } from "@blaze-cardano/tx";
@@ -516,8 +517,7 @@ export class Emulator {
       ?.values()
       .forEach((cert, index) => {
         switch (cert.kind()) {
-          // CertificateKind is not an exported enum so we match on number literals
-          case 0: {
+          case CertificateKind.StakeRegistration: {
             // StakeRegistration
             const stakeRegistration = cert.asStakeRegistration()!;
             const rewardAddr = RewardAccount.fromCredential(
@@ -528,9 +528,13 @@ export class Emulator {
               throw new Error(
                 `Stake key with reward address ${rewardAddr} is already registered.`,
               );
+            netValue = V.sub(
+              netValue,
+              new Value(BigInt(this.params.stakeKeyDeposit)),
+            );
             break;
           }
-          case 1: {
+          case CertificateKind.StakeDeregistration: {
             // StakeDeregistration
             const stakeDeregistration = cert.asStakeDeregistration()!;
             const stakeCred = stakeDeregistration.stakeCredential();
@@ -543,6 +547,10 @@ export class Emulator {
                 `Stake key with reward address ${rewardAddr} is not registered.`,
               );
             consumeCred(stakeCred, RedeemerTag.Cert, BigInt(index));
+            netValue = V.merge(
+              netValue,
+              new Value(BigInt(this.params.stakeKeyDeposit)),
+            );
             break;
           }
           // TODO: Other kinds (delegation, governance, e.t.c.)
