@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.0.27
+
+### Patch Changes
+
+- a28ff6a: feat: Stake registration balancing
+
 ## 0.0.26
 
 ### Patch Changes
