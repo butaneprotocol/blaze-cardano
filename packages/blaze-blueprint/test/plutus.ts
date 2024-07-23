@@ -22,11 +22,11 @@ export const AlwaysTrueSpend = Object.assign(
         {
           dataType: "list",
           items: [{ dataType: "integer" }, { dataType: "bytes" }],
-        } as any,
+        } as any
       ),
-      ScriptType.PlutusV2,
+      ScriptType.PlutusV2
     );
   },
   { _datum: { dataType: "list", items: { dataType: "integer" } } },
-  { _redeemer: { dataType: "integer" } },
+  { _redeemer: { dataType: "integer" } }
 ) as unknown as AlwaysTrueSpend;
