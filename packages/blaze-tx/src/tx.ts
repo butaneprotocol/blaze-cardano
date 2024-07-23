@@ -57,6 +57,7 @@ import {
   blake2b_256,
   RedeemerTag,
   StakeRegistration,
+  CertificateKind,
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
@@ -849,6 +850,31 @@ export class TxBuilder {
       outputValue = value.merge(outputValue, output.amount());
     }
 
+    for (const cert of this.body.certs()?.values() || []) {
+      switch (cert.kind()) {
+        case CertificateKind.StakeRegistration:
+          outputValue = value.merge(
+            outputValue,
+            new Value(BigInt(this.params.stakeKeyDeposit)),
+          );
+          break;
+        case CertificateKind.PoolRegistration:
+          if (this.params.poolDeposit) {
+            outputValue = value.merge(
+              outputValue,
+              new Value(BigInt(this.params.poolDeposit)),
+            );
+          }
+          break;
+        case CertificateKind.StakeDeregistration:
+          inputValue = value.merge(
+            inputValue,
+            new Value(BigInt(this.params.stakeKeyDeposit)),
+          );
+          break;
+      }
+    }
+
     // Calculate the net value by merging input, output (negated), and mint values.
     // Subtract a fixed fee amount (5 ADA) to ensure enough is allocated for transaction fees.
     const tilt = value.merge(
@@ -856,7 +882,7 @@ export class TxBuilder {
       mintValue,
     );
     if (withSpare == true) {
-      return value.merge(tilt, new Value(-5000000n)); // Subtract 5 ADA from the excess.
+      return value.merge(tilt, new Value(-5_000_000n)); // Subtract 5 ADA from the excess.
     }
     return tilt;
   }
