@@ -1,5 +1,14 @@
 # @blaze-cardano/emulator
 
+## 0.1.32
+
+### Patch Changes
+
+- a28ff6a: feat: Stake registration balancing
+- Updated dependencies [a28ff6a]
+  - @blaze-cardano/tx@0.0.27
+  - @blaze-cardano/wallet@0.1.12
+
 ## 0.1.31
 
 ### Patch Changes
