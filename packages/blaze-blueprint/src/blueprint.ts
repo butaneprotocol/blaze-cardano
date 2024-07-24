@@ -46,7 +46,7 @@ let dataImported = false;
 let imports = `// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { type Script } from "@blaze-cardano/core";
-import { applyParamsToScript, cborToScript, ScriptType } from "@blaze-cardano/uplc";`;
+import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`;
 
 function resolveSchema(schema: any, definitions: any): any {
   if (schema.items) {
@@ -216,9 +216,7 @@ export function generateBlueprint({
   const plutusJson: Blueprint = JSON.parse(fs.readFileSync(infile, "utf8"));
 
   const plutusVersion =
-    plutusJson.preamble.plutusVersion == "v2"
-      ? "ScriptType.PlutusV2"
-      : "ScriptType.PlutusV1";
+    plutusJson.preamble.plutusVersion == "v2" ? '"PlutusV2"' : '"PlutusV1"';
 
   const definitions = plutusJson.definitions;
 

@@ -15,11 +15,7 @@ import type { TArray } from "@sinclair/typebox";
 const { CborReader, CborWriter, CborReaderState } = Serialization;
 
 // TODO: Use the c-js-sdk enums for this if possible
-export enum ScriptType {
-  Native,
-  PlutusV1,
-  PlutusV2,
-}
+export type ScriptType = "Native" | "PlutusV1" | "PlutusV2";
 
 /**
  * Applies parameters to a UPLC program encoded as a hex blob.
@@ -110,7 +106,7 @@ export function applyParamsToScript<T extends TArray>(
  * @throws {Error} - Throws an error if the script type is unsupported.
  */
 export function cborToScript(cbor: string, type: ScriptType): Script {
-  if (type === ScriptType.Native) {
+  if (type === "Native") {
     return Script.newNativeScript(NativeScript.fromCbor(HexBlob(cbor)));
   } else {
     const cborReader = new CborReader(HexBlob(cbor));
@@ -121,9 +117,9 @@ export function cborToScript(cbor: string, type: ScriptType): Script {
     const cborWriter = new CborWriter();
     cborWriter.writeByteString(cborBytes);
     const cborHex = cborWriter.encodeAsHex();
-    if (type === ScriptType.PlutusV1) {
+    if (type === "PlutusV1") {
       return Script.newPlutusV1Script(new PlutusV1Script(cborHex));
-    } else if (type === ScriptType.PlutusV2) {
+    } else if (type === "PlutusV2") {
       return Script.newPlutusV2Script(new PlutusV2Script(cborHex));
     } else {
       throw new Error("Unsupported script type");
