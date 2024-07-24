@@ -28,7 +28,6 @@ import {
   TransactionUnspentOutput,
   Value,
   blake2b_256,
-  CertificateKind,
 } from "@blaze-cardano/core";
 import type { SlotConfig } from "@blaze-cardano/tx";
 import { makeUplcEvaluator, Value as V } from "@blaze-cardano/tx";
@@ -517,7 +516,7 @@ export class Emulator {
       ?.values()
       .forEach((cert, index) => {
         switch (cert.kind()) {
-          case CertificateKind.StakeRegistration: {
+          case 0: {
             // StakeRegistration
             const stakeRegistration = cert.asStakeRegistration()!;
             const rewardAddr = RewardAccount.fromCredential(
@@ -534,7 +533,7 @@ export class Emulator {
             );
             break;
           }
-          case CertificateKind.StakeDeregistration: {
+          case 1: {
             // StakeDeregistration
             const stakeDeregistration = cert.asStakeDeregistration()!;
             const stakeCred = stakeDeregistration.stakeCredential();

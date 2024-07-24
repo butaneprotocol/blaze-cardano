@@ -57,7 +57,6 @@ import {
   blake2b_256,
   RedeemerTag,
   StakeRegistration,
-  CertificateKind,
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
@@ -852,13 +851,19 @@ export class TxBuilder {
 
     for (const cert of this.body.certs()?.values() || []) {
       switch (cert.kind()) {
-        case CertificateKind.StakeRegistration:
+        case 0: // Stake Registration
           outputValue = value.merge(
             outputValue,
             new Value(BigInt(this.params.stakeKeyDeposit)),
           );
           break;
-        case CertificateKind.PoolRegistration:
+        case 1: // Stake Deregistration
+          inputValue = value.merge(
+            inputValue,
+            new Value(BigInt(this.params.stakeKeyDeposit)),
+          );
+          break;
+        case 3: // Pool Registration
           if (this.params.poolDeposit) {
             outputValue = value.merge(
               outputValue,
@@ -866,11 +871,13 @@ export class TxBuilder {
             );
           }
           break;
-        case CertificateKind.StakeDeregistration:
-          inputValue = value.merge(
-            inputValue,
-            new Value(BigInt(this.params.stakeKeyDeposit)),
-          );
+        case 4: // Pool Retirement
+          if (this.params.poolDeposit) {
+            inputValue = value.merge(
+              inputValue,
+              new Value(BigInt(this.params.poolDeposit)),
+            );
+          }
           break;
       }
     }

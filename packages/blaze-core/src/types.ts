@@ -132,29 +132,6 @@ export type CredentialType = C.Cardano.CredentialType;
 export const Certificate = C.Serialization.Certificate;
 export type Certificate = C.Serialization.Certificate;
 
-// Not exported from @cardano-sdk/core directly
-export enum CertificateKind {
-  StakeRegistration = 0,
-  StakeDeregistration = 1,
-  StakeDelegation = 2,
-  PoolRegistration = 3,
-  PoolRetirement = 4,
-  GenesisKeyDelegation = 5,
-  MoveInstantaneousRewards = 6,
-  Registration = 7,
-  Unregistration = 8,
-  VoteDelegation = 9,
-  StakeVoteDelegation = 10,
-  StakeRegistrationDelegation = 11,
-  VoteRegistrationDelegation = 12,
-  StakeVoteRegistrationDelegation = 13,
-  AuthCommitteeHot = 14,
-  ResignCommitteeCold = 15,
-  DrepRegistration = 16,
-  DrepUnregistration = 17,
-  UpdateDrep = 18,
-}
-
 export const PoolId = C.Cardano.PoolId;
 export type PoolId = C.Cardano.PoolId;
 
