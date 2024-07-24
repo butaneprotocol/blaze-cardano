@@ -1,5 +1,12 @@
 # @blaze-cardano/sdk
 
+## 0.0.41
+
+### Patch Changes
+
+- Updated dependencies [9d9c026]
+  - @blaze-cardano/blueprint@0.2.5
+
 ## 0.0.40
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @blaze-cardano/uplc
 
+## 0.0.11
+
+### Patch Changes
+
+- 9d9c026: patch: remove enums
+
 ## 0.0.10
 
 ### Patch Changes
