@@ -92,6 +92,14 @@ const txIns = [
     "74baf638a18a6ab54798cac310112af61cb1f1d6eacb8c893a10b6877cf71a8d",
     1,
   ),
+  new TransactionInput(
+    "036ed48c89169a9c4e475e08a6d22ea1e09ba8a6a6cfbabfa4f1deefd269652c",
+    0,
+  ),
+  new TransactionInput(
+    "ad54aa407df81404ab74343a4fca56e51c4ab488c54f12c4bc43e8b093c976a5",
+    1,
+  ),
 ];
 
 const resolvedOutputs = await provider.resolveUnspentOutputs(txIns);
@@ -109,6 +117,16 @@ for (const utxo of resolvedOutputs) {
     ).toString();
 
     console.log(`Amount of ${assetName}: ${amount}`);
+  }
+
+  if (utxo.output().datum()) {
+    console.log("Datum:");
+    console.log(utxo.output().datum().toCore());
+  }
+
+  if (utxo.output().scriptRef()) {
+    console.log("Reference Script:");
+    console.log(utxo.output().scriptRef().hash());
   }
 }
 
