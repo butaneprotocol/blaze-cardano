@@ -1,5 +1,13 @@
 # @blaze-cardano/blueprint
 
+## 0.2.5
+
+### Patch Changes
+
+- 9d9c026: patch: remove enums
+- Updated dependencies [9d9c026]
+  - @blaze-cardano/uplc@0.0.11
+
 ## 0.2.4
 
 ### Patch Changes
