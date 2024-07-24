@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.1.6
+
+### Patch Changes
+
+- f0854dc: feat: Blockfrost provider returns UTxOs with datums and script refs
+
 ## 0.1.5
 
 ### Patch Changes
