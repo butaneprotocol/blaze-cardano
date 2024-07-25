@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.2.7
+
+### Patch Changes
+
+- 69586a9: bump @cardano-sdk/core
+
 ## 0.2.6
 
 ### Patch Changes

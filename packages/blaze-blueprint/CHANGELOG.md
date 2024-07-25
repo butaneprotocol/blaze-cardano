@@ -1,5 +1,15 @@
 # @blaze-cardano/blueprint
 
+## 0.2.6
+
+### Patch Changes
+
+- 69586a9: bump @cardano-sdk/core
+- Updated dependencies [69586a9]
+  - @blaze-cardano/core@0.2.7
+  - @blaze-cardano/uplc@0.0.12
+  - @blaze-cardano/tx@0.0.29
+
 ## 0.2.5
 
 ### Patch Changes
