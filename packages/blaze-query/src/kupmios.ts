@@ -406,11 +406,11 @@ export class Kupmios implements Provider {
       case "native":
         return Script.newNativeScript(NativeScript.fromCbor(result.script));
       case "plutus:v1":
-        return Script.newPlutusV1Script(PlutusV1Script.fromCbor(result.script));
+        return Script.newPlutusV1Script(new PlutusV1Script(result.script));
       case "plutus:v2":
-        return Script.newPlutusV2Script(PlutusV2Script.fromCbor(result.script));
+        return Script.newPlutusV2Script(new PlutusV2Script(result.script));
       case "plutus:v3":
-        return Script.newPlutusV3Script(PlutusV3Script.fromCbor(result.script));
+        return Script.newPlutusV3Script(new PlutusV3Script(result.script));
 
       default:
         throw new Error(`Unsupported script language: ${result.language}`);
