@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.1.8
+
+### Patch Changes
+
+- 686d3a5: Fix resolveScript on Kumpios provider
+
 ## 0.1.7
 
 ### Patch Changes
