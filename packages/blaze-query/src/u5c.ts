@@ -1,4 +1,23 @@
-import { ProtocolParameters, Address, TransactionUnspentOutput, AssetId, TransactionInput, DatumHash, PlutusData, TransactionId, Transaction, Redeemers, TransactionOutput, HexBlob, Value, TokenMap, PolicyId, AssetName, hardCodedProtocolParams } from "@blaze-cardano/core";
+import {
+    ProtocolParameters,
+    Address,
+    TransactionUnspentOutput,
+    AssetId,
+    TransactionInput,
+    DatumHash,
+    PlutusData,
+    TransactionId,
+    Transaction,
+    Redeemers,
+    TransactionOutput,
+    HexBlob,
+    Value,
+    TokenMap,
+    PolicyId,
+    AssetName,
+    hardCodedProtocolParams,
+    Datum
+} from "@blaze-cardano/core";
 import { Provider } from "./types";
 import { CardanoQueryClient } from "@utxorpc/sdk";
 import * as Cardano from "@utxorpc/spec/lib/utxorpc/v1alpha/cardano/cardano_pb.js";
@@ -151,11 +170,16 @@ export class U5C implements Provider {
             this._rpcTxOutToCoreValue(rpcTxOutput)
         );
 
-        // output.setDatum(new Datum(
-        //     DatumHash(Buffer.from(rpcTxOutput.datumHash).toString('hex'))
-        // ))
-        // Would be convient to have a Datum.fromBytes() method since blaze a PlutusData.fromCbor
-        // console.log(rpcTxOutput.datum);
+        if (rpcTxOutput.datum !== undefined) {
+            if (rpcTxOutput.datum?.originalCbor && rpcTxOutput.datum.originalCbor.length > 0) {
+                const inlineDatum = Datum.newInlineData(PlutusData.fromCbor(HexBlob.fromBytes(rpcTxOutput.datum.originalCbor)));
+                output.setDatum(inlineDatum);
+            } else if (rpcTxOutput.datum?.hash && rpcTxOutput.datum.hash.length > 0) {
+                const datumHash = Datum.newDataHash(DatumHash(Buffer.from(rpcTxOutput.datum.hash).toString('hex')));
+                output.setDatum(datumHash);
+            }
+        }
+
         return output;
     }
 

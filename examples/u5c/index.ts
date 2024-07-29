@@ -5,6 +5,11 @@ const provider = new U5C({
     url: "http://localhost:50051"
 });
 
+let contractUtxos = await provider.getUnspentOutputs(Core.Address.fromBech32("addr_test1wpwg0j7282yvhlhx76kcyzkw4x05sj6gxr7xxfss723sz3sa65qse"));
+contractUtxos = contractUtxos.map(utxo => utxo.toCore()) as any;
+console.log("contractUtxos", contractUtxos);
+const contractUtxosDatums = contractUtxos.map(utxo => utxo[1].datum);
+console.log("UTXOs Datum", contractUtxosDatums);
 
 const mnemonic = "end link visit estate sock hurt crucial forum eagle earn idle laptop wheat rookie when hard suffer duty kingdom clerk glide mechanic debris jar";
 const entropy = mnemonicToEntropy(mnemonic, wordlist);
@@ -15,8 +20,7 @@ const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
 const blaze = await Blaze.from(provider, wallet);
 console.log("Balance", (await wallet.getBalance()).toCore());
 const utxosResponse = await wallet.getUnspentOutputs();
-const utxos = utxosResponse.map(utxo => utxo.toCbor().toString());
-
+const utxos = utxosResponse.map(utxo => utxo.toCore());
 console.log("UTXOs", utxos);
 
 const tx = await blaze.newTransaction()
