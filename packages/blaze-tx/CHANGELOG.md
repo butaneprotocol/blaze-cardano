@@ -1,5 +1,17 @@
 # @blaze-cardano/tx
 
+## 0.1.0
+
+### Minor Changes
+
+- 54dd469: allow custom coin selection, clean up pitch function, remove wasm from tx
+
+### Patch Changes
+
+- 54dd469: update packaging
+- Updated dependencies [54dd469]
+  - @blaze-cardano/core@0.2.8
+
 ## 0.0.29
 
 ### Patch Changes
