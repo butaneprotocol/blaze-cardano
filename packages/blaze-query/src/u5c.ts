@@ -1,4 +1,4 @@
-import { ProtocolParameters, Address, TransactionUnspentOutput, AssetId, TransactionInput, DatumHash, PlutusData, TransactionId, Transaction, Redeemers, TransactionOutput, HexBlob, Value, TokenMap, PolicyId, AssetName } from "@blaze-cardano/core";
+import { ProtocolParameters, Address, TransactionUnspentOutput, AssetId, TransactionInput, DatumHash, PlutusData, TransactionId, Transaction, Redeemers, TransactionOutput, HexBlob, Value, TokenMap, PolicyId, AssetName, hardCodedProtocolParams } from "@blaze-cardano/core";
 import { Provider } from "./types";
 import { CardanoQueryClient } from "@utxorpc/sdk";
 import * as Cardano from "@utxorpc/spec/lib/utxorpc/v1alpha/cardano/cardano_pb.js";
@@ -15,8 +15,12 @@ export class U5C implements Provider {
         });
     }
 
-    getParameters(): Promise<ProtocolParameters> {
-        throw new Error("Method not implemented.");
+    async getParameters(): Promise<ProtocolParameters> {
+        const rpcPParams = await this.queryClient.readParams();
+        if (rpcPParams === undefined || rpcPParams === null) {
+            throw new Error(`Error fetching protocol parameters`);
+        }
+        return this._rpcPParamsToCorePParams(rpcPParams);
     }
 
     async getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {
@@ -182,4 +186,43 @@ export class U5C implements Provider {
         });
         return tokenMap;
     }
+
+    private _rpcPParamsToCorePParams(rpcPParams: Cardano.PParams): ProtocolParameters {
+        return {
+            coinsPerUtxoByte: Number(rpcPParams.coinsPerUtxoByte),
+            costModels: hardCodedProtocolParams.costModels,
+            maxBlockBodySize: Number(rpcPParams.maxBlockBodySize),
+            maxBlockHeaderSize: Number(rpcPParams.maxBlockHeaderSize),
+            maxCollateralInputs: Number(rpcPParams.maxCollateralInputs),
+            maxExecutionUnitsPerBlock: {
+                steps: Number(rpcPParams.maxExecutionUnitsPerBlock?.steps),
+                memory: Number(rpcPParams.maxExecutionUnitsPerBlock?.memory),
+            },
+            maxTxSize: Number(rpcPParams.maxTxSize),
+            minFeeConstant: Number(rpcPParams.minFeeConstant),
+            minFeeCoefficient: Number(rpcPParams.minFeeCoefficient),
+            minPoolCost: Number(rpcPParams.minPoolCost),
+            poolDeposit: Number(rpcPParams.poolDeposit),
+            stakeKeyDeposit: Number(rpcPParams.stakeKeyDeposit),
+            poolRetirementEpochBound: Number(rpcPParams.poolRetirementEpochBound),
+            desiredNumberOfPools: Number(rpcPParams.desiredNumberOfPools),
+            poolInfluence: `${rpcPParams.poolInfluence?.numerator}/${rpcPParams.poolInfluence?.denominator}`,
+            monetaryExpansion: `${rpcPParams.monetaryExpansion?.numerator}/${rpcPParams.monetaryExpansion?.denominator}`,
+            treasuryExpansion: `${rpcPParams.treasuryExpansion?.numerator}/${rpcPParams.treasuryExpansion?.denominator}`,
+            protocolVersion: {
+                minor: Number(rpcPParams.protocolVersion?.minor),
+                major: Number(rpcPParams.protocolVersion?.major),
+            },
+            maxValueSize: Number(rpcPParams.maxValueSize),
+            collateralPercentage: Number(rpcPParams.collateralPercentage),
+            prices: {
+                memory: Number(rpcPParams.prices?.memory),
+                steps: Number(rpcPParams.prices?.steps),
+            },
+            maxExecutionUnitsPerTransaction: {
+                memory: Number(rpcPParams.maxExecutionUnitsPerTransaction?.memory),
+                steps: Number(rpcPParams.maxExecutionUnitsPerTransaction?.steps),
+            },
+        }
+    };
 }

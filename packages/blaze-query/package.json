@@ -35,6 +35,6 @@
     "@cardano-ogmios/schema": "^6.4.0",
     "ws": "^8.17.1",
     "@utxorpc/sdk": "/home/rawriclark/Projects/node-sdk",
-    "@utxorpc/spec": "0.7.0"
+    "@utxorpc/spec": "0.8.0"
   }
 }
