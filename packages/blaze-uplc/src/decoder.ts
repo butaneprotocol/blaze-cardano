@@ -1,8 +1,8 @@
-import { type Cardano } from "@cardano-sdk/core";
+import { Serialization, type Cardano } from "@cardano-sdk/core";
 import { Parser as FlatDecoder } from "./flat";
 import type { Byte, Data, ParsedProgram, ParsedTerm, SemVer } from "./types";
 import { BuiltinFunctions, DataType, type TermNames, termTags } from "./types";
-import { fromHex } from "@blaze-cardano/core";
+import { HexBlob, fromHex, toHex } from "@blaze-cardano/core";
 
 /**
  * This class provides decoding functionality for UPLC (Untyped Plutus Core) programs.
@@ -117,13 +117,11 @@ export class UPLCDecoder extends FlatDecoder {
 
   /**
    * Decodes CBOR data from the binary stream.
-   * @returns {Data} The decoded data in Plutus core format.
+   * @returns {Cardano.PlutusData} The decoded data in Plutus core format.
    */
   #decodeCborData(): Cardano.PlutusData {
-    return this.#decodeByteString();
-    // return Serialization.PlutusData.fromCbor(
-    //   HexBlob(toHex(this.#decodeByteString())),
-    // ).toCore();
+    const cbor = this.#decodeByteString();
+    return Serialization.PlutusData.fromCbor(HexBlob(toHex(cbor))).toCore();
   }
 
   /**

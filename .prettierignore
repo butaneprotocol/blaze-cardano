@@ -3,3 +3,6 @@ pnpm-lock.yaml
 node_modules/
 .turbo/
 dist/
+.next/
+out/
+plutus.ts

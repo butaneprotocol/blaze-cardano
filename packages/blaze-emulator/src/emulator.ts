@@ -516,7 +516,6 @@ export class Emulator {
       ?.values()
       .forEach((cert, index) => {
         switch (cert.kind()) {
-          // CertificateKind is not an exported enum so we match on number literals
           case 0: {
             // StakeRegistration
             const stakeRegistration = cert.asStakeRegistration()!;
@@ -528,6 +527,10 @@ export class Emulator {
               throw new Error(
                 `Stake key with reward address ${rewardAddr} is already registered.`,
               );
+            netValue = V.sub(
+              netValue,
+              new Value(BigInt(this.params.stakeKeyDeposit)),
+            );
             break;
           }
           case 1: {
@@ -543,6 +546,10 @@ export class Emulator {
                 `Stake key with reward address ${rewardAddr} is not registered.`,
               );
             consumeCred(stakeCred, RedeemerTag.Cert, BigInt(index));
+            netValue = V.merge(
+              netValue,
+              new Value(BigInt(this.params.stakeKeyDeposit)),
+            );
             break;
           }
           // TODO: Other kinds (delegation, governance, e.t.c.)

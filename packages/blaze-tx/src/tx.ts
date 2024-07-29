@@ -56,6 +56,7 @@ import {
   CertificateType,
   blake2b_256,
   RedeemerTag,
+  StakeRegistration,
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelection";
@@ -94,6 +95,7 @@ constraints:
  */
 export class TxBuilder {
   readonly params: ProtocolParameters;
+  private preCompleteHooks: ((tx: TxBuilder) => Promise<void>)[] = [];
   private body: TransactionBody; // The main body of the transaction containing inputs, outputs, etc.
   private auxiliaryData?: AuxiliaryData;
   private redeemers: Redeemers = Redeemers.fromCore([]); // A collection of redeemers for script validation.
@@ -728,6 +730,25 @@ export class TxBuilder {
         );
       }
     }
+    // do native script check too
+    for (const requiredScriptHash of this.requiredNativeScripts) {
+      if (!this.scriptSeen.has(requiredScriptHash)) {
+        const script = scriptLookup[requiredScriptHash];
+        if (!script) {
+          throw new Error(
+            `complete: Could not resolve script hash ${requiredScriptHash}`,
+          );
+        } else {
+          if (script.asNative() != undefined) {
+            sn.push(script.asNative()!);
+          } else {
+            throw new Error(
+              "complete: Could not resolve script hash (was not native script)",
+            );
+          }
+        }
+      }
+    }
     // Add scripts to the transaction witness set
     if (sn.length != 0) {
       const cborSet = CborSet.fromCore([], NativeScript.fromCore);
@@ -799,7 +820,7 @@ export class TxBuilder {
     }
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(withdrawalAmount);
-    let outputValue = new Value(this.fee);
+    let outputValue = new Value(BigIntMax(this.fee, this.minimumFee));
     const mintValue = new Value(0n, this.body.mint());
 
     // Aggregate the total input value from all inputs.
@@ -828,6 +849,39 @@ export class TxBuilder {
       outputValue = value.merge(outputValue, output.amount());
     }
 
+    for (const cert of this.body.certs()?.values() || []) {
+      switch (cert.kind()) {
+        case 0: // Stake Registration
+          outputValue = value.merge(
+            outputValue,
+            new Value(BigInt(this.params.stakeKeyDeposit)),
+          );
+          break;
+        case 1: // Stake Deregistration
+          inputValue = value.merge(
+            inputValue,
+            new Value(BigInt(this.params.stakeKeyDeposit)),
+          );
+          break;
+        case 3: // Pool Registration
+          if (this.params.poolDeposit) {
+            outputValue = value.merge(
+              outputValue,
+              new Value(BigInt(this.params.poolDeposit)),
+            );
+          }
+          break;
+        case 4: // Pool Retirement
+          if (this.params.poolDeposit) {
+            inputValue = value.merge(
+              inputValue,
+              new Value(BigInt(this.params.poolDeposit)),
+            );
+          }
+          break;
+      }
+    }
+
     // Calculate the net value by merging input, output (negated), and mint values.
     // Subtract a fixed fee amount (5 ADA) to ensure enough is allocated for transaction fees.
     const tilt = value.merge(
@@ -835,7 +889,7 @@ export class TxBuilder {
       mintValue,
     );
     if (withSpare == true) {
-      return value.merge(tilt, new Value(-5000000n)); // Subtract 5 ADA from the excess.
+      return value.merge(tilt, new Value(-5_000_000n)); // Subtract 5 ADA from the excess.
     }
     return tilt;
   }
@@ -1036,7 +1090,10 @@ export class TxBuilder {
     const scope = [...this.utxoScope.values()];
     // Calculate the total collateral based on the transaction fee and collateral percentage.
     const totalCollateral = BigInt(
-      Math.ceil(this.params.collateralPercentage * Number(this.fee)),
+      Math.ceil(
+        this.params.collateralPercentage *
+          Number(BigIntMax(this.fee, this.minimumFee)),
+      ),
     );
     // Calculate the collateral value by summing up the amounts from collateral inputs.
     const collateralValue = this.body
@@ -1077,6 +1134,12 @@ export class TxBuilder {
    * @returns {Promise<Transaction>} A new Transaction object with all components set and ready for submission.
    */
   async complete(): Promise<Transaction> {
+    // Execute pre-complete hooks
+    if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
+      for (const hook of this.preCompleteHooks) {
+        await hook(this);
+      }
+    }
     // Ensure a change address has been set before proceeding.
     if (!this.changeAddress) {
       throw new Error(
@@ -1165,7 +1228,10 @@ export class TxBuilder {
     // Calculate and set the transaction fee.
     let draft_size = draft_tx.toCbor().length / 2;
     this.calculateFees(draft_tx);
-    excessValue = value.merge(excessValue, new Value(-this.fee));
+    excessValue = value.merge(
+      excessValue,
+      new Value(-BigIntMax(this.fee, this.minimumFee)),
+    );
     this.balanceChange(excessValue);
     if (this.redeemers.size() > 0) {
       this.prepareCollateral();
@@ -1200,7 +1266,7 @@ export class TxBuilder {
     } while (final_size != draft_size);
     // Return the fully constructed transaction.
     tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore));
-    return new Transaction(this.body, tw);
+    return new Transaction(this.body, tw, this.auxiliaryData);
   }
 
   /**
@@ -1283,10 +1349,21 @@ export class TxBuilder {
 
   /**
    * Adds a certificate to register a staker.
+   * @param {Credential} credential - The credential to register.
    * @throws {Error} Method not implemented.
    */
-  addRegisterStake() {
-    throw new Error("Method not implemented.");
+  addRegisterStake(credential: Credential) {
+    const stakeRegistration: StakeRegistration = new StakeRegistration(
+      credential.toCore(),
+    );
+    const registrationCertificate: Certificate =
+      Certificate.newStakeRegistration(stakeRegistration);
+    const certs =
+      this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const vals = [...certs.values(), registrationCertificate];
+    certs.setValues(vals);
+    this.body.setCerts(certs);
+    return this;
   }
 
   /**
@@ -1482,6 +1559,26 @@ export class TxBuilder {
    */
   provideScript(script: Script) {
     this.scriptScope.add(script);
+    return this;
+  }
+
+  /**
+   * Adds a pre-complete hook to the transaction builder. This hook will be executed
+   * before the transaction is finalized.
+   *
+   * Pre-complete hooks are useful for performing last-minute modifications or
+   * validations on the transaction before it's completed. Multiple hooks can be
+   * added, and they will be executed in the order they were added.
+   *
+   * @param {(tx: TxBuilder) => Promise<void>} hook - A function that takes the TxBuilder
+   * instance as an argument and performs some operation. The hook should be asynchronous.
+   * @returns {TxBuilder} The same transaction builder instance for method chaining.
+   */
+  addPreCompleteHook(hook: (tx: TxBuilder) => Promise<void>): TxBuilder {
+    if (!this.preCompleteHooks) {
+      this.preCompleteHooks = [];
+    }
+    this.preCompleteHooks.push(hook);
     return this;
   }
 }

@@ -64,10 +64,11 @@ const provider = new Maestro({
 const wallet = new ColdWallet(address, 0, provider);
 
 console.log("Your blaze address: ", wallet.address.toBech32());
-const blaze = new Blaze(provider, wallet);
+const blaze = await Blaze.from(provider, wallet);
 
 //Use the awesome transaction builder
-const tx = await (await blaze.newTransaction())
+const tx = await blaze
+  .newTransaction()
   .payLovelace(blazeWallet, 5n * 1_000_000n)
   .complete();
 

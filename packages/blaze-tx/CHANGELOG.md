@@ -1,5 +1,55 @@
 # @blaze-cardano/tx
 
+## 0.0.29
+
+### Patch Changes
+
+- Updated dependencies [69586a9]
+  - @blaze-cardano/core@0.2.7
+
+## 0.0.28
+
+### Patch Changes
+
+- Updated dependencies [b1dcf6a]
+  - @blaze-cardano/core@0.2.6
+
+## 0.0.27
+
+### Patch Changes
+
+- a28ff6a: feat: Stake registration balancing
+
+## 0.0.26
+
+### Patch Changes
+
+- 99ce4a5: feat: addRegisterStake
+
+## 0.0.25
+
+### Patch Changes
+
+- ac597b1: Release @joacohoyos @ilap PRs
+
+## 0.0.24
+
+### Patch Changes
+
+- 1623e94: feat: newTransaction improved via precomplete hooks
+
+## 0.0.23
+
+### Patch Changes
+
+- a99e113: fix: minimum fee used in collateral calc
+
+## 0.0.22
+
+### Patch Changes
+
+- c96ec08: fix: nativescript support
+
 ## 0.0.21
 
 ### Patch Changes

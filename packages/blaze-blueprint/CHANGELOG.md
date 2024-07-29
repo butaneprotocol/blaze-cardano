@@ -1,5 +1,73 @@
 # @blaze-cardano/blueprint
 
+## 0.2.6
+
+### Patch Changes
+
+- 69586a9: bump @cardano-sdk/core
+- Updated dependencies [69586a9]
+  - @blaze-cardano/core@0.2.7
+  - @blaze-cardano/uplc@0.0.12
+  - @blaze-cardano/tx@0.0.29
+
+## 0.2.5
+
+### Patch Changes
+
+- 9d9c026: patch: remove enums
+- Updated dependencies [9d9c026]
+  - @blaze-cardano/uplc@0.0.11
+
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies [b1dcf6a]
+  - @blaze-cardano/core@0.2.6
+  - @blaze-cardano/tx@0.0.28
+  - @blaze-cardano/uplc@0.0.10
+
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [a28ff6a]
+  - @blaze-cardano/tx@0.0.27
+  - @blaze-cardano/uplc@0.0.9
+
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [99ce4a5]
+  - @blaze-cardano/tx@0.0.26
+  - @blaze-cardano/uplc@0.0.8
+
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [28e72b8]
+  - @blaze-cardano/uplc@0.0.7
+
+## 0.2.0
+
+### Minor Changes
+
+- 7a49bf4: add commander to cli for help menu
+
+## 0.1.1
+
+### Patch Changes
+
+- 56c7034: testing: cli deploy
+
+## 0.1.0
+
+### Minor Changes
+
+- cb7800c: Blueprint generation
+
 ## 0.0.1
 
 ### Patch Changes

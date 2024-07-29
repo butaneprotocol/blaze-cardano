@@ -38,8 +38,8 @@ export class HotWallet implements Wallet {
    * Constructs a new instance of the HotWallet class.
    * @param {Address} address - the wallets's address
    * @param {RewardAddress} rewardAddress - the wallet's reward address if there is any
-   * @param {Ed25519PrivateNormalKeyHex} signingKey - The signing key of the derived account's of wallet.
-   * @param {Ed25519PublicKeyHex} publicKey - The public key of the derived account's of the wallet.
+   * @param {Bip32PrivateKey} signingKey - The signing key of the derived account's of wallet.
+   * @param {Bip32PublicKey} publicKey - The public key of the derived account's of the wallet.
    * @param {Provider} provider - The provider of the wallet.
    */
   private constructor(

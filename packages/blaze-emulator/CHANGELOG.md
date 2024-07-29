@@ -1,5 +1,122 @@
 # @blaze-cardano/emulator
 
+## 0.1.37
+
+### Patch Changes
+
+- Updated dependencies [686d3a5]
+  - @blaze-cardano/query@0.1.8
+  - @blaze-cardano/wallet@0.1.17
+
+## 0.1.36
+
+### Patch Changes
+
+- Updated dependencies [69586a9]
+  - @blaze-cardano/core@0.2.7
+  - @blaze-cardano/query@0.1.7
+  - @blaze-cardano/tx@0.0.29
+  - @blaze-cardano/wallet@0.1.16
+
+## 0.1.35
+
+### Patch Changes
+
+- Updated dependencies [f0854dc]
+  - @blaze-cardano/query@0.1.6
+  - @blaze-cardano/wallet@0.1.15
+
+## 0.1.34
+
+### Patch Changes
+
+- Updated dependencies [b1dcf6a]
+  - @blaze-cardano/core@0.2.6
+  - @blaze-cardano/query@0.1.5
+  - @blaze-cardano/tx@0.0.28
+  - @blaze-cardano/wallet@0.1.14
+
+## 0.1.33
+
+### Patch Changes
+
+- Updated dependencies [ce03f8e]
+  - @blaze-cardano/query@0.1.4
+  - @blaze-cardano/wallet@0.1.13
+
+## 0.1.32
+
+### Patch Changes
+
+- a28ff6a: feat: Stake registration balancing
+- Updated dependencies [a28ff6a]
+  - @blaze-cardano/tx@0.0.27
+  - @blaze-cardano/wallet@0.1.12
+
+## 0.1.31
+
+### Patch Changes
+
+- Updated dependencies [99ce4a5]
+  - @blaze-cardano/tx@0.0.26
+  - @blaze-cardano/wallet@0.1.11
+
+## 0.1.30
+
+### Patch Changes
+
+- Updated dependencies [ac597b1]
+  - @blaze-cardano/query@0.1.3
+  - @blaze-cardano/tx@0.0.25
+  - @blaze-cardano/wallet@0.1.10
+
+## 0.1.29
+
+### Patch Changes
+
+- Updated dependencies [df3c0f5]
+  - @blaze-cardano/query@0.1.2
+  - @blaze-cardano/wallet@0.1.9
+
+## 0.1.28
+
+### Patch Changes
+
+- 1623e94: feat: newTransaction improved via precomplete hooks
+- Updated dependencies [1623e94]
+  - @blaze-cardano/tx@0.0.24
+  - @blaze-cardano/wallet@0.1.8
+
+## 0.1.27
+
+### Patch Changes
+
+- Updated dependencies [a99e113]
+  - @blaze-cardano/tx@0.0.23
+  - @blaze-cardano/wallet@0.1.7
+
+## 0.1.26
+
+### Patch Changes
+
+- Updated dependencies [c96ec08]
+  - @blaze-cardano/tx@0.0.22
+  - @blaze-cardano/wallet@0.1.6
+
+## 0.1.25
+
+### Patch Changes
+
+- Updated dependencies [8bd2d1c]
+  - @blaze-cardano/wallet@0.1.5
+
+## 0.1.24
+
+### Patch Changes
+
+- Updated dependencies [32590e5]
+  - @blaze-cardano/wallet@0.1.4
+
 ## 0.1.23
 
 ### Patch Changes

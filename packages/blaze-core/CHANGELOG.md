@@ -1,5 +1,17 @@
 # @blaze-cardano/core
 
+## 0.2.7
+
+### Patch Changes
+
+- 69586a9: bump @cardano-sdk/core
+
+## 0.2.6
+
+### Patch Changes
+
+- b1dcf6a: patch: exporting CertificateKind as const enum
+
 ## 0.2.5
 
 ### Patch Changes

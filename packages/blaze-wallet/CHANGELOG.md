@@ -1,5 +1,107 @@
 # @blaze-cardano/wallet
 
+## 0.1.17
+
+### Patch Changes
+
+- Updated dependencies [686d3a5]
+  - @blaze-cardano/query@0.1.8
+
+## 0.1.16
+
+### Patch Changes
+
+- Updated dependencies [69586a9]
+  - @blaze-cardano/core@0.2.7
+  - @blaze-cardano/query@0.1.7
+  - @blaze-cardano/tx@0.0.29
+
+## 0.1.15
+
+### Patch Changes
+
+- Updated dependencies [f0854dc]
+  - @blaze-cardano/query@0.1.6
+
+## 0.1.14
+
+### Patch Changes
+
+- Updated dependencies [b1dcf6a]
+  - @blaze-cardano/core@0.2.6
+  - @blaze-cardano/query@0.1.5
+  - @blaze-cardano/tx@0.0.28
+
+## 0.1.13
+
+### Patch Changes
+
+- Updated dependencies [ce03f8e]
+  - @blaze-cardano/query@0.1.4
+
+## 0.1.12
+
+### Patch Changes
+
+- Updated dependencies [a28ff6a]
+  - @blaze-cardano/tx@0.0.27
+
+## 0.1.11
+
+### Patch Changes
+
+- Updated dependencies [99ce4a5]
+  - @blaze-cardano/tx@0.0.26
+
+## 0.1.10
+
+### Patch Changes
+
+- Updated dependencies [ac597b1]
+  - @blaze-cardano/query@0.1.3
+  - @blaze-cardano/tx@0.0.25
+
+## 0.1.9
+
+### Patch Changes
+
+- Updated dependencies [df3c0f5]
+  - @blaze-cardano/query@0.1.2
+
+## 0.1.8
+
+### Patch Changes
+
+- Updated dependencies [1623e94]
+  - @blaze-cardano/tx@0.0.24
+
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies [a99e113]
+  - @blaze-cardano/tx@0.0.23
+
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [c96ec08]
+  - @blaze-cardano/tx@0.0.22
+
+## 0.1.5
+
+### Patch Changes
+
+- 8bd2d1c: Remove private constructor from `HotSingleWallet`
+  Add staking key to `HotSingleWallet`
+
+## 0.1.4
+
+### Patch Changes
+
+- 32590e5: feat: Hot Single Wallet
+
 ## 0.1.3
 
 ### Patch Changes

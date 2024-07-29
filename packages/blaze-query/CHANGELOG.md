@@ -1,5 +1,49 @@
 # @blaze-cardano/query
 
+## 0.1.8
+
+### Patch Changes
+
+- 686d3a5: Fix resolveScript on Kumpios provider
+
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies [69586a9]
+  - @blaze-cardano/core@0.2.7
+
+## 0.1.6
+
+### Patch Changes
+
+- f0854dc: feat: Blockfrost provider returns UTxOs with datums and script refs
+
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies [b1dcf6a]
+  - @blaze-cardano/core@0.2.6
+
+## 0.1.4
+
+### Patch Changes
+
+- ce03f8e: patch: maestro+blockfrost eval, params
+
+## 0.1.3
+
+### Patch Changes
+
+- ac597b1: Release @joacohoyos @ilap PRs
+
+## 0.1.2
+
+### Patch Changes
+
+- df3c0f5: Fix BlockfrostUTxO type mismatch
+
 ## 0.1.1
 
 ### Patch Changes

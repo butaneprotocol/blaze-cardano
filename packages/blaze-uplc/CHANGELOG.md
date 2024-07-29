@@ -1,5 +1,54 @@
 # @blaze-cardano/uplc
 
+## 0.0.12
+
+### Patch Changes
+
+- 69586a9: bump @cardano-sdk/core
+- Updated dependencies [69586a9]
+  - @blaze-cardano/core@0.2.7
+  - @blaze-cardano/tx@0.0.29
+
+## 0.0.11
+
+### Patch Changes
+
+- 9d9c026: patch: remove enums
+
+## 0.0.10
+
+### Patch Changes
+
+- Updated dependencies [b1dcf6a]
+  - @blaze-cardano/core@0.2.6
+  - @blaze-cardano/tx@0.0.28
+
+## 0.0.9
+
+### Patch Changes
+
+- Updated dependencies [a28ff6a]
+  - @blaze-cardano/tx@0.0.27
+
+## 0.0.8
+
+### Patch Changes
+
+- Updated dependencies [99ce4a5]
+  - @blaze-cardano/tx@0.0.26
+
+## 0.0.7
+
+### Patch Changes
+
+- 28e72b8: Bump cjs-core
+
+## 0.0.6
+
+### Patch Changes
+
+- 9b9d636: fix: decodeCborData
+
 ## 0.0.5
 
 ### Patch Changes
