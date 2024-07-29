@@ -8,6 +8,7 @@ import type {
   DatumHash,
   PlutusData,
   CredentialCore,
+  SlotConfig,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -29,8 +30,8 @@ import {
   Value,
   blake2b_256,
 } from "@blaze-cardano/core";
-import type { SlotConfig } from "@blaze-cardano/tx";
-import { makeUplcEvaluator, Value as V } from "@blaze-cardano/tx";
+import { Value as V } from "@blaze-cardano/tx";
+import { makeUplcEvaluator } from "@blaze-cardano/vm";
 
 export class LedgerTimer {
   block: number;

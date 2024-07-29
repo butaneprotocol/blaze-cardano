@@ -59,7 +59,7 @@ import {
   StakeRegistration,
 } from "@blaze-cardano/core";
 import * as value from "./value";
-import { micahsSelector } from "./coinSelection";
+import { micahsSelector, type SelectionResult } from "./coinSelection";
 
 /*
 methods we want to implement somewhere in new blaze (from haskell codebase):
@@ -127,6 +127,10 @@ export class TxBuilder {
   private consumedWithdrawalHashes: Hash28ByteBase16[] = [];
   private consumedSpendInputs: string[] = [];
   private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
+  private coinSelector: (
+    inputs: TransactionUnspentOutput[],
+    dearth: Value,
+  ) => SelectionResult = micahsSelector;
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -176,11 +180,42 @@ export class TxBuilder {
     return this;
   }
 
+  /**
+   * Sets the evaluator for the transaction builder.
+   * The evaluator is used to execute Plutus scripts during transaction building.
+   *
+   * @param {Evaluator} evaluator - The evaluator to be used for script execution.
+   * @returns {TxBuilder} The same transaction builder
+   */
   useEvaluator(evaluator: Evaluator) {
     this.evaluator = evaluator;
     return this;
   }
 
+  /**
+   * Sets a custom coin selector function for the transaction builder.
+   * This function will be used to select inputs during the transaction building process.
+   *
+   * @param {(inputs: TransactionUnspentOutput[], dearth: Value): SelectionResult} selector - The coin selector function to use.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  useCoinSelector(
+    selector: (
+      inputs: TransactionUnspentOutput[],
+      dearth: Value,
+    ) => SelectionResult,
+  ): TxBuilder {
+    this.coinSelector = selector;
+    return this;
+  }
+
+  /**
+   * Sets the network ID for the transaction builder.
+   * The network ID is used to determine which network the transaction is intended for.
+   *
+   * @param {NetworkId} networkId - The network ID to set.
+   * @returns {TxBuilder} The same transaction builder
+   */
   setNetworkId(networkId: NetworkId) {
     this.networkId = networkId;
     return this;
@@ -809,7 +844,7 @@ export class TxBuilder {
    * @returns {Value} The net value that represents the transaction's pitch.
    * @throws {Error} If a corresponding UTxO for an input cannot be found.
    */
-  private getPitch(withSpare: boolean = true) {
+  private getPitch(spareAmount: bigint = 0n) {
     // Calculate withdrawal amounts.
     let withdrawalAmount = 0n;
     const withdrawals = this.body.withdrawals();
@@ -888,8 +923,8 @@ export class TxBuilder {
       value.merge(inputValue, value.negate(outputValue)),
       mintValue,
     );
-    if (withSpare == true) {
-      return value.merge(tilt, new Value(-5_000_000n)); // Subtract 5 ADA from the excess.
+    if (spareAmount != 0n) {
+      return value.merge(tilt, new Value(-spareAmount)); // Subtract 5 ADA from the excess.
     }
     return tilt;
   }
@@ -1157,7 +1192,7 @@ export class TxBuilder {
     // Gather all inputs from the transaction body.
     const inputs = [...this.body.inputs().values()];
     // Perform initial checks and preparations for coin selection.
-    let excessValue = this.getPitch(true);
+    let excessValue = this.getPitch(5_000_000n);
     let spareInputs: TransactionUnspentOutput[] = [];
     for (const [utxo] of this.utxos.entries()) {
       if (!inputs.includes(utxo.input())) {
@@ -1165,7 +1200,7 @@ export class TxBuilder {
       }
     }
     // Perform coin selection to cover any negative excess value.
-    const selectionResult = micahsSelector(
+    const selectionResult = this.coinSelector(
       spareInputs,
       value.negate(value.negatives(excessValue)),
     );
@@ -1254,7 +1289,7 @@ export class TxBuilder {
       this.fee += BigInt(
         Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
       );
-      excessValue = this.getPitch(false);
+      excessValue = this.getPitch();
       this.body.setFee(BigIntMax(this.fee, this.minimumFee));
       this.balanceChange(excessValue);
       if (this.body.collateral()) {
