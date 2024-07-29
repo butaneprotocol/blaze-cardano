@@ -6,7 +6,7 @@ import * as value from "./value";
  * The result of a coin selection operation.
  * It includes the selected inputs, the total value of the selected inputs, and the remaining inputs.
  */
-type SelectionResult = {
+export type SelectionResult = {
   selectedInputs: TransactionUnspentOutput[];
   selectedValue: Value;
   inputs: TransactionUnspentOutput[];

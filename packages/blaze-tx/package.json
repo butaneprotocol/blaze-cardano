@@ -41,7 +41,6 @@
   },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
-    "@sinclair/typebox": "^0.32.32",
-    "uplc-node": "^0.0.3"
+    "@sinclair/typebox": "^0.32.32"
   }
 }
