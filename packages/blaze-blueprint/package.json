@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/blueprint",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "CIP-57 implementation and generator",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
