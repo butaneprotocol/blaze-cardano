@@ -10,6 +10,8 @@ contractUtxos = contractUtxos.map(utxo => utxo.toCore()) as any;
 console.log("contractUtxos", contractUtxos);
 const contractUtxosDatums = contractUtxos.map(utxo => utxo[1].datum);
 console.log("UTXOs Datum", contractUtxosDatums);
+const contractRefScript = contractUtxos.map(utxo => utxo[1].scriptReference);
+console.log("contractRefScript", contractRefScript);
 
 const mnemonic = "end link visit estate sock hurt crucial forum eagle earn idle laptop wheat rookie when hard suffer duty kingdom clerk glide mechanic debris jar";
 const entropy = mnemonicToEntropy(mnemonic, wordlist);

@@ -16,7 +16,10 @@ import {
     PolicyId,
     AssetName,
     hardCodedProtocolParams,
-    Datum
+    Datum,
+    PlutusV1Script,
+    Script,
+    PlutusV2Script
 } from "@blaze-cardano/core";
 import { Provider } from "./types";
 import { CardanoQueryClient } from "@utxorpc/sdk";
@@ -177,6 +180,17 @@ export class U5C implements Provider {
             } else if (rpcTxOutput.datum?.hash && rpcTxOutput.datum.hash.length > 0) {
                 const datumHash = Datum.newDataHash(DatumHash(Buffer.from(rpcTxOutput.datum.hash).toString('hex')));
                 output.setDatum(datumHash);
+            }
+        }
+
+        if (rpcTxOutput.script !== undefined) {
+            if (rpcTxOutput.script.script.case === "plutusV1") {
+                const cbor = rpcTxOutput.script.script.value;
+                output.setScriptRef(Script.newPlutusV1Script(PlutusV1Script.fromCbor(HexBlob.fromBytes(cbor))));
+            }
+            if (rpcTxOutput.script.script.case === "plutusV2") {
+                const cbor = rpcTxOutput.script.script.value;
+                output.setScriptRef(Script.newPlutusV2Script(PlutusV2Script.fromCbor(HexBlob.fromBytes(cbor))));
             }
         }
 
