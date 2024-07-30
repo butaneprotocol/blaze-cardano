@@ -123,9 +123,6 @@ importers:
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
-      rxjs:
-        specifier: 7.8.1
-        version: 7.8.1
       terser:
         specifier: ^5.31.3
         version: 5.31.3
@@ -379,6 +376,9 @@ importers:
       '@blaze-cardano/core':
         specifier: workspace:*
         version: link:../blaze-core
+      uplc-node:
+        specifier: ^0.0.3
+        version: 0.0.3
     devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
@@ -398,9 +398,6 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.5.4
-      uplc-node:
-        specifier: ^0.0.3
-        version: 0.0.3
 
   packages/blaze-wallet:
     dependencies:
