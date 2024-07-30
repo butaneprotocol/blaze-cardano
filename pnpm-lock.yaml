@@ -370,6 +370,9 @@ importers:
       typescript:
         specifier: ^5.5.4
         version: 5.5.4
+      uplc-node:
+        specifier: ^0.0.3
+        version: 0.0.3
 
   packages/blaze-vm:
     dependencies:
