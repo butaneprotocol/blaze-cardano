@@ -22,7 +22,6 @@ import {
   PlutusV1Script,
   PlutusV2Script,
   Redeemers,
-  RedeemerTag,
   Script,
   TransactionId,
   TransactionInput,
@@ -31,7 +30,7 @@ import {
   Value,
 } from "@blaze-cardano/core";
 import { PlutusLanguageVersion } from "@blaze-cardano/core";
-import type { Provider } from "./types";
+import { purposeToTag, type Provider } from "./types";
 
 export class Blockfrost implements Provider {
   url: string;
@@ -562,7 +561,7 @@ export class Blockfrost implements Provider {
     const result = json.result.EvaluationResult;
     for (const redeemerPointer in result) {
       const [pTag, pIndex] = redeemerPointer.split(":");
-      const purpose = purposeFromTag(pTag!);
+      const purpose = purposeToTag[pTag!];
       const index = BigInt(pIndex!);
       const data = result[redeemerPointer]!;
       const exUnits = ExUnits.fromCore({
@@ -686,26 +685,6 @@ export class Blockfrost implements Provider {
         );
       return new TransactionUnspentOutput(txIn, txOut);
     };
-  }
-}
-
-// builds proper type from string result from Blockfrost API
-function purposeFromTag(tag: string): RedeemerTag {
-  const tagMap: { [key: string]: RedeemerTag } = {
-    spend: RedeemerTag.Spend,
-    mint: RedeemerTag.Mint,
-    cert: RedeemerTag.Cert,
-    reward: RedeemerTag.Reward,
-    voting: RedeemerTag.Voting,
-    proposing: RedeemerTag.Proposing,
-  };
-
-  const normalizedTag = tag.toLowerCase();
-
-  if (normalizedTag in tagMap) {
-    return tagMap[normalizedTag]!;
-  } else {
-    throw new Error(`Invalid tag: ${tag}.`);
   }
 }
 
