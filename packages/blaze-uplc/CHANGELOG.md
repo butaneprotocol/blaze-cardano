@@ -1,5 +1,17 @@
 # @blaze-cardano/uplc
 
+## 0.1.0
+
+### Minor Changes
+
+- ae2d1f2: packaging changes
+
+### Patch Changes
+
+- Updated dependencies [ae2d1f2]
+  - @blaze-cardano/core@0.3.0
+  - @blaze-cardano/tx@0.2.0
+
 ## 0.0.13
 
 ### Patch Changes

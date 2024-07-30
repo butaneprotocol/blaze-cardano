@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.3.0
+
+### Minor Changes
+
+- ae2d1f2: packaging changes
+
 ## 0.2.7
 
 ### Patch Changes
