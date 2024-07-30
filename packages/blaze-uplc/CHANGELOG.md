@@ -1,5 +1,11 @@
 # @blaze-cardano/uplc
 
+## 0.1.1
+
+### Patch Changes
+
+- 467c779: patch import
+
 ## 0.1.0
 
 ### Minor Changes
