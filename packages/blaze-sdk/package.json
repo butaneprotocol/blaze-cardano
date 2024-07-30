@@ -25,10 +25,10 @@
     "access": "public"
   },
   "dependencies": {
-    "@blaze-cardano/blueprint": "workspace:*",
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/query": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
+    "@blaze-cardano/uplc": "workspace:*",
     "@blaze-cardano/wallet": "workspace:*"
   }
 }

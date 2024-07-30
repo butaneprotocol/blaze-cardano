@@ -28,13 +28,10 @@
     "ts-jest": "^29.2.3",
     "tsup": "^8.2.3",
     "tsx": "^4.16.2",
-    "typescript": "^5.5.4"
-  },
-  "dependencies": {
+    "typescript": "^5.5.4",
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
     "@blaze-cardano/uplc": "workspace:*",
-    "@cardano-sdk/core": "^0.35.4",
     "@commander-js/extra-typings": "^12.1.0",
     "commander": "^12.1.0"
   },

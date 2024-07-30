@@ -10,7 +10,7 @@
   },
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts ",
+    "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
@@ -18,7 +18,11 @@
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
+    "@cardano-sdk/core": "^0.35.4",
+    "@cardano-sdk/crypto": "^0.1.28",
+    "@cardano-sdk/util": "^0.15.4",
     "eslint": "^8.57.0",
+    "terser": "^5.31.3",
     "tsup": "^8.2.3",
     "typescript": "^5.5.4"
   },
@@ -26,14 +30,10 @@
     "access": "public"
   },
   "dependencies": {
-    "@cardano-sdk/core": "^0.35.4",
-    "@cardano-sdk/crypto": "^0.1.28",
-    "@cardano-sdk/util": "^0.15.4",
     "@noble/curves": "^1.4.2",
     "@noble/ed25519": "^2.1.0",
     "@noble/hashes": "^1.4.0",
     "@scure/bip39": "^1.3.0",
-    "blakejs": "^1.2.1",
-    "rxjs": "7.8.1"
+    "blakejs": "^1.2.1"
   }
 }
