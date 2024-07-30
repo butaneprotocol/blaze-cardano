@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.1.10
+
+### Patch Changes
+
+- 6e9352d: patch: blockfrost use purposeToTag mapping
+
 ## 0.1.9
 
 ### Patch Changes
