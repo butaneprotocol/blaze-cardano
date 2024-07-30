@@ -1,5 +1,20 @@
 # @blaze-cardano/sdk
 
+## 0.1.0
+
+### Minor Changes
+
+- ae2d1f2: packaging changes
+
+### Patch Changes
+
+- Updated dependencies [ae2d1f2]
+  - @blaze-cardano/query@0.2.0
+  - @blaze-cardano/core@0.3.0
+  - @blaze-cardano/uplc@0.1.0
+  - @blaze-cardano/tx@0.2.0
+  - @blaze-cardano/wallet@0.1.20
+
 ## 0.0.46
 
 ### Patch Changes

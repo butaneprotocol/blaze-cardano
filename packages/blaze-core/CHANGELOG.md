@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.3.0
+
+### Minor Changes
+
+- ae2d1f2: packaging changes
+
 ## 0.2.8
 
 ### Patch Changes
