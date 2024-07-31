@@ -89,6 +89,15 @@ importers:
 
   packages/blaze-core:
     dependencies:
+      '@cardano-sdk/core':
+        specifier: ^0.35.4
+        version: 0.35.4(rxjs@7.8.1)
+      '@cardano-sdk/crypto':
+        specifier: ^0.1.28
+        version: 0.1.28
+      '@cardano-sdk/util':
+        specifier: ^0.15.4
+        version: 0.15.4
       '@noble/curves':
         specifier: ^1.4.2
         version: 1.4.2
@@ -111,15 +120,6 @@ importers:
       '@blaze-cardano/tsconfig':
         specifier: workspace:*
         version: link:../blaze-tsconfig
-      '@cardano-sdk/core':
-        specifier: ^0.35.4
-        version: 0.35.4(rxjs@7.8.1)
-      '@cardano-sdk/crypto':
-        specifier: ^0.1.28
-        version: 0.1.28
-      '@cardano-sdk/util':
-        specifier: ^0.15.4
-        version: 0.15.4
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
