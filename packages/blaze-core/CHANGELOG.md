@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.3.1
+
+### Patch Changes
+
+- ee5932c: revert @cardano-sdk bundling
+
 ## 0.3.0
 
 ### Minor Changes
