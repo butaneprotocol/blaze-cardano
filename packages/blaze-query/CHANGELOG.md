@@ -1,5 +1,13 @@
 # @blaze-cardano/query
 
+## 0.2.3
+
+### Patch Changes
+
+- ab8ab7c: patch: isomorphic-ws for browsers
+- Updated dependencies [ab8ab7c]
+  - @blaze-cardano/ogmios@0.0.2
+
 ## 0.2.2
 
 ### Patch Changes
