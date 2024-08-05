@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/ogmios": "workspace:*",
     "@blaze-cardano/jest-config": "workspace:*",
     "ws": "^8.17.1"
   }
