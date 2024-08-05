@@ -1,0 +1,33 @@
+{
+  "name": "@blaze-cardano/ogmios",
+  "version": "0.0.0",
+  "description": "Blaze cardano ogmios library",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --external rxjs",
+    "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
+  },
+  "devDependencies": {
+    "@blaze-cardano/eslint-config": "workspace:*",
+    "@blaze-cardano/tsconfig": "workspace:*",
+    "@types/ws": "^8.5.10",
+    "eslint": "^8.57.0",
+    "tsup": "^8.0.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "@cardano-ogmios/schema": "^6.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "ws": "^8.17.1"
+  }
+}
