@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.2.2
+
+### Patch Changes
+
+- 7c94d17: patch: blaze-query kupmios provider uses ogmios library
+
 ## 0.2.1
 
 ### Patch Changes
