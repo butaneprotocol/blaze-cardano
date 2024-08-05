@@ -1,4 +1,4 @@
-import WebSocket from "ws";
+import WebSocket from "isomorphic-ws";
 import type * as schema from "./schema";
 
 export class Ogmios {

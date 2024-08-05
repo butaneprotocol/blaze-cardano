@@ -17,17 +17,16 @@
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
-    "@types/ws": "^8.5.10",
+    "@cardano-ogmios/schema": "^6.4.0",
     "eslint": "^8.57.0",
-    "tsup": "^8.0.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3",
-    "@cardano-ogmios/schema": "^6.4.0"
+    "tsup": "^8.0.2",
+    "typescript": "^5.3.3"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "ws": "^8.17.1"
+    "isomorphic-ws": "^5.0.0"
   }
 }

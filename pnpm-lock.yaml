@@ -208,9 +208,9 @@ importers:
 
   packages/blaze-ogmios:
     dependencies:
-      ws:
-        specifier: ^8.17.1
-        version: 8.18.0
+      isomorphic-ws:
+        specifier: ^5.0.0
+        version: 5.0.0(ws@8.18.0)
     devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
@@ -221,9 +221,6 @@ importers:
       '@cardano-ogmios/schema':
         specifier: ^6.4.0
         version: 6.5.0
-      '@types/ws':
-        specifier: ^8.5.10
-        version: 8.5.11
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
@@ -258,9 +255,6 @@ importers:
       '@blaze-cardano/tsconfig':
         specifier: workspace:*
         version: link:../blaze-tsconfig
-      '@cardano-ogmios/schema':
-        specifier: ^6.4.0
-        version: 6.5.0
       '@types/jest':
         specifier: ^29.5.5
         version: 29.5.12
@@ -3023,6 +3017,11 @@ packages:
 
   isomorphic-ws@4.0.1:
     resolution: {integrity: sha512-BhBvN2MBpWTaSHdWRb/bwdZJ1WaehQ2L1KngkCkfLUGF0mAWAT1sQUQacEmQ0jXkFw/czDXPNQSL5u2/Krsz1w==}
+    peerDependencies:
+      ws: '*'
+
+  isomorphic-ws@5.0.0:
+    resolution: {integrity: sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==}
     peerDependencies:
       ws: '*'
 
@@ -7706,6 +7705,10 @@ snapshots:
   isomorphic-ws@4.0.1(ws@7.5.10):
     dependencies:
       ws: 7.5.10
+
+  isomorphic-ws@5.0.0(ws@8.18.0):
+    dependencies:
+      ws: 8.18.0
 
   istanbul-lib-coverage@3.2.2: {}
 
