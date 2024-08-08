@@ -337,11 +337,12 @@ export const Data = {
 };
 
 export type Exact<T> = T extends TSchema ? Static<T> : T;
-function to<T>(data: Exact<T>, type: T): PlutusData;
+function to<T>(data: Exact<T>, type: T, recType?: string): PlutusData;
 function to(data: Data, type?: never): PlutusData;
 function to<T extends TSchema>(
   data: T extends undefined ? Data : Exact<T>,
   type: T,
+  recType?: string,
 ): PlutusData {
   if (type === undefined || type.description == "Any Data.") {
     if (typeof data == "bigint") {
@@ -374,7 +375,7 @@ function to<T extends TSchema>(
       }
     }
   }
-  return castTo(data as Exact<T>, type);
+  return castTo(data as Exact<T>, type, recType);
 }
 
 function from<T = undefined>(
@@ -426,9 +427,28 @@ function from<T = undefined>(
   ) as Exact<T> as T extends undefined ? Data : Exact<T>;
 }
 
-function castTo<T extends TSchema>(struct: Exact<T>, schema: T): PlutusData {
+function castTo<T extends TSchema>(
+  struct: Exact<T>,
+  schemaType: T,
+  recType?: string,
+  recShape?: {
+    recType: string;
+    shape: T;
+    shapeType: string;
+  },
+): PlutusData {
   // const type = typeRaw as unknown as PSchema;
-  if (!schema) throw new Error("Could not type cast struct.");
+  if (!schemaType) throw new Error("Could not type cast struct.");
+
+  let schema = schemaType as Json;
+  let shapeType = (schema.anyOf ? "enum" : "") || schema.dataType;
+
+  if (recType === schema.title) {
+    recShape = { recType: recType!, shape: schema, shapeType: shapeType };
+  } else if (recShape && schema.$ref) {
+    schema = recShape.shape;
+    shapeType = recShape.shapeType;
+  }
 
   if (struct instanceof PlutusData) {
     return struct;
@@ -437,7 +457,7 @@ function castTo<T extends TSchema>(struct: Exact<T>, schema: T): PlutusData {
   if ("anyOf" in schema) {
     const schemaEnum = schema as unknown as TEnum;
     if (schema["anyOf"].length === 1) {
-      return castTo(struct, schema["anyOf"][0]! as T);
+      return castTo(struct, schema["anyOf"][0]! as T, recType, recShape);
     }
 
     if (isBoolean(schemaEnum)) {
@@ -473,7 +493,7 @@ function castTo<T extends TSchema>(struct: Exact<T>, schema: T): PlutusData {
           throw new Error("Could not type cast to nullable object.");
         }
         const someList = new PlutusList();
-        someList.add(castTo(struct, fields[someIdx]! as T));
+        someList.add(castTo(struct, fields[someIdx]! as T, recType, recShape));
         return PlutusData.newConstrPlutusData(
           new ConstrPlutusData(BigInt(someIdx), someList),
         );
@@ -518,13 +538,13 @@ function castTo<T extends TSchema>(struct: Exact<T>, schema: T): PlutusData {
         const fields =
           args instanceof Array
             ? args.map((item, index) =>
-                castTo(item, enumEntry["fields"][index]!),
+                castTo(item, enumEntry["fields"][index]!, recType, recShape),
               )
             : enumEntry["fields"].map((entry: Json) => {
                 const [, item] = Object.entries(args).find(
                   ([title]) => "title" in entry && title === entry.title,
                 )!;
-                return castTo(item as Exact<T>, entry as T);
+                return castTo(item as Exact<T>, entry as T, recType, recShape);
               });
 
         const plutusList = new PlutusList();
@@ -588,6 +608,8 @@ function castTo<T extends TSchema>(struct: Exact<T>, schema: T): PlutusData {
               "title" in field ? field.title! : "wrapper"
             ],
             field,
+            recType,
+            recShape,
           ),
         );
       }
@@ -610,13 +632,17 @@ function castTo<T extends TSchema>(struct: Exact<T>, schema: T): PlutusData {
           );
         }
         for (let index = 0; index < schema["items"].length; index++) {
-          fields.add(castTo(struct[index], schema["items"][index]!));
+          fields.add(
+            castTo(struct[index], schema["items"][index]!, recType, recShape),
+          );
         }
         return PlutusData.newList(fields);
       } else {
         const arrayType = schema["items"];
         const list = new PlutusList();
-        struct.forEach((item) => list.add(castTo(item, arrayType)));
+        struct.forEach((item) =>
+          list.add(castTo(item, arrayType, recType, recShape)),
+        );
         return PlutusData.newList(list);
       }
     }
@@ -627,8 +653,8 @@ function castTo<T extends TSchema>(struct: Exact<T>, schema: T): PlutusData {
       const map = new PlutusMap();
       for (const [key, value] of struct.entries()) {
         map.insert(
-          castTo(key, schema["keys"]),
-          castTo(value, schema["values"]),
+          castTo(key, schema["keys"], recType, recShape),
+          castTo(value, schema["values"], recType, recShape),
         );
       }
       return PlutusData.newMap(map);
