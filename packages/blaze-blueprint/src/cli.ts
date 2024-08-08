@@ -12,10 +12,14 @@ command
   .version(packageJson.version)
   .argument("<blueprint>", "plutus.json file")
   .requiredOption("-o, --outfile <file>", "output file")
-  .action((infile, { outfile }) => {
+  .option(
+    "-s, --use-sdk",
+    "use @blaze-cardano/sdk instead of @blaze-cardano/core & @blaze-cardano/uplc",
+  )
+  .action(async (infile, { outfile, useSdk }) => {
     validateFilePaths(infile, outfile);
 
-    generateBlueprint({ infile, outfile });
+    await generateBlueprint({ infile, outfile, useSdk });
 
     console.log(`Blueprint generated at ${outfile}`);
   });
