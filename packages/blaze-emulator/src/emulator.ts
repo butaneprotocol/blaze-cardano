@@ -30,7 +30,7 @@ import {
   Value,
   blake2b_256,
 } from "@blaze-cardano/core";
-import { Value as V } from "@blaze-cardano/tx";
+import { calculateReferenceScriptFee, Value as V } from "@blaze-cardano/tx";
 import { makeUplcEvaluator } from "@blaze-cardano/vm";
 
 export class LedgerTimer {
@@ -647,6 +647,13 @@ export class Emulator {
       }
     });
 
+    const txSize = tx.toCbor().length / 2;
+    if (txSize > this.params.maxTxSize) {
+      throw new Error(
+        `Transaction size exceeds the maximum allowed. Supplied: ${txSize}, Maximum: ${this.params.maxTxSize}`,
+      );
+    }
+
     // Script eval and fees
     const evaluatedRedeemers = await this.evaluator(tx, usedInputs);
     const evalFee = BigInt(
@@ -683,20 +690,23 @@ export class Emulator {
       ),
     );
 
-    const txSize = tx.toCbor().length / 2;
-    if (txSize > this.params.maxTxSize) {
-      throw new Error(
-        `Transaction size exceeds the maximum allowed. Supplied: ${txSize}, Maximum: ${this.params.maxTxSize}`,
-      );
-    }
-
-    const fee =
+    let fee =
       evalFee +
       BigInt(
         Math.ceil(
           this.params.minFeeConstant + txSize * this.params.minFeeCoefficient,
         ),
       );
+
+    if (refInputs && this.params.minFeeReferenceScripts) {
+      const refUtxos =
+        refInputs?.map(
+          (x) => new TransactionUnspentOutput(x, this.getOutput(x)!),
+        ) ?? [];
+      fee += BigInt(
+        Math.ceil(calculateReferenceScriptFee(refUtxos, this.params)),
+      );
+    }
 
     if (fee > body.fee())
       throw new Error(

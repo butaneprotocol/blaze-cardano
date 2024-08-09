@@ -48,6 +48,10 @@ export interface ProtocolParameters {
   maxExecutionUnitsPerTransaction: Cardano.ExUnits;
   /** The maximum execution units per block. */
   maxExecutionUnitsPerBlock: Cardano.ExUnits;
+  /** Params used for calculating the minimum fee from reference inputs (see https://github.com/CardanoSolutions/ogmios/releases/tag/v6.5.0) */
+  // Conway params are optional while not on mainnet
+  // TODO: all of the new params
+  minFeeReferenceScripts?: MinFeeReferenceScripts;
 }
 /**
  * Hard coded protocol parameters for the Cardano ledger.
@@ -55,6 +59,7 @@ export interface ProtocolParameters {
  */
 export const hardCodedProtocolParams: ProtocolParameters = {
   coinsPerUtxoByte: 4310, // The number of coins per UTXO byte.
+  minFeeReferenceScripts: { base: 44, range: 25600, multiplier: 1.2 },
   maxTxSize: 16384, // The maximum transaction size.
   minFeeCoefficient: 44, // The minimum fee coefficient.
   minFeeConstant: 155381, // The minimum fee constant.
@@ -114,3 +119,9 @@ export const hardCodedProtocolParams: ProtocolParameters = {
   maxExecutionUnitsPerTransaction: { memory: 14000000, steps: 10000000000 }, // The maximum execution units per transaction.
   maxExecutionUnitsPerBlock: { memory: 62000000, steps: 20000000000 }, // The maximum execution units per block.
 };
+
+export interface MinFeeReferenceScripts {
+  base: number;
+  range: number;
+  multiplier: number;
+}
