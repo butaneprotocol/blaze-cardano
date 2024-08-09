@@ -256,7 +256,8 @@ export class Kupmios implements Provider {
           steps: result.maxExecutionUnitsPerBlock!.cpu,
           memory: result.maxExecutionUnitsPerBlock!.memory,
         },
-      } as ProtocolParameters;
+        minFeeReferenceScripts: result.minFeeReferenceScripts,
+      };
     });
   }
 

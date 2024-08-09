@@ -60,6 +60,7 @@ import {
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector, type SelectionResult } from "./coinSelection";
+import { calculateReferenceScriptFee } from "./utils";
 
 /*
 methods we want to implement somewhere in new blaze (from haskell codebase):
@@ -850,7 +851,7 @@ export class TxBuilder {
     }
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(withdrawalAmount);
-    let outputValue = new Value(BigIntMax(this.fee, this.minimumFee));
+    let outputValue = new Value(bigintMax(this.fee, this.minimumFee));
     const mintValue = new Value(0n, this.body.mint());
 
     // Aggregate the total input value from all inputs.
@@ -1024,14 +1025,26 @@ export class TxBuilder {
    */
   private calculateFees(draft_tx: Transaction) {
     // Calculate the fee based on the transaction size and minimum fee parameters.
-    this.fee = BigInt(
-      Math.ceil(
-        this.params.minFeeConstant +
-          fromHex(draft_tx.toCbor()).length * this.params.minFeeCoefficient,
-      ),
-    );
+    let minFee =
+      this.params.minFeeConstant +
+      fromHex(draft_tx.toCbor()).length * this.params.minFeeCoefficient;
+
+    if (this.params.minFeeReferenceScripts) {
+      const utxoScope = [...this.utxoScope.values()];
+      const refUtxos = draft_tx
+        .body()
+        .referenceInputs()
+        ?.values()
+        // TODO: Should make the utxoScope a lookup of serialised inputs to utxos
+        .map((x) => utxoScope.find((y) => y.input().toCbor() == x.toCbor())!);
+      if (refUtxos) {
+        minFee += calculateReferenceScriptFee(refUtxos!, this.params);
+      }
+    }
+
+    this.fee = BigInt(Math.ceil(minFee));
     // Update the transaction body with the calculated fee.
-    this.body.setFee(BigIntMax(this.fee, this.minimumFee));
+    this.body.setFee(bigintMax(this.fee, this.minimumFee));
   }
 
   /**
@@ -1122,14 +1135,14 @@ export class TxBuilder {
     const totalCollateral = BigInt(
       Math.ceil(
         this.params.collateralPercentage *
-          Number(BigIntMax(this.fee, this.minimumFee)),
+          Number(bigintMax(this.fee, this.minimumFee)),
       ),
     );
     // Calculate the collateral value by summing up the amounts from collateral inputs.
     const collateralValue = this.body
       .collateral()!
       .values()
-      .reduce((acc, input) => {
+      .reduce((acc: any, input: any) => {
         const utxo = scope.find((x) => x.input() == input);
         if (!utxo) {
           throw new Error(
@@ -1260,7 +1273,7 @@ export class TxBuilder {
     this.calculateFees(draft_tx);
     excessValue = value.merge(
       excessValue,
-      new Value(-BigIntMax(this.fee, this.minimumFee)),
+      new Value(-bigintMax(this.fee, this.minimumFee)),
     );
     this.balanceChange(excessValue);
     if (this.redeemers.size() > 0) {
@@ -1294,7 +1307,7 @@ export class TxBuilder {
         Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
       );
       excessValue = this.getPitch();
-      this.body.setFee(BigIntMax(this.fee, this.minimumFee));
+      this.body.setFee(bigintMax(this.fee, this.minimumFee));
       this.balanceChange(excessValue);
       if (this.body.collateral()) {
         this.balanceCollateralChange();
@@ -1662,6 +1675,6 @@ function assertLockAddress(address: Address) {
  * @param {bigint} b - The second bigint value.
  * @returns {bigint} The maximum value.
  */
-function BigIntMax(a: bigint, b: bigint): bigint {
+function bigintMax(a: bigint, b: bigint): bigint {
   return a > b ? a : b;
 }
