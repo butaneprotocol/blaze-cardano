@@ -59,7 +59,7 @@ export interface ProtocolParameters {
  */
 export const hardCodedProtocolParams: ProtocolParameters = {
   coinsPerUtxoByte: 4310, // The number of coins per UTXO byte.
-  minFeeReferenceScripts: { base: 15, range: 25600, multiplier: 1.2 },
+  minFeeReferenceScripts: { base: 44, range: 25600, multiplier: 1.2 },
   maxTxSize: 16384, // The maximum transaction size.
   minFeeCoefficient: 44, // The minimum fee coefficient.
   minFeeConstant: 155381, // The minimum fee constant.
