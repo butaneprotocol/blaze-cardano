@@ -1,5 +1,13 @@
 # @blaze-cardano/query
 
+## 0.2.5
+
+### Patch Changes
+
+- a421f6f: patch: @microproofs bug x2 (ogmios bigints, data.to lists), @calvin bug (lockAssets)
+- Updated dependencies [a421f6f]
+  - @blaze-cardano/ogmios@0.0.3
+
 ## 0.2.4
 
 ### Patch Changes
