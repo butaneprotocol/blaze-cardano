@@ -614,18 +614,12 @@ export class TxBuilder {
     datum: Datum,
     scriptReference?: Script,
   ) {
-    assertLockAddress(address);
-    const paymentAddress = getPaymentAddress(address);
-    this.addOutput(
-      TransactionOutput.fromCore({
-        address: paymentAddress,
-        value: { coins: lovelace },
-        datum: !("__opaqueString" in datum) ? datum.toCore() : undefined,
-        datumHash: "__opaqueString" in datum ? datum : undefined,
-        scriptReference: scriptReference?.toCore(),
-      }),
+    return this.lockAssets(
+      address,
+      new Value(lovelace),
+      datum,
+      scriptReference,
     );
-    return this;
   }
 
   /**
@@ -646,18 +640,19 @@ export class TxBuilder {
     datum: Datum,
     scriptReference?: Script,
   ) {
+    const datumData = typeof datum == "object" ? datum.toCore() : undefined;
+    const datumHash = typeof datum == "string" ? datum : undefined;
     assertLockAddress(address);
     const paymentAddress = getPaymentAddress(address);
-    this.addOutput(
+    return this.addOutput(
       TransactionOutput.fromCore({
         address: paymentAddress,
         value: value.toCore(),
-        datum: !("__opaqueString" in datum) ? datum.toCore() : undefined,
-        datumHash: "__opaqueString" in datum ? datum : undefined,
+        datum: datumData,
+        datumHash,
         scriptReference: scriptReference?.toCore(),
       }),
     );
-    return this;
   }
 
   /**

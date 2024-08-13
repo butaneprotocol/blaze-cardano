@@ -17,7 +17,6 @@
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
-    "@cardano-ogmios/schema": "^6.4.0",
     "eslint": "^8.57.0",
     "ts-node": "^10.9.2",
     "tsup": "^8.0.2",
@@ -27,6 +26,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@cardano-ogmios/schema": "^6.4.0",
     "isomorphic-ws": "^5.0.0"
   }
 }

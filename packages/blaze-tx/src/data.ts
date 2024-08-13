@@ -356,7 +356,7 @@ function to<T extends TSchema>(
       if (data instanceof Array) {
         const list = new PlutusList();
         for (let i = 0; i < data.length; i++) {
-          list.add(to(data[i], type[0]));
+          list.add(to(data[i]));
         }
         return PlutusData.newList(list);
       } else if (data instanceof Map) {

@@ -71,7 +71,17 @@ export class Ogmios {
     }
     const id = Ogmios.generateId();
     return new Promise<Extract<R, "result">>((resolve, reject) => {
-      this.ws.send(JSON.stringify({ jsonrpc: "2.0", method, params, id }));
+      this.ws.send(
+        JSON.stringify(
+          { jsonrpc: "2.0", method, params, id },
+          (_key, value) => {
+            if (value instanceof BigInt) {
+              return Number(value);
+            }
+            return value;
+          },
+        ),
+      );
       this.requests[id] = { resolve, reject };
     });
   }
@@ -126,12 +136,12 @@ export class Ogmios {
   // Transaction Evaluation API
   async evaluateTransaction(
     transaction: { cbor: string },
-    additionalUtxo?: schema.Utxo,
+    additionalUtxos?: schema.Utxo,
   ): Promise<schema.EvaluateTransactionSuccess["result"]> {
     return this.request<
       schema.EvaluateTransaction,
       schema.Ogmios["EvaluateTransactionResponse"]
-    >("evaluateTransaction", { transaction, additionalUtxo });
+    >("evaluateTransaction", { transaction, additionalUtxo: additionalUtxos });
   }
 
   // State Query API

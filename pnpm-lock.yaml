@@ -208,6 +208,9 @@ importers:
 
   packages/blaze-ogmios:
     dependencies:
+      '@cardano-ogmios/schema':
+        specifier: ^6.4.0
+        version: 6.5.0
       isomorphic-ws:
         specifier: ^5.0.0
         version: 5.0.0(ws@8.18.0)
@@ -218,9 +221,6 @@ importers:
       '@blaze-cardano/tsconfig':
         specifier: workspace:*
         version: link:../blaze-tsconfig
-      '@cardano-ogmios/schema':
-        specifier: ^6.4.0
-        version: 6.5.0
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
@@ -245,6 +245,9 @@ importers:
       '@blaze-cardano/ogmios':
         specifier: workspace:*
         version: link:../blaze-ogmios
+      '@cardano-ogmios/schema':
+        specifier: ^6.4.0
+        version: 6.5.0
       ws:
         specifier: ^8.17.1
         version: 8.18.0

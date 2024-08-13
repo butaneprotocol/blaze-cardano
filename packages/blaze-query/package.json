@@ -30,6 +30,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@cardano-ogmios/schema": "^6.4.0",
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/ogmios": "workspace:*",
     "@blaze-cardano/jest-config": "workspace:*",

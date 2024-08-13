@@ -28,6 +28,7 @@ import {
 } from "@blaze-cardano/core";
 import { purposeToTag, type Provider } from "./types";
 import type { Unwrapped } from "@blaze-cardano/ogmios";
+import type * as Schema from "@cardano-ogmios/schema";
 
 export class Kupmios implements Provider {
   kupoUrl: string;
@@ -410,7 +411,9 @@ export class Kupmios implements Provider {
    * @param unspentOutputs - Unspent outputs to serialize.
    * @returns the serialized unspent outputs.
    */
-  static serializeUtxos(unspentOutputs: TransactionUnspentOutput[]): any[] {
+  static serializeUtxos(
+    unspentOutputs: TransactionUnspentOutput[],
+  ): Schema.Utxo {
     return unspentOutputs.map((output) => {
       const out = output.output();
       const address = out.address().toBech32();
@@ -418,14 +421,14 @@ export class Kupmios implements Provider {
       // Output parameters
       const ada = out.amount().coin().valueOf();
 
-      const value: { [key: string]: any } = { ada: { lovelace: ada } };
+      const value: Schema.Value = { ada: { lovelace: ada } };
       const multiAsset = out.amount().multiasset?.();
       multiAsset?.forEach((assets, assetId) => {
         const policyID = AssetId.getPolicyId(assetId);
         const assetName = AssetId.getAssetName(assetId);
 
         value[policyID] ??= {};
-        value[policyID][assetName] = assets;
+        value[policyID]![assetName] = assets;
       });
 
       // Handle optional datum and datumHash
@@ -464,7 +467,7 @@ export class Kupmios implements Provider {
         datumHash,
         datum,
         script,
-      };
+      } as Schema.Utxo[number];
     });
   }
 }
