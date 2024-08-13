@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.3.1
+
+### Patch Changes
+
+- a421f6f: patch: @microproofs bug x2 (ogmios bigints, data.to lists), @calvin bug (lockAssets)
+
 ## 0.3.0
 
 ### Minor Changes
