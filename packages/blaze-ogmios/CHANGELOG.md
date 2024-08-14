@@ -1,5 +1,11 @@
 # @blaze-cardano/ogmios
 
+## 0.0.4
+
+### Patch Changes
+
+- 40c1fd7: bug: fix bigint replacer for ogmios json stringify
+
 ## 0.0.3
 
 ### Patch Changes
