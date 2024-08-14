@@ -75,7 +75,7 @@ export class Ogmios {
         JSON.stringify(
           { jsonrpc: "2.0", method, params, id },
           (_key, value) => {
-            if (value instanceof BigInt) {
+            if (typeof value === "bigint") {
               return Number(value);
             }
             return value;
