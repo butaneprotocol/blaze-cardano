@@ -4,6 +4,7 @@ import {
   wordlist,
 } from "../../packages/blaze-core/dist/index.js";
 import { Kupmios } from "../../packages/blaze-query/dist/index.js";
+import { Unwrapped } from "../../packages/blaze-ogmios";
 import { Blaze } from "../../packages/blaze-sdk/dist/index.js";
 import { HotWallet } from "../../packages/blaze-wallet/dist/index.js";
 
@@ -12,8 +13,9 @@ const kupoUrl = "<YOUR KUPO ENDPOINT>";
 
 // Tested with Ogmios v6.3.0
 const ogmiosUrl = "<YOUR OGMIOS ENDPOINT>";
+const ogmios = await Unwrapped.Ogmios.new(ogmiosUrl);
 
-const provider = new Kupmios(kupoUrl, ogmiosUrl);
+const provider = new Kupmios(kupoUrl, ogmios);
 
 const mnemonic = "<YOUR MNEMONIC THAT CONTAINS FUND TO SEND>";
 
