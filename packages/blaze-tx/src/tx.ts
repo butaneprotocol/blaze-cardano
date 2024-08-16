@@ -1031,14 +1031,20 @@ export class TxBuilder {
 
     if (this.params.minFeeReferenceScripts) {
       const utxoScope = [...this.utxoScope.values()];
-      const refUtxos = draft_tx
-        .body()
-        .referenceInputs()
-        ?.values()
-        // TODO: Should make the utxoScope a lookup of serialised inputs to utxos
-        .map((x) => utxoScope.find((y) => y.input().toCbor() == x.toCbor())!);
-      if (refUtxos) {
-        minFee += calculateReferenceScriptFee(refUtxos!, this.params);
+      const allInputs = [
+        ...draft_tx.body().inputs().values(),
+        ...(draft_tx.body().referenceInputs()?.values() ?? []),
+      ];
+      const refScripts = allInputs
+        .map((x) =>
+          utxoScope
+            .find((y) => y.input().toCbor() == x.toCbor())!
+            .output()
+            .scriptRef(),
+        )
+        .filter((x) => x !== undefined);
+      if (refScripts.length > 0) {
+        minFee += calculateReferenceScriptFee(refScripts, this.params);
       }
     }
 
@@ -1142,7 +1148,7 @@ export class TxBuilder {
     const collateralValue = this.body
       .collateral()!
       .values()
-      .reduce((acc: any, input: any) => {
+      .reduce((acc, input) => {
         const utxo = scope.find((x) => x.input() == input);
         if (!utxo) {
           throw new Error(

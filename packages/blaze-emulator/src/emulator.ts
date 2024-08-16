@@ -699,12 +699,11 @@ export class Emulator {
       );
 
     if (refInputs && this.params.minFeeReferenceScripts) {
-      const refUtxos =
-        refInputs?.map(
-          (x) => new TransactionUnspentOutput(x, this.getOutput(x)!),
-        ) ?? [];
+      const refScripts = [...inputs, ...refInputs]
+        .map((x) => this.getOutput(x)!.scriptRef())
+        .filter((x) => x !== undefined);
       fee += BigInt(
-        Math.ceil(calculateReferenceScriptFee(refUtxos, this.params)),
+        Math.ceil(calculateReferenceScriptFee(refScripts, this.params)),
       );
     }
 
