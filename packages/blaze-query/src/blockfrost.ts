@@ -16,6 +16,7 @@ import {
   DatumHash,
   ExUnits,
   fromHex,
+  hardCodedProtocolParams,
   Hash28ByteBase16,
   HexBlob,
   PlutusData,
@@ -126,6 +127,12 @@ export class Blockfrost implements Provider {
         memory: response.max_block_ex_mem,
         steps: response.max_block_ex_steps,
       },
+      minFeeReferenceScripts: response.min_fee_ref_script_cost_per_byte
+        ? {
+            ...hardCodedProtocolParams.minFeeReferenceScripts!,
+            base: response.min_fee_ref_script_cost_per_byte,
+          }
+        : undefined,
     };
   }
 
@@ -734,6 +741,7 @@ export interface BlockfrostProtocolParametersResponse {
   collateral_percent: number;
   max_collateral_inputs: number;
   coins_per_utxo_size: number;
+  min_fee_ref_script_cost_per_byte?: number;
 }
 
 type BlockfrostResponse<SomeResponse> = SomeResponse | { message: string };
