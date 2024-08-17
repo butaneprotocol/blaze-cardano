@@ -116,7 +116,7 @@ export const Preamble = z.object({
     name: z.string(),
     version: z.string(),
   }),
-  license: z.string(),
+  license: z.optional(z.string()),
 });
 
 export const Validator = z.object({
