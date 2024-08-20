@@ -1268,7 +1268,9 @@ export class TxBuilder {
       tw = this.buildTransactionWitnessSet();
       const evaluationFee = await this.evaluate(draft_tx);
       this.fee += evaluationFee;
-      excessValue = value.merge(excessValue, new Value(-evaluationFee));
+      if (this.fee > this.minimumFee) {
+        excessValue = value.merge(excessValue, new Value(-evaluationFee));
+      }
       tw.setRedeemers(this.redeemers);
       draft_tx.setWitnessSet(tw);
     }
