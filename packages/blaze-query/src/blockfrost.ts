@@ -463,7 +463,6 @@ export class Blockfrost implements Provider {
       method: "POST",
       headers: {
         "Content-Type": "application/cbor",
-        Accept: "text/plain",
         ...this.headers(),
       },
       body: fromHex(tx.toCbor()),
@@ -476,7 +475,7 @@ export class Blockfrost implements Provider {
       );
     }
 
-    const txId = await response.text();
+    const txId = (await response.json()) as string;
     return TransactionId(txId);
   }
 
