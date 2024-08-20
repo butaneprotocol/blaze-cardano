@@ -29,11 +29,14 @@ export class U5C implements Provider {
     private queryClient: CardanoQueryClient;
     constructor({
         url,
+        headers
     }: {
         url: string;
+        headers?: Record<string, string>;
     }) {
         this.queryClient = new CardanoQueryClient({
             uri: url,
+            headers,
         });
     }
 

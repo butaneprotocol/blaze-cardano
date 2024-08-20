@@ -1,30 +1,39 @@
-import { Bip32PrivateKey, mnemonicToEntropy, wordlist, AssetName, PolicyId, TransactionInput, TransactionId } from "../../packages/blaze-core/dist/index.js";
-import { HotWallet, Core, Blaze, Blockfrost, Maestro, U5C } from "../../packages/blaze-sdk/dist/index.js";
+// Step #1
+// Import Blaze SDK and U5C provider
+import { Bip32PrivateKey, mnemonicToEntropy, wordlist } from "../../packages/blaze-core/dist/index.js";
+import { HotWallet, Core, Blaze, U5C } from "../../packages/blaze-sdk/dist/index.js";
 
+// Step #2
+// Create a new U5C provider
+// In this example we use Demeter hosted UTXO provider
+// but you can run a local dolos instance and connect to its UTxO endpoint
+// If this is the case then you can remove the headers field
 const provider = new U5C({
-    url: "http://localhost:50051"
+    url: "https://cardano-preview.utxorpc.cloud",
+    headers: {
+        "dmtr-api-key": "<api-key>"
+    }
 });
 
-let contractUtxos = await provider.getUnspentOutputs(Core.Address.fromBech32("addr_test1wpwg0j7282yvhlhx76kcyzkw4x05sj6gxr7xxfss723sz3sa65qse"));
-contractUtxos = contractUtxos.map(utxo => utxo.toCore()) as any;
-console.log("contractUtxos", contractUtxos);
-const contractUtxosDatums = contractUtxos.map(utxo => utxo[1].datum);
-console.log("UTXOs Datum", contractUtxosDatums);
-const contractRefScript = contractUtxos.map(utxo => utxo[1].scriptReference);
-console.log("contractRefScript", contractRefScript);
-
+// Step #3
+// Create a new wallet from a mnemonic
 const mnemonic = "end link visit estate sock hurt crucial forum eagle earn idle laptop wheat rookie when hard suffer duty kingdom clerk glide mechanic debris jar";
 const entropy = mnemonicToEntropy(mnemonic, wordlist);
 const masterkey = Bip32PrivateKey.fromBip39Entropy(Buffer.from(entropy), "");
-
 const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
 
+// Step #4
+// Create a Blaze instance from the wallet and provider
 const blaze = await Blaze.from(provider, wallet);
-console.log("Balance", (await wallet.getBalance()).toCore());
-const utxosResponse = await wallet.getUnspentOutputs();
-const utxos = utxosResponse.map(utxo => utxo.toCore());
-console.log("UTXOs", utxos);
 
+// Optional: Print the wallet address
+console.log("Wallet address", wallet.address.toBech32());
+
+// Optional: Print the wallet balance
+console.log("Wallet balance", (await wallet.getBalance()).toCore());
+
+// Step #5
+// Create a example transaction that sends 5 ADA to an address
 const tx = await blaze.newTransaction()
     .payLovelace(
         Core.Address.fromBech32("addr_test1qrnrqg4s73skqfyyj69mzr7clpe8s7ux9t8z6l55x2f2xuqra34p9pswlrq86nq63hna7p4vkrcrxznqslkta9eqs2nsmlqvnk"),
@@ -32,20 +41,10 @@ const tx = await blaze.newTransaction()
     )
     .complete();
 
+// Step #6
+// Sign the transaction
 const signexTx = await blaze.signTransaction(tx);
-console.log("signed tx", signexTx.toCbor().toString());
 
-// const txId = await blaze.provider.postTransactionToChain(signexTx);
-// console.log("waiting for confirmation", txId);
-
-// while (true) {
-//   const confirmed = await blaze.provider.awaitTransactionConfirmation(txId, 1000 * 60);
-//   if (confirmed) {
-//     break;
-//   }
-//   await new Promise(resolve => setTimeout(resolve, 1000));
-// }
-
-// console.log("transaction confirmed", txId);
-
-// console.log("balance", (await wallet.getBalance()).toCore());
+// Step #7
+// Submit the transaction to the blockchain network
+const txId = await blaze.provider.postTransactionToChain(signexTx);
