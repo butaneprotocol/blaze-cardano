@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.3.2
+
+### Patch Changes
+
+- e6f670f: patch: minimum fee affect on excess val
+
 ## 0.3.1
 
 ### Patch Changes
