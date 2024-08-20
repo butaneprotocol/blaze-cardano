@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.3.3
+
+### Patch Changes
+
+- 1100236: patch: fix2 min fee
+
 ## 0.3.2
 
 ### Patch Changes
