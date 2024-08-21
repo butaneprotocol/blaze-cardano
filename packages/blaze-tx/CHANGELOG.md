@@ -1,5 +1,14 @@
 # @blaze-cardano/tx
 
+## 0.3.4
+
+### Patch Changes
+
+- b9ea33c: feat: add min fee calculation for Conway reference script params
+- e0b5c36: Blockfrost submission was including an incorrect header, preventing finality. Script data hash generation was using outdated models for Conway.
+- Updated dependencies [b9ea33c]
+  - @blaze-cardano/core@0.4.1
+
 ## 0.3.3
 
 ### Patch Changes

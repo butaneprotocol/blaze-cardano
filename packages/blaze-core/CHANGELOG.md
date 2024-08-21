@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.4.1
+
+### Patch Changes
+
+- b9ea33c: feat: add min fee calculation for Conway reference script params
+
 ## 0.4.0
 
 ### Minor Changes
