@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/query",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Blaze cardano emulator library",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
