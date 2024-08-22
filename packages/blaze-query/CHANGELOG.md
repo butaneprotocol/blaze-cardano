@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.2.8
+
+### Patch Changes
+
+- a4bc1b1: patch: maestro /protocol-params deprecated @mandriuska
+
 ## 0.2.7
 
 ### Patch Changes
