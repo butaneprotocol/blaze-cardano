@@ -62,19 +62,19 @@ const Script = Core.Script;`;
 const PlutusData = Core.PlutusData;`;
   }
 
-  static resolveSchema(schema: any, definitions: any): any {
+  static resolveSchema(schema: any, definitions: any, refName?: string): any {
     if (schema.items) {
       if (schema.items instanceof Array) {
         return {
           ...schema,
           items: schema.items.map((item: any) =>
-            this.resolveSchema(item, definitions),
+            this.resolveSchema(item, definitions, refName),
           ),
         };
       } else {
         return {
           ...schema,
-          items: this.resolveSchema(schema.items, definitions),
+          items: this.resolveSchema(schema.items, definitions, refName),
         };
       }
     } else if (schema.anyOf) {
@@ -83,7 +83,7 @@ const PlutusData = Core.PlutusData;`;
         anyOf: schema.anyOf.map((a: any) => ({
           ...a,
           fields: a.fields.map((field: any) => ({
-            ...this.resolveSchema(field, definitions),
+            ...this.resolveSchema(field, definitions, refName),
             title: field.title
               ? Generator.snakeToCamel(field.title)
               : undefined,
@@ -93,15 +93,26 @@ const PlutusData = Core.PlutusData;`;
     } else if (schema.keys && schema.values) {
       return {
         ...schema,
-        keys: this.resolveSchema(schema.keys, definitions),
-        values: this.resolveSchema(schema.values, definitions),
+        keys: this.resolveSchema(schema.keys, definitions, refName),
+        values: this.resolveSchema(schema.values, definitions, refName),
       };
     } else {
       if (schema["$ref"]) {
         const refKey = schema["$ref"]
           .replaceAll("~1", "/")
           .split("#/definitions/")[1];
-        return this.resolveSchema(definitions[refKey], definitions);
+
+        if (refKey === refName) {
+          return schema;
+        } else {
+          refName = refKey;
+          const resolved = this.resolveSchema(
+            definitions[refKey],
+            definitions,
+            refName,
+          );
+          return resolved;
+        }
       } else {
         return schema;
       }
@@ -231,11 +242,13 @@ export type BlueprintArgs = {
   infile?: string;
   outfile?: string;
   useSdk?: boolean;
+  recursiveType?: string;
 };
 export async function generateBlueprint({
   infile = "plutus.json",
   outfile = "plutus.ts",
   useSdk = false,
+  recursiveType,
 }: BlueprintArgs) {
   const plutusJson: Blueprint = JSON.parse(await fs.readFile(infile, "utf8"));
 
@@ -260,7 +273,7 @@ export async function generateBlueprint({
     const datum = validator.datum;
     const datumTitle = datum ? Generator.snakeToCamel(datum.title) : null;
     const datumSchema = datum
-      ? Generator.resolveSchema(datum.schema, definitions)
+      ? Generator.resolveSchema(datum.schema, definitions, recursiveType)
       : null;
 
     const redeemer = validator.redeemer;
@@ -268,13 +281,14 @@ export async function generateBlueprint({
     const redeemerSchema = Generator.resolveSchema(
       redeemer.schema,
       definitions,
+      recursiveType,
     );
 
     const params = validator.parameters || [];
     const paramsSchema = {
       dataType: "list",
       items: params.map((param) =>
-        Generator.resolveSchema(param.schema, definitions),
+        Generator.resolveSchema(param.schema, definitions, recursiveType),
       ),
     };
 
