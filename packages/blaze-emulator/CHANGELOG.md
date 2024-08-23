@@ -1,5 +1,26 @@
 # @blaze-cardano/emulator
 
+## 0.1.50
+
+### Patch Changes
+
+- Updated dependencies [a4bc1b1]
+  - @blaze-cardano/query@0.2.8
+  - @blaze-cardano/wallet@0.1.30
+
+## 0.1.49
+
+### Patch Changes
+
+- b9ea33c: feat: add min fee calculation for Conway reference script params
+- Updated dependencies [b9ea33c]
+- Updated dependencies [e0b5c36]
+  - @blaze-cardano/query@0.2.7
+  - @blaze-cardano/core@0.4.1
+  - @blaze-cardano/tx@0.3.4
+  - @blaze-cardano/wallet@0.1.29
+  - @blaze-cardano/vm@0.0.34
+
 ## 0.1.48
 
 ### Patch Changes

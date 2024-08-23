@@ -50,7 +50,7 @@ export class Maestro implements Provider {
    * @returns A Promise that resolves to a ProtocolParameters object.
    */
   getParameters(): Promise<ProtocolParameters> {
-    const query = `/protocol-params`;
+    const query = `//protocol-parameters`;
     return fetch(`${this.url}${query}`, { headers: this.headers() })
       .then((resp) => resp.json())
       .then((json) => {

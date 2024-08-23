@@ -1,5 +1,20 @@
 # @blaze-cardano/query
 
+## 0.2.8
+
+### Patch Changes
+
+- a4bc1b1: patch: maestro /protocol-params deprecated @mandriuska
+
+## 0.2.7
+
+### Patch Changes
+
+- b9ea33c: feat: add min fee calculation for Conway reference script params
+- e0b5c36: Blockfrost submission was including an incorrect header, preventing finality. Script data hash generation was using outdated models for Conway.
+- Updated dependencies [b9ea33c]
+  - @blaze-cardano/core@0.4.1
+
 ## 0.2.6
 
 ### Patch Changes

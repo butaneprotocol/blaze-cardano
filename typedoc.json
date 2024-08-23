@@ -10,7 +10,8 @@
     "packages/blaze-uplc/src/index.ts",
     "packages/blaze-wallet/src/index.ts",
     "packages/blaze-vm/src/index.ts",
-    "packages/blaze-ogmios/src/index.ts"
+    "packages/blaze-ogmios/src/index.ts",
+    "cardano-js-sdk/packages/core/src/index.ts"
   ],
   "out": "docs",
   "includeVersion": true,
