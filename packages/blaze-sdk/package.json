@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/sdk",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "Blaze cardano sdk library",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
