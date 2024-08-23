@@ -362,8 +362,16 @@ export class Kupmios implements Provider {
         throw new Error("Cannot evaluate without redeemers!");
       }
 
+      const additionalInputs = additionalUtxos.map((utxo) => utxo.input());
+
+      const utxosToDrop = await this.resolveUnspentOutputs(additionalInputs);
+
       // Serialize additional UTXOs to JSON format
-      const additional_utxos = Kupmios.serializeUtxos(additionalUtxos);
+      const additional_utxos = Kupmios.serializeUtxos(
+        additionalUtxos.filter((utxo) => {
+          return !utxosToDrop.includes(utxo);
+        }),
+      );
 
       // Handle the response
       return this.ogmios
