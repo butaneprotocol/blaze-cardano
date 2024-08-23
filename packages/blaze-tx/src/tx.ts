@@ -598,6 +598,32 @@ export class TxBuilder {
   }
 
   /**
+   * Adds a payment in assets to the transaction output, along with an inline datum.
+   * This method ensures that the address is valid and the payment is added to the transaction output.
+   *
+   * @param {Address} address - The address to send the payment to.
+   * @param {Value} value - The value of the assets to send.
+   * @param {Datum} datum - The datum to be associated with the paid assets.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  payAssetsWithData(address: Address, value: Value, datum: PlutusData) {
+    assertPaymentsAddress(address);
+    const paymentAddress = getPaymentAddress(address);
+    const datumData = typeof datum == "object" ? datum.toCore() : undefined;
+    const datumHash = typeof datum == "string" ? datum : undefined;
+    
+    this.addOutput(
+      TransactionOutput.fromCore({
+        address: paymentAddress,
+        value: value.toCore(),
+        datum: datumData,
+        datumHash
+      }),
+    );
+    return this;
+  }
+
+  /**
    * Locks a specified amount of lovelace to a script.
    * The difference between 'pay' and 'lock' is that you pay to a public key/user,
    * and you lock at a script.
