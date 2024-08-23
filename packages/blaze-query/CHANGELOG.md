@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.2.9
+
+### Patch Changes
+
+- da1e549: Filter out additional utxos that can be resolved by the ledger on evaluate
+
 ## 0.2.8
 
 ### Patch Changes
