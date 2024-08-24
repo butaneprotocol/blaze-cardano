@@ -290,7 +290,12 @@ export class Kupmios implements Provider {
 
     const checkConfirmation = async (): Promise<boolean> => {
       const response = await fetch(`${this.kupoUrl}/matches/0@${txId}`);
-      if (response.ok) {
+
+      if (
+        response.ok &&
+        (await response.json().then((res: any) => res.length),
+        (_res: any) => false)
+      ) {
         return true;
       } else if (Date.now() - startTime < timeout) {
         await new Promise((resolve) =>
