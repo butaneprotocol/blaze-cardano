@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.2.10
+
+### Patch Changes
+
+- d0e6dc1: Fix await transaction confirmation to actually wait for tx using kupmios
+
 ## 0.2.9
 
 ### Patch Changes
