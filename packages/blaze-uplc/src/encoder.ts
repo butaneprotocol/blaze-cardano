@@ -1,5 +1,4 @@
 import { Encoder as FlatEncoder } from "./flat";
-import { type Cardano } from "@cardano-sdk/core";
 import { BuiltinFunctions, DataType, TermNames, termTags } from "./types";
 import type {
   Data,
@@ -109,20 +108,32 @@ export class UPLCEncoder extends FlatEncoder {
     } else if (type === "Unit") {
       // No data to encode for Unit type
     } else if (type === "Bool") {
-      this.encodeBool((data as Cardano.ConstrPlutusData).constructor === 1n);
+      if (typeof data == "object" && "constructor" in data) {
+        this.encodeBool(data.constructor === 1n);
+      } else {
+        throw new Error(`Cannot encode data of type ${JSON.stringify(type)}`);
+      }
     } else if (type === "Data") {
       this.encodeByteString(fromHex(PlutusData.fromCore(data).toCbor()));
     } else if (typeof type === "object" && "list" in type) {
-      const list = (data as Cardano.PlutusList).items;
-      for (let i = 0; i < list.length; i++) {
-        this.pushBit(1);
-        this.encodeData(type.list, list[i]!);
+      if (typeof data == "object" && "items" in data) {
+        const list = data.items;
+        for (let i = 0; i < list.length; i++) {
+          this.pushBit(1);
+          this.encodeData(type.list, list[i]!);
+        }
+        this.pushBit(0);
+      } else {
+        throw new Error(`Cannot encode data of type ${JSON.stringify(type)}`);
       }
-      this.pushBit(0);
     } else if (typeof type === "object" && "pair" in type) {
-      const pair = (data as Cardano.PlutusList).items as [Data, Data];
-      this.encodeData(type.pair[0], pair[0]);
-      this.encodeData(type.pair[1], pair[1]);
+      if (typeof data == "object" && "items" in data) {
+        const pair = data.items as [Data, Data];
+        this.encodeData(type.pair[0], pair[0]);
+        this.encodeData(type.pair[1], pair[1]);
+      } else {
+        throw new Error(`Cannot encode data of type ${JSON.stringify(type)}`);
+      }
     } else {
       throw new Error(`Cannot encode data of type ${JSON.stringify(type)}`);
     }

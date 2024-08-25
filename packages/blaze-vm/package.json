@@ -1,21 +1,31 @@
 {
-  "name": "@blaze-cardano/sdk",
-  "version": "0.1.13",
-  "description": "Blaze cardano sdk library",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@blaze-cardano/vm",
+  "version": "0.0.34",
+  "description": "Blaze cardano plutus virtual machine",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./value": {
+      "import": "./dist/value.mjs",
+      "require": "./dist/value.js"
+    }
+  },
   "types": "./dist/index.d.ts",
   "files": [
     "dist/**"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --external rxjs",
+    "build": "tsup src/index.ts src/value.ts --format esm,cjs --dts --external rxjs",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
+    "@blaze-cardano/jest-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
     "eslint": "^8.57.0",
     "tsup": "^8.0.2",
@@ -26,9 +36,6 @@
   },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
-    "@blaze-cardano/query": "workspace:*",
-    "@blaze-cardano/tx": "workspace:*",
-    "@blaze-cardano/uplc": "workspace:*",
-    "@blaze-cardano/wallet": "workspace:*"
+    "uplc-node": "^0.0.3"
   }
 }

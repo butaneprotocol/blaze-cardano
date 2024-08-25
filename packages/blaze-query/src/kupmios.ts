@@ -26,13 +26,13 @@ import {
   PlutusV2Script,
   PlutusV3Script,
 } from "@blaze-cardano/core";
-import WebSocket from "ws";
-import type * as ogmios from "@cardano-ogmios/schema";
 import { purposeToTag, type Provider } from "./types";
+import type { Unwrapped } from "@blaze-cardano/ogmios";
+import type * as Schema from "@cardano-ogmios/schema";
 
 export class Kupmios implements Provider {
   kupoUrl: string;
-  ogmiosUrl: string;
+  ogmios: Unwrapped.Ogmios;
 
   static readonly plutusVersions: string[] = [
     "plutus:v1",
@@ -47,40 +47,9 @@ export class Kupmios implements Provider {
    * @param kupoUrl - URL of the Kupo service.
    * @param ogmiosUrl - URL of the Ogmios service.
    */
-  constructor(kupoUrl: string, ogmiosUrl: string) {
+  constructor(kupoUrl: string, ogmios: Unwrapped.Ogmios) {
     this.kupoUrl = kupoUrl;
-    this.ogmiosUrl = ogmiosUrl;
-  }
-
-  /**
-   * Creates a WebSocket client to communicate with Ogmios.
-   * @param method - JSON-RPC method name.
-   * @param params - Parameters for the JSON-RPC method.
-   * @returns A promise that resolves to a WebSocket client.
-   */
-  private createWebSocketClient(
-    method: string,
-    params: object,
-  ): Promise<WebSocket> {
-    const client = new WebSocket(this.ogmiosUrl);
-    return new Promise((resolve, reject) => {
-      client.once("open", () => {
-        client.send(
-          JSON.stringify(
-            {
-              jsonrpc: "2.0",
-              method,
-              params,
-            },
-            // Todo: Will `Number(bigint)` work properly in browser or node? Not sure.
-            (_, value: any) =>
-              typeof value === "bigint" ? Number(value) : value,
-          ),
-        );
-        resolve(client);
-      });
-      client.once("error", reject);
-    });
+    this.ogmios = ogmios;
   }
 
   /**
@@ -91,32 +60,6 @@ export class Kupmios implements Provider {
   private parseFraction(fraction: string): number {
     const [numerator, denominator] = fraction.split("/").map(Number);
     return numerator! / denominator!;
-  }
-
-  /**
-   * Handles the WebSocket response, parses it and returns the parsed data.
-   * @param client - WebSocket client instance.
-   * @param parseResponse - Function to parse the response data.
-   * @returns A promise that resolves to the parsed data.
-   */
-  private async handleWebSocketResponse<T, R>(
-    client: WebSocket,
-    parseResponse: (data: T) => R,
-  ): Promise<R> {
-    return new Promise((resolve, reject) => {
-      client.once("message", (msg: string | Buffer) => {
-        try {
-          const response = JSON.parse(
-            typeof msg === "string" ? msg : msg.toString(),
-          );
-          resolve(parseResponse(response));
-        } catch (e) {
-          reject(e);
-        } finally {
-          client.close();
-        }
-      });
-    });
   }
 
   /**
@@ -260,17 +203,7 @@ export class Kupmios implements Provider {
    * @returns A promise that resolves to the protocol parameters.
    */
   async getParameters(): Promise<ProtocolParameters> {
-    const client = await this.createWebSocketClient(
-      "queryLedgerState/protocolParameters",
-      {},
-    );
-
-    return this.handleWebSocketResponse<
-      ogmios.QueryLedgerStateProtocolParametersResponse,
-      ProtocolParameters
-    >(client, (response) => {
-      const result = response.result;
-
+    return this.ogmios.queryLedgerStateProtocolParameters().then((result) => {
       const createCostModels = (versions: string[], result: any) => {
         const costModels = new Map<number, number[]>();
         versions.forEach((version, index) => {
@@ -323,7 +256,8 @@ export class Kupmios implements Provider {
           steps: result.maxExecutionUnitsPerBlock!.cpu,
           memory: result.maxExecutionUnitsPerBlock!.memory,
         },
-      } as ProtocolParameters;
+        minFeeReferenceScripts: result.minFeeReferenceScripts,
+      };
     });
   }
 
@@ -356,7 +290,12 @@ export class Kupmios implements Provider {
 
     const checkConfirmation = async (): Promise<boolean> => {
       const response = await fetch(`${this.kupoUrl}/matches/0@${txId}`);
-      if (response.ok) {
+
+      if (
+        response.ok &&
+        (await response.json().then((res: any) => res.length),
+        (_res: any) => false)
+      ) {
         return true;
       } else if (Date.now() - startTime < timeout) {
         await new Promise((resolve) =>
@@ -376,17 +315,11 @@ export class Kupmios implements Provider {
    * @returns A promise that resolves to the transaction ID.
    */
   async postTransactionToChain(tx: Transaction): Promise<TransactionId> {
-    const client = await this.createWebSocketClient("submitTransaction", {
-      transaction: { cbor: tx.toCbor() },
-    });
-
-    return this.handleWebSocketResponse<any, any>(client, (response) => {
-      if ("result" in response) {
-        return response.result.transaction.id;
-      } else {
-        throw response.error;
-      }
-    });
+    return this.ogmios
+      .submitTransaction({ cbor: tx.toCbor() })
+      .then((result) => {
+        return TransactionId(result.transaction.id);
+      });
   }
 
   /**
@@ -434,19 +367,21 @@ export class Kupmios implements Provider {
         throw new Error("Cannot evaluate without redeemers!");
       }
 
+      const additionalInputs = additionalUtxos.map((utxo) => utxo.input());
+
+      const utxosToDrop = await this.resolveUnspentOutputs(additionalInputs);
+
       // Serialize additional UTXOs to JSON format
-      const additional_utxos = Kupmios.serializeUtxos(additionalUtxos);
-      const client = await this.createWebSocketClient("evaluateTransaction", {
-        transaction: { cbor: tx.toCbor() },
-        additional_utxos,
-      });
+      const additional_utxos = Kupmios.serializeUtxos(
+        additionalUtxos.filter((utxo) => {
+          return !utxosToDrop.includes(utxo);
+        }),
+      );
 
       // Handle the response
-      return this.handleWebSocketResponse<any, any>(client, (response) => {
-        if ("result" in response) {
-          // Example results: [{"validator":{"index":0,"purpose":"spend"},"budget":{"memory":2301,"cpu":586656}}]
-          const results: Array<any> = response.result;
-
+      return this.ogmios
+        .evaluateTransaction({ cbor: tx.toCbor() }, additional_utxos)
+        .then((results) => {
           // TODO: check whether all redeemers are required to be returned.
           if (results.length !== redeemers.length) {
             throw new Error(
@@ -478,10 +413,7 @@ export class Kupmios implements Provider {
           });
 
           return Redeemers.fromCore(updatedRedeemers);
-        } else {
-          throw response.error;
-        }
-      });
+        });
     } catch (error) {
       console.error("Error evaluating transaction:", error);
       throw error;
@@ -493,7 +425,9 @@ export class Kupmios implements Provider {
    * @param unspentOutputs - Unspent outputs to serialize.
    * @returns the serialized unspent outputs.
    */
-  static serializeUtxos(unspentOutputs: TransactionUnspentOutput[]): any[] {
+  static serializeUtxos(
+    unspentOutputs: TransactionUnspentOutput[],
+  ): Schema.Utxo {
     return unspentOutputs.map((output) => {
       const out = output.output();
       const address = out.address().toBech32();
@@ -501,14 +435,14 @@ export class Kupmios implements Provider {
       // Output parameters
       const ada = out.amount().coin().valueOf();
 
-      const value: { [key: string]: any } = { ada: { lovelace: ada } };
+      const value: Schema.Value = { ada: { lovelace: ada } };
       const multiAsset = out.amount().multiasset?.();
       multiAsset?.forEach((assets, assetId) => {
         const policyID = AssetId.getPolicyId(assetId);
         const assetName = AssetId.getAssetName(assetId);
 
         value[policyID] ??= {};
-        value[policyID][assetName] = assets;
+        value[policyID]![assetName] = assets;
       });
 
       // Handle optional datum and datumHash
@@ -547,7 +481,7 @@ export class Kupmios implements Provider {
         datumHash,
         datum,
         script,
-      };
+      } as Schema.Utxo[number];
     });
   }
 }

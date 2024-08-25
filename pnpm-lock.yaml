@@ -37,26 +37,10 @@ importers:
         version: 5.5.4
 
   packages/blaze-blueprint:
-    dependencies:
+    devDependencies:
       '@blaze-cardano/core':
         specifier: workspace:*
         version: link:../blaze-core
-      '@blaze-cardano/tx':
-        specifier: workspace:*
-        version: link:../blaze-tx
-      '@blaze-cardano/uplc':
-        specifier: workspace:*
-        version: link:../blaze-uplc
-      '@cardano-sdk/core':
-        specifier: ^0.35.4
-        version: 0.35.4(rxjs@7.8.1)
-      '@commander-js/extra-typings':
-        specifier: ^12.1.0
-        version: 12.1.0(commander@12.1.0)
-      commander:
-        specifier: ^12.1.0
-        version: 12.1.0
-    devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
         version: link:../blaze-eslint-config
@@ -66,12 +50,24 @@ importers:
       '@blaze-cardano/tsconfig':
         specifier: workspace:*
         version: link:../blaze-tsconfig
+      '@blaze-cardano/tx':
+        specifier: workspace:*
+        version: link:../blaze-tx
+      '@blaze-cardano/uplc':
+        specifier: workspace:*
+        version: link:../blaze-uplc
+      '@commander-js/extra-typings':
+        specifier: ^12.1.0
+        version: 12.1.0(commander@12.1.0)
       '@sinclair/typebox':
         specifier: ^0.32.35
         version: 0.32.35
       '@types/jest':
         specifier: ^29.5.12
         version: 29.5.12
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
@@ -117,9 +113,6 @@ importers:
       blakejs:
         specifier: ^1.2.1
         version: 1.2.1
-      rxjs:
-        specifier: 7.8.1
-        version: 7.8.1
     devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
@@ -130,6 +123,9 @@ importers:
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
+      terser:
+        specifier: ^5.31.3
+        version: 5.31.3
       tsup:
         specifier: ^8.2.3
         version: 8.2.3(postcss@8.4.31)(tsx@4.16.2)(typescript@5.5.4)
@@ -148,6 +144,9 @@ importers:
       '@blaze-cardano/tx':
         specifier: workspace:*
         version: link:../blaze-tx
+      '@blaze-cardano/vm':
+        specifier: workspace:*
+        version: link:../blaze-vm
       '@blaze-cardano/wallet':
         specifier: workspace:*
         version: link:../blaze-wallet
@@ -207,6 +206,34 @@ importers:
         specifier: ^29.1.1
         version: 29.2.3(@babel/core@7.24.9)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.24.9))(esbuild@0.23.0)(jest@29.7.0(@types/node@20.14.12)(ts-node@10.9.2(@types/node@20.14.12)(typescript@5.5.4)))(typescript@5.5.4)
 
+  packages/blaze-ogmios:
+    dependencies:
+      '@cardano-ogmios/schema':
+        specifier: ^6.4.0
+        version: 6.5.0
+      isomorphic-ws:
+        specifier: ^5.0.0
+        version: 5.0.0(ws@8.18.0)
+    devDependencies:
+      '@blaze-cardano/eslint-config':
+        specifier: workspace:*
+        version: link:../blaze-eslint-config
+      '@blaze-cardano/tsconfig':
+        specifier: workspace:*
+        version: link:../blaze-tsconfig
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.0
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@types/node@20.14.12)(typescript@5.5.4)
+      tsup:
+        specifier: ^8.0.2
+        version: 8.2.3(postcss@8.4.31)(tsx@4.16.2)(typescript@5.5.4)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.5.4
+
   packages/blaze-query:
     dependencies:
       '@blaze-cardano/core':
@@ -215,6 +242,9 @@ importers:
       '@blaze-cardano/jest-config':
         specifier: workspace:*
         version: link:../blaze-jest-config
+      '@blaze-cardano/ogmios':
+        specifier: workspace:*
+        version: link:../blaze-ogmios
       '@cardano-ogmios/schema':
         specifier: ^6.4.0
         version: 6.5.0
@@ -261,9 +291,6 @@ importers:
 
   packages/blaze-sdk:
     dependencies:
-      '@blaze-cardano/blueprint':
-        specifier: workspace:*
-        version: link:../blaze-blueprint
       '@blaze-cardano/core':
         specifier: workspace:*
         version: link:../blaze-core
@@ -273,6 +300,9 @@ importers:
       '@blaze-cardano/tx':
         specifier: workspace:*
         version: link:../blaze-tx
+      '@blaze-cardano/uplc':
+        specifier: workspace:*
+        version: link:../blaze-uplc
       '@blaze-cardano/wallet':
         specifier: workspace:*
         version: link:../blaze-wallet
@@ -300,12 +330,6 @@ importers:
       '@blaze-cardano/core':
         specifier: workspace:*
         version: link:../blaze-core
-      '@sinclair/typebox':
-        specifier: ^0.32.32
-        version: 0.32.35
-      uplc-node:
-        specifier: ^0.0.3
-        version: 0.0.3
     devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
@@ -316,6 +340,9 @@ importers:
       '@blaze-cardano/tsconfig':
         specifier: workspace:*
         version: link:../blaze-tsconfig
+      '@sinclair/typebox':
+        specifier: ^0.32.32
+        version: 0.32.35
       '@types/jest':
         specifier: ^29.5.5
         version: 29.5.12
@@ -346,9 +373,6 @@ importers:
       '@blaze-cardano/tx':
         specifier: workspace:*
         version: link:../blaze-tx
-      '@cardano-sdk/core':
-        specifier: ^0.35.4
-        version: 0.35.4(rxjs@7.8.1)
       hex-encoding:
         specifier: ^2.0.2
         version: 2.0.2
@@ -386,6 +410,34 @@ importers:
       uplc-node:
         specifier: ^0.0.3
         version: 0.0.3
+
+  packages/blaze-vm:
+    dependencies:
+      '@blaze-cardano/core':
+        specifier: workspace:*
+        version: link:../blaze-core
+      uplc-node:
+        specifier: ^0.0.3
+        version: 0.0.3
+    devDependencies:
+      '@blaze-cardano/eslint-config':
+        specifier: workspace:*
+        version: link:../blaze-eslint-config
+      '@blaze-cardano/jest-config':
+        specifier: workspace:*
+        version: link:../blaze-jest-config
+      '@blaze-cardano/tsconfig':
+        specifier: workspace:*
+        version: link:../blaze-tsconfig
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.0
+      tsup:
+        specifier: ^8.0.2
+        version: 8.2.3(postcss@8.4.31)(tsx@4.16.2)(typescript@5.5.4)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.5.4
 
   packages/blaze-wallet:
     dependencies:
@@ -1160,6 +1212,9 @@ packages:
   '@jridgewell/set-array@1.2.1':
     resolution: {integrity: sha512-R8gLRTZeyp03ymzP/6Lil/28tGeGEzhx1q2k703KGWRAI1VdvPIXdG70VJc2pAMw3NA6JKL5hhFu1sJX0Mnn/A==}
     engines: {node: '>=6.0.0'}
+
+  '@jridgewell/source-map@0.3.6':
+    resolution: {integrity: sha512-1ZJTZebgqllO79ue2bm3rIGud/bOe0pP5BjSRCRxxYkEZS8STV7zN84UBbiYu7jy+eCKSnVIUgoWWE/tt+shMQ==}
 
   '@jridgewell/sourcemap-codec@1.5.0':
     resolution: {integrity: sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ==}
@@ -2019,6 +2074,9 @@ packages:
   commander@12.1.0:
     resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
     engines: {node: '>=18'}
+
+  commander@2.20.3:
+    resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
 
   commander@4.1.1:
     resolution: {integrity: sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==}
@@ -2975,6 +3033,11 @@ packages:
 
   isomorphic-ws@4.0.1:
     resolution: {integrity: sha512-BhBvN2MBpWTaSHdWRb/bwdZJ1WaehQ2L1KngkCkfLUGF0mAWAT1sQUQacEmQ0jXkFw/czDXPNQSL5u2/Krsz1w==}
+    peerDependencies:
+      ws: '*'
+
+  isomorphic-ws@5.0.0:
+    resolution: {integrity: sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==}
     peerDependencies:
       ws: '*'
 
@@ -4155,6 +4218,9 @@ packages:
   source-map-support@0.5.13:
     resolution: {integrity: sha512-SHSKFHadjVA5oR4PPqhtAVdcBWwRYVd6g6cAXnIbRiIwc2EhPrTuKUBdSLvlEKyIP3GCf89fltvcZiP9MMFA1w==}
 
+  source-map-support@0.5.21:
+    resolution: {integrity: sha512-uBHU3L3czsIyYXKX88fdrGovxdSCoTGDRZ6SYXtSRxLZUzHg5P/66Ht6uoUlHu9EZod+inXhKo3qQgwXUT/y1w==}
+
   source-map@0.6.1:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
@@ -4301,6 +4367,11 @@ packages:
   term-size@2.2.1:
     resolution: {integrity: sha512-wK0Ri4fOGjv/XPy8SBHZChl8CM7uMc5VML7SqiQ0zG7+J5Vr+RMQDoHa2CNT6KHUnTGIXH34UDMkPzAUyapBZg==}
     engines: {node: '>=8'}
+
+  terser@5.31.3:
+    resolution: {integrity: sha512-pAfYn3NIZLyZpa83ZKigvj6Rn9c/vd5KfYGX7cN1mnzqgDcxWvrU5ZtAfIKhEXz9nRecw4z3LXkjaq96/qZqAA==}
+    engines: {node: '>=10'}
+    hasBin: true
 
   test-exclude@6.0.0:
     resolution: {integrity: sha512-cAGWPIyOHU6zlmg88jwm7VRyXnMN7iV68OGAbYDk/Mh/xC/pzVPlQtY6ngoIH/5/tciuhGfvESU8GrHrcxD56w==}
@@ -5694,6 +5765,11 @@ snapshots:
 
   '@jridgewell/set-array@1.2.1': {}
 
+  '@jridgewell/source-map@0.3.6':
+    dependencies:
+      '@jridgewell/gen-mapping': 0.3.5
+      '@jridgewell/trace-mapping': 0.3.25
+
   '@jridgewell/sourcemap-codec@1.5.0': {}
 
   '@jridgewell/trace-mapping@0.3.25':
@@ -6551,6 +6627,8 @@ snapshots:
   comma-separated-tokens@2.0.3: {}
 
   commander@12.1.0: {}
+
+  commander@2.20.3: {}
 
   commander@4.1.1: {}
 
@@ -7649,6 +7727,10 @@ snapshots:
   isomorphic-ws@4.0.1(ws@7.5.10):
     dependencies:
       ws: 7.5.10
+
+  isomorphic-ws@5.0.0(ws@8.18.0):
+    dependencies:
+      ws: 8.18.0
 
   istanbul-lib-coverage@3.2.2: {}
 
@@ -9278,6 +9360,11 @@ snapshots:
       buffer-from: 1.1.2
       source-map: 0.6.1
 
+  source-map-support@0.5.21:
+    dependencies:
+      buffer-from: 1.1.2
+      source-map: 0.6.1
+
   source-map@0.6.1: {}
 
   source-map@0.7.4: {}
@@ -9418,6 +9505,13 @@ snapshots:
       readable-stream: 3.6.2
 
   term-size@2.2.1: {}
+
+  terser@5.31.3:
+    dependencies:
+      '@jridgewell/source-map': 0.3.6
+      acorn: 8.12.1
+      commander: 2.20.3
+      source-map-support: 0.5.21
 
   test-exclude@6.0.0:
     dependencies:

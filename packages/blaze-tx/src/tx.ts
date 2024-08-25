@@ -59,7 +59,8 @@ import {
   StakeRegistration,
 } from "@blaze-cardano/core";
 import * as value from "./value";
-import { micahsSelector } from "./coinSelection";
+import { micahsSelector, type SelectionResult } from "./coinSelection";
+import { calculateReferenceScriptFee } from "./utils";
 
 /*
 methods we want to implement somewhere in new blaze (from haskell codebase):
@@ -127,6 +128,10 @@ export class TxBuilder {
   private consumedWithdrawalHashes: Hash28ByteBase16[] = [];
   private consumedSpendInputs: string[] = [];
   private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
+  private coinSelector: (
+    inputs: TransactionUnspentOutput[],
+    dearth: Value,
+  ) => SelectionResult = micahsSelector;
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -176,11 +181,42 @@ export class TxBuilder {
     return this;
   }
 
+  /**
+   * Sets the evaluator for the transaction builder.
+   * The evaluator is used to execute Plutus scripts during transaction building.
+   *
+   * @param {Evaluator} evaluator - The evaluator to be used for script execution.
+   * @returns {TxBuilder} The same transaction builder
+   */
   useEvaluator(evaluator: Evaluator) {
     this.evaluator = evaluator;
     return this;
   }
 
+  /**
+   * Sets a custom coin selector function for the transaction builder.
+   * This function will be used to select inputs during the transaction building process.
+   *
+   * @param {(inputs: TransactionUnspentOutput[], dearth: Value): SelectionResult} selector - The coin selector function to use.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  useCoinSelector(
+    selector: (
+      inputs: TransactionUnspentOutput[],
+      dearth: Value,
+    ) => SelectionResult,
+  ): TxBuilder {
+    this.coinSelector = selector;
+    return this;
+  }
+
+  /**
+   * Sets the network ID for the transaction builder.
+   * The network ID is used to determine which network the transaction is intended for.
+   *
+   * @param {NetworkId} networkId - The network ID to set.
+   * @returns {TxBuilder} The same transaction builder
+   */
   setNetworkId(networkId: NetworkId) {
     this.networkId = networkId;
     return this;
@@ -579,18 +615,12 @@ export class TxBuilder {
     datum: Datum,
     scriptReference?: Script,
   ) {
-    assertLockAddress(address);
-    const paymentAddress = getPaymentAddress(address);
-    this.addOutput(
-      TransactionOutput.fromCore({
-        address: paymentAddress,
-        value: { coins: lovelace },
-        datum: !("__opaqueString" in datum) ? datum.toCore() : undefined,
-        datumHash: "__opaqueString" in datum ? datum : undefined,
-        scriptReference: scriptReference?.toCore(),
-      }),
+    return this.lockAssets(
+      address,
+      new Value(lovelace),
+      datum,
+      scriptReference,
     );
-    return this;
   }
 
   /**
@@ -611,18 +641,19 @@ export class TxBuilder {
     datum: Datum,
     scriptReference?: Script,
   ) {
+    const datumData = typeof datum == "object" ? datum.toCore() : undefined;
+    const datumHash = typeof datum == "string" ? datum : undefined;
     assertLockAddress(address);
     const paymentAddress = getPaymentAddress(address);
-    this.addOutput(
+    return this.addOutput(
       TransactionOutput.fromCore({
         address: paymentAddress,
         value: value.toCore(),
-        datum: !("__opaqueString" in datum) ? datum.toCore() : undefined,
-        datumHash: "__opaqueString" in datum ? datum : undefined,
+        datum: datumData,
+        datumHash,
         scriptReference: scriptReference?.toCore(),
       }),
     );
-    return this;
   }
 
   /**
@@ -809,7 +840,7 @@ export class TxBuilder {
    * @returns {Value} The net value that represents the transaction's pitch.
    * @throws {Error} If a corresponding UTxO for an input cannot be found.
    */
-  private getPitch(withSpare: boolean = true) {
+  private getPitch(spareAmount: bigint = 0n) {
     // Calculate withdrawal amounts.
     let withdrawalAmount = 0n;
     const withdrawals = this.body.withdrawals();
@@ -820,7 +851,7 @@ export class TxBuilder {
     }
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(withdrawalAmount);
-    let outputValue = new Value(BigIntMax(this.fee, this.minimumFee));
+    let outputValue = new Value(bigintMax(this.fee, this.minimumFee));
     const mintValue = new Value(0n, this.body.mint());
 
     // Aggregate the total input value from all inputs.
@@ -888,8 +919,8 @@ export class TxBuilder {
       value.merge(inputValue, value.negate(outputValue)),
       mintValue,
     );
-    if (withSpare == true) {
-      return value.merge(tilt, new Value(-5_000_000n)); // Subtract 5 ADA from the excess.
+    if (spareAmount != 0n) {
+      return value.merge(tilt, new Value(-spareAmount)); // Subtract 5 ADA from the excess.
     }
     return tilt;
   }
@@ -912,9 +943,17 @@ export class TxBuilder {
       // Initialize a CBOR writer to encode the script data.
       const writer = new CborWriter();
       // Encode redeemers and datums into CBOR format.
-      writer.writeStartArray(redeemers.length);
-      for (const redeemer of redeemers) {
-        writer.writeEncodedValue(Buffer.from(redeemer.toCbor(), "hex"));
+      if (redeemers.length === 0) {
+        // An empty redeemer set is always an empty map, as of conway
+        writer.writeStartMap(0);
+      } else {
+        // TODO: in the conway era, this will support array, or map
+        // but in the next era, it will only support maps
+        // So, we should switch this to encoding as maps when we switch the witness set to encoding as maps
+        writer.writeStartArray(redeemers.length);
+        for (const redeemer of redeemers) {
+          writer.writeEncodedValue(Buffer.from(redeemer.toCbor(), "hex"));
+        }
       }
       if (datums && datums.length > 0) {
         writer.writeStartArray(datums.length);
@@ -994,14 +1033,32 @@ export class TxBuilder {
    */
   private calculateFees(draft_tx: Transaction) {
     // Calculate the fee based on the transaction size and minimum fee parameters.
-    this.fee = BigInt(
-      Math.ceil(
-        this.params.minFeeConstant +
-          fromHex(draft_tx.toCbor()).length * this.params.minFeeCoefficient,
-      ),
-    );
+    let minFee =
+      this.params.minFeeConstant +
+      fromHex(draft_tx.toCbor()).length * this.params.minFeeCoefficient;
+
+    if (this.params.minFeeReferenceScripts) {
+      const utxoScope = [...this.utxoScope.values()];
+      const allInputs = [
+        ...draft_tx.body().inputs().values(),
+        ...(draft_tx.body().referenceInputs()?.values() ?? []),
+      ];
+      const refScripts = allInputs
+        .map((x) =>
+          utxoScope
+            .find((y) => y.input().toCbor() == x.toCbor())!
+            .output()
+            .scriptRef(),
+        )
+        .filter((x) => x !== undefined);
+      if (refScripts.length > 0) {
+        minFee += calculateReferenceScriptFee(refScripts, this.params);
+      }
+    }
+
+    this.fee = BigInt(Math.ceil(minFee));
     // Update the transaction body with the calculated fee.
-    this.body.setFee(BigIntMax(this.fee, this.minimumFee));
+    this.body.setFee(bigintMax(this.fee, this.minimumFee));
   }
 
   /**
@@ -1092,7 +1149,7 @@ export class TxBuilder {
     const totalCollateral = BigInt(
       Math.ceil(
         this.params.collateralPercentage *
-          Number(BigIntMax(this.fee, this.minimumFee)),
+          Number(bigintMax(this.fee, this.minimumFee)),
       ),
     );
     // Calculate the collateral value by summing up the amounts from collateral inputs.
@@ -1157,7 +1214,7 @@ export class TxBuilder {
     // Gather all inputs from the transaction body.
     const inputs = [...this.body.inputs().values()];
     // Perform initial checks and preparations for coin selection.
-    let excessValue = this.getPitch(true);
+    let excessValue = this.getPitch(5_000_000n);
     let spareInputs: TransactionUnspentOutput[] = [];
     for (const [utxo] of this.utxos.entries()) {
       if (!inputs.includes(utxo.input())) {
@@ -1165,7 +1222,7 @@ export class TxBuilder {
       }
     }
     // Perform coin selection to cover any negative excess value.
-    const selectionResult = micahsSelector(
+    const selectionResult = this.coinSelector(
       spareInputs,
       value.negate(value.negatives(excessValue)),
     );
@@ -1230,7 +1287,7 @@ export class TxBuilder {
     this.calculateFees(draft_tx);
     excessValue = value.merge(
       excessValue,
-      new Value(-BigIntMax(this.fee, this.minimumFee)),
+      new Value(-bigintMax(this.fee, this.minimumFee)),
     );
     this.balanceChange(excessValue);
     if (this.redeemers.size() > 0) {
@@ -1238,7 +1295,16 @@ export class TxBuilder {
       tw = this.buildTransactionWitnessSet();
       const evaluationFee = await this.evaluate(draft_tx);
       this.fee += evaluationFee;
-      excessValue = value.merge(excessValue, new Value(-evaluationFee));
+      if (this.fee > this.minimumFee) {
+        if (this.fee - evaluationFee > this.minimumFee) {
+          excessValue = value.merge(excessValue, new Value(-evaluationFee));
+          this.balanceChange(excessValue);
+        } else {
+          const feeChange = this.fee - this.minimumFee;
+          excessValue = value.merge(excessValue, new Value(-feeChange));
+          this.balanceChange(excessValue);
+        }
+      }
       tw.setRedeemers(this.redeemers);
       draft_tx.setWitnessSet(tw);
     }
@@ -1254,8 +1320,8 @@ export class TxBuilder {
       this.fee += BigInt(
         Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
       );
-      excessValue = this.getPitch(false);
-      this.body.setFee(BigIntMax(this.fee, this.minimumFee));
+      excessValue = this.getPitch();
+      this.body.setFee(bigintMax(this.fee, this.minimumFee));
       this.balanceChange(excessValue);
       if (this.body.collateral()) {
         this.balanceCollateralChange();
@@ -1623,6 +1689,6 @@ function assertLockAddress(address: Address) {
  * @param {bigint} b - The second bigint value.
  * @returns {bigint} The maximum value.
  */
-function BigIntMax(a: bigint, b: bigint): bigint {
+function bigintMax(a: bigint, b: bigint): bigint {
   return a > b ? a : b;
 }

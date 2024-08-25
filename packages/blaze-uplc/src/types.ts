@@ -1,5 +1,4 @@
-import { Serialization } from "@cardano-sdk/core";
-export const { CborReader, PlutusData } = Serialization;
+import type { PlutusData } from "@blaze-cardano/core";
 
 export type Bit = 0 | 1;
 export type Byte = number & { __opaqueNumber: "Byte" };
@@ -24,7 +23,7 @@ export const TermNames = {
 } as const;
 export type TermNames = typeof TermNames;
 
-export type Data = ReturnType<Serialization.PlutusData["toCore"]>;
+export type Data = ReturnType<PlutusData["toCore"]>;
 
 export const DataType = {
   0: "Integer",

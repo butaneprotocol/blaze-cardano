@@ -1,5 +1,35 @@
 # @blaze-cardano/core
 
+## 0.4.1
+
+### Patch Changes
+
+- b9ea33c: feat: add min fee calculation for Conway reference script params
+
+## 0.4.0
+
+### Minor Changes
+
+- b57177b: compatibility with lucid-data, blueprint supports sdk
+
+## 0.3.1
+
+### Patch Changes
+
+- ee5932c: revert @cardano-sdk bundling
+
+## 0.3.0
+
+### Minor Changes
+
+- ae2d1f2: packaging changes
+
+## 0.2.8
+
+### Patch Changes
+
+- 54dd469: update packaging
+
 ## 0.2.7
 
 ### Patch Changes

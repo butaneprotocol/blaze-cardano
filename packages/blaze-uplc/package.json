@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@blaze-cardano/uplc",
-  "version": "0.0.12",
+  "version": "0.1.7",
   "description": "Blaze untyped plutus core library",
   "exports": {
     ".": {
@@ -36,7 +36,6 @@
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
-    "@cardano-sdk/core": "^0.35.4",
     "hex-encoding": "^2.0.2"
   }
 }

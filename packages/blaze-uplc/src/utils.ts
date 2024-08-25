@@ -4,15 +4,16 @@ import {
   PlutusV1Script,
   PlutusV2Script,
   Script,
+  CborReader,
+  CborWriter,
+  CborReaderState,
 } from "@blaze-cardano/core";
 import { HexBlob } from "@blaze-cardano/core";
 import { UPLCDecoder } from "./decoder";
 import { type ParsedProgram, TermNames } from "./types";
-import { Serialization } from "@cardano-sdk/core";
 import { UPLCEncoder } from "./encoder";
 import { type Exact, Data } from "@blaze-cardano/tx";
 import type { TArray } from "@sinclair/typebox";
-const { CborReader, CborWriter, CborReaderState } = Serialization;
 
 // TODO: Use the c-js-sdk enums for this if possible
 export type ScriptType = "Native" | "PlutusV1" | "PlutusV2";

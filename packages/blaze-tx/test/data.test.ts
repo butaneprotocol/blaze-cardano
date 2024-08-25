@@ -1,4 +1,5 @@
-import { Data, type Static } from "../src/data";
+import { ConstrPlutusData, PlutusData, PlutusList } from "@blaze-cardano/core";
+import { Constr, Data, type Static } from "../src/data";
 export interface BtnMint {
   _r: "Mint" | "Burn";
 }
@@ -122,5 +123,19 @@ describe("Data Serialisation", () => {
     const serialised = Data.to(data, Datum);
     const deserialised = Data.from(serialised, Datum);
     expect(deserialised).toEqual(data);
+  });
+
+  it("Should be able to serialise integers with no type", () => {
+    const data = Data.to(1234n);
+    expect(data.toCbor()).toEqual(PlutusData.newInteger(1234n).toCbor());
+  });
+
+  it("Should be able to serialise constructors with no type", () => {
+    const data = Data.to(new Constr(0, []));
+    expect(data.toCbor()).toEqual(
+      PlutusData.newConstrPlutusData(
+        new ConstrPlutusData(0n, new PlutusList()),
+      ).toCbor(),
+    );
   });
 });

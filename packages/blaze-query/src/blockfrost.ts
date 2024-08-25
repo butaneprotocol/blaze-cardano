@@ -16,13 +16,13 @@ import {
   DatumHash,
   ExUnits,
   fromHex,
+  hardCodedProtocolParams,
   Hash28ByteBase16,
   HexBlob,
   PlutusData,
   PlutusV1Script,
   PlutusV2Script,
   Redeemers,
-  RedeemerTag,
   Script,
   TransactionId,
   TransactionInput,
@@ -31,7 +31,7 @@ import {
   Value,
 } from "@blaze-cardano/core";
 import { PlutusLanguageVersion } from "@blaze-cardano/core";
-import type { Provider } from "./types";
+import { purposeToTag, type Provider } from "./types";
 
 export class Blockfrost implements Provider {
   url: string;
@@ -127,6 +127,12 @@ export class Blockfrost implements Provider {
         memory: response.max_block_ex_mem,
         steps: response.max_block_ex_steps,
       },
+      minFeeReferenceScripts: response.min_fee_ref_script_cost_per_byte
+        ? {
+            ...hardCodedProtocolParams.minFeeReferenceScripts!,
+            base: response.min_fee_ref_script_cost_per_byte,
+          }
+        : undefined,
     };
   }
 
@@ -457,7 +463,6 @@ export class Blockfrost implements Provider {
       method: "POST",
       headers: {
         "Content-Type": "application/cbor",
-        Accept: "text/plain",
         ...this.headers(),
       },
       body: fromHex(tx.toCbor()),
@@ -470,7 +475,7 @@ export class Blockfrost implements Provider {
       );
     }
 
-    const txId = await response.text();
+    const txId = (await response.json()) as string;
     return TransactionId(txId);
   }
 
@@ -562,7 +567,7 @@ export class Blockfrost implements Provider {
     const result = json.result.EvaluationResult;
     for (const redeemerPointer in result) {
       const [pTag, pIndex] = redeemerPointer.split(":");
-      const purpose = purposeFromTag(pTag!);
+      const purpose = purposeToTag[pTag!];
       const index = BigInt(pIndex!);
       const data = result[redeemerPointer]!;
       const exUnits = ExUnits.fromCore({
@@ -689,26 +694,6 @@ export class Blockfrost implements Provider {
   }
 }
 
-// builds proper type from string result from Blockfrost API
-function purposeFromTag(tag: string): RedeemerTag {
-  const tagMap: { [key: string]: RedeemerTag } = {
-    spend: RedeemerTag.Spend,
-    mint: RedeemerTag.Mint,
-    cert: RedeemerTag.Cert,
-    reward: RedeemerTag.Reward,
-    voting: RedeemerTag.Voting,
-    proposing: RedeemerTag.Proposing,
-  };
-
-  const normalizedTag = tag.toLowerCase();
-
-  if (normalizedTag in tagMap) {
-    return tagMap[normalizedTag]!;
-  } else {
-    throw new Error(`Invalid tag: ${tag}.`);
-  }
-}
-
 type BlockfrostLanguageVersions = "PlutusV1" | "PlutusV2" | "PlutusV3";
 export const fromBlockfrostLanguageVersion = (
   x: BlockfrostLanguageVersions,
@@ -755,6 +740,7 @@ export interface BlockfrostProtocolParametersResponse {
   collateral_percent: number;
   max_collateral_inputs: number;
   coins_per_utxo_size: number;
+  min_fee_ref_script_cost_per_byte?: number;
 }
 
 type BlockfrostResponse<SomeResponse> = SomeResponse | { message: string };

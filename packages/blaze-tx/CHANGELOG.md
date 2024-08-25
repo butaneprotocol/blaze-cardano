@@ -1,5 +1,73 @@
 # @blaze-cardano/tx
 
+## 0.3.4
+
+### Patch Changes
+
+- b9ea33c: feat: add min fee calculation for Conway reference script params
+- e0b5c36: Blockfrost submission was including an incorrect header, preventing finality. Script data hash generation was using outdated models for Conway.
+- Updated dependencies [b9ea33c]
+  - @blaze-cardano/core@0.4.1
+
+## 0.3.3
+
+### Patch Changes
+
+- 1100236: patch: fix2 min fee
+
+## 0.3.2
+
+### Patch Changes
+
+- e6f670f: patch: minimum fee affect on excess val
+
+## 0.3.1
+
+### Patch Changes
+
+- a421f6f: patch: @microproofs bug x2 (ogmios bigints, data.to lists), @calvin bug (lockAssets)
+
+## 0.3.0
+
+### Minor Changes
+
+- b57177b: compatibility with lucid-data, blueprint supports sdk
+
+### Patch Changes
+
+- Updated dependencies [b57177b]
+  - @blaze-cardano/core@0.4.0
+
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [ee5932c]
+  - @blaze-cardano/core@0.3.1
+
+## 0.2.0
+
+### Minor Changes
+
+- ae2d1f2: packaging changes
+
+### Patch Changes
+
+- Updated dependencies [ae2d1f2]
+  - @blaze-cardano/core@0.3.0
+
+## 0.1.0
+
+### Minor Changes
+
+- 54dd469: allow custom coin selection, clean up pitch function, remove wasm from tx
+
+### Patch Changes
+
+- 54dd469: update packaging
+- Updated dependencies [54dd469]
+  - @blaze-cardano/core@0.2.8
+
 ## 0.0.29
 
 ### Patch Changes

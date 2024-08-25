@@ -1,5 +1,99 @@
 # @blaze-cardano/query
 
+## 0.2.10
+
+### Patch Changes
+
+- d0e6dc1: Fix await transaction confirmation to actually wait for tx using kupmios
+
+## 0.2.9
+
+### Patch Changes
+
+- da1e549: Filter out additional utxos that can be resolved by the ledger on evaluate
+
+## 0.2.8
+
+### Patch Changes
+
+- a4bc1b1: patch: maestro /protocol-params deprecated @mandriuska
+
+## 0.2.7
+
+### Patch Changes
+
+- b9ea33c: feat: add min fee calculation for Conway reference script params
+- e0b5c36: Blockfrost submission was including an incorrect header, preventing finality. Script data hash generation was using outdated models for Conway.
+- Updated dependencies [b9ea33c]
+  - @blaze-cardano/core@0.4.1
+
+## 0.2.6
+
+### Patch Changes
+
+- Updated dependencies [40c1fd7]
+  - @blaze-cardano/ogmios@0.0.4
+
+## 0.2.5
+
+### Patch Changes
+
+- a421f6f: patch: @microproofs bug x2 (ogmios bigints, data.to lists), @calvin bug (lockAssets)
+- Updated dependencies [a421f6f]
+  - @blaze-cardano/ogmios@0.0.3
+
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies [b57177b]
+  - @blaze-cardano/core@0.4.0
+
+## 0.2.3
+
+### Patch Changes
+
+- ab8ab7c: patch: isomorphic-ws for browsers
+- Updated dependencies [ab8ab7c]
+  - @blaze-cardano/ogmios@0.0.2
+
+## 0.2.2
+
+### Patch Changes
+
+- 7c94d17: patch: blaze-query kupmios provider uses ogmios library
+
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [ee5932c]
+  - @blaze-cardano/core@0.3.1
+
+## 0.2.0
+
+### Minor Changes
+
+- ae2d1f2: packaging changes
+
+### Patch Changes
+
+- Updated dependencies [ae2d1f2]
+  - @blaze-cardano/core@0.3.0
+
+## 0.1.10
+
+### Patch Changes
+
+- 6e9352d: patch: blockfrost use purposeToTag mapping
+
+## 0.1.9
+
+### Patch Changes
+
+- Updated dependencies [54dd469]
+  - @blaze-cardano/core@0.2.8
+
 ## 0.1.8
 
 ### Patch Changes

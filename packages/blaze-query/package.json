@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/query",
-  "version": "0.1.8",
+  "version": "0.2.10",
   "description": "Blaze cardano emulator library",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -30,10 +30,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@blaze-cardano/core": "workspace:*",
-    "@blaze-cardano/jest-config": "workspace:*",
     "@cardano-ogmios/schema": "^6.4.0",
     "ws": "^8.17.1",
+    "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/ogmios": "workspace:*",
+    "@blaze-cardano/jest-config": "workspace:*",
     "@utxorpc/sdk": "/home/rawriclark/Projects/node-sdk",
     "@utxorpc/spec": "0.9.0"
   }

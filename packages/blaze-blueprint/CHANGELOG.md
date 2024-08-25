@@ -1,5 +1,27 @@
 # @blaze-cardano/blueprint
 
+## 0.4.0
+
+### Minor Changes
+
+- b57177b: compatibility with lucid-data, blueprint supports sdk
+
+## 0.3.0
+
+### Minor Changes
+
+- ae2d1f2: packaging changes
+
+## 0.2.7
+
+### Patch Changes
+
+- Updated dependencies [54dd469]
+- Updated dependencies [54dd469]
+  - @blaze-cardano/tx@0.1.0
+  - @blaze-cardano/core@0.2.8
+  - @blaze-cardano/uplc@0.0.13
+
 ## 0.2.6
 
 ### Patch Changes
