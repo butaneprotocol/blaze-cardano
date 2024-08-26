@@ -1309,7 +1309,9 @@ export class TxBuilder {
       try {
         evaluationFee = await this.evaluate(draft_tx);
       } catch (e) {
-        console.log(`An error occurred when trying to evaluate this transaction. Full CBOR: ${draft_tx.toCbor()}`)
+        console.log(
+          `An error occurred when trying to evaluate this transaction. Full CBOR: ${draft_tx.toCbor()}`,
+        );
       }
       this.fee += evaluationFee;
       if (this.fee > this.minimumFee) {
