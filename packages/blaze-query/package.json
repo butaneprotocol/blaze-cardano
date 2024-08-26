@@ -35,7 +35,7 @@
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/ogmios": "workspace:*",
     "@blaze-cardano/jest-config": "workspace:*",
-    "@utxorpc/sdk": "/home/rawriclark/Projects/node-sdk",
+    "@utxorpc/sdk": "0.4.0",
     "@utxorpc/spec": "0.9.0"
   }
 }
