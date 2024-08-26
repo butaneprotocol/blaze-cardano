@@ -52,7 +52,8 @@ import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`;
   pdataImport = `import { type PlutusData } from "@blaze-cardano/core";`;
 
   useSDK() {
-    this.imports = `// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    this.imports =
+      `// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk";
 type Script = Core.Script;
@@ -68,7 +69,7 @@ const PlutusData = Core.PlutusData;`;
         return {
           ...schema,
           items: schema.items.map((item: any) =>
-            this.resolveSchema(item, definitions, refName),
+            this.resolveSchema(item, definitions, refName)
           ),
         };
       } else {
@@ -134,12 +135,14 @@ const PlutusData = Core.PlutusData;`;
         if (Generator.isVoid(schema)) {
           return "undefined";
         } else {
-          return `{${schema.fields
-            .map(
-              (field: any) =>
-                `${field.title || "wrapper"}:${this.schemaToType(field)}`,
-            )
-            .join(";")}}`;
+          return `{${
+            schema.fields
+              .map(
+                (field: any) =>
+                  `${field.title || "wrapper"}:${this.schemaToType(field)}`,
+              )
+              .join(";")
+          }}`;
         }
       }
       case "enum": {
@@ -158,32 +161,40 @@ const PlutusData = Core.PlutusData;`;
             entry.fields.length === 0
               ? `"${entry.title}"`
               : `{${entry.title}: ${
-                  entry.fields[0].title
-                    ? `{${entry.fields
-                        .map((field: any) =>
-                          [field.title, this.schemaToType(field)].join(":"),
-                        )
-                        .join(",")}}}`
-                    : `[${entry.fields
-                        .map((field: any) => this.schemaToType(field))
-                        .join(",")}]}`
-                }`,
+                entry.fields[0].title
+                  ? `{${
+                    entry.fields
+                      .map((field: any) =>
+                        [field.title, this.schemaToType(field)].join(":")
+                      )
+                      .join(",")
+                  }}}`
+                  : `[${
+                    entry.fields
+                      .map((field: any) => this.schemaToType(field))
+                      .join(",")
+                  }]}`
+              }`
           )
           .join(" | ");
       }
       case "list": {
         if (schema.items instanceof Array) {
-          return `[${schema.items
-            .map((item: any) => this.schemaToType(item))
-            .join(",")}]`;
+          return `[${
+            schema.items
+              .map((item: any) => this.schemaToType(item))
+              .join(",")
+          }]`;
         } else {
           return `Array<${this.schemaToType(schema.items)}>`;
         }
       }
       case "map": {
-        return `Map<${this.schemaToType(schema.keys)}, ${this.schemaToType(
-          schema.values,
-        )}>`;
+        return `Map<${this.schemaToType(schema.keys)}, ${
+          this.schemaToType(
+            schema.values,
+          )
+        }>`;
       }
       case undefined: {
         if (!this.dataImported) {
@@ -222,8 +233,9 @@ const PlutusData = Core.PlutusData;`;
       withUnderscore +
       (withUnderscore ? s.slice(1) : s)
         .toLowerCase()
-        .replace(/([-_][a-z])/g, (group) =>
-          group.toUpperCase().replace("-", "").replace("_", ""),
+        .replace(
+          /([-_][a-z])/g,
+          (group) => group.toUpperCase().replace("-", "").replace("_", ""),
         )
     );
   }
@@ -252,8 +264,9 @@ export async function generateBlueprint({
 }: BlueprintArgs) {
   const plutusJson: Blueprint = JSON.parse(await fs.readFile(infile, "utf8"));
 
-  const plutusVersion =
-    plutusJson.preamble.plutusVersion == "v2" ? '"PlutusV2"' : '"PlutusV1"';
+  const plutusVersion = plutusJson.preamble.plutusVersion == "v2"
+    ? '"PlutusV2"'
+    : '"PlutusV1"';
 
   const definitions = plutusJson.definitions;
 
@@ -264,7 +277,11 @@ export async function generateBlueprint({
   const validators = plutusJson.validators.map((validator) => {
     const title = validator.title;
     const name = (() => {
-      const [a, b] = title.split(".");
+      // Validators can reside under sub-directories and without replacing `/`
+      // in the path the resulting `plutus.ts` will have validators with `/`
+      // in their names.
+      const processedTitle = title.replace("/", "_");
+      const [a, b] = processedTitle.split(".");
       return (
         Generator.upperFirst(Generator.snakeToCamel(a!)) +
         Generator.upperFirst(Generator.snakeToCamel(b!))
@@ -288,7 +305,7 @@ export async function generateBlueprint({
     const paramsSchema = {
       dataType: "list",
       items: params.map((param) =>
-        Generator.resolveSchema(param.schema, definitions, recursiveType),
+        Generator.resolveSchema(param.schema, definitions, recursiveType)
       ),
     };
 
@@ -309,11 +326,15 @@ export async function generateBlueprint({
   export const ${name} = Object.assign(
     function (${paramsArgs.map((param) => param.join(":")).join(",")}) {${
       paramsArgs.length > 0
-        ? `return cborToScript(applyParamsToScript("${script}", [${paramsArgs
+        ? `return cborToScript(applyParamsToScript("${script}", [${
+          paramsArgs
             .map((param) => param[0])
-            .join(",")}], ${JSON.stringify(
+            .join(",")
+        }], ${
+          JSON.stringify(
             paramsSchema,
-          )} as any), ${plutusVersion});`
+          )
+        } as any), ${plutusVersion});`
         : `return cborToScript("${script}", ${plutusVersion});`
     }},
     ${datum ? `{${datumTitle}: ${JSON.stringify(datumSchema)}},` : ""}

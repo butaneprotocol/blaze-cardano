@@ -41,6 +41,25 @@
       ],
       "compiledCode": "5848010000323232322322322322322533300a4a229309b2b1bad0013233001001375800444a6660120022930991980180198060011bad300a001375c0026eb40055cd2ab9f5742ae881",
       "hash": "d0cf08dca31123692a4b93c9d063eeff8ae5bc71282544bcdbc296d5"
+    },
+    {
+      "title": "nested/sometimes_true.spend",
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/Int"
+        }
+      },
+      "parameters": [
+        {
+          "title": "param",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        }
+      ],
+      "compiledCode": "581e01000032232232253330063371000800429309b2b1bad001375a002ae681",
+      "hash": "ed3f8f41ef1cd903d9ae4304191ab71c97422189df37d70174d73b7d"
     }
   ],
   "definitions": {

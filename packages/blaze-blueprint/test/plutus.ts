@@ -14,3 +14,14 @@ _datum: Array<bigint>;
     {_datum: {"dataType":"list","items":{"dataType":"integer"}}},
     {_redeemer: {"dataType":"integer"}},
   ) as unknown as AlwaysTrueSpend;
+
+export interface NestedSometimesTrueSpend {
+    new (param:bigint): Script;
+    redeemer: bigint;
+  };
+
+  export const NestedSometimesTrueSpend = Object.assign(
+    function (param:bigint) {return cborToScript(applyParamsToScript("581e01000032232232253330063371000800429309b2b1bad001375a002ae681", [param], {"dataType":"list","items":[{"dataType":"integer"}]} as any), "PlutusV2");},
+    
+    {redeemer: {"dataType":"integer"}},
+  ) as unknown as NestedSometimesTrueSpend;
