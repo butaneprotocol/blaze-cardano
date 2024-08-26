@@ -1312,6 +1312,7 @@ export class TxBuilder {
         console.log(
           `An error occurred when trying to evaluate this transaction. Full CBOR: ${draft_tx.toCbor()}`,
         );
+        throw e;
       }
       this.fee += evaluationFee;
       if (this.fee > this.minimumFee) {
