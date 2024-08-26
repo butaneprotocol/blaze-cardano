@@ -1305,7 +1305,12 @@ export class TxBuilder {
     if (this.redeemers.size() > 0) {
       this.prepareCollateral();
       tw = this.buildTransactionWitnessSet();
-      const evaluationFee = await this.evaluate(draft_tx);
+      let evaluationFee: bigint = 0n;
+      try {
+        evaluationFee = await this.evaluate(draft_tx);
+      } catch (e) {
+        console.log(`An error occurred when trying to evaluate this transaction. Full CBOR: ${draft_tx.toCbor()}`)
+      }
       this.fee += evaluationFee;
       if (this.fee > this.minimumFee) {
         if (this.fee - evaluationFee > this.minimumFee) {
