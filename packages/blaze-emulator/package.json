@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/emulator",
-  "version": "0.1.50",
+  "version": "0.1.52",
   "description": "Blaze cardano emulator library",
   "exports": {
     ".": {
