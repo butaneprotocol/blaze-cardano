@@ -21,7 +21,6 @@ jobs:
           version: 8
       - run: pnpm i
       - run: pnpm run build
-      - run: git clone https://github.com/input-output-hk/cardano-js-sdk.git
       - run: pnpm run docs
       - uses: actions/upload-pages-artifact@v2
         with:

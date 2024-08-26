@@ -290,7 +290,12 @@ export class Kupmios implements Provider {
 
     const checkConfirmation = async (): Promise<boolean> => {
       const response = await fetch(`${this.kupoUrl}/matches/0@${txId}`);
-      if (response.ok) {
+
+      if (
+        response.ok &&
+        (await response.json().then((res: any) => res.length),
+        (_res: any) => false)
+      ) {
         return true;
       } else if (Date.now() - startTime < timeout) {
         await new Promise((resolve) =>
@@ -362,8 +367,16 @@ export class Kupmios implements Provider {
         throw new Error("Cannot evaluate without redeemers!");
       }
 
+      const additionalInputs = additionalUtxos.map((utxo) => utxo.input());
+
+      const utxosToDrop = await this.resolveUnspentOutputs(additionalInputs);
+
       // Serialize additional UTXOs to JSON format
-      const additional_utxos = Kupmios.serializeUtxos(additionalUtxos);
+      const additional_utxos = Kupmios.serializeUtxos(
+        additionalUtxos.filter((utxo) => {
+          return !utxosToDrop.includes(utxo);
+        }),
+      );
 
       // Handle the response
       return this.ogmios
