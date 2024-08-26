@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.3.5
+
+### Patch Changes
+
+- 710b5d7: optional datums
+
 ## 0.3.4
 
 ### Patch Changes
