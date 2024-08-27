@@ -563,15 +563,21 @@ export class TxBuilder {
    *
    * @param {Address} address - The address to send the payment to.
    * @param {bigint} lovelace - The amount of lovelace to send.
+   * @param {Datum} [datum] - Optional datum to be associated with the paid assets.
    * @returns {TxBuilder} The same transaction builder
    */
-  payLovelace(address: Address, lovelace: bigint) {
+  payLovelace(address: Address, lovelace: bigint, datum?: Datum) {
     assertPaymentsAddress(address);
     const paymentAddress = getPaymentAddress(address);
+    const datumData = typeof datum == "object" ? datum.toCore() : undefined;
+    const datumHash = typeof datum == "string" ? datum : undefined;
+
     this.addOutput(
       TransactionOutput.fromCore({
         address: paymentAddress,
         value: { coins: lovelace },
+        datum: datumData,
+        datumHash,
       }),
     );
     return this;
@@ -583,15 +589,21 @@ export class TxBuilder {
    *
    * @param {Address} address - The address to send the payment to.
    * @param {Value} value - The value of the assets to send.
+   * @param {Datum} [datum] - Optional datum to be associated with the paid assets.
    * @returns {TxBuilder} The same transaction builder
    */
-  payAssets(address: Address, value: Value) {
+  payAssets(address: Address, value: Value, datum?: Datum) {
     assertPaymentsAddress(address);
     const paymentAddress = getPaymentAddress(address);
+    const datumData = typeof datum == "object" ? datum.toCore() : undefined;
+    const datumHash = typeof datum == "string" ? datum : undefined;
+
     this.addOutput(
       TransactionOutput.fromCore({
         address: paymentAddress,
         value: value.toCore(),
+        datum: datumData,
+        datumHash,
       }),
     );
     return this;
