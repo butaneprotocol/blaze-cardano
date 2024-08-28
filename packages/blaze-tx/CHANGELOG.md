@@ -1,5 +1,12 @@
 # @blaze-cardano/tx
 
+## 0.3.6
+
+### Patch Changes
+
+- 1bfbe92: feat: Transaction cbor logging on eval error (@cjkoepke)
+  fix: Value merge was mutating the multiasset state of a value (thanks @cjkoepke, @Quantumplation)
+
 ## 0.3.5
 
 ### Patch Changes
