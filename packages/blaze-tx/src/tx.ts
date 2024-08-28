@@ -1027,7 +1027,7 @@ export class TxBuilder {
     const output = new TransactionOutput(this.changeAddress!, excessValue);
     // If there is no existing change output index, add the new output to the transaction
     // and store its index. Otherwise, update the existing change output with the new output.
-    if (!this.changeOutputIndex) {
+    if (undefined === this.changeOutputIndex) {
       this.addOutput(output);
       this.changeOutputIndex = this.outputsCount - 1;
     } else {
