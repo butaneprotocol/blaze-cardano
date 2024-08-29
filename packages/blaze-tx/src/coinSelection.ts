@@ -120,7 +120,7 @@ function primitiveSelection(
 
     selectedInputs.push(input);
     selectedValue = value.merge(selectedValue, input.output().amount());
-    remain = value.sub(remain, input.output().amount());
+    remain = value.positives(value.sub(remain, input.output().amount()));
   }
 
   if (!value.empty(remain)) {

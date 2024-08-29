@@ -11,6 +11,9 @@ importers:
       '@blaze-cardano/core':
         specifier: ^0.4.1
         version: 0.4.1(rxjs@7.8.1)
+      '@blaze-cardano/tx':
+        specifier: ^0.4.0
+        version: 0.4.0(rxjs@7.8.1)
     devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
@@ -672,6 +675,9 @@ packages:
 
   '@blaze-cardano/core@0.4.1':
     resolution: {integrity: sha512-p9I9lKYdri2JNMWXDHDfDK0aO6mIGUe0uphCia4aXE9UoSRO4mfy+1TcAFfDf2ltKjcsJYAaUBBZ376oa0v68A==}
+
+  '@blaze-cardano/tx@0.4.0':
+    resolution: {integrity: sha512-OooIpVYx9J+6zxeoF8pV4PMeRCk+tHNGJDaqFx4+tEgKJ7RjwzFRmmXJIZkE1g8oQJH012GI5AcG+j7SfFOgEA==}
 
   '@braintree/sanitize-url@6.0.4':
     resolution: {integrity: sha512-s3jaWicZd0pkP0jf5ysyHUI/RE7MHos6qlToFcGWXVp+ykHOy77OUMrfbgJ9it2C5bow7OIQwYYaHjk9XlBQ2A==}
@@ -5106,6 +5112,20 @@ snapshots:
       '@noble/hashes': 1.4.0
       '@scure/bip39': 1.3.0
       blakejs: 1.2.1
+    transitivePeerDependencies:
+      - '@dcspark/cardano-multiplatform-lib-asmjs'
+      - '@dcspark/cardano-multiplatform-lib-browser'
+      - '@dcspark/cardano-multiplatform-lib-nodejs'
+      - bufferutil
+      - debug
+      - encoding
+      - rxjs
+      - supports-color
+      - utf-8-validate
+
+  '@blaze-cardano/tx@0.4.0(rxjs@7.8.1)':
+    dependencies:
+      '@blaze-cardano/core': 0.4.1(rxjs@7.8.1)
     transitivePeerDependencies:
       - '@dcspark/cardano-multiplatform-lib-asmjs'
       - '@dcspark/cardano-multiplatform-lib-browser'

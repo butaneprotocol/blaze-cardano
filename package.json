@@ -26,6 +26,7 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@blaze-cardano/core": "^0.4.1"
+    "@blaze-cardano/core": "^0.4.1",
+    "@blaze-cardano/tx": "^0.4.0"
   }
 }
