@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.4.1
+
+### Patch Changes
+
+- 12213bd: Support for nested validators (@kettlebell)
+
 ## 0.4.0
 
 ### Minor Changes
