@@ -102,6 +102,39 @@ function deepSelection(
 }
 
 /**
+ * Primitive coin selection algorithm as described in - https://arxiv.org/pdf/2311.01113
+ * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
+ * @param {Value} dearth - The value to be covered by the selected inputs.
+ * @returns {SelectionResult} The result of the coin selection operation.
+ */
+function primitiveSelection(
+  inputs: TransactionUnspentOutput[],
+  dearth: Value
+): SelectionResult {
+  const selectedInputs: TransactionUnspentOutput[] = [];
+  let selectedValue = new Value(0n);
+  let remain = dearth;
+
+  for (const input of inputs) {
+    if (value.empty(remain)) break;
+
+    selectedInputs.push(input);
+    selectedValue = value.merge(selectedValue, input.output().amount());
+    remain = value.sub(remain, input.output().amount());
+  }
+
+  if (!value.empty(remain)) {
+    throw new Error("UTxO Balance Insufficient");
+  }
+
+  return {
+    selectedInputs,
+    selectedValue,
+    inputs: inputs.filter(input => !selectedInputs.includes(input))
+  };
+}
+
+/**
  * The main coin selection function executes wideSelection and then deepSelection, combining the two.
  * It greedily selects the smallest set of utxos, and then any extra is done with the depth search.
  * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
@@ -134,4 +167,28 @@ export function micahsSelector(
     ),
     inputs: deepResult.inputs,
   };
+}
+
+/**
+ * FIFO (First In, First Out) coin selection algorithm.
+ * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
+ * @param {Value} dearth - The target value to be covered by the selected inputs.
+ * @returns {SelectionResult} The result of the coin selection operation.
+ */
+export function fifoSelection(
+  inputs: TransactionUnspentOutput[],
+  dearth: Value
+): SelectionResult {
+  // Sort inputs by transaction index and output index
+  const sortedInputs = [...inputs].sort((a, b) => {
+    const aTxId = a.input().transactionId().toString();
+    const bTxId = b.input().transactionId().toString();
+    if (aTxId !== bTxId) {
+      return aTxId.localeCompare(bTxId);
+    }
+    return Number(a.input().index() - b.input().index());
+  });
+
+  // Use primitiveSelection with sorted inputs
+  return primitiveSelection(sortedInputs, dearth);
 }
