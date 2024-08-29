@@ -1,4 +1,4 @@
-import { hvfSelection, lvfSelection, micahsSelector, greedySelection } from "../src/coinSelection";
+import { hvfSelection, lvfSelection, micahsSelector, greedySelection, randomDrawSelection } from "../src/coinSelection";
 import { TransactionUnspentOutput, TransactionInput, TransactionOutput, TransactionId, Address } from "@blaze-cardano/core";
 import { makeValue } from "@blaze-cardano/tx";
 
@@ -27,6 +27,7 @@ describe("Coin Selection Algorithms", () => {
         { name: "Highest Value First (HVF) Selection", selector: hvfSelection },
         { name: "Lowest Value First (LVF) Selection", selector: lvfSelection },
         { name: "Greedy Selection", selector: greedySelection },
+        { name: "Random Draw Selection", selector: randomDrawSelection },
     ];
 
     testCases.forEach(({ name, selector }) => {

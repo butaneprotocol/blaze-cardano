@@ -215,6 +215,7 @@ export function lvfSelection(
 
 /**
  * Greedy coin selection algorithm.
+ * Only sorts by ADA.
  * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
  * @param {Value} dearth - The target value to be covered by the selected inputs.
  * @returns {SelectionResult} The result of the coin selection operation.
@@ -269,4 +270,25 @@ export function greedySelection(
     selectedValue,
     inputs: inputs.filter(input => !selectedInputs.includes(input))
   };
+}
+
+/**
+ * Random Draw coin selection algorithm.
+ * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
+ * @param {Value} dearth - The target value to be covered by the selected inputs.
+ * @returns {SelectionResult} The result of the coin selection operation.
+ */
+export function randomDrawSelection(
+  inputs: TransactionUnspentOutput[],
+  dearth: Value
+): SelectionResult {
+  const shuffledInputs = [...inputs];
+
+  for (let i = shuffledInputs.length - 1; i > 0; i--) {
+    // TODO: Replace Math.random() with a cryptographically secure random number generator
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledInputs[i], shuffledInputs[j]] = [shuffledInputs[j]!, shuffledInputs[i]!];
+  }
+
+  return primitiveSelection(shuffledInputs, dearth);
 }
