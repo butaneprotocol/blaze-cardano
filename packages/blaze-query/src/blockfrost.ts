@@ -297,7 +297,12 @@ export class Blockfrost implements Provider {
       );
     }
     // Ensures a single asset address is returned
-    if (response.length !== 1) {
+    if (response.length === 0) {
+      throw new Error(
+        "getUnspentOutputByNFT: No addresses found holding the asset.",
+      );
+    }
+    if (response.length > 1) {
       throw new Error(
         "getUnspentOutputByNFT: Asset must be held by only one address. Multiple found.",
       );
