@@ -192,3 +192,69 @@ export function fifoSelection(
   // Use primitiveSelection with sorted inputs
   return primitiveSelection(sortedInputs, dearth);
 }
+
+/**
+ * LIFO (Last In, First Out) coin selection algorithm.
+ * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
+ * @param {Value} dearth - The target value to be covered by the selected inputs.
+ * @returns {SelectionResult} The result of the coin selection operation.
+ */
+export function lifoSelection(
+  inputs: TransactionUnspentOutput[],
+  dearth: Value
+): SelectionResult {
+  // Sort inputs by transaction index and output index in descending order
+  const sortedInputs = [...inputs].sort((a, b) => {
+    const aTxId = a.input().transactionId().toString();
+    const bTxId = b.input().transactionId().toString();
+    if (aTxId !== bTxId) {
+      return bTxId.localeCompare(aTxId);
+    }
+    return Number(b.input().index() - a.input().index());
+  });
+
+  // Use primitiveSelection with sorted inputs
+  return primitiveSelection(sortedInputs, dearth);
+}
+
+/**
+ * HVF (Highest Value First) coin selection algorithm.
+ * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
+ * @param {Value} dearth - The target value to be covered by the selected inputs.
+ * @returns {SelectionResult} The result of the coin selection operation.
+ */
+export function hvfSelection(
+  inputs: TransactionUnspentOutput[],
+  dearth: Value
+): SelectionResult {
+  // Sort inputs by total value in descending order
+  const sortedInputs = [...inputs].sort((a, b) => {
+    const aValue = a.output().amount().coin();
+    const bValue = b.output().amount().coin();
+    return Number(bValue - aValue);
+  });
+
+  // Use primitiveSelection with sorted inputs
+  return primitiveSelection(sortedInputs, dearth);
+}
+
+/**
+ * LVF (Lowest Value First) coin selection algorithm.
+ * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
+ * @param {Value} dearth - The target value to be covered by the selected inputs.
+ * @returns {SelectionResult} The result of the coin selection operation.
+ */
+export function lvfSelection(
+  inputs: TransactionUnspentOutput[],
+  dearth: Value
+): SelectionResult {
+  // Sort inputs by total value in ascending order
+  const sortedInputs = [...inputs].sort((a, b) => {
+    const aValue = a.output().amount().coin();
+    const bValue = b.output().amount().coin();
+    return Number(aValue - bValue);
+  });
+
+  // Use primitiveSelection with sorted inputs
+  return primitiveSelection(sortedInputs, dearth);
+}

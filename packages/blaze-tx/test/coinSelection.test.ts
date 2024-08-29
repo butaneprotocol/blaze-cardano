@@ -1,4 +1,4 @@
-import { fifoSelection } from "../src/coinSelection";
+import { fifoSelection, lifoSelection, hvfSelection, lvfSelection, micahsSelector } from "../src/coinSelection";
 import { TransactionUnspentOutput, TransactionInput, TransactionOutput, TransactionId, Address } from "@blaze-cardano/core";
 import { makeValue } from "@blaze-cardano/tx";
 
@@ -12,23 +12,31 @@ function createMockUTxO(txId: string, index: number, amount: bigint): Transactio
     return new TransactionUnspentOutput(input, output);
 }
 
-describe("FIFO Coin Selection", () => {
-    test("Should select inputs in FIFO order", () => {
-        // Create test inputs here
-        const inputs: TransactionUnspentOutput[] = [
-            createMockUTxO("1111111111111111111111111111111111111111111111111111111111111111", 0, 500000n),
-            createMockUTxO("2222222222222222222222222222222222222222222222222222222222222222", 1, 700000n),
-            createMockUTxO("3333333333333333333333333333333333333333333333333333333333333333", 0, 1000000n),
-            createMockUTxO("4444444444444444444444444444444444444444444444444444444444444444", 0, 300000n),
-        ];
+describe("Coin Selection Algorithms", () => {
+    const inputs: TransactionUnspentOutput[] = [
+        createMockUTxO("1", 0, 500000n),
+        createMockUTxO("2", 1, 700000n),
+        createMockUTxO("3", 0, 1000000n),
+        createMockUTxO("4", 0, 300000n),
+    ];
 
-        const dearth = makeValue(1000000n); // Example target value
+    const dearth = makeValue(1000000n); // Example target value
 
-        const result = fifoSelection(inputs, dearth);
+    const testCases = [
+        { name: "Micah's Selector", selector: micahsSelector },
+        { name: "FIFO Selection", selector: fifoSelection },
+        { name: "LIFO Selection", selector: lifoSelection },
+        { name: "Highest Value First (HVF) Selection", selector: hvfSelection },
+        { name: "Lowest Value First (LVF) Selection", selector: lvfSelection },
+    ];
 
-        // Add your assertions here
-        expect(result).toBeDefined();
-        expect(result.selectedInputs.length).toBeGreaterThan(0);
-        // Add more specific assertions based on expected behavior
+    testCases.forEach(({ name, selector }) => {
+        test(name, () => {
+            const result = selector(inputs, dearth);
+
+            expect(result).toBeDefined();
+            expect(result.selectedInputs.length).toBeGreaterThan(0);
+            expect(result.selectedValue.coin()).toBeGreaterThanOrEqual(1000000n);
+        });
     });
 });
