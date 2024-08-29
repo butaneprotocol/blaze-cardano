@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.4.0
+
+### Minor Changes
+
+- 578cfb8: Fix conditional when checking changeOutputIndex, where index 0 would result in a false false.
+
 ## 0.3.6
 
 ### Patch Changes
