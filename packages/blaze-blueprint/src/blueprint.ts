@@ -264,7 +264,11 @@ export async function generateBlueprint({
   const validators = plutusJson.validators.map((validator) => {
     const title = validator.title;
     const name = (() => {
-      const [a, b] = title.split(".");
+      // Validators can reside under sub-directories and without replacing `/`
+      // in the path the resulting `plutus.ts` will have validators with `/`
+      // in their names.
+      const processedTitle = title.replace("/", "_");
+      const [a, b] = processedTitle.split(".");
       return (
         Generator.upperFirst(Generator.snakeToCamel(a!)) +
         Generator.upperFirst(Generator.snakeToCamel(b!))
