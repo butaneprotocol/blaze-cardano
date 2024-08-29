@@ -1,5 +1,4 @@
 {
-  "name": "@blaze-cardano/sdk",
   "workspaces": [
     "sites/*",
     "packages/*"
