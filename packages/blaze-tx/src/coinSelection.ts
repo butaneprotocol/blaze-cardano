@@ -170,55 +170,8 @@ export function micahsSelector(
 }
 
 /**
- * FIFO (First In, First Out) coin selection algorithm.
- * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
- * @param {Value} dearth - The target value to be covered by the selected inputs.
- * @returns {SelectionResult} The result of the coin selection operation.
- */
-export function fifoSelection(
-  inputs: TransactionUnspentOutput[],
-  dearth: Value
-): SelectionResult {
-  // Sort inputs by transaction index and output index
-  const sortedInputs = [...inputs].sort((a, b) => {
-    const aTxId = a.input().transactionId().toString();
-    const bTxId = b.input().transactionId().toString();
-    if (aTxId !== bTxId) {
-      return aTxId.localeCompare(bTxId);
-    }
-    return Number(a.input().index() - b.input().index());
-  });
-
-  // Use primitiveSelection with sorted inputs
-  return primitiveSelection(sortedInputs, dearth);
-}
-
-/**
- * LIFO (Last In, First Out) coin selection algorithm.
- * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
- * @param {Value} dearth - The target value to be covered by the selected inputs.
- * @returns {SelectionResult} The result of the coin selection operation.
- */
-export function lifoSelection(
-  inputs: TransactionUnspentOutput[],
-  dearth: Value
-): SelectionResult {
-  // Sort inputs by transaction index and output index in descending order
-  const sortedInputs = [...inputs].sort((a, b) => {
-    const aTxId = a.input().transactionId().toString();
-    const bTxId = b.input().transactionId().toString();
-    if (aTxId !== bTxId) {
-      return bTxId.localeCompare(aTxId);
-    }
-    return Number(b.input().index() - a.input().index());
-  });
-
-  // Use primitiveSelection with sorted inputs
-  return primitiveSelection(sortedInputs, dearth);
-}
-
-/**
  * HVF (Highest Value First) coin selection algorithm.
+ * Only sorts by ADA
  * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
  * @param {Value} dearth - The target value to be covered by the selected inputs.
  * @returns {SelectionResult} The result of the coin selection operation.
@@ -239,7 +192,8 @@ export function hvfSelection(
 }
 
 /**
- * LVF (Lowest Value First) coin selection algorithm.
+ * LVF (Lowest Value First) coin selection algorithm. 
+ * Only sorts by ADA
  * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
  * @param {Value} dearth - The target value to be covered by the selected inputs.
  * @returns {SelectionResult} The result of the coin selection operation.
@@ -257,4 +211,62 @@ export function lvfSelection(
 
   // Use primitiveSelection with sorted inputs
   return primitiveSelection(sortedInputs, dearth);
+}
+
+/**
+ * Greedy coin selection algorithm.
+ * @param {TransactionUnspentOutput[]} inputs - The available inputs for the selection.
+ * @param {Value} dearth - The target value to be covered by the selected inputs.
+ * @returns {SelectionResult} The result of the coin selection operation.
+ */
+export function greedySelection(
+  inputs: TransactionUnspentOutput[],
+  dearth: Value
+): SelectionResult {
+  const selectedInputs: TransactionUnspentOutput[] = [];
+  let selectedValue = new Value(0n);
+  let remain = dearth;
+
+  // Sort inputs by value in descending order
+  const sortedInputs = [...inputs].sort((a, b) =>
+    Number(b.output().amount().coin() - a.output().amount().coin())
+  );
+
+  // First pass: select inputs that are less than or equal to the remaining target
+  for (const input of sortedInputs) {
+    if (value.empty(remain)) break;
+
+    const inputValue = input.output().amount();
+
+    const lte = (a: Value, b: Value) => value.empty(value.positives(value.sub(a, b)));
+
+    if (lte(inputValue, remain)) {
+      selectedInputs.push(input);
+      selectedValue = value.merge(selectedValue, inputValue);
+      remain = value.positives(value.sub(remain, inputValue));
+    }
+  }
+
+  // Second pass: if target is not met, add smallest input that covers the remaining amount
+  while (!value.empty(remain)) {
+    const gte = (a: Value, b: Value) => value.empty(value.positives(value.sub(b, a)));
+
+    const smallestCoveringInput = sortedInputs.find(input =>
+      !selectedInputs.includes(input) && gte(input.output().amount(), remain)
+    );
+
+    if (!smallestCoveringInput) {
+      throw new Error("UTxO Balance Insufficient");
+    }
+
+    selectedInputs.push(smallestCoveringInput);
+    selectedValue = value.merge(selectedValue, smallestCoveringInput.output().amount());
+    remain = value.positives(value.sub(remain, smallestCoveringInput.output().amount()));
+  }
+
+  return {
+    selectedInputs,
+    selectedValue,
+    inputs: inputs.filter(input => !selectedInputs.includes(input))
+  };
 }

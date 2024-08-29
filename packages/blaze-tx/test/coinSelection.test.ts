@@ -1,4 +1,4 @@
-import { fifoSelection, lifoSelection, hvfSelection, lvfSelection, micahsSelector } from "../src/coinSelection";
+import { hvfSelection, lvfSelection, micahsSelector, greedySelection } from "../src/coinSelection";
 import { TransactionUnspentOutput, TransactionInput, TransactionOutput, TransactionId, Address } from "@blaze-cardano/core";
 import { makeValue } from "@blaze-cardano/tx";
 
@@ -24,10 +24,9 @@ describe("Coin Selection Algorithms", () => {
 
     const testCases = [
         { name: "Micah's Selector", selector: micahsSelector },
-        { name: "FIFO Selection", selector: fifoSelection },
-        { name: "LIFO Selection", selector: lifoSelection },
         { name: "Highest Value First (HVF) Selection", selector: hvfSelection },
         { name: "Lowest Value First (LVF) Selection", selector: lvfSelection },
+        { name: "Greedy Selection", selector: greedySelection },
     ];
 
     testCases.forEach(({ name, selector }) => {
