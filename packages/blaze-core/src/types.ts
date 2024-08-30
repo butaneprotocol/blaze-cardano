@@ -170,6 +170,24 @@ export type PlutusLanguageVersion = C.Cardano.PlutusLanguageVersion;
 export const NativeScript = C.Serialization.NativeScript;
 export type NativeScript = C.Serialization.NativeScript;
 
+export const ScriptPubkey = C.Serialization.ScriptPubkey;
+export type ScriptPubkey = C.Serialization.ScriptPubkey;
+
+export const ScriptAll = C.Serialization.ScriptAll;
+export type ScriptAll = C.Serialization.ScriptAll;
+
+export const ScriptAny = C.Serialization.ScriptAny;
+export type ScriptAny = C.Serialization.ScriptAny;
+
+export const ScriptNOfK = C.Serialization.ScriptNOfK;
+export type ScriptNOfK = C.Serialization.ScriptNOfK;
+
+export const TimelockStart = C.Serialization.TimelockStart;
+export type TimelockStart = C.Serialization.TimelockStart;
+
+export const TimelockExpiry = C.Serialization.TimelockExpiry;
+export type TimelockExpiry = C.Serialization.TimelockExpiry;
+
 export const PlutusV1Script = C.Serialization.PlutusV1Script;
 export type PlutusV1Script = C.Serialization.PlutusV1Script;
 

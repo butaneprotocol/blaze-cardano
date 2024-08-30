@@ -1027,7 +1027,7 @@ export class TxBuilder {
     const output = new TransactionOutput(this.changeAddress!, excessValue);
     // If there is no existing change output index, add the new output to the transaction
     // and store its index. Otherwise, update the existing change output with the new output.
-    if (!this.changeOutputIndex) {
+    if (undefined === this.changeOutputIndex) {
       this.addOutput(output);
       this.changeOutputIndex = this.outputsCount - 1;
     } else {
@@ -1305,7 +1305,15 @@ export class TxBuilder {
     if (this.redeemers.size() > 0) {
       this.prepareCollateral();
       tw = this.buildTransactionWitnessSet();
-      const evaluationFee = await this.evaluate(draft_tx);
+      let evaluationFee: bigint = 0n;
+      try {
+        evaluationFee = await this.evaluate(draft_tx);
+      } catch (e) {
+        console.log(
+          `An error occurred when trying to evaluate this transaction. Full CBOR: ${draft_tx.toCbor()}`,
+        );
+        throw e;
+      }
       this.fee += evaluationFee;
       if (this.fee > this.minimumFee) {
         if (this.fee - evaluationFee > this.minimumFee) {

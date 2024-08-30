@@ -9,7 +9,7 @@ import { Value, AssetId } from "@blaze-cardano/core";
  * @returns {Value} - The resulting Value object after merging.
  */
 export function merge(a: Value, b: Value): Value {
-  const ma = a.multiasset() ?? new Map();
+  const ma = new Map(a.multiasset());
   b.multiasset()?.forEach((v, k) => {
     const newVal = (ma.get(k) ?? 0n) + v;
     if (newVal == 0n) {
