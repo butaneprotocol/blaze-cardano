@@ -955,13 +955,21 @@ export class TxBuilder {
       // Initialize a CBOR writer to encode the script data.
       const writer = new CborWriter();
       // Encode redeemers and datums into CBOR format.
-      if (redeemers.length === 0) {
-        // An empty redeemer set is always an empty map, as of conway
-        writer.writeStartMap(0);
+      const conway = this.params.protocolVersion.major === 9;
+      if (conway) {
+        if (redeemers.length === 0) {
+          // An empty redeemer set is always an empty map, as of conway
+          writer.writeStartMap(0);
+        } else {
+          // TODO: in the conway era, this will support array, or map
+          // but in the next era, it will only support maps
+          // So, we should switch this to encoding as maps when we switch the witness set to encoding as maps
+          writer.writeStartArray(redeemers.length);
+          for (const redeemer of redeemers) {
+            writer.writeEncodedValue(Buffer.from(redeemer.toCbor(), "hex"));
+          }
+        }
       } else {
-        // TODO: in the conway era, this will support array, or map
-        // but in the next era, it will only support maps
-        // So, we should switch this to encoding as maps when we switch the witness set to encoding as maps
         writer.writeStartArray(redeemers.length);
         for (const redeemer of redeemers) {
           writer.writeEncodedValue(Buffer.from(redeemer.toCbor(), "hex"));
