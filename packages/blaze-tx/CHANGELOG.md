@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.0
+
+### Minor Changes
+
+- fbe047a: This checks the protocol version to determine if the new script data hash requirements are current yet or not.
+
 ## 0.4.0
 
 ### Minor Changes
