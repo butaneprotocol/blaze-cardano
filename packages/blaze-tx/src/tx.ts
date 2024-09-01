@@ -955,7 +955,9 @@ export class TxBuilder {
       // Initialize a CBOR writer to encode the script data.
       const writer = new CborWriter();
       // Encode redeemers and datums into CBOR format.
-      if (redeemers.length === 0) {
+      // In the conway era, the format changes
+      const conway = this.params.protocolVersion.major === 9;
+      if (conway && redeemers.length === 0) {
         // An empty redeemer set is always an empty map, as of conway
         writer.writeStartMap(0);
       } else {
