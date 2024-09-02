@@ -9,7 +9,7 @@ import { HotWallet, Core, Blaze, U5C } from "../../packages/blaze-sdk/dist/index
 // but you can run a local Dolos https://github.com/txpipe/dolos instance and connect to its UTxO endpoint
 // If this is the case then you can remove the headers field
 const provider = new U5C({
-    url: "https://cardano-preview.utxorpc.cloud",
+    url: "http://localhost:50051",
     headers: {
         "dmtr-api-key": "<api-key>"
     }
@@ -48,3 +48,5 @@ const signexTx = await blaze.signTransaction(tx);
 // Step #7
 // Submit the transaction to the blockchain network
 const txId = await blaze.provider.postTransactionToChain(signexTx);
+
+console.log("Transaction ID", txId);

@@ -1,5 +1,11 @@
-import {
+import type {
   ProtocolParameters,
+  Transaction,
+  Redeemers,
+  TokenMap,
+  CostModels,
+} from "@blaze-cardano/core";
+import {
   Address,
   TransactionUnspentOutput,
   AssetId,
@@ -7,25 +13,23 @@ import {
   DatumHash,
   PlutusData,
   TransactionId,
-  Transaction,
-  Redeemers,
   TransactionOutput,
   HexBlob,
   Value,
-  TokenMap,
   PolicyId,
   AssetName,
-  hardCodedProtocolParams,
   Datum,
   PlutusV1Script,
   Script,
   PlutusV2Script,
   fromHex,
   toHex,
+  PlutusLanguageVersion,
+  hardCodedProtocolParams,
 } from "@blaze-cardano/core";
-import { Provider } from "./types";
+import type { Provider } from "./types";
 import { CardanoQueryClient, CardanoSubmitClient } from "@utxorpc/sdk";
-import * as Cardano from "@utxorpc/spec/lib/utxorpc/v1alpha/cardano/cardano_pb.js";
+import type * as Cardano from "@utxorpc/spec/lib/utxorpc/v1alpha/cardano/cardano_pb.js";
 
 export class U5C implements Provider {
   private queryClient: CardanoQueryClient;
@@ -168,17 +172,15 @@ export class U5C implements Provider {
   }
 
   awaitTransactionConfirmation(
-    txId: TransactionId,
-    timeout?: number
+    _txId: TransactionId,
+    _timeout?: number
   ): Promise<boolean> {
-    console.log("awaitTransactionConfirmation", txId, timeout);
     throw new Error("Method not implemented.");
   }
 
   async postTransactionToChain(tx: Transaction): Promise<TransactionId> {
-    console.log({ tx, cbor: tx.toCbor() });
-    let cbor = fromHex(tx.toCbor());
-    let hash = await this.submitClient.submitTx(cbor);
+    const cbor = fromHex(tx.toCbor());
+    const hash = await this.submitClient.submitTx(cbor);
     return TransactionId(toHex(hash));
   }
 
@@ -270,9 +272,19 @@ export class U5C implements Provider {
   private _rpcPParamsToCorePParams(
     rpcPParams: Cardano.PParams
   ): ProtocolParameters {
+    console.log(rpcPParams.costModels);
     return {
       coinsPerUtxoByte: Number(rpcPParams.coinsPerUtxoByte),
-      costModels: hardCodedProtocolParams.costModels,
+      costModels: (new Map() as CostModels)
+        .set(
+          PlutusLanguageVersion.V1,
+          rpcPParams.costModels?.plutusV1?.values.map(v => Number(v.toString())) ?? hardCodedProtocolParams.costModels.get(PlutusLanguageVersion.V1) ?? []
+        )
+        .set(
+          PlutusLanguageVersion.V2,
+          rpcPParams.costModels?.plutusV2?.values.map(v => Number(v.toString())) ?? hardCodedProtocolParams.costModels.get(PlutusLanguageVersion.V2) ?? []
+        )
+        .set(PlutusLanguageVersion.V3, hardCodedProtocolParams.costModels.get(PlutusLanguageVersion.V3) ?? []),
       maxBlockBodySize: Number(rpcPParams.maxBlockBodySize),
       maxBlockHeaderSize: Number(rpcPParams.maxBlockHeaderSize),
       maxCollateralInputs: Number(rpcPParams.maxCollateralInputs),
