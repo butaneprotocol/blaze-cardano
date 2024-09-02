@@ -128,6 +128,7 @@ export class TxBuilder {
   private consumedWithdrawalHashes: Hash28ByteBase16[] = [];
   private consumedSpendInputs: string[] = [];
   private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
+  private feePadding: bigint = 0n; // A padding to add onto the fee; use only in emergencies, and open a ticket so we can fix the fee calculation please!
   private coinSelector: (
     inputs: TransactionUnspentOutput[],
     dearth: Value,
@@ -243,6 +244,18 @@ export class TxBuilder {
    */
   setMinimumFee(fee: bigint) {
     this.minimumFee = fee;
+    return this;
+  }
+
+  /**
+   * Sets an additional padding to add onto the transactions.
+   * Use this only in emergencies, and please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can correct the fee calculation!
+   * 
+   * @param {bigint} pad - The padding to add onto the transaction fee 
+   * @returns {TxBuilder} the same transaction builder
+   */
+  setFeePadding(pad: bigint) {
+    this.feePadding = pad;
     return this;
   }
 
@@ -1194,7 +1207,7 @@ export class TxBuilder {
     const totalCollateral = BigInt(
       Math.ceil(
         this.params.collateralPercentage *
-          Number(bigintMax(this.fee, this.minimumFee)),
+          Number(bigintMax(this.fee, this.minimumFee) + this.feePadding),
       ),
     );
     // Calculate the collateral value by summing up the amounts from collateral inputs.
@@ -1332,7 +1345,7 @@ export class TxBuilder {
     this.calculateFees(draft_tx);
     excessValue = value.merge(
       excessValue,
-      new Value(-bigintMax(this.fee, this.minimumFee)),
+      new Value(-(bigintMax(this.fee, this.minimumFee) + this.feePadding)),
     );
     this.balanceChange(excessValue);
     if (this.redeemers.size() > 0) {
@@ -1367,14 +1380,17 @@ export class TxBuilder {
         this.body.setScriptDataHash(scriptDataHash);
       }
     }
-
+    if (this.feePadding > 0n) {
+      console.warn("A transaction was built using fee padding. This is useful for working around changes to fee calculation, but ultimately is a bandaid. If you find yourself needing this, please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can fix the underlying inaccuracy!")
+    }
     let final_size = draft_tx.toCbor().length / 2;
     do {
       this.fee += BigInt(
         Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
       );
       excessValue = this.getPitch();
-      this.body.setFee(bigintMax(this.fee, this.minimumFee));
+      
+      this.body.setFee(bigintMax(this.fee, this.minimumFee) + this.feePadding);
       this.balanceChange(excessValue);
       if (this.body.collateral()) {
         this.balanceCollateralChange();
