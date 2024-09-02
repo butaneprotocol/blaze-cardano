@@ -1,5 +1,12 @@
 # @blaze-cardano/tx
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [ce33e70]
+  - @blaze-cardano/core@0.4.2
+
 ## 0.5.0
 
 ### Minor Changes
