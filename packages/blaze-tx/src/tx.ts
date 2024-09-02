@@ -1112,7 +1112,7 @@ export class TxBuilder {
     if (!best) {
       for (const utxo of this.utxos.values()) {
         if (
-          utxo.output().amount().coin() >= 10n * 10n ** 6n &&
+          utxo.output().amount().coin() >= 5_000_000n &&
           utxo.output().address().getProps().paymentPart?.type ==
             CredentialType.KeyHash
         ) {
