@@ -1,14 +1,14 @@
-import { PlutusData, PlutusDataKind } from './types'
-import { toHex } from './util'
+import { PlutusData, PlutusDataKind } from "./types";
+import { toHex } from "./util";
 
-export type Prettier = PlutusData | string | number | boolean | null
+export type Prettier = PlutusData | string | number | boolean | null;
 
 type PrettierFunction = (data: Prettier, indent: string) => string;
 
 const ansiColors = {
   reset: "\x1b[0m",
   bold: "\x1b[1m",
-  
+
   fg: {
     black: "\x1b[38;5;240m",
     red: "\x1b[38;5;203m",
@@ -25,67 +25,72 @@ const ansiColors = {
 function prettify_plutusData(data: PlutusData, indent: string): string {
   if (data.getKind() === PlutusDataKind.Bytes) {
     const hexValue = toHex(data.asBoundedBytes()!);
-    const textValue = Buffer.from(data.asBoundedBytes()!).toString('utf-8').replace(/\r\n|\r|\n/g, '\\n');
-    return `${ansiColors.fg.gray}"${textValue}"${ansiColors.reset}\n${indent}${ansiColors.fg.cyan}${hexValue}${ansiColors.reset}`
+    const textValue = Buffer.from(data.asBoundedBytes()!)
+      .toString("utf-8")
+      .replace(/\r\n|\r|\n/g, "\\n");
+    return `${ansiColors.fg.gray}"${textValue}"${ansiColors.reset}\n${indent}${ansiColors.fg.cyan}${hexValue}${ansiColors.reset}`;
   } else if (data.getKind() === PlutusDataKind.ConstrPlutusData) {
     const innerData = prettify(
       PlutusData.newList(data.asConstrPlutusData()!.getData()),
-      indent + '  ',
-    )
+      indent + "  ",
+    );
     return `${ansiColors.fg.magenta}Constr ${ansiColors.fg.yellow}${data
       .asConstrPlutusData()!
-      .getAlternative()}${ansiColors.reset} ${innerData}`
+      .getAlternative()}${ansiColors.reset} ${innerData}`;
   } else if (data.getKind() === PlutusDataKind.List) {
-    const items: PlutusData[] = []
+    const items: PlutusData[] = [];
     for (let i = 0; i < data.asList()!.getLength(); i++) {
-      items.push(data.asList()!.get(i)!)
+      items.push(data.asList()!.get(i)!);
     }
-    const innerIndent = indent + '  '
+    const innerIndent = indent + "  ";
     if (items.length === 0) {
-      return `${ansiColors.fg.blue}[]${ansiColors.reset}`
+      return `${ansiColors.fg.blue}[]${ansiColors.reset}`;
     }
     const itemsStr = items
       .map((item) => innerIndent + prettify(item, innerIndent))
-      .join(',\n')
-    return `${ansiColors.fg.blue}[\n${itemsStr}\n${indent}${ansiColors.fg.blue}]${ansiColors.reset}`
+      .join(",\n");
+    return `${ansiColors.fg.blue}[\n${itemsStr}\n${indent}${ansiColors.fg.blue}]${ansiColors.reset}`;
   } else if (data.getKind() === PlutusDataKind.Map) {
-    let pretty = `${ansiColors.fg.blue}{\n`
-    const list = data.asMap()!.getKeys()
-    const innerIndent = indent + '  '
+    let pretty = `${ansiColors.fg.blue}{\n`;
+    const list = data.asMap()!.getKeys();
+    const innerIndent = indent + "  ";
     for (let i = 0; i < list.getLength(); i++) {
-      const key = prettify(list.get(i)!, innerIndent)
-      const value = prettify(data.asMap()!.get(list.get(i)!)!, innerIndent)
-      pretty += `${innerIndent}${ansiColors.fg.gray}[${key}${ansiColors.fg.gray}]${ansiColors.reset}: ${value}`
+      const key = prettify(list.get(i)!, innerIndent);
+      const value = prettify(data.asMap()!.get(list.get(i)!)!, innerIndent);
+      pretty += `${innerIndent}${ansiColors.fg.gray}[${key}${ansiColors.fg.gray}]${ansiColors.reset}: ${value}`;
       if (i < list.getLength() - 1) {
-        pretty += ',\n'
+        pretty += ",\n";
       }
     }
-    return `${pretty}\n${indent}${ansiColors.fg.blue}}${ansiColors.reset}`
+    return `${pretty}\n${indent}${ansiColors.fg.blue}}${ansiColors.reset}`;
   } else {
-    return `${ansiColors.fg.yellow}${data.asInteger()!.toString()}${ansiColors.reset}`
+    return `${ansiColors.fg.yellow}${data.asInteger()!.toString()}${ansiColors.reset}`;
   }
 }
 
 const prettierFunctions: PrettierFunction[] = [
   (data, _indent) => {
-    if (typeof data === 'string') return `${ansiColors.fg.green}"${data}"${ansiColors.reset}`;
-    if (typeof data === 'number') return `${ansiColors.fg.yellow}${data.toString()}${ansiColors.reset}`;
-    if (typeof data === 'boolean') return `${ansiColors.fg.magenta}${data.toString()}${ansiColors.reset}`;
+    if (typeof data === "string")
+      return `${ansiColors.fg.green}"${data}"${ansiColors.reset}`;
+    if (typeof data === "number")
+      return `${ansiColors.fg.yellow}${data.toString()}${ansiColors.reset}`;
+    if (typeof data === "boolean")
+      return `${ansiColors.fg.magenta}${data.toString()}${ansiColors.reset}`;
     if (data === null) return `${ansiColors.fg.red}null${ansiColors.reset}`;
-    return '';
+    return "";
   },
   (data, indent) => {
     if (data instanceof PlutusData) {
       return prettify_plutusData(data, indent);
     }
-    return '';
-  }
+    return "";
+  },
 ];
 
-export function prettify(data: Prettier, indent: string = ''): string {
+export function prettify(data: Prettier, indent: string = ""): string {
   for (const func of prettierFunctions) {
     const result = func(data, indent);
-    if (result !== '') return result;
+    if (result !== "") return result;
   }
   throw new Error(`Could not prettify unknown type ${typeof data}`);
 }

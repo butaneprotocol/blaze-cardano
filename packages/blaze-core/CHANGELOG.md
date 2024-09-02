@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.4.2
+
+### Patch Changes
+
+- ce33e70: exports, prettify
+
 ## 0.4.1
 
 ### Patch Changes

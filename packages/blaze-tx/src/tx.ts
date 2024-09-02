@@ -1084,7 +1084,7 @@ export class TxBuilder {
     const inputs = [...this.body.inputs().values()];
     const scope = [...this.utxoScope.values()];
     // Initialize variables to track the best UTXO for collateral and its ranking.
-    let [best, rank]: [TransactionUnspentOutput | undefined, number] = [
+    let [best, rank]: [TransactionUnspentOutput[] | undefined, number] = [
       undefined,
       99,
     ];
@@ -1094,7 +1094,7 @@ export class TxBuilder {
       if (utxo) {
         // Check if the UTXO amount is sufficient for collateral.
         if (
-          utxo.output().amount().coin() >= 10n * 10n ** 6n &&
+          utxo.output().amount().coin() >= 5_000_000 &&
           utxo.output().address().getProps().paymentPart?.type ==
             CredentialType.KeyHash
         ) {
@@ -1102,7 +1102,7 @@ export class TxBuilder {
           // Update the best UTXO and its ranking if it's a better candidate.
           if (ranking < rank) {
             rank = ranking;
-            best = utxo;
+            best = [utxo];
           }
         }
       } else {
@@ -1112,36 +1112,67 @@ export class TxBuilder {
     if (!best) {
       for (const utxo of this.utxos.values()) {
         if (
-          utxo.output().amount().coin() >= 10n * 10n ** 6n &&
+          utxo.output().amount().coin() >= 5_000_000n &&
           utxo.output().address().getProps().paymentPart?.type ==
             CredentialType.KeyHash
         ) {
           const ranking = value.assetTypes(utxo.output().amount());
           if (ranking < rank) {
             rank = ranking;
-            best = utxo;
+            best = [utxo];
           }
         }
       }
       if (best) {
-        this.utxoScope.add(best);
+        for (const bestUtxo of best) {
+          this.utxoScope.add(bestUtxo);
+        }
       } else {
-        throw new Error("prepareCollateral: could not find enough collateral");
+        let adaAmount = 0n;
+        // create a sorted list of utxos by ada amount
+        const adaUtxos = [...this.utxos.values()].sort((a, b) =>
+          a.output().amount().coin() < b.output().amount().coin() ? -1 : 1,
+        );
+        for (
+          let i = 0;
+          i < Math.min(this.params.maxCollateralInputs, adaUtxos.length);
+          i++
+        ) {
+          adaAmount += adaUtxos[i]!.output().amount().coin();
+          if (adaAmount >= 5_000_000n) {
+            break;
+          }
+        }
+        if (adaAmount <= 5_000_000) {
+          throw new Error(
+            "prepareCollateral: could not find enough collateral (5 ada minimum)",
+          );
+        }
+        best = adaUtxos;
       }
     }
     // Set the selected UTXO as collateral in the transaction body.
     const tis = CborSet.fromCore([], TransactionInput.fromCore);
-    tis.setValues([best.input()]);
+    tis.setValues(best.map((x) => x.input()));
     this.body.setCollateral(tis);
 
-    const key = best.output().address().getProps().paymentPart!;
-    if (key.type == CredentialType.ScriptHash) {
-      this.requiredNativeScripts.add(key.hash);
-    } else {
-      this.requiredWitnesses.add(HashAsPubKeyHex(key.hash));
+    for (const bestUtxo of best) {
+      const key = bestUtxo.output().address().getProps().paymentPart!;
+      if (key.type == CredentialType.ScriptHash) {
+        this.requiredNativeScripts.add(key.hash);
+      } else {
+        this.requiredWitnesses.add(HashAsPubKeyHex(key.hash));
+      }
     }
     // Also set the collateral return to the output of the selected UTXO.
-    this.body.setCollateralReturn(best.output());
+    const ret = new TransactionOutput(
+      this.changeAddress!,
+      best.reduce(
+        (acc, x) => value.merge(acc, x.output().amount()),
+        value.zero(),
+      ),
+    );
+    this.body.setCollateralReturn(ret);
   }
 
   /**

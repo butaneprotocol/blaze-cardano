@@ -1,5 +1,24 @@
 # @blaze-cardano/tx
 
+## 0.5.3
+
+### Patch Changes
+
+- 97ca100: patch: use multiple collateral inputs
+
+## 0.5.2
+
+### Patch Changes
+
+- 42257b8: patch: reduce collateral search amount to 5 ada
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [ce33e70]
+  - @blaze-cardano/core@0.4.2
+
 ## 0.5.0
 
 ### Minor Changes
