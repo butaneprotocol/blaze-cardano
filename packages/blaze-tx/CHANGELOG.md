@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.2
+
+### Patch Changes
+
+- 42257b8: patch: reduce collateral search amount to 5 ada
+
 ## 0.5.1
 
 ### Patch Changes
