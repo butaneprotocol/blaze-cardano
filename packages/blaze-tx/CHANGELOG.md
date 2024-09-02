@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.3
+
+### Patch Changes
+
+- 97ca100: patch: use multiple collateral inputs
+
 ## 0.5.2
 
 ### Patch Changes
