@@ -1,4 +1,4 @@
-import type {
+import {
   TransactionUnspentOutput,
   TransactionWitnessPlutusData,
   Script,
@@ -104,6 +104,8 @@ export class TxBuilder {
     new Set<TransactionUnspentOutput>(); // A set of unspent transaction outputs.
   private utxoScope: Set<TransactionUnspentOutput> =
     new Set<TransactionUnspentOutput>(); // A scoped set of UTxOs for the transaction.
+  private collateralUtxos: Set<TransactionUnspentOutput> =
+    new Set<TransactionUnspentOutput>(); // A set of unspent transaction outputs specifically reserved for collateral, if any.
   private scriptScope: Set<Script> = new Set(); // A set of scripts included in the transaction.
   private scriptSeen: Set<ScriptHash> = new Set(); // A set of script hashes that have been processed.
   private changeAddress?: Address; // The address to send change to, if any.
@@ -427,6 +429,22 @@ export class TxBuilder {
     for (const utxo of utxos) {
       this.utxos.add(utxo);
     }
+    return this;
+  }
+
+  /**
+   * Adds unspent transaction outputs (UTxOs) to the set of collateral UTxOs available for this transaction.
+   * These UTxOs can then be used to provide collateral for the transaction, if necessary. If provided, they will b
+   * If there are specific, valid collateral UTxOs provided, Blaze will use them before using any other UTxO.
+   *
+   * @param {TransactionUnspentOutput[]} utxos - the UTxOs to add as collateral
+   * @returns {TxBuilder} The same transaction builder
+   */
+  provideCollateral(utxos: TransactionUnspentOutput[]) {
+    for (const utxo of utxos) {
+      this.collateralUtxos.add(utxo);
+    }
+
     return this;
   }
 
@@ -1166,6 +1184,11 @@ export class TxBuilder {
    * Throws an error if suitable collateral cannot be found or if some inputs cannot be resolved.
    */
   private prepareCollateral() {
+    // Retrieve provided collateral inputs
+    const providedCollateral = [...this.collateralUtxos.values()].sort(
+      (a, b) =>
+        a.output().amount().coin() < b.output().amount().coin() ? -1 : 1,
+    );
     // Retrieve inputs from the transaction body and available UTXOs within scope.
     const inputs = [...this.body.inputs().values()];
     const scope = [...this.utxoScope.values()];
@@ -1174,27 +1197,45 @@ export class TxBuilder {
       undefined,
       99,
     ];
-    // Iterate over inputs to find the best UTXO for collateral.
-    for (const input of inputs) {
-      const utxo = scope.find((x) => x.input() == input);
-      if (utxo) {
-        // Check if the UTXO amount is sufficient for collateral.
+    // if there are provided collateral UTxOs, use them first
+    if (providedCollateral.length > 0) {
+      for (const utxo of providedCollateral) {
         if (
           utxo.output().amount().coin() >= 5_000_000 &&
           utxo.output().address().getProps().paymentPart?.type ==
             CredentialType.KeyHash
         ) {
           const ranking = value.assetTypes(utxo.output().amount());
-          // Update the best UTXO and its ranking if it's a better candidate.
           if (ranking < rank) {
             rank = ranking;
             best = [utxo];
           }
         }
-      } else {
-        throw new Error("prepareCollateral: could not resolve some input");
+      }
+    } else {
+      // If no provided collateral inputs, iterate over the inputs to find the best candidate.
+      for (const input of inputs) {
+        const utxo = scope.find((x) => x.input() == input);
+        if (utxo) {
+          // Check if the UTXO amount is sufficient for collateral.
+          if (
+            utxo.output().amount().coin() >= 5_000_000 &&
+            utxo.output().address().getProps().paymentPart?.type ==
+              CredentialType.KeyHash
+          ) {
+            const ranking = value.assetTypes(utxo.output().amount());
+            // Update the best UTXO and its ranking if it's a better candidate.
+            if (ranking < rank) {
+              rank = ranking;
+              best = [utxo];
+            }
+          }
+        } else {
+          throw new Error("prepareCollateral: could not resolve some input");
+        }
       }
     }
+    // If there is no best fit still, iterate over all UTXOs to find the best candidate.
     if (!best) {
       for (const utxo of this.utxos.values()) {
         if (
@@ -1214,19 +1255,37 @@ export class TxBuilder {
           this.utxoScope.add(bestUtxo);
         }
       } else {
+        const collateral: TransactionUnspentOutput[] = [];
         let adaAmount = 0n;
-        // create a sorted list of utxos by ada amount
-        const adaUtxos = [...this.utxos.values()].sort((a, b) =>
-          a.output().amount().coin() < b.output().amount().coin() ? -1 : 1,
-        );
+        // Check the provided collateral inputs to see if we can build valid collateral
         for (
           let i = 0;
-          i < Math.min(this.params.maxCollateralInputs, adaUtxos.length);
+          i <
+          Math.min(this.params.maxCollateralInputs, providedCollateral.length);
           i++
         ) {
-          adaAmount += adaUtxos[i]!.output().amount().coin();
+          adaAmount += providedCollateral[i]!.output().amount().coin();
+          collateral.push(providedCollateral[i]!);
           if (adaAmount >= 5_000_000n) {
             break;
+          }
+        }
+        // If we still haven't reached the necessary collateral amount, try to use any available UTxO
+        if (adaAmount < 5_000_000n) {
+          // create a sorted list of utxos by ada amount
+          const adaUtxos = [...this.utxos.values()].sort((a, b) =>
+            a.output().amount().coin() < b.output().amount().coin() ? -1 : 1,
+          );
+          for (
+            let i = 0;
+            i < Math.min(this.params.maxCollateralInputs, adaUtxos.length);
+            i++
+          ) {
+            adaAmount += adaUtxos[i]!.output().amount().coin();
+            collateral.push(adaUtxos[i]!);
+            if (adaAmount >= 5_000_000n) {
+              break;
+            }
           }
         }
         if (adaAmount <= 5_000_000) {
@@ -1234,7 +1293,7 @@ export class TxBuilder {
             "prepareCollateral: could not find enough collateral (5 ada minimum)",
           );
         }
-        best = adaUtxos;
+        best = collateral;
       }
     }
     // Set the selected UTXO as collateral in the transaction body.
