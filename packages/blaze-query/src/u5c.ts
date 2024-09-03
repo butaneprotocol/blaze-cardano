@@ -272,7 +272,6 @@ export class U5C implements Provider {
   private _rpcPParamsToCorePParams(
     rpcPParams: Cardano.PParams
   ): ProtocolParameters {
-    console.log(rpcPParams.costModels);
     return {
       coinsPerUtxoByte: Number(rpcPParams.coinsPerUtxoByte),
       costModels: (new Map() as CostModels)
