@@ -49,4 +49,5 @@ const signexTx = await blaze.signTransaction(tx);
 // Submit the transaction to the blockchain network
 const txId = await blaze.provider.postTransactionToChain(signexTx);
 
+// Optional: Print the transaction ID
 console.log("Transaction ID", txId);
