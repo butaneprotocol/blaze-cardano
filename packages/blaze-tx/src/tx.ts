@@ -817,6 +817,7 @@ export class TxBuilder {
     // const vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore);
     const requiredWitnesses: [Ed25519PublicKeyHex, Ed25519SignatureHex][] = [];
     let witnessCount = 0;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const _witness of this.requiredWitnesses) {
       requiredWitnesses.push([
         Ed25519PublicKeyHex(witnessCount.toString().padStart(64, "0")),
