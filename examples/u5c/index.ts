@@ -1,7 +1,16 @@
 // Step #1
 // Import Blaze SDK and U5C provider
-import { Bip32PrivateKey, mnemonicToEntropy, wordlist } from "../../packages/blaze-core/dist/index.js";
-import { HotWallet, Core, Blaze, U5C } from "../../packages/blaze-sdk/dist/index.js";
+import {
+  Bip32PrivateKey,
+  mnemonicToEntropy,
+  wordlist,
+} from "../../packages/blaze-core/dist/index.js";
+import {
+  HotWallet,
+  Core,
+  Blaze,
+  U5C,
+} from "../../packages/blaze-sdk/dist/index.js";
 
 // Step #2
 // Create a new U5C provider
@@ -9,15 +18,16 @@ import { HotWallet, Core, Blaze, U5C } from "../../packages/blaze-sdk/dist/index
 // but you can run a local Dolos https://github.com/txpipe/dolos instance and connect to its UTxO endpoint
 // If this is the case then you can remove the headers field
 const provider = new U5C({
-    url: "http://localhost:50051",
-    headers: {
-        "dmtr-api-key": "<api-key>"
-    }
+  url: "http://localhost:50051",
+  headers: {
+    "dmtr-api-key": "<api-key>",
+  },
 });
 
 // Step #3
 // Create a new wallet from a mnemonic
-const mnemonic = "end link visit estate sock hurt crucial forum eagle earn idle laptop wheat rookie when hard suffer duty kingdom clerk glide mechanic debris jar";
+const mnemonic =
+  "end link visit estate sock hurt crucial forum eagle earn idle laptop wheat rookie when hard suffer duty kingdom clerk glide mechanic debris jar";
 const entropy = mnemonicToEntropy(mnemonic, wordlist);
 const masterkey = Bip32PrivateKey.fromBip39Entropy(Buffer.from(entropy), "");
 const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
@@ -34,12 +44,15 @@ console.log("Wallet balance", (await wallet.getBalance()).toCore());
 
 // Step #5
 // Create a example transaction that sends 5 ADA to an address
-const tx = await blaze.newTransaction()
-    .payLovelace(
-        Core.Address.fromBech32("addr_test1qrnrqg4s73skqfyyj69mzr7clpe8s7ux9t8z6l55x2f2xuqra34p9pswlrq86nq63hna7p4vkrcrxznqslkta9eqs2nsmlqvnk"),
-        5_000_000n
-    )
-    .complete();
+const tx = await blaze
+  .newTransaction()
+  .payLovelace(
+    Core.Address.fromBech32(
+      "addr_test1qrnrqg4s73skqfyyj69mzr7clpe8s7ux9t8z6l55x2f2xuqra34p9pswlrq86nq63hna7p4vkrcrxznqslkta9eqs2nsmlqvnk",
+    ),
+    5_000_000n,
+  )
+  .complete();
 
 // Step #6
 // Sign the transaction
