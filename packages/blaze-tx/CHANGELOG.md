@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.4
+
+### Patch Changes
+
+- c7164ae: patch: fix fee calculation by ensuring fake witnesses are unique
+
 ## 0.5.3
 
 ### Patch Changes
