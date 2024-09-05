@@ -250,8 +250,8 @@ export class TxBuilder {
   /**
    * Sets an additional padding to add onto the transactions.
    * Use this only in emergencies, and please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can correct the fee calculation!
-   * 
-   * @param {bigint} pad - The padding to add onto the transaction fee 
+   *
+   * @param {bigint} pad - The padding to add onto the transaction fee
    * @returns {TxBuilder} the same transaction builder
    */
   setFeePadding(pad: bigint) {
@@ -1395,7 +1395,9 @@ export class TxBuilder {
       }
     }
     if (this.feePadding > 0n) {
-      console.warn("A transaction was built using fee padding. This is useful for working around changes to fee calculation, but ultimately is a bandaid. If you find yourself needing this, please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can fix the underlying inaccuracy!")
+      console.warn(
+        "A transaction was built using fee padding. This is useful for working around changes to fee calculation, but ultimately is a bandaid. If you find yourself needing this, please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can fix the underlying inaccuracy!",
+      );
     }
     let final_size = draft_tx.toCbor().length / 2;
     do {
@@ -1403,7 +1405,7 @@ export class TxBuilder {
         Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
       );
       excessValue = this.getPitch();
-      
+
       this.body.setFee(bigintMax(this.fee, this.minimumFee) + this.feePadding);
       this.balanceChange(excessValue);
       if (this.body.collateral()) {
