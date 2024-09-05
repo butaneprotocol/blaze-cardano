@@ -1263,9 +1263,17 @@ export class TxBuilder {
     // Gather all inputs from the transaction body.
     const inputs = [...this.body.inputs().values()];
     // Perform initial checks and preparations for coin selection.
-    const preliminaryDraftTx = new Transaction(this.body, new TransactionWitnessSet());
-    const preliminaryFee = this.params.minFeeConstant + fromHex(preliminaryDraftTx.toCbor()).length * this.params.minFeeCoefficient;
-    let excessValue = this.getPitch(bigintMax(BigInt(Math.ceil(preliminaryFee)), this.minimumFee));
+    const preliminaryDraftTx = new Transaction(
+      this.body,
+      new TransactionWitnessSet(),
+    );
+    const preliminaryFee =
+      this.params.minFeeConstant +
+      fromHex(preliminaryDraftTx.toCbor()).length *
+        this.params.minFeeCoefficient;
+    let excessValue = this.getPitch(
+      bigintMax(BigInt(Math.ceil(preliminaryFee)), this.minimumFee),
+    );
     let spareInputs: TransactionUnspentOutput[] = [];
     for (const [utxo] of this.utxos.entries()) {
       if (!inputs.includes(utxo.input())) {
