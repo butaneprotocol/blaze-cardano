@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.2.12
+
+### Patch Changes
+
+- 83192cc: fee leaner, maestro patched
+
 ## 0.2.11
 
 ### Patch Changes
