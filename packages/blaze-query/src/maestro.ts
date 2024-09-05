@@ -50,7 +50,7 @@ export class Maestro implements Provider {
    * @returns A Promise that resolves to a ProtocolParameters object.
    */
   getParameters(): Promise<ProtocolParameters> {
-    const query = `//protocol-parameters`;
+    const query = `/protocol-parameters`;
     return fetch(`${this.url}${query}`, { headers: this.headers() })
       .then((resp) => resp.json())
       .then((json) => {
@@ -65,14 +65,12 @@ export class Maestro implements Provider {
           const params = response.data;
           const costModels: CostModels = new Map();
           for (const cm of Object.keys(
-            params.cost_models,
+            params.plutus_cost_models,
           ) as MaestroLanguageVersions[]) {
-            const costModel: number[] = [];
-            const keys = Object.keys(params.cost_models[cm]).sort();
-            for (const key of keys) {
-              costModel.push(params.cost_models[cm][key]!);
-            }
-            costModels.set(fromMaestroLanguageVersion(cm), costModel);
+            costModels.set(
+              fromMaestroLanguageVersion(cm),
+              params.plutus_cost_models[cm],
+            );
           }
           const parseRatio = (ratio: string): number => {
             const [numerator, denominator] = ratio.split("/").map(Number);
@@ -80,33 +78,38 @@ export class Maestro implements Provider {
           };
 
           return {
-            coinsPerUtxoByte: params.coins_per_utxo_byte,
-            maxTxSize: params.max_tx_size,
+            coinsPerUtxoByte: params.min_utxo_deposit_coefficient,
+            maxTxSize: params.max_transaction_size.bytes,
             minFeeCoefficient: params.min_fee_coefficient,
-            minFeeConstant: params.min_fee_constant,
-            maxBlockBodySize: params.max_block_body_size,
-            maxBlockHeaderSize: params.max_block_header_size,
-            stakeKeyDeposit: params.stake_key_deposit,
-            poolDeposit: params.pool_deposit,
-            poolRetirementEpochBound: params.pool_retirement_epoch_bound,
-            desiredNumberOfPools: params.desired_number_of_pools,
-            poolInfluence: params.pool_influence,
+            minFeeConstant: params.min_fee_constant.ada.lovelace,
+            maxBlockBodySize: params.max_block_body_size.bytes,
+            maxBlockHeaderSize: params.max_block_header_size.bytes,
+            stakeKeyDeposit: params.stake_credential_deposit.ada.lovelace,
+            poolDeposit: params.stake_pool_deposit.ada.lovelace,
+            poolRetirementEpochBound: params.stake_pool_retirement_epoch_bound,
+            desiredNumberOfPools: params.desired_number_of_stake_pools,
+            poolInfluence: params.stake_pool_pledge_influence,
             monetaryExpansion: params.monetary_expansion,
             treasuryExpansion: params.treasury_expansion,
-            minPoolCost: params.min_pool_cost,
-            protocolVersion: params.protocol_version,
-            maxValueSize: params.max_value_size,
+            minPoolCost: params.min_stake_pool_cost.ada.lovelace,
+            protocolVersion: params.version,
+            maxValueSize: params.max_value_size.bytes,
             collateralPercentage: params.collateral_percentage / 100,
             maxCollateralInputs: params.max_collateral_inputs,
             costModels: costModels,
             prices: {
-              memory: parseRatio(params.prices.memory),
-              steps: parseRatio(params.prices.steps),
+              memory: parseRatio(params.script_execution_prices.memory),
+              steps: parseRatio(params.script_execution_prices.cpu),
             },
-            maxExecutionUnitsPerTransaction:
-              params.max_execution_units_per_transaction,
-            maxExecutionUnitsPerBlock: params.max_execution_units_per_block,
-          };
+            maxExecutionUnitsPerTransaction: {
+              memory: params.max_execution_units_per_transaction.memory,
+              steps: params.max_execution_units_per_transaction.cpu,
+            },
+            maxExecutionUnitsPerBlock: {
+              memory: params.max_execution_units_per_block.memory,
+              steps: params.max_execution_units_per_block.cpu,
+            },
+          } as ProtocolParameters;
         }
         throw new Error("getParameters: Could not parse response json");
       });
@@ -440,58 +443,177 @@ export class Maestro implements Provider {
   }
 }
 
-type MaestroLanguageVersions = "plutus:v1" | "plutus:v2";
+type MaestroLanguageVersions = "plutus_v1" | "plutus_v2" | "plutus_v3";
 const fromMaestroLanguageVersion = (
   x: MaestroLanguageVersions,
 ): PlutusLanguageVersion => {
-  if (x == "plutus:v1") {
+  if (x == "plutus_v1") {
     return PlutusLanguageVersion.V1;
-  } else if (x == "plutus:v2") {
+  } else if (x == "plutus_v2") {
     return PlutusLanguageVersion.V2;
+  } else if (x == "plutus_v3") {
+    return PlutusLanguageVersion.V3;
   }
   throw new Error("fromMaestroLanguageVersion: Unreachable!");
 };
 
+/**
+ * Represents the response structure for protocol parameters from the Maestro API.
+ * @see https://docs.gomaestro.org/Indexer%20API/Protocol%20Parameters
+ */
 interface MaestroProtocolParametersResponse {
   data: {
+    /** Collateral percentage */
+    collateral_percentage: number;
+    /** Maximum term length for the constitutional committee */
+    constitutional_committee_max_term_length: number;
+    /** Minimum size of the constitutional committee */
+    constitutional_committee_min_size: number;
+    /** Deposit required for delegate representatives */
+    delegate_representative_deposit: {
+      ada: {
+        lovelace: number;
+      };
+    };
+    /** Maximum idle time for delegate representatives */
+    delegate_representative_max_idle_time: number;
+    /** Voting thresholds for delegate representatives */
+    delegate_representative_voting_thresholds: {
+      constitution: string;
+      constitutional_committee: {
+        default: string;
+        state_of_no_confidence: string;
+      };
+      hard_fork_initiation: string;
+      no_confidence: string;
+      protocol_parameters_update: {
+        economic: string;
+        governance: string;
+        network: string;
+        technical: string;
+      };
+      treasury_withdrawals: string;
+    };
+    /** Desired number of stake pools */
+    desired_number_of_stake_pools: number;
+    /** Deposit required for governance actions */
+    governance_action_deposit: {
+      ada: {
+        lovelace: number;
+      };
+    };
+    /** Lifetime of governance actions */
+    governance_action_lifetime: number;
+    /** Maximum block body size in bytes */
+    max_block_body_size: {
+      bytes: number;
+    };
+    /** Maximum block header size in bytes */
+    max_block_header_size: {
+      bytes: number;
+    };
+    /** Maximum number of collateral inputs */
+    max_collateral_inputs: number;
+    /** Maximum execution units per block */
+    max_execution_units_per_block: {
+      cpu: number;
+      memory: number;
+    };
+    /** Maximum execution units per transaction */
+    max_execution_units_per_transaction: {
+      cpu: number;
+      memory: number;
+    };
+    /** Maximum size of reference scripts */
+    max_reference_scripts_size: {
+      bytes: number;
+    };
+    /** Maximum transaction size in bytes */
+    max_transaction_size: {
+      bytes: number;
+    };
+    /** Maximum value size in bytes */
+    max_value_size: {
+      bytes: number;
+    };
+    /** Minimum fee coefficient */
     min_fee_coefficient: number;
-    min_fee_constant: number;
-    max_block_body_size: number;
-    max_block_header_size: number;
-    max_tx_size: number;
-    stake_key_deposit: number;
-    pool_deposit: number;
-    pool_retirement_epoch_bound: number;
-    desired_number_of_pools: number;
-    pool_influence: string;
+    /** Minimum fee constant */
+    min_fee_constant: {
+      ada: {
+        lovelace: number;
+      };
+    };
+    /** Minimum fee for reference scripts */
+    min_fee_reference_scripts: {
+      base: number;
+      multiplier: number;
+      range: number;
+    };
+    /** Minimum stake pool cost */
+    min_stake_pool_cost: {
+      ada: {
+        lovelace: number;
+      };
+    };
+    /** Minimum UTxO deposit coefficient */
+    min_utxo_deposit_coefficient: number;
+    /** Minimum UTxO deposit constant */
+    min_utxo_deposit_constant: {
+      ada: {
+        lovelace: number;
+      };
+    };
+    /** Monetary expansion rate */
     monetary_expansion: string;
+    /** Plutus cost models for different versions */
+    plutus_cost_models: {
+      plutus_v1: number[];
+      plutus_v2: number[];
+      plutus_v3: number[];
+    };
+    /** Script execution prices */
+    script_execution_prices: {
+      cpu: string;
+      memory: string;
+    };
+    /** Stake credential deposit */
+    stake_credential_deposit: {
+      ada: {
+        lovelace: number;
+      };
+    };
+    /** Stake pool deposit */
+    stake_pool_deposit: {
+      ada: {
+        lovelace: number;
+      };
+    };
+    /** Stake pool pledge influence */
+    stake_pool_pledge_influence: string;
+    /** Stake pool retirement epoch bound */
+    stake_pool_retirement_epoch_bound: number;
+    /** Stake pool voting thresholds */
+    stake_pool_voting_thresholds: {
+      constitutional_committee: {
+        default: string;
+        state_of_no_confidence: string;
+      };
+      hard_fork_initiation: string;
+      no_confidence: string;
+      protocol_parameters_update: {
+        security: string;
+      };
+    };
+    /** Treasury expansion rate */
     treasury_expansion: string;
-    protocol_version: {
+    /** Protocol version */
+    version: {
       major: number;
       minor: number;
     };
-    min_pool_cost: number;
-    coins_per_utxo_byte: number;
-    cost_models: Record<MaestroLanguageVersions, { [key: string]: number }>;
-    prices: {
-      memory: string;
-      steps: string;
-    };
-    max_execution_units_per_transaction: {
-      memory: number;
-      steps: number;
-    };
-    max_execution_units_per_block: {
-      memory: number;
-      steps: number;
-    };
-    max_value_size: number;
-    collateral_percentage: number;
-    max_collateral_inputs: number;
   };
-  last_updated: MaestroLastUpdated;
 }
-
 type MaestroResponse<SomeResponse> = SomeResponse | { message: string };
 
 interface MaestroUTxOResponse {

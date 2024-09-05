@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.5
+
+### Patch Changes
+
+- 83192cc: fee leaner, maestro patched
+
 ## 0.5.4
 
 ### Patch Changes
