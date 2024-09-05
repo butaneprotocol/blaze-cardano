@@ -1,5 +1,5 @@
 import type { TransactionUnspentOutput } from "@blaze-cardano/core";
-import { Value } from "@blaze-cardano/core";
+import { Value, UTxOSelectionError } from "@blaze-cardano/core";
 import * as value from "./value";
 
 /**
@@ -47,7 +47,7 @@ function wideSelection(
         }
       }
       if (bestStep[2] == -1) {
-        throw new Error("UTxO Balance Insufficient");
+        throw new UTxOSelectionError("wide", dearth, availableInputs, selectedInputs, bestStep);
       }
       selectedInputs.push(...availableInputs.splice(bestStep[2], 1));
       acc = value.merge(acc, bestStep[1]);
@@ -92,7 +92,7 @@ function deepSelection(
         }
       }
       if (bestStep[2] == -1) {
-        throw new Error("UTxO Balance Insufficient");
+        throw new UTxOSelectionError("deep", dearth, availableInputs, selectedInputs, bestStep);
       }
       selectedInputs.push(...availableInputs.splice(bestStep[2], 1));
       acc = value.merge(acc, bestStep[1]);
@@ -120,14 +120,12 @@ export function micahsSelector(
   const finalDearth = value.positives(
     value.sub(remainingDearth, deepResult.selectedValue),
   );
+  const selectedInputs = [...wideResult.selectedInputs, ...deepResult.selectedInputs];
   if (!value.empty(finalDearth)) {
-    throw new Error("Coin selector failed!");
+    throw new UTxOSelectionError("final", finalDearth, inputs, selectedInputs);
   }
   return {
-    selectedInputs: [
-      ...wideResult.selectedInputs,
-      ...deepResult.selectedInputs,
-    ],
+    selectedInputs,
     selectedValue: value.merge(
       wideResult.selectedValue,
       deepResult.selectedValue,
