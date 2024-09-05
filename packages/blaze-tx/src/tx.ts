@@ -829,17 +829,21 @@ export class TxBuilder {
     // Process vkey witnesses
     // const vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore);
     const requiredWitnesses: [Ed25519PublicKeyHex, Ed25519SignatureHex][] = [];
-    this.requiredWitnesses.forEach((_) => {
+    let witnessCount = 0;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for (const _witness of this.requiredWitnesses) {
       requiredWitnesses.push([
-        Ed25519PublicKeyHex("0".repeat(64)),
-        Ed25519SignatureHex("0".repeat(128)),
+        Ed25519PublicKeyHex(witnessCount.toString().padStart(64, "0")),
+        Ed25519SignatureHex(witnessCount.toString().padStart(128, "0")),
       ]);
-    });
+      witnessCount++;
+    }
     for (let i = 0; i < this.additionalSigners; i++) {
       requiredWitnesses.push([
-        Ed25519PublicKeyHex("0".repeat(64)),
-        Ed25519SignatureHex("0".repeat(128)),
+        Ed25519PublicKeyHex(witnessCount.toString().padStart(64, "0")),
+        Ed25519SignatureHex(witnessCount.toString().padStart(128, "0")),
       ]);
+      witnessCount++;
     }
     tw.setVkeys(CborSet.fromCore(requiredWitnesses, VkeyWitness.fromCore));
     tw.setRedeemers(this.redeemers);
@@ -1272,7 +1276,17 @@ export class TxBuilder {
     // Gather all inputs from the transaction body.
     const inputs = [...this.body.inputs().values()];
     // Perform initial checks and preparations for coin selection.
-    let excessValue = this.getPitch(5_000_000n);
+    const preliminaryDraftTx = new Transaction(
+      this.body,
+      new TransactionWitnessSet(),
+    );
+    const preliminaryFee =
+      this.params.minFeeConstant +
+      fromHex(preliminaryDraftTx.toCbor()).length *
+        this.params.minFeeCoefficient;
+    let excessValue = this.getPitch(
+      bigintMax(BigInt(Math.ceil(preliminaryFee)), this.minimumFee),
+    );
     let spareInputs: TransactionUnspentOutput[] = [];
     for (const [utxo] of this.utxos.entries()) {
       if (!inputs.includes(utxo.input())) {

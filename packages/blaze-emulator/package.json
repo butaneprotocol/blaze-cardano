@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/emulator",
-  "version": "0.1.59",
+  "version": "0.1.61",
   "description": "Blaze cardano emulator library",
   "exports": {
     ".": {
@@ -36,7 +36,7 @@
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/query": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
-    "@blaze-cardano/wallet": "workspace:*",
-    "@blaze-cardano/vm": "workspace:*"
+    "@blaze-cardano/vm": "workspace:*",
+    "@blaze-cardano/wallet": "workspace:*"
   }
 }
