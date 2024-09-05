@@ -1,5 +1,3 @@
 {
-  "extends": "@blaze-cardano/tsconfig/base.json",
-  "include": ["."],
-  "exclude": ["dist", "build", "node_modules"]
+  "extends": "@blaze-cardano/tsconfig/base.json"
 }

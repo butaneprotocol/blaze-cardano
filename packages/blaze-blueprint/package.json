@@ -2,12 +2,16 @@
   "name": "@blaze-cardano/blueprint",
   "version": "0.4.1",
   "description": "CIP-57 implementation and generator",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "types": "./dist/index.d.ts",
   "bin": "./dist/cli.js",
   "files": [
-    "dist/**"
+    "dist"
   ],
   "scripts": {
     "build": "tsup src/index.ts src/cli.ts --format esm,cjs --dts",

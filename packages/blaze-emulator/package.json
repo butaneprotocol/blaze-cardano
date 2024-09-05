@@ -9,6 +9,9 @@
     }
   },
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --external rxjs",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",

@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json.schemastore.org/package.json",
   "name": "@blaze-cardano/vm",
   "version": "0.0.35",
   "description": "Blaze cardano plutus virtual machine",
@@ -7,15 +6,11 @@
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
-    },
-    "./value": {
-      "import": "./dist/value.mjs",
-      "require": "./dist/value.js"
     }
   },
   "types": "./dist/index.d.ts",
   "files": [
-    "dist/**"
+    "dist"
   ],
   "scripts": {
     "build": "tsup src/index.ts src/value.ts --format esm,cjs --dts --external rxjs",
