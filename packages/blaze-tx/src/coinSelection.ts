@@ -47,7 +47,13 @@ function wideSelection(
         }
       }
       if (bestStep[2] == -1) {
-        throw new UTxOSelectionError("wide", dearth, availableInputs, selectedInputs, bestStep);
+        throw new UTxOSelectionError(
+          "wide",
+          dearth,
+          availableInputs,
+          selectedInputs,
+          bestStep,
+        );
       }
       selectedInputs.push(...availableInputs.splice(bestStep[2], 1));
       acc = value.merge(acc, bestStep[1]);
@@ -92,7 +98,13 @@ function deepSelection(
         }
       }
       if (bestStep[2] == -1) {
-        throw new UTxOSelectionError("deep", dearth, availableInputs, selectedInputs, bestStep);
+        throw new UTxOSelectionError(
+          "deep",
+          dearth,
+          availableInputs,
+          selectedInputs,
+          bestStep,
+        );
       }
       selectedInputs.push(...availableInputs.splice(bestStep[2], 1));
       acc = value.merge(acc, bestStep[1]);
@@ -120,7 +132,10 @@ export function micahsSelector(
   const finalDearth = value.positives(
     value.sub(remainingDearth, deepResult.selectedValue),
   );
-  const selectedInputs = [...wideResult.selectedInputs, ...deepResult.selectedInputs];
+  const selectedInputs = [
+    ...wideResult.selectedInputs,
+    ...deepResult.selectedInputs,
+  ];
   if (!value.empty(finalDearth)) {
     throw new UTxOSelectionError("final", finalDearth, inputs, selectedInputs);
   }
