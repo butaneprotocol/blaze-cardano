@@ -1239,6 +1239,15 @@ export class TxBuilder {
   }
 
   /**
+   * Prints the transaction cbor in its current state without trying to complete it
+   * @returns {string} The CBOR representation of the transaction
+   * */
+  toCbor(): string {
+    const tw = this.buildTransactionWitnessSet();
+    return new Transaction(this.body, tw, this.auxiliaryData).toCbor();
+  }
+
+  /**
    * Completes the transaction by performing several key operations:
    * - Verifies the presence of a change address.
    * - Gathers inputs and performs coin selection if necessary.
