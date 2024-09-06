@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.6
+
+### Patch Changes
+
+- d80a09b: Add a fee padding option, to supplement the minFee option
+
 ## 0.5.5
 
 ### Patch Changes
