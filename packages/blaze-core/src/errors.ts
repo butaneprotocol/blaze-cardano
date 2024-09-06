@@ -1,4 +1,4 @@
-import { TransactionUnspentOutput, Value } from "./types";
+import type { TransactionUnspentOutput, Value } from "./types";
 
 export type SelectionPhase = "wide" | "deep" | "final";
 
