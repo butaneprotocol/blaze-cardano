@@ -84,6 +84,9 @@ Blaze channel is in the [TxPipe Discord](https://discord.gg/FAeAR6jX)!
 A list of projects, apps, websites, repositories, which depend on this library in some manner.
 
 - [Butane](https://butane.dev)
+- [Fortuna](https://minefortuna.com/)
+- [jpg.store](https://jpg.store)
+- [Rocket](rocket.store)
 
 ### Contributing
 
