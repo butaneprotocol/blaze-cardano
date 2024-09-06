@@ -87,6 +87,7 @@ A list of projects, apps, websites, repositories, which depend on this library i
 - [Fortuna](https://minefortuna.com/)
 - [jpg.store](https://jpg.store)
 - [Rocket](rocket.store)
+- [SundaeSwap](https://sundae.fi/)
 
 ### Contributing
 
