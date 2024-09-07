@@ -831,8 +831,8 @@ export class TxBuilder {
     const requiredWitnesses: [Ed25519PublicKeyHex, Ed25519SignatureHex][] = Array.from(
       { length: this.requiredWitnesses.size + this.additionalSigners },
       (_, i) => [
-        Ed25519PublicKeyHex(i.toString(10).padStart(64, "0")),
-        Ed25519SignatureHex(i.toString(10).padStart(128, "0")),
+        Ed25519PublicKeyHex(i.toString().padStart(64, "0")),
+        Ed25519SignatureHex(i.toString().padStart(128, "0")),
       ]
     );
 
