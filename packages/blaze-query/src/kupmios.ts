@@ -166,7 +166,7 @@ export class Kupmios implements Provider {
     if (res.length === 1) {
       return res[0]!;
     } else {
-      throw new Error(`Error fetching unspent outputs`);
+      throw new Error(`Error fetching unspent outputs ${unit}`);
     }
   }
 
@@ -460,16 +460,21 @@ export class Kupmios implements Provider {
           }
         | undefined;
       if (scriptRef) {
-        const language = Kupmios.plutusVersions[scriptRef.language()];
+        // TODO: Cardano Core SDK comes back with these language numbers.
+        // 0 = native
+        // 1 = plutusV1
+        // 2 = plutusV2
+        // 3 = plutusV3
+        const langIndex = scriptRef.language();
+        const language = Kupmios.plutusVersions[langIndex - 1];
 
         script = {
           language: language || "native",
-          cbor: scriptRef.toCbor(),
+          cbor:
+            langIndex === 0
+              ? scriptRef.toCbor()
+              : scriptRef[`asPlutusV${langIndex}`]()!.rawBytes(),
         };
-        if (!language) {
-          // Todo: handle native scripts properly.
-          throw new Error("unimplemented");
-        }
       }
       return {
         transaction: {
