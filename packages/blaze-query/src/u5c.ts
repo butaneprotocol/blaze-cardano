@@ -62,16 +62,16 @@ export class U5C implements Provider {
   }
 
   async getUnspentOutputs(
-    address: Address
+    address: Address,
   ): Promise<TransactionUnspentOutput[]> {
     const utxoSearchResult = await this.queryClient.searchUtxosByAddress(
-      new Uint8Array(Buffer.from(address.toBytes().toString(), "hex"))
+      new Uint8Array(Buffer.from(address.toBytes().toString(), "hex")),
     );
 
     const utxos = utxoSearchResult.map((item) => {
       const input = new TransactionInput(
         TransactionId(Buffer.from(item.txoRef.hash).toString("hex")),
-        BigInt(item.txoRef.index)
+        BigInt(item.txoRef.index),
       );
 
       const output = this._rpcTxOutToCoreTxOut(item.parsedValued!);
@@ -83,10 +83,10 @@ export class U5C implements Provider {
 
   async getUnspentOutputsWithAsset(
     address: Address,
-    unit: AssetId
+    unit: AssetId,
   ): Promise<TransactionUnspentOutput[]> {
     const addressBytes = new Uint8Array(
-      Buffer.from(address.toBytes().toString(), "hex")
+      Buffer.from(address.toBytes().toString(), "hex"),
     );
 
     const unitBytes = new Uint8Array(Buffer.from(unit.toString(), "hex"));
@@ -95,13 +95,13 @@ export class U5C implements Provider {
       await this.queryClient.searchUtxosByAddressWithAsset(
         addressBytes,
         undefined,
-        unitBytes
+        unitBytes,
       );
 
     return utxoSearchResult.map((item) => {
       const input = new TransactionInput(
         TransactionId(Buffer.from(item.txoRef.hash).toString("hex")),
-        BigInt(item.txoRef.index)
+        BigInt(item.txoRef.index),
       );
 
       const output = this._rpcTxOutToCoreTxOut(item.parsedValued!);
@@ -111,12 +111,12 @@ export class U5C implements Provider {
   }
 
   async getUnspentOutputByNFT(
-    unit: AssetId
+    unit: AssetId,
   ): Promise<TransactionUnspentOutput> {
     const unitBytes = new Uint8Array(Buffer.from(unit.toString(), "hex"));
     const utxoSearchResult = await this.queryClient.searchUtxosByAsset(
       undefined,
-      unitBytes
+      unitBytes,
     );
 
     if (utxoSearchResult.length <= 0) {
@@ -130,7 +130,7 @@ export class U5C implements Provider {
 
     const input = new TransactionInput(
       TransactionId(Buffer.from(item.txoRef.hash).toString("hex")),
-      BigInt(item.txoRef.index)
+      BigInt(item.txoRef.index),
     );
 
     const output = this._rpcTxOutToCoreTxOut(item.parsedValued!);
@@ -139,11 +139,11 @@ export class U5C implements Provider {
   }
 
   async resolveUnspentOutputs(
-    txIns: TransactionInput[]
+    txIns: TransactionInput[],
   ): Promise<TransactionUnspentOutput[]> {
     const references = txIns.map((txIn) => {
       const txHashBytes = new Uint8Array(
-        Buffer.from(txIn.transactionId().toString(), "hex")
+        Buffer.from(txIn.transactionId().toString(), "hex"),
       );
       return {
         txHash: txHashBytes,
@@ -156,7 +156,7 @@ export class U5C implements Provider {
       utxoSearchResult?.map((item) => {
         const input = new TransactionInput(
           TransactionId(Buffer.from(item.txoRef.hash).toString("hex")),
-          BigInt(item.txoRef.index)
+          BigInt(item.txoRef.index),
         );
 
         const output = this._rpcTxOutToCoreTxOut(item.parsedValued!);
@@ -173,7 +173,7 @@ export class U5C implements Provider {
 
   awaitTransactionConfirmation(
     _txId: TransactionId,
-    _timeout?: number
+    _timeout?: number,
   ): Promise<boolean> {
     throw new Error("Method not implemented.");
   }
@@ -186,18 +186,18 @@ export class U5C implements Provider {
 
   evaluateTransaction(
     tx: Transaction,
-    additionalUtxos: TransactionUnspentOutput[]
+    additionalUtxos: TransactionUnspentOutput[],
   ): Promise<Redeemers> {
     console.log("evaluateTransaction", tx, additionalUtxos);
     throw new Error("Method not implemented.");
   }
 
   private _rpcTxOutToCoreTxOut(
-    rpcTxOutput: spec.cardano.TxOutput
+    rpcTxOutput: spec.cardano.TxOutput,
   ): TransactionOutput {
     const output = new TransactionOutput(
       Address.fromBytes(HexBlob.fromBytes(rpcTxOutput.address)),
-      this._rpcTxOutToCoreValue(rpcTxOutput)
+      this._rpcTxOutToCoreValue(rpcTxOutput),
     );
 
     if (rpcTxOutput.datum !== undefined) {
@@ -206,12 +206,14 @@ export class U5C implements Provider {
         rpcTxOutput.datum.originalCbor.length > 0
       ) {
         const inlineDatum = Datum.newInlineData(
-          PlutusData.fromCbor(HexBlob.fromBytes(rpcTxOutput.datum.originalCbor))
+          PlutusData.fromCbor(
+            HexBlob.fromBytes(rpcTxOutput.datum.originalCbor),
+          ),
         );
         output.setDatum(inlineDatum);
       } else if (rpcTxOutput.datum?.hash && rpcTxOutput.datum.hash.length > 0) {
         const datumHash = Datum.newDataHash(
-          DatumHash(Buffer.from(rpcTxOutput.datum.hash).toString("hex"))
+          DatumHash(Buffer.from(rpcTxOutput.datum.hash).toString("hex")),
         );
         output.setDatum(datumHash);
       }
@@ -222,16 +224,16 @@ export class U5C implements Provider {
         const cbor = rpcTxOutput.script.script.value;
         output.setScriptRef(
           Script.newPlutusV1Script(
-            PlutusV1Script.fromCbor(HexBlob.fromBytes(cbor))
-          )
+            PlutusV1Script.fromCbor(HexBlob.fromBytes(cbor)),
+          ),
         );
       }
       if (rpcTxOutput.script.script.case === "plutusV2") {
         const cbor = rpcTxOutput.script.script.value;
         output.setScriptRef(
           Script.newPlutusV2Script(
-            PlutusV2Script.fromCbor(HexBlob.fromBytes(cbor))
-          )
+            PlutusV2Script.fromCbor(HexBlob.fromBytes(cbor)),
+          ),
         );
       }
     }
@@ -242,19 +244,19 @@ export class U5C implements Provider {
   private _rpcTxOutToCoreValue(rpcTxOutput: spec.cardano.TxOutput): Value {
     return new Value(
       BigInt(rpcTxOutput.coin),
-      this._rpcMultiAssetOutputToTokenMap(rpcTxOutput.assets)
+      this._rpcMultiAssetOutputToTokenMap(rpcTxOutput.assets),
     );
   }
 
   private _rpcMultiAssetOutputToTokenMap(
-    multiAsset: spec.cardano.Multiasset[]
+    multiAsset: spec.cardano.Multiasset[],
   ): TokenMap {
     const tokenMap: TokenMap = new Map();
     multiAsset.forEach((ma) => {
       ma.assets.forEach((asset) => {
         const assetId = AssetId.fromParts(
           PolicyId(Buffer.from(ma.policyId).toString("hex")),
-          AssetName(Buffer.from(asset.name).toString("hex"))
+          AssetName(Buffer.from(asset.name).toString("hex")),
         );
 
         const quantity = BigInt(asset.outputCoin);
@@ -270,7 +272,7 @@ export class U5C implements Provider {
   }
 
   private _rpcPParamsToCorePParams(
-    rpcPParams: spec.cardano.PParams
+    rpcPParams: spec.cardano.PParams,
   ): ProtocolParameters {
     return {
       coinsPerUtxoByte: Number(rpcPParams.coinsPerUtxoByte),
@@ -278,22 +280,23 @@ export class U5C implements Provider {
         .set(
           PlutusLanguageVersion.V1,
           rpcPParams.costModels?.plutusV1?.values.map((v) =>
-            Number(v.toString())
+            Number(v.toString()),
           ) ??
             hardCodedProtocolParams.costModels.get(PlutusLanguageVersion.V1) ??
-            []
+            [],
         )
         .set(
           PlutusLanguageVersion.V2,
           rpcPParams.costModels?.plutusV2?.values.map((v) =>
-            Number(v.toString())
+            Number(v.toString()),
           ) ??
             hardCodedProtocolParams.costModels.get(PlutusLanguageVersion.V2) ??
-            []
+            [],
         )
         .set(
           PlutusLanguageVersion.V3,
-          hardCodedProtocolParams.costModels.get(PlutusLanguageVersion.V3) ?? []
+          hardCodedProtocolParams.costModels.get(PlutusLanguageVersion.V3) ??
+            [],
         ),
       maxBlockBodySize: Number(rpcPParams.maxBlockBodySize),
       maxBlockHeaderSize: Number(rpcPParams.maxBlockHeaderSize),
