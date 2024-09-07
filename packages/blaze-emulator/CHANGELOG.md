@@ -1,5 +1,17 @@
 # @blaze-cardano/emulator
 
+## 0.1.63
+
+### Patch Changes
+
+- 690d580: use package.json exports consistently
+- Updated dependencies [690d580]
+  - @blaze-cardano/wallet@0.1.43
+  - @blaze-cardano/query@0.2.13
+  - @blaze-cardano/core@0.4.3
+  - @blaze-cardano/tx@0.5.7
+  - @blaze-cardano/vm@0.0.36
+
 ## 0.1.62
 
 ### Patch Changes

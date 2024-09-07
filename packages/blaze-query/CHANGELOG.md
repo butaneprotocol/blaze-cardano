@@ -1,5 +1,14 @@
 # @blaze-cardano/query
 
+## 0.2.13
+
+### Patch Changes
+
+- 690d580: use package.json exports consistently
+- Updated dependencies [690d580]
+  - @blaze-cardano/ogmios@0.0.5
+  - @blaze-cardano/core@0.4.3
+
 ## 0.2.12
 
 ### Patch Changes
