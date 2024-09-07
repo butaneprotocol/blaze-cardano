@@ -13,9 +13,6 @@ export type TokenMap = C.Cardano.TokenMap;
 export const Transaction = C.Serialization.Transaction;
 export type Transaction = C.Serialization.Transaction;
 
-export const TxCBOR = C.TxCBOR;
-export type TxCBOR = C.TxCBOR;
-
 export const TransactionId = C.Cardano.TransactionId;
 export type TransactionId = C.Cardano.TransactionId;
 
@@ -257,6 +254,48 @@ export type MetadatumList = C.Serialization.MetadatumList;
 export const TransactionMetadatumKind =
   C.Serialization.TransactionMetadatumKind;
 export type TransactionMetadatumKind = C.Serialization.TransactionMetadatumKind;
+
+export const VotingProcedures = C.Serialization.VotingProcedures;
+export type VotingProcedures = C.Serialization.VotingProcedures;
+
+export const ProposalProcedure = C.Serialization.ProposalProcedure;
+export type ProposalProcedure = C.Serialization.ProposalProcedure;
+
+export const InfoAction = C.Serialization.InfoAction;
+export type InfoAction = C.Serialization.InfoAction;
+
+export const Voter = C.Serialization.Voter;
+export type Voter = C.Serialization.Voter
+
+export const GovernanceActionId = C.Serialization.GovernanceActionId
+export type GovernanceActionId = C.Serialization.GovernanceActionId
+
+export const Anchor = C.Serialization.Anchor
+export type Anchor = C.Serialization.Anchor
+
+export const VotingProcedure = C.Serialization.VotingProcedure
+export type VotingProcedure = C.Serialization.VotingProcedure
+
+export const VoteDelegation = C.Serialization.VoteDelegation
+export type VoteDelegation = C.Serialization.VoteDelegation
+
+export const StakeVoteDelegation = C.Serialization.StakeVoteDelegation
+export type StakeVoteDelegation = C.Serialization.StakeVoteDelegation
+
+export type VoteDelegationCertificate = C.Cardano.VoteDelegationCertificate
+
+export const voteNo = (x?: Anchor) => new VotingProcedure(C.Cardano.Vote.no, x)
+export const voteYes = (x?: Anchor) => new VotingProcedure(C.Cardano.Vote.yes, x)
+export const voteAbstain = (x?: Anchor) => new VotingProcedure(C.Cardano.Vote.abstain, x)
+
+export const VoterType = C.Cardano.VoterType
+export type VoterType = C.Cardano.VoterType
+
+export const DRepID = C.Cardano.DRepID
+export type DRepID = C.Cardano.DRepID
+
+export const Drep = C.Serialization.DRep
+export type Drep = C.Serialization.DRep
 
 /**
  * The SlotConfig interface defines the configuration for slots.

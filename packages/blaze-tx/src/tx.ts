@@ -18,6 +18,9 @@ import type {
   StakeDelegationCertificate,
   NetworkId,
   AuxiliaryData,
+  Voter,
+  GovernanceActionId,
+  VotingProcedure
 } from "@blaze-cardano/core";
 import {
   CborSet,
@@ -57,6 +60,9 @@ import {
   blake2b_256,
   RedeemerTag,
   StakeRegistration,
+  VotingProcedures,
+  ProposalProcedure,
+  VoteDelegation
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector, type SelectionResult } from "./coinSelection";
@@ -858,6 +864,7 @@ export class TxBuilder {
     }
     plutusData.setValues(plutusDataList);
     tw.setPlutusData(plutusData);
+    console.log("draft tw", tw.toCore())
     return tw;
   }
 
@@ -878,8 +885,15 @@ export class TxBuilder {
         withdrawalAmount += withdrawals.get(account)!;
       }
     }
+    let proposalAmount = 0n;
+    const proposals = this.body.proposalProcedures();
+    if (proposals !== undefined) {
+      for (const proposal of proposals.values()) {
+        proposalAmount += proposal.deposit();
+      }
+    }
     // Initialize values for input, output, and minted amounts.
-    let inputValue = new Value(withdrawalAmount);
+    let inputValue = new Value(withdrawalAmount+proposalAmount);
     let outputValue = new Value(bigintMax(this.fee, this.minimumFee));
     const mintValue = new Value(0n, this.body.mint());
 
@@ -1068,6 +1082,7 @@ export class TxBuilder {
       this.params.minFeeConstant +
       fromHex(draft_tx.toCbor()).length * this.params.minFeeCoefficient;
 
+      console.log("minFeeCoefficient", this.params.minFeeCoefficient)
     if (this.params.minFeeReferenceScripts) {
       const utxoScope = [...this.utxoScope.values()];
       const allInputs = [
@@ -1354,6 +1369,7 @@ export class TxBuilder {
     this.balanceChange(excessValue);
     // Create a draft transaction for fee calculation.
     const draft_tx = new Transaction(this.body, tw, auxiliaryData);
+    console.log("draft length", draft_tx.toCbor().length)
     // Calculate and set the transaction fee.
     let draft_size = draft_tx.toCbor().length / 2;
     this.calculateFees(draft_tx);
@@ -1417,7 +1433,9 @@ export class TxBuilder {
     } while (final_size != draft_size);
     // Return the fully constructed transaction.
     tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore));
-    return new Transaction(this.body, tw, this.auxiliaryData);
+    const tx = new Transaction(this.body, tw, this.auxiliaryData)
+    console.log("final length", tx.toCbor().length)
+    return tx;
   }
 
   /**
@@ -1447,6 +1465,60 @@ export class TxBuilder {
     certs.setValues(vals);
     this.body.setCerts(certs);
     const delegatorCredential = delegator.toCore();
+    if (delegatorCredential.type == CredentialType.ScriptHash) {
+      if (redeemer) {
+        this.requiredPlutusScripts.add(delegatorCredential.hash);
+        const redeemers = [...this.redeemers.values()];
+        redeemers.push(
+          Redeemer.fromCore({
+            index: 256, // todo: fix
+            purpose: RedeemerPurpose["certificate"],
+            data: redeemer.toCore(),
+            executionUnits: {
+              memory: this.params.maxExecutionUnitsPerTransaction.memory,
+              steps: this.params.maxExecutionUnitsPerTransaction.steps,
+            },
+          }),
+        );
+        this.redeemers.setValues(redeemers);
+      } else {
+        this.requiredNativeScripts.add(delegatorCredential.hash);
+      }
+    } else if (redeemer) {
+      throw new Error(
+        "TxBuilder addDelegation: failing to attach redeemer to a non-script delegation!",
+      );
+    } else {
+      this.requiredWitnesses.add(HashAsPubKeyHex(delegatorCredential.hash));
+    }
+    return this;
+  }
+
+  /**
+   * Adds a certificate to delegate a staker to a pool
+   *
+   * @param {Credential} delegator - The credential of the staker to delegate.
+   * @param {Credential} drep - The credential of the drep to delegate to.
+   * @param {PlutusData} [redeemer] - Optional. A redeemer to be used if the delegation requires Plutus script validation.
+   * @returns {TxBuilder} The updated transaction builder.
+   */
+  addVoteDelegation(
+    delegator: Credential,
+    drep: Credential,
+    redeemer?: PlutusData,
+  ): TxBuilder {
+    const delegatorCredential = delegator.toCore();
+    const voteDelegation: VoteDelegation = VoteDelegation.fromCore({
+      __typename: CertificateType.VoteDelegation,
+      stakeCredential: delegatorCredential,
+      dRep: drep.toCore(),
+    });
+    const delegationCertificate: Certificate = Certificate.newVoteDelegationCert(voteDelegation);
+    const certs =
+      this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const vals = [...certs.values(), delegationCertificate];
+    certs.setValues(vals);
+    this.body.setCerts(certs);
     if (delegatorCredential.type == CredentialType.ScriptHash) {
       if (redeemer) {
         this.requiredPlutusScripts.add(delegatorCredential.hash);
@@ -1650,6 +1722,40 @@ export class TxBuilder {
       }
     }
     return this;
+  }
+
+  /**
+   * This method delegates the selected reward address to a pool.
+   * It first checks if the reward address is set and if it has a stake component.
+   * If both conditions are met, it adds a delegation to the transaction.
+   *
+   * @param {PoolId} poolId - The ID of the pool to delegate the reward address to.
+   * @throws {Error} If the reward address is not set or if the method is unimplemented.
+   */
+  governanceVote(voter: Voter, actionId: GovernanceActionId, votingProcedure: VotingProcedure) {
+    const votingProcedures = this.body.votingProcedures() ?? new VotingProcedures()
+    votingProcedures.insert(voter, actionId, votingProcedure)
+    this.body.setVotingProcedures(votingProcedures)
+    return this
+  }
+
+  /**
+   * Adds a governance proposal to the transaction.
+   * 
+   * This method adds a proposal procedure to the transaction's body. If there are existing
+   * proposal procedures, it appends the new one to the list. If there are no existing
+   * proposal procedures, it creates a new list with the provided procedure.
+   *
+   * @param {ProposalProcedure} proposalProcedure - The proposal procedure to be added to the transaction.
+   * @returns {TxBuilder} The same transaction builder instance, allowing for method chaining.
+   */
+  governanceProposal(proposalProcedure: ProposalProcedure) {
+    const proposalProcedures = this.body.proposalProcedures() ?? CborSet.fromCore([], ProposalProcedure.fromCore)
+    const values = [...proposalProcedures.values()]
+    values.push(proposalProcedure)
+    proposalProcedures.setValues(values)
+    this.body.setProposalProcedures(proposalProcedures)
+    return this
   }
 
   /**

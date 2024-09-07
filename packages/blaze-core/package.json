@@ -22,21 +22,21 @@
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
     "eslint": "^8.57.0",
-    "terser": "^5.31.3",
-    "tsup": "^8.2.3",
+    "terser": "^5.31.6",
+    "tsup": "^8.2.4",
     "typescript": "^5.5.4"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "@cardano-sdk/core": "^0.35.4",
-    "@cardano-sdk/crypto": "^0.1.28",
-    "@cardano-sdk/util": "^0.15.4",
-    "@noble/curves": "^1.4.2",
+    "@cardano-sdk/core": "^0.39.0",
+    "@cardano-sdk/crypto": "^0.1.30",
+    "@cardano-sdk/util": "^0.15.5",
+    "@noble/curves": "^1.6.0",
     "@noble/ed25519": "^2.1.0",
-    "@noble/hashes": "^1.4.0",
-    "@scure/bip39": "^1.3.0",
+    "@noble/hashes": "^1.5.0",
+    "@scure/bip39": "^1.4.0",
     "blakejs": "^1.2.1"
   }
 }
