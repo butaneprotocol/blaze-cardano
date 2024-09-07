@@ -1,5 +1,11 @@
 # @blaze-cardano/ogmios
 
+## 0.0.5
+
+### Patch Changes
+
+- 690d580: use package.json exports consistently
+
 ## 0.0.4
 
 ### Patch Changes

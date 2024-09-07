@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.4.3
+
+### Patch Changes
+
+- 690d580: use package.json exports consistently
+
 ## 0.4.2
 
 ### Patch Changes

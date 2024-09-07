@@ -1,5 +1,13 @@
 # @blaze-cardano/vm
 
+## 0.0.36
+
+### Patch Changes
+
+- 690d580: use package.json exports consistently
+- Updated dependencies [690d580]
+  - @blaze-cardano/core@0.4.3
+
 ## 0.0.35
 
 ### Patch Changes

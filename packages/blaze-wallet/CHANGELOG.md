@@ -1,5 +1,15 @@
 # @blaze-cardano/wallet
 
+## 0.1.43
+
+### Patch Changes
+
+- 690d580: use package.json exports consistently
+- Updated dependencies [690d580]
+  - @blaze-cardano/query@0.2.13
+  - @blaze-cardano/core@0.4.3
+  - @blaze-cardano/tx@0.5.7
+
 ## 0.1.42
 
 ### Patch Changes

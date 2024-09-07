@@ -1,5 +1,14 @@
 # @blaze-cardano/uplc
 
+## 0.1.18
+
+### Patch Changes
+
+- 690d580: use package.json exports consistently
+- Updated dependencies [690d580]
+  - @blaze-cardano/core@0.4.3
+  - @blaze-cardano/tx@0.5.7
+
 ## 0.1.17
 
 ### Patch Changes
