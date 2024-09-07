@@ -828,14 +828,14 @@ export class TxBuilder {
     }
     // Process vkey witnesses
     // const vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore);
-    const requiredWitnesses: [Ed25519PublicKeyHex, Ed25519SignatureHex][] = Array.from(
-      { length: this.requiredWitnesses.size + this.additionalSigners },
-      (_, i) => [
-        Ed25519PublicKeyHex(i.toString().padStart(64, "0")),
-        Ed25519SignatureHex(i.toString().padStart(128, "0")),
-      ]
-    );
-
+    const requiredWitnesses: [Ed25519PublicKeyHex, Ed25519SignatureHex][] =
+      Array.from(
+        { length: this.requiredWitnesses.size + this.additionalSigners },
+        (_, i) => [
+          Ed25519PublicKeyHex(i.toString().padStart(64, "0")),
+          Ed25519SignatureHex(i.toString().padStart(128, "0")),
+        ],
+      );
 
     tw.setVkeys(CborSet.fromCore(requiredWitnesses, VkeyWitness.fromCore));
     tw.setRedeemers(this.redeemers);
