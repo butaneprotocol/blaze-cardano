@@ -828,23 +828,15 @@ export class TxBuilder {
     }
     // Process vkey witnesses
     // const vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore);
-    const requiredWitnesses: [Ed25519PublicKeyHex, Ed25519SignatureHex][] = [];
-    let witnessCount = 0;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for (const _witness of this.requiredWitnesses) {
-      requiredWitnesses.push([
-        Ed25519PublicKeyHex(witnessCount.toString().padStart(64, "0")),
-        Ed25519SignatureHex(witnessCount.toString().padStart(128, "0")),
-      ]);
-      witnessCount++;
-    }
-    for (let i = 0; i < this.additionalSigners; i++) {
-      requiredWitnesses.push([
-        Ed25519PublicKeyHex(witnessCount.toString().padStart(64, "0")),
-        Ed25519SignatureHex(witnessCount.toString().padStart(128, "0")),
-      ]);
-      witnessCount++;
-    }
+    const requiredWitnesses: [Ed25519PublicKeyHex, Ed25519SignatureHex][] = Array.from(
+      { length: this.requiredWitnesses.size + this.additionalSigners },
+      (_, i) => [
+        Ed25519PublicKeyHex(i.toString(10).padStart(64, "0")),
+        Ed25519SignatureHex(i.toString(10).padStart(128, "0")),
+      ]
+    );
+
+
     tw.setVkeys(CborSet.fromCore(requiredWitnesses, VkeyWitness.fromCore));
     tw.setRedeemers(this.redeemers);
     // Process Plutus data

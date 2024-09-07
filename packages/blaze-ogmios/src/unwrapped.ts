@@ -17,29 +17,32 @@ export class Ogmios {
 
   private async setupEventListeners(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.ws.on("open", () => {
+      this.ws.onopen = () => {
         resolve();
-      });
+      };
 
-      this.ws.on("message", (message) => {
-        const messageText = message.toString("utf-8");
+      this.ws.onmessage = (event) => {
+        const messageText =
+          typeof event.data === "string"
+            ? event.data
+            : event.data.toString("utf-8");
         const parsedMessage = JSON.parse(messageText);
 
         if (parsedMessage.id && parsedMessage.id in this.requests) {
           const { resolve, reject } = this.requests[parsedMessage.id]!;
           if (parsedMessage.error) {
-            reject(new Error(parsedMessage.error.message));
+            reject(new Error(JSON.stringify(parsedMessage.error)));
           } else {
             resolve(parsedMessage.result);
           }
           delete this.requests[parsedMessage.id];
         }
-      });
+      };
 
-      this.ws.on("error", (error) => {
+      this.ws.onerror = (error) => {
         console.error("WebSocket error:", error);
         reject(error);
-      });
+      };
     });
   }
 
@@ -94,12 +97,11 @@ export class Ogmios {
     return new Promise<void>((resolve) => {
       if (this.ws) {
         this.ws.close();
-        this.ws.on("close", () => {
-          console.log("WebSocket connection closed");
+        this.ws.onclose = (event) => {
+          console.log("WebSocket connection closed:", event);
           // Clear any pending requests
           this.requests = {};
-          resolve();
-        });
+        };
       } else {
         // If there's no WebSocket, resolve immediately
         resolve();
