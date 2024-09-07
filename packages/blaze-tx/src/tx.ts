@@ -888,7 +888,7 @@ export class TxBuilder {
       let utxo: TransactionUnspentOutput | undefined;
       // Find the matching UTxO for the input.
       for (const iterUtxo of this.utxoScope.values()) {
-        if (iterUtxo.input().toCbor() == input.toCbor()) {
+        if (iterUtxo.input().transactionId() == input.transactionId() && iterUtxo.input().index() == input.index()) {
           utxo = iterUtxo;
         }
       }
@@ -952,6 +952,80 @@ export class TxBuilder {
       return value.merge(tilt, new Value(-spareAmount)); // Subtract 5 ADA from the excess.
     }
     return tilt;
+  }
+
+  private balanced(){
+    let withdrawalAmount = 0n;
+    const withdrawals = this.body.withdrawals();
+    if (withdrawals !== undefined) {
+      for (const account of withdrawals.keys()) {
+        withdrawalAmount += withdrawals.get(account)!;
+      }
+    }
+    // Initialize values for input, output, and minted amounts.
+    let inputValue = new Value(withdrawalAmount);
+    let outputValue = new Value(bigintMax(this.fee, this.minimumFee));
+    const mintValue = new Value(0n, this.body.mint());
+
+    // Aggregate the total input value from all inputs.
+    for (const input of this.body.inputs().values()) {
+      let utxo: TransactionUnspentOutput | undefined;
+      // Find the matching UTxO for the input.
+      for (const iterUtxo of this.utxoScope.values()) {
+        if (iterUtxo.input().transactionId() == input.transactionId() && iterUtxo.input().index() == input.index()) {
+          utxo = iterUtxo;
+        }
+      }
+      // Throw an error if a matching UTxO cannot be found.
+      if (!utxo) {
+        throw new Error("Unreachable! UTxO missing!");
+      }
+      // Merge the UTxO's output amount into the total input value.
+      inputValue = value.merge(inputValue, utxo.output().amount());
+    }
+    for (const output of this.body.outputs().values()) {
+      outputValue = value.merge(outputValue, output.amount());
+    }
+
+    for (const cert of this.body.certs()?.values() || []) {
+      switch (cert.kind()) {
+        case 0: // Stake Registration
+          outputValue = value.merge(
+            outputValue,
+            new Value(BigInt(this.params.stakeKeyDeposit)),
+          );
+          break;
+        case 1: // Stake Deregistration
+          inputValue = value.merge(
+            inputValue,
+            new Value(BigInt(this.params.stakeKeyDeposit)),
+          );
+          break;
+        case 3: // Pool Registration
+          if (this.params.poolDeposit) {
+            outputValue = value.merge(
+              outputValue,
+              new Value(BigInt(this.params.poolDeposit)),
+            );
+          }
+          break;
+        case 4: // Pool Retirement
+          if (this.params.poolDeposit) {
+            inputValue = value.merge(
+              inputValue,
+              new Value(BigInt(this.params.poolDeposit)),
+            );
+          }
+          break;
+      }
+    }
+    const tilt = value.merge(
+      value.merge(inputValue, value.negate(outputValue)),
+      mintValue,
+    );
+    console.log(tilt.toCore())
+    console.log(value.zero().toCore())
+    return tilt.toCbor() == value.zero().toCbor()
   }
 
   /**
@@ -1284,9 +1358,11 @@ export class TxBuilder {
       this.params.minFeeConstant +
       fromHex(preliminaryDraftTx.toCbor()).length *
         this.params.minFeeCoefficient;
+    const spareA = bigintMax(BigInt(Math.ceil(preliminaryFee)), this.minimumFee)
     let excessValue = this.getPitch(
       bigintMax(BigInt(Math.ceil(preliminaryFee)), this.minimumFee),
     );
+    console.log("original excess value ", value.merge(excessValue, new Value(-spareA)).toCore())
     let spareInputs: TransactionUnspentOutput[] = [];
     for (const [utxo] of this.utxos.entries()) {
       if (!inputs.includes(utxo.input())) {
@@ -1300,6 +1376,7 @@ export class TxBuilder {
     );
     // Update the excess value and spare inputs based on the selection result.
     excessValue = value.merge(excessValue, selectionResult.selectedValue);
+    console.log("Original excess value: ", excessValue.toCore())
     spareInputs = selectionResult.inputs;
     // Add selected inputs to the transaction.
     for (const input of selectionResult.selectedInputs) {
@@ -1405,16 +1482,39 @@ export class TxBuilder {
         Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
       );
       excessValue = this.getPitch();
+      console.log("excess value: ", excessValue.toCore())
+      console.log("balanced 1", this.balanced())
 
       this.body.setFee(bigintMax(this.fee, this.minimumFee) + this.feePadding);
       this.balanceChange(excessValue);
+      console.log("balanced 2", this.balanced())
+      const changeOutput = this.body.outputs()[this.changeOutputIndex];
+      console.log(changeOutput!.amount().coin(), excessValue.coin())
+      if (changeOutput!.amount().coin() > excessValue.coin()) {
+        console.log("extra balancing!")
+        const excessAda = changeOutput!.amount().coin() - excessValue.coin()
+        console.log("extra balancing by: ", excessAda)
+        // we must add more inputs, to cover the difference
+        const selectionResult = this.coinSelector(
+          spareInputs,
+          new Value(-excessAda),
+        );
+        spareInputs = selectionResult.inputs
+        for (const input of selectionResult.selectedInputs){
+          this.addInput(input);
+        }
+      }
       if (this.body.collateral()) {
         this.balanceCollateralChange();
       }
+      console.log("balanced 3", this.balanced())
       draft_tx.setBody(this.body);
+      console.log("balanced 4", this.balanced())
       draft_size = final_size;
       final_size = draft_tx.toCbor().length / 2;
-    } while (final_size != draft_size);
+      console.log("balanced 5", this.balanced())
+    } while (final_size != draft_size || !this.balanced());
+    // console.log("Final pitch ", this.getPitch().toCore())
     // Return the fully constructed transaction.
     tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore));
     return new Transaction(this.body, tw, this.auxiliaryData);
