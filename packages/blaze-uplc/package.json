@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json.schemastore.org/package.json",
   "name": "@blaze-cardano/uplc",
   "version": "0.1.17",
   "description": "Blaze untyped plutus core library",
@@ -10,6 +9,9 @@
     }
   },
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --external rxjs",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
