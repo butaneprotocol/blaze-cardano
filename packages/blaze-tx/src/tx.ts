@@ -1509,6 +1509,8 @@ export class TxBuilder {
         if (evaluationFee > 0) {
           evaluationFee = await this.evaluate(draft_tx);
           this.fee += evaluationFee - oldEvaluationFee;
+          tw.setRedeemers(this.redeemers);
+          draft_tx.setWitnessSet(tw);
           if (evaluationFee > oldEvaluationFee) {
             continue;
           }
