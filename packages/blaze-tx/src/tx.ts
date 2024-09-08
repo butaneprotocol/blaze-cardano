@@ -1486,7 +1486,7 @@ export class TxBuilder {
       excessValue = this.getPitch();
 
       this.body.setFee(bigintMax(this.fee, this.minimumFee) + this.feePadding);
-      this.balanceChange(Value.fromCbor(excessValue.toCbor()));
+      this.balanceChange(Value.fromCore(excessValue.toCore()));
       const changeOutput = this.body.outputs()[this.changeOutputIndex!]!;
       if (changeOutput.amount().coin() > excessValue.coin()) {
         const excessDifference = value.merge(
