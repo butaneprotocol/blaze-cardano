@@ -1508,6 +1508,7 @@ export class TxBuilder {
         draft_tx.setBody(this.body);
         if (evaluationFee > 0) {
           evaluationFee = await this.evaluate(draft_tx);
+          this.fee += evaluationFee - oldEvaluationFee;
           if (evaluationFee > oldEvaluationFee) {
             continue;
           }
