@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.10
+
+### Patch Changes
+
+- 5369627: patch: evaluate recursively
+
 ## 0.5.9
 
 ### Patch Changes
