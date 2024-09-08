@@ -34,7 +34,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@cardano-ogmios/schema": "^6.4.0",
+    "@cardano-ogmios/schema": "^6.6.1",
     "ws": "^8.17.1",
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/ogmios": "workspace:*",
