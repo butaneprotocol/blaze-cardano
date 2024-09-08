@@ -888,7 +888,10 @@ export class TxBuilder {
       let utxo: TransactionUnspentOutput | undefined;
       // Find the matching UTxO for the input.
       for (const iterUtxo of this.utxoScope.values()) {
-        if (iterUtxo.input().transactionId() == input.transactionId() && iterUtxo.input().index() == input.index()) {
+        if (
+          iterUtxo.input().transactionId() == input.transactionId() &&
+          iterUtxo.input().index() == input.index()
+        ) {
           utxo = iterUtxo;
         }
       }
@@ -947,10 +950,13 @@ export class TxBuilder {
     if (spareAmount != 0n) {
       return value.merge(tilt, new Value(-spareAmount)); // Subtract 5 ADA from the excess.
     }
-    return value.merge(tilt, this.body.outputs()[this.changeOutputIndex!]!.amount());
+    return value.merge(
+      tilt,
+      this.body.outputs()[this.changeOutputIndex!]!.amount(),
+    );
   }
 
-  private balanced(){
+  private balanced() {
     let withdrawalAmount = 0n;
     const withdrawals = this.body.withdrawals();
     if (withdrawals !== undefined) {
@@ -968,7 +974,10 @@ export class TxBuilder {
       let utxo: TransactionUnspentOutput | undefined;
       // Find the matching UTxO for the input.
       for (const iterUtxo of this.utxoScope.values()) {
-        if (iterUtxo.input().transactionId() == input.transactionId() && iterUtxo.input().index() == input.index()) {
+        if (
+          iterUtxo.input().transactionId() == input.transactionId() &&
+          iterUtxo.input().index() == input.index()
+        ) {
           utxo = iterUtxo;
         }
       }
@@ -1019,7 +1028,7 @@ export class TxBuilder {
       value.merge(inputValue, value.negate(outputValue)),
       mintValue,
     );
-    return tilt.toCbor() == value.zero().toCbor()
+    return tilt.toCbor() == value.zero().toCbor();
   }
 
   /**
@@ -1487,17 +1496,20 @@ export class TxBuilder {
       this.balanceChange(Value.fromCbor(excessValue.toCbor()));
       const changeOutput = this.body.outputs()[this.changeOutputIndex!]!;
       if (changeOutput.amount().coin() > excessValue.coin()) {
-        const excessDifference = value.merge(changeOutput!.amount(), value.negate(excessValue))
+        const excessDifference = value.merge(
+          changeOutput!.amount(),
+          value.negate(excessValue),
+        );
         // we must add more inputs, to cover the difference
-        if (spareInputs.length == 0){
-          throw new Error("Tx builder could not satisfy coin selection")
+        if (spareInputs.length == 0) {
+          throw new Error("Tx builder could not satisfy coin selection");
         }
         const selectionResult = this.coinSelector(
           spareInputs,
           excessDifference,
         );
-        spareInputs = selectionResult.inputs
-        for (const input of selectionResult.selectedInputs){
+        spareInputs = selectionResult.inputs;
+        for (const input of selectionResult.selectedInputs) {
           this.addInput(input);
         }
       }
