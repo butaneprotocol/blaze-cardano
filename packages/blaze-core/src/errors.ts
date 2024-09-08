@@ -8,7 +8,7 @@ export class UTxOSelectionError extends Error {
     public dearth: Value,
     public availableInputs?: TransactionUnspentOutput[],
     public selectedInputs?: TransactionUnspentOutput[],
-    public bestStep?: [bigint, Value, number],
+    public bestStep?: [bigint | number, Value, number],
   ) {
     super("UTxO Balance Insufficient");
   }
