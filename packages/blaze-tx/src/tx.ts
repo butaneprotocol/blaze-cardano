@@ -1440,10 +1440,10 @@ export class TxBuilder {
       new Value(-(bigintMax(this.fee, this.minimumFee) + this.feePadding)),
     );
     this.balanceChange(excessValue);
+    let evaluationFee: bigint = 0n;
     if (this.redeemers.size() > 0) {
       this.prepareCollateral();
       tw = this.buildTransactionWitnessSet();
-      let evaluationFee: bigint = 0n;
       try {
         evaluationFee = await this.evaluate(draft_tx);
       } catch (e) {
@@ -1479,6 +1479,7 @@ export class TxBuilder {
     }
     let final_size = draft_tx.toCbor().length / 2;
     do {
+      const oldEvaluationFee = evaluationFee;
       this.fee += BigInt(
         Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
       );
@@ -1503,6 +1504,13 @@ export class TxBuilder {
         spareInputs = selectionResult.inputs;
         for (const input of selectionResult.selectedInputs) {
           this.addInput(input);
+        }
+        draft_tx.setBody(this.body);
+        if (evaluationFee > 0) {
+          evaluationFee = await this.evaluate(draft_tx);
+          if (evaluationFee > oldEvaluationFee) {
+            continue;
+          }
         }
       }
       if (this.body.collateral()) {
