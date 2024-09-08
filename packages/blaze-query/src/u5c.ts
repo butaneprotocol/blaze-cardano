@@ -29,7 +29,7 @@ import {
 } from "@blaze-cardano/core";
 import type { Provider } from "./types";
 import { CardanoQueryClient, CardanoSubmitClient } from "@utxorpc/sdk";
-import type * as Cardano from "@utxorpc/spec/lib/utxorpc/v1alpha/cardano/cardano_pb.js";
+import type * as spec from "@utxorpc/spec";
 
 export class U5C implements Provider {
   private queryClient: CardanoQueryClient;
@@ -193,7 +193,7 @@ export class U5C implements Provider {
   }
 
   private _rpcTxOutToCoreTxOut(
-    rpcTxOutput: Cardano.TxOutput,
+    rpcTxOutput: spec.cardano.TxOutput,
   ): TransactionOutput {
     const output = new TransactionOutput(
       Address.fromBytes(HexBlob.fromBytes(rpcTxOutput.address)),
@@ -241,7 +241,7 @@ export class U5C implements Provider {
     return output;
   }
 
-  private _rpcTxOutToCoreValue(rpcTxOutput: Cardano.TxOutput): Value {
+  private _rpcTxOutToCoreValue(rpcTxOutput: spec.cardano.TxOutput): Value {
     return new Value(
       BigInt(rpcTxOutput.coin),
       this._rpcMultiAssetOutputToTokenMap(rpcTxOutput.assets),
@@ -249,7 +249,7 @@ export class U5C implements Provider {
   }
 
   private _rpcMultiAssetOutputToTokenMap(
-    multiAsset: Cardano.Multiasset[],
+    multiAsset: spec.cardano.Multiasset[],
   ): TokenMap {
     const tokenMap: TokenMap = new Map();
     multiAsset.forEach((ma) => {
@@ -272,7 +272,7 @@ export class U5C implements Provider {
   }
 
   private _rpcPParamsToCorePParams(
-    rpcPParams: Cardano.PParams,
+    rpcPParams: spec.cardano.PParams,
   ): ProtocolParameters {
     return {
       coinsPerUtxoByte: Number(rpcPParams.coinsPerUtxoByte),

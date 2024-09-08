@@ -81,6 +81,7 @@ console.log(`Please sign and submit this transaction: ${tx.toCbor()}`);
 Blaze channel is in the [TxPipe Discord](https://discord.gg/FAeAR6jX)!
 
 ### Runs on Blaze
+
 A list of projects, apps, websites, repositories, which depend on this library in some manner.
 
 - [Butane](https://butane.dev)

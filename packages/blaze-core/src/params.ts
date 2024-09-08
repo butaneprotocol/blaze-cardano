@@ -73,7 +73,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
   monetaryExpansion: "3/1000", // The monetary expansion.
   treasuryExpansion: "1/5", // The treasury expansion.
   minPoolCost: 170000000, // The minimum pool cost.
-  protocolVersion: { major: 8, minor: 0 }, // The protocol version.
+  protocolVersion: { major: 9, minor: 0 }, // The protocol version.
   maxValueSize: 5000, // The maximum value size.
   collateralPercentage: 150 / 100, // The collateral percentage.
   maxCollateralInputs: 3, // The maximum collateral inputs.

@@ -165,7 +165,7 @@ export class TxBuilder {
    * @param {Address} address - The address to receive the change.
    * @returns {TxBuilder} The same transaction builder
    */
-  setChangeAddress(address: Address) {
+  setChangeAddress(address: Address): TxBuilder {
     this.changeAddress = address;
     return this;
   }
@@ -177,7 +177,7 @@ export class TxBuilder {
    * @param {Address} address - The reward address
    * @returns {TxBuilder} The same transaction builder
    */
-  setRewardAddress(address: Address) {
+  setRewardAddress(address: Address): TxBuilder {
     this.rewardAddress = address;
     return this;
   }
@@ -189,7 +189,7 @@ export class TxBuilder {
    * @param {Evaluator} evaluator - The evaluator to be used for script execution.
    * @returns {TxBuilder} The same transaction builder
    */
-  useEvaluator(evaluator: Evaluator) {
+  useEvaluator(evaluator: Evaluator): TxBuilder {
     this.evaluator = evaluator;
     return this;
   }
@@ -218,7 +218,7 @@ export class TxBuilder {
    * @param {NetworkId} networkId - The network ID to set.
    * @returns {TxBuilder} The same transaction builder
    */
-  setNetworkId(networkId: NetworkId) {
+  setNetworkId(networkId: NetworkId): TxBuilder {
     this.networkId = networkId;
     return this;
   }
@@ -230,7 +230,7 @@ export class TxBuilder {
    * @param {number} amount - The amount of additional signers
    * @returns {TxBuilder} The same transaction builder
    */
-  addAdditionalSigners(amount: number) {
+  addAdditionalSigners(amount: number): TxBuilder {
     this.additionalSigners += amount;
     return this;
   }
@@ -242,7 +242,7 @@ export class TxBuilder {
    * @param {bigint} fee - The minimum fee to be set.
    * @returns {TxBuilder} The same transaction builder
    */
-  setMinimumFee(fee: bigint) {
+  setMinimumFee(fee: bigint): TxBuilder {
     this.minimumFee = fee;
     return this;
   }
@@ -254,7 +254,7 @@ export class TxBuilder {
    * @param {bigint} pad - The padding to add onto the transaction fee
    * @returns {TxBuilder} the same transaction builder
    */
-  setFeePadding(pad: bigint) {
+  setFeePadding(pad: bigint): TxBuilder {
     this.feePadding = pad;
     return this;
   }
@@ -268,7 +268,7 @@ export class TxBuilder {
    * @returns {TxBuilder} The same transaction builder
    * @throws {Error} If the input to be added is already present in the list of reference inputs, to prevent duplicates.
    */
-  addReferenceInput(utxo: TransactionUnspentOutput) {
+  addReferenceInput(utxo: TransactionUnspentOutput): TxBuilder {
     // Attempt to retrieve existing reference inputs from the transaction body, or initialize a new set if none exist.
     const referenceInputs =
       this.body.referenceInputs() ??
@@ -321,7 +321,7 @@ export class TxBuilder {
     utxo: TransactionUnspentOutput,
     redeemer?: PlutusData,
     unhashDatum?: PlutusData,
-  ) {
+  ): TxBuilder {
     // Retrieve the current inputs from the transaction body for manipulation.
     const inputs = this.body.inputs();
     const values = [...inputs.values()];
@@ -423,7 +423,7 @@ export class TxBuilder {
    * @param {TransactionUnspentOutput[]} utxos - The unspent transaction outputs to add.
    * @returns {TxBuilder} The same transaction builder
    */
-  addUnspentOutputs(utxos: TransactionUnspentOutput[]) {
+  addUnspentOutputs(utxos: TransactionUnspentOutput[]): TxBuilder {
     for (const utxo of utxos) {
       this.utxos.add(utxo);
     }
@@ -506,7 +506,7 @@ export class TxBuilder {
    * @returns {TransactionOutput} The altered transaction output.
    * @throws {Error} If the output does not meet the minimum ada requirements or exceeds the maximum value size.
    */
-  private checkAndAlterOutput(output: TransactionOutput) {
+  private checkAndAlterOutput(output: TransactionOutput): TransactionOutput {
     {
       let byteLength = BigInt(output.toCbor().length / 2);
       let minAda = BigInt(this.params.coinsPerUtxoByte) * (byteLength + 160n);
@@ -551,7 +551,7 @@ export class TxBuilder {
    * @param {TransactionOutput} output - The transaction output to be added.
    * @returns {TxBuilder} The same transaction builder
    */
-  addOutput(output: TransactionOutput) {
+  addOutput(output: TransactionOutput): TxBuilder {
     output = this.checkAndAlterOutput(output);
     // Retrieve the current list of outputs from the transaction body.
     const outputs = this.body.outputs();
@@ -579,7 +579,7 @@ export class TxBuilder {
    * @param {Datum} [datum] - Optional datum to be associated with the paid assets.
    * @returns {TxBuilder} The same transaction builder
    */
-  payLovelace(address: Address, lovelace: bigint, datum?: Datum) {
+  payLovelace(address: Address, lovelace: bigint, datum?: Datum): TxBuilder {
     assertPaymentsAddress(address);
     const paymentAddress = getPaymentAddress(address);
     const datumData = typeof datum == "object" ? datum.toCore() : undefined;
@@ -605,7 +605,7 @@ export class TxBuilder {
    * @param {Datum} [datum] - Optional datum to be associated with the paid assets.
    * @returns {TxBuilder} The same transaction builder
    */
-  payAssets(address: Address, value: Value, datum?: Datum) {
+  payAssets(address: Address, value: Value, datum?: Datum): TxBuilder {
     assertPaymentsAddress(address);
     const paymentAddress = getPaymentAddress(address);
     const datumData = typeof datum == "object" ? datum.toCore() : undefined;
@@ -639,7 +639,7 @@ export class TxBuilder {
     lovelace: bigint,
     datum: Datum,
     scriptReference?: Script,
-  ) {
+  ): TxBuilder {
     return this.lockAssets(
       address,
       new Value(lovelace),
@@ -665,7 +665,7 @@ export class TxBuilder {
     value: Value,
     datum: Datum,
     scriptReference?: Script,
-  ) {
+  ): TxBuilder {
     const datumData = typeof datum == "object" ? datum.toCore() : undefined;
     const datumHash = typeof datum == "string" ? datum : undefined;
     assertLockAddress(address);
@@ -689,7 +689,7 @@ export class TxBuilder {
    * @param {PlutusData} datum - The Plutus datum to be added to the transaction.
    * @returns {TxBuilder} The same transaction builder
    */
-  provideDatum(datum: PlutusData) {
+  provideDatum(datum: PlutusData): TxBuilder {
     this.extraneousDatums.add(datum);
     return this;
   }
@@ -737,7 +737,7 @@ export class TxBuilder {
    * @returns {TransactionWitnessSet} A constructed transaction witness set.
    * @throws {Error} If a required script cannot be resolved by its hash.
    */
-  private buildTransactionWitnessSet() {
+  private buildTransactionWitnessSet(): TransactionWitnessSet {
     const tw = new TransactionWitnessSet();
     // Script lookup table to map script hashes to script objects
     const scriptLookup: Record<ScriptHash, Script> = {};
@@ -869,7 +869,7 @@ export class TxBuilder {
    * @returns {Value} The net value that represents the transaction's pitch.
    * @throws {Error} If a corresponding UTxO for an input cannot be found.
    */
-  private getPitch(spareAmount: bigint = 0n) {
+  private getPitch(spareAmount: bigint = 0n): Value {
     // Calculate withdrawal amounts.
     let withdrawalAmount = 0n;
     const withdrawals = this.body.withdrawals();
@@ -1313,6 +1313,15 @@ export class TxBuilder {
   }
 
   /**
+   * Prints the transaction cbor in its current state without trying to complete it
+   * @returns {string} The CBOR representation of the transaction
+   * */
+  toCbor(): string {
+    const tw = this.buildTransactionWitnessSet();
+    return new Transaction(this.body, tw, this.auxiliaryData).toCbor();
+  }
+
+  /**
    * Completes the transaction by performing several key operations:
    * - Verifies the presence of a change address.
    * - Gathers inputs and performs coin selection if necessary.
@@ -1683,7 +1692,11 @@ export class TxBuilder {
    * @returns {TxBuilder} The same transaction builder
    * @throws {Error} If the reward account does not have a stake credential or if any other error occurs.
    */
-  addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData) {
+  addWithdrawal(
+    address: RewardAccount,
+    amount: bigint,
+    redeemer?: PlutusData,
+  ): TxBuilder {
     const withdrawalHash =
       Address.fromBech32(address).getProps().paymentPart?.hash;
     if (!withdrawalHash) {
@@ -1758,7 +1771,7 @@ export class TxBuilder {
    * @param {Ed25519KeyHashHex} signer - The hash of the Ed25519 public key that is required to sign the transaction.
    * @returns {TxBuilder} The same transaction builder
    */
-  addRequiredSigner(signer: Ed25519KeyHashHex) {
+  addRequiredSigner(signer: Ed25519KeyHashHex): TxBuilder {
     // Retrieve existing required signers or initialize a new CBOR set if none exist.
     const signers: CborSet<
       Ed25519KeyHashHex,
@@ -1808,7 +1821,7 @@ export class TxBuilder {
    * @param {Script} script - The script to be added to the transaction's script scope.
    * @returns {TxBuilder} The same transaction builder
    */
-  provideScript(script: Script) {
+  provideScript(script: Script): TxBuilder {
     this.scriptScope.add(script);
     return this;
   }

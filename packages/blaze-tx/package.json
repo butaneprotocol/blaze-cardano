@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/tx",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "description": "Blaze cardano transaction building library",
   "exports": {
     ".": {

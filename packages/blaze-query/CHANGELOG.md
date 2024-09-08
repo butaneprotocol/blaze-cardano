@@ -1,5 +1,13 @@
 # @blaze-cardano/query
 
+## 0.2.14
+
+### Patch Changes
+
+- a4e6808: Bump utxorpc provider dependencies (@scarmuega), bump typedoc
+- Updated dependencies [476d4af]
+  - @blaze-cardano/core@0.4.4
+
 ## 0.2.13
 
 ### Patch Changes
