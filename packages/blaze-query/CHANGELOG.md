@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.2.15
+
+### Patch Changes
+
+- bb5da39: patch: remove u5c until fix, patched eval
+
 ## 0.2.14
 
 ### Patch Changes
