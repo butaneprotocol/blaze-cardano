@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.11
+
+### Patch Changes
+
+- 5e2b970: patch: fromCbor -> fromCore for no deserialisation bugs
+
 ## 0.5.10
 
 ### Patch Changes
