@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.4.4
+
+### Patch Changes
+
+- 476d4af: Add a custom UTXO selection error
+
 ## 0.4.3
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @blaze-cardano/vm
 
+## 0.0.37
+
+### Patch Changes
+
+- Updated dependencies [476d4af]
+  - @blaze-cardano/core@0.4.4
+
 ## 0.0.36
 
 ### Patch Changes
