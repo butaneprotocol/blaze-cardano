@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.13
+
+### Patch Changes
+
+- e12d65e: patch: eval update redeemers in tw
+
 ## 0.5.12
 
 ### Patch Changes
