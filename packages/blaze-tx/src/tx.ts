@@ -880,7 +880,10 @@ export class TxBuilder {
       let utxo: TransactionUnspentOutput | undefined;
       // Find the matching UTxO for the input.
       for (const iterUtxo of this.utxoScope.values()) {
-        if (iterUtxo.input().toCbor() == input.toCbor()) {
+        if (
+          iterUtxo.input().transactionId() == input.transactionId() &&
+          iterUtxo.input().index() == input.index()
+        ) {
           utxo = iterUtxo;
         }
       }
@@ -892,10 +895,6 @@ export class TxBuilder {
       inputValue = value.merge(inputValue, utxo.output().amount());
     }
 
-    this.body.outputs()[this.changeOutputIndex!] = new TransactionOutput(
-      this.changeAddress!,
-      value.zero(),
-    );
     // Aggregate the total output value from all outputs.
     for (const output of this.body.outputs().values()) {
       outputValue = value.merge(outputValue, output.amount());
@@ -943,7 +942,85 @@ export class TxBuilder {
     if (spareAmount != 0n) {
       return value.merge(tilt, new Value(-spareAmount)); // Subtract 5 ADA from the excess.
     }
-    return tilt;
+    return value.merge(
+      tilt,
+      this.body.outputs()[this.changeOutputIndex!]!.amount(),
+    );
+  }
+
+  private balanced() {
+    let withdrawalAmount = 0n;
+    const withdrawals = this.body.withdrawals();
+    if (withdrawals !== undefined) {
+      for (const account of withdrawals.keys()) {
+        withdrawalAmount += withdrawals.get(account)!;
+      }
+    }
+    // Initialize values for input, output, and minted amounts.
+    let inputValue = new Value(withdrawalAmount);
+    let outputValue = new Value(bigintMax(this.fee, this.minimumFee));
+    const mintValue = new Value(0n, this.body.mint());
+
+    // Aggregate the total input value from all inputs.
+    for (const input of this.body.inputs().values()) {
+      let utxo: TransactionUnspentOutput | undefined;
+      // Find the matching UTxO for the input.
+      for (const iterUtxo of this.utxoScope.values()) {
+        if (
+          iterUtxo.input().transactionId() == input.transactionId() &&
+          iterUtxo.input().index() == input.index()
+        ) {
+          utxo = iterUtxo;
+        }
+      }
+      // Throw an error if a matching UTxO cannot be found.
+      if (!utxo) {
+        throw new Error("Unreachable! UTxO missing!");
+      }
+      // Merge the UTxO's output amount into the total input value.
+      inputValue = value.merge(inputValue, utxo.output().amount());
+    }
+    for (const output of this.body.outputs().values()) {
+      outputValue = value.merge(outputValue, output.amount());
+    }
+
+    for (const cert of this.body.certs()?.values() || []) {
+      switch (cert.kind()) {
+        case 0: // Stake Registration
+          outputValue = value.merge(
+            outputValue,
+            new Value(BigInt(this.params.stakeKeyDeposit)),
+          );
+          break;
+        case 1: // Stake Deregistration
+          inputValue = value.merge(
+            inputValue,
+            new Value(BigInt(this.params.stakeKeyDeposit)),
+          );
+          break;
+        case 3: // Pool Registration
+          if (this.params.poolDeposit) {
+            outputValue = value.merge(
+              outputValue,
+              new Value(BigInt(this.params.poolDeposit)),
+            );
+          }
+          break;
+        case 4: // Pool Retirement
+          if (this.params.poolDeposit) {
+            inputValue = value.merge(
+              inputValue,
+              new Value(BigInt(this.params.poolDeposit)),
+            );
+          }
+          break;
+      }
+    }
+    const tilt = value.merge(
+      value.merge(inputValue, value.negate(outputValue)),
+      mintValue,
+    );
+    return tilt.toCbor() == value.zero().toCbor();
   }
 
   /**
@@ -1408,14 +1485,33 @@ export class TxBuilder {
       excessValue = this.getPitch();
 
       this.body.setFee(bigintMax(this.fee, this.minimumFee) + this.feePadding);
-      this.balanceChange(excessValue);
+      this.balanceChange(Value.fromCbor(excessValue.toCbor()));
+      const changeOutput = this.body.outputs()[this.changeOutputIndex!]!;
+      if (changeOutput.amount().coin() > excessValue.coin()) {
+        const excessDifference = value.merge(
+          changeOutput!.amount(),
+          value.negate(excessValue),
+        );
+        // we must add more inputs, to cover the difference
+        if (spareInputs.length == 0) {
+          throw new Error("Tx builder could not satisfy coin selection");
+        }
+        const selectionResult = this.coinSelector(
+          spareInputs,
+          excessDifference,
+        );
+        spareInputs = selectionResult.inputs;
+        for (const input of selectionResult.selectedInputs) {
+          this.addInput(input);
+        }
+      }
       if (this.body.collateral()) {
         this.balanceCollateralChange();
       }
       draft_tx.setBody(this.body);
       draft_size = final_size;
       final_size = draft_tx.toCbor().length / 2;
-    } while (final_size != draft_size);
+    } while (final_size != draft_size || !this.balanced());
     // Return the fully constructed transaction.
     tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore));
     return new Transaction(this.body, tw, this.auxiliaryData);
