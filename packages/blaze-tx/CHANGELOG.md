@@ -1,5 +1,14 @@
 # @blaze-cardano/tx
 
+## 0.5.8
+
+### Patch Changes
+
+- 476d4af: Add a custom UTXO selection error
+- 3946a63: Add toCbor() function to print partial transaction
+- Updated dependencies [476d4af]
+  - @blaze-cardano/core@0.4.4
+
 ## 0.5.7
 
 ### Patch Changes
