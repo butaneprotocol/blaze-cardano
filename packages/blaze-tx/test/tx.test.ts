@@ -41,7 +41,7 @@ describe("Transaction Building", () => {
         ),
       ),
       new TransactionUnspentOutput(
-        new TransactionInput(TransactionId("0".repeat(64)), 0n),
+        new TransactionInput(TransactionId("1".padStart(64, "0")), 0n),
         new TransactionOutput(
           testAddress,
           value.makeValue(40_000_000n, [ASSET_NAME_1, 1n], [ASSET_NAME_2, 1n]),
@@ -52,7 +52,7 @@ describe("Transaction Building", () => {
       .addUnspentOutputs(utxos)
       .setNetworkId(NetworkId.Testnet)
       .setChangeAddress(testAddress)
-      .payAssets(testAddress, value.makeValue(48_708_444n, [ASSET_NAME_1, 1n]))
+      .payAssets(testAddress, value.makeValue(48_708_900n, [ASSET_NAME_1, 1n]))
       .complete();
 
     const inputValue =

@@ -900,10 +900,6 @@ export class TxBuilder {
       inputValue = value.merge(inputValue, utxo.output().amount());
     }
 
-    this.body.outputs()[this.changeOutputIndex!] = new TransactionOutput(
-      this.changeAddress!,
-      value.zero(),
-    );
     // Aggregate the total output value from all outputs.
     for (const output of this.body.outputs().values()) {
       outputValue = value.merge(outputValue, output.amount());
@@ -951,7 +947,7 @@ export class TxBuilder {
     if (spareAmount != 0n) {
       return value.merge(tilt, new Value(-spareAmount)); // Subtract 5 ADA from the excess.
     }
-    return tilt;
+    return value.merge(tilt, this.body.outputs()[this.changeOutputIndex!]!.amount());
   }
 
   private balanced(){
@@ -1023,8 +1019,6 @@ export class TxBuilder {
       value.merge(inputValue, value.negate(outputValue)),
       mintValue,
     );
-    console.log(tilt.toCore())
-    console.log(value.zero().toCore())
     return tilt.toCbor() == value.zero().toCbor()
   }
 
@@ -1367,11 +1361,9 @@ export class TxBuilder {
       this.params.minFeeConstant +
       fromHex(preliminaryDraftTx.toCbor()).length *
         this.params.minFeeCoefficient;
-    const spareA = bigintMax(BigInt(Math.ceil(preliminaryFee)), this.minimumFee)
     let excessValue = this.getPitch(
       bigintMax(BigInt(Math.ceil(preliminaryFee)), this.minimumFee),
     );
-    console.log("original excess value ", value.merge(excessValue, new Value(-spareA)).toCore())
     let spareInputs: TransactionUnspentOutput[] = [];
     for (const [utxo] of this.utxos.entries()) {
       if (!inputs.includes(utxo.input())) {
@@ -1385,7 +1377,6 @@ export class TxBuilder {
     );
     // Update the excess value and spare inputs based on the selection result.
     excessValue = value.merge(excessValue, selectionResult.selectedValue);
-    console.log("Original excess value: ", excessValue.toCore())
     spareInputs = selectionResult.inputs;
     // Add selected inputs to the transaction.
     for (const input of selectionResult.selectedInputs) {
@@ -1491,22 +1482,19 @@ export class TxBuilder {
         Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
       );
       excessValue = this.getPitch();
-      console.log("excess value: ", excessValue.toCore())
-      console.log("balanced 1", this.balanced())
 
       this.body.setFee(bigintMax(this.fee, this.minimumFee) + this.feePadding);
-      this.balanceChange(excessValue);
-      console.log("balanced 2", this.balanced())
-      const changeOutput = this.body.outputs()[this.changeOutputIndex];
-      console.log(changeOutput!.amount().coin(), excessValue.coin())
-      if (changeOutput!.amount().coin() > excessValue.coin()) {
-        console.log("extra balancing!")
-        const excessAda = changeOutput!.amount().coin() - excessValue.coin()
-        console.log("extra balancing by: ", excessAda)
+      this.balanceChange(Value.fromCbor(excessValue.toCbor()));
+      const changeOutput = this.body.outputs()[this.changeOutputIndex!]!;
+      if (changeOutput.amount().coin() > excessValue.coin()) {
+        const excessDifference = value.merge(changeOutput!.amount(), value.negate(excessValue))
         // we must add more inputs, to cover the difference
+        if (spareInputs.length == 0){
+          throw new Error("Tx builder could not satisfy coin selection")
+        }
         const selectionResult = this.coinSelector(
           spareInputs,
-          new Value(-excessAda),
+          excessDifference,
         );
         spareInputs = selectionResult.inputs
         for (const input of selectionResult.selectedInputs){
@@ -1516,14 +1504,10 @@ export class TxBuilder {
       if (this.body.collateral()) {
         this.balanceCollateralChange();
       }
-      console.log("balanced 3", this.balanced())
       draft_tx.setBody(this.body);
-      console.log("balanced 4", this.balanced())
       draft_size = final_size;
       final_size = draft_tx.toCbor().length / 2;
-      console.log("balanced 5", this.balanced())
     } while (final_size != draft_size || !this.balanced());
-    // console.log("Final pitch ", this.getPitch().toCore())
     // Return the fully constructed transaction.
     tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore));
     return new Transaction(this.body, tw, this.auxiliaryData);
