@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.9
+
+### Patch Changes
+
+- dcb0d76: patch: fix balancer
+
 ## 0.5.8
 
 ### Patch Changes
