@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.4.5
+
+### Patch Changes
+
+- 3d0f4b7: Fix issue with blakejs import
+
 ## 0.4.4
 
 ### Patch Changes
