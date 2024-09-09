@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/core",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Blaze cardano core library",
   "exports": {
     ".": {
