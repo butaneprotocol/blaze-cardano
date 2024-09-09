@@ -21,7 +21,7 @@ import {
 } from "./types";
 import { sha256 } from "@noble/hashes/sha256";
 import * as sha3 from "@noble/hashes/sha3";
-import * as blake from "blakejs";
+import blake from "blakejs";
 import * as bip39 from "@scure/bip39";
 import { ed25519 as ed } from "@noble/curves/ed25519";
 
