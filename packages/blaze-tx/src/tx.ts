@@ -1569,6 +1569,12 @@ export class TxBuilder {
           evaluationFee = await this.evaluate(draft_tx);
           this.fee += evaluationFee - oldEvaluationFee;
           tw.setRedeemers(this.redeemers);
+          {
+            const scriptDataHash = this.getScriptDataHash(tw);
+            if (scriptDataHash) {
+              this.body.setScriptDataHash(scriptDataHash);
+            }
+          }
           draft_tx.setWitnessSet(tw);
           if (evaluationFee > oldEvaluationFee) {
             continue;
