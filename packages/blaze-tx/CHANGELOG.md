@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.15
+
+### Patch Changes
+
+- 4cddb94: patch: scriptDataHash recursive calc
+
 ## 0.5.14
 
 ### Patch Changes
