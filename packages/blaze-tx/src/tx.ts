@@ -1334,7 +1334,10 @@ export class TxBuilder {
       return;
     }
     // Retrieve available UTXOs within scope.
-    const scope = [...this.utxoScope.values()];
+    const scope = [
+      ...this.utxoScope.values(),
+      ...this.collateralUtxos.values(),
+    ];
     // Calculate the total collateral based on the transaction fee and collateral percentage.
     const totalCollateral = BigInt(
       Math.ceil(
