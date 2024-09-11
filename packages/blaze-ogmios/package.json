@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/ogmios",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Blaze cardano ogmios library",
   "exports": {
     ".": {
@@ -30,7 +30,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@cardano-ogmios/schema": "^6.4.0",
+    "@cardano-ogmios/schema": "^6.6.1",
     "isomorphic-ws": "^5.0.0"
   }
 }

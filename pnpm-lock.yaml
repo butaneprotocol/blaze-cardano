@@ -209,7 +209,7 @@ importers:
   packages/blaze-ogmios:
     dependencies:
       '@cardano-ogmios/schema':
-        specifier: ^6.4.0
+        specifier: ^6.6.1
         version: 6.6.1
       isomorphic-ws:
         specifier: ^5.0.0
