@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/ogmios",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Blaze cardano ogmios library",
   "exports": {
     ".": {

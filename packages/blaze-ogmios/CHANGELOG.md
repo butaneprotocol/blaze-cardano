@@ -1,5 +1,11 @@
 # @blaze-cardano/ogmios
 
+## 0.0.6
+
+### Patch Changes
+
+- 3653396: @ilap requested release
+
 ## 0.0.5
 
 ### Patch Changes

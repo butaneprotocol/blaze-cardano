@@ -1,5 +1,12 @@
 # @blaze-cardano/emulator
 
+## 0.1.72
+
+### Patch Changes
+
+- @blaze-cardano/query@0.2.17
+- @blaze-cardano/wallet@0.1.52
+
 ## 0.1.71
 
 ### Patch Changes
