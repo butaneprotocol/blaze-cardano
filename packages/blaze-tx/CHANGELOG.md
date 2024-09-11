@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.5.16
+
+### Patch Changes
+
+- ff8fd0a: search collateralUtxos when balancing collateral change
+
 ## 0.5.15
 
 ### Patch Changes
