@@ -1321,6 +1321,54 @@ export class TxBuilder {
   }
 
   /**
+   * Adjusts the balance of the transaction by creating or updating a change output.
+   * This method takes only the native assets from excess value from the transaction, removes any zero-valued
+   * tokens from the multiasset map, and then creates change outputs that don't exceed the minValueSize.
+   *
+   * Updates the changeOutputIndex to the index of the last change output.
+   *
+   * @param {Value} excessValue - The excess value that needs to be returned as change.
+   * returns {Value} The remaining excess value after creating change outputs. (Which should only be ADA)
+   */
+  private balanceMultiAssetChange(excessValue: Value): Value {
+    const tokenMap = excessValue.multiasset();
+    if (tokenMap) {
+      for (const key of tokenMap.keys()) {
+        if (tokenMap.get(key) == 0n) {
+          tokenMap.delete(key);
+        }
+      }
+      excessValue.setMultiasset(tokenMap);
+    }
+    let changeExcess = excessValue;
+    const multiAsset = excessValue.multiasset();
+    if (!multiAsset || multiAsset.size == 0) return excessValue;
+    let output = new TransactionOutput(this.changeAddress!, value.zero());
+    for (const [asset, qty] of Array.from(multiAsset.entries())) {
+      const newOutputValue = value.merge(
+        output.amount(),
+        value.makeValue(0n, [asset, qty]),
+      );
+      const newOutputValueByteLength = newOutputValue.toCbor().length / 2;
+      //We need to check if the new output value is too large
+      //We leave a small buffer for the change ADA. Also we don't need such a big output so 10% is fine
+      if (newOutputValueByteLength > this.params.maxValueSize * 0.9) {
+        this.addOutput(output);
+        changeExcess = value.sub(changeExcess, output.amount());
+        output = new TransactionOutput(
+          this.changeAddress!,
+          value.makeValue(0n, [asset, qty]),
+        );
+      } else {
+        output = new TransactionOutput(this.changeAddress!, newOutputValue);
+      }
+    }
+    this.addOutput(output);
+    changeExcess = value.sub(changeExcess, output.amount());
+    return changeExcess;
+  }
+
+  /**
    * Balances the collateral change by creating a transaction output that returns the excess collateral.
    * Throws an error if the change address is not set.
    */
@@ -1457,6 +1505,8 @@ export class TxBuilder {
       );
     }
 
+    // We first balance the native assets  to avoid issues with the max value size being exceeded
+    excessValue = this.balanceMultiAssetChange(excessValue);
     // Balance the change output with the updated excess value.
     this.balanceChange(excessValue);
     // Ensure a change output index has been set after balancing.
