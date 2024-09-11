@@ -137,7 +137,18 @@ export class Emulator {
     }
     this.clock = new LedgerTimer(slotConfig);
     this.params = params;
-    this.evaluator = evaluator ?? makeUplcEvaluator(params, 1, 1, slotConfig);
+    this.evaluator =
+      evaluator ??
+      makeUplcEvaluator(
+        params,
+        1,
+        1,
+        slotConfig ?? {
+          zeroSlot: this.clock.slot,
+          zeroTime: this.clock.time,
+          slotLength: this.clock.slotLength,
+        },
+      );
     this.addUtxo = this.addUtxo.bind(this);
     this.removeUtxo = this.removeUtxo.bind(this);
   }
