@@ -489,7 +489,7 @@ export class TxBuilder {
       for (const redeemer of redeemers) {
         if (
           redeemer.tag() == RedeemerTag.Mint &&
-          redeemer.index() >= insertIdx
+          redeemer.index() >= BigInt(insertIdx)
         ) {
           redeemer.setIndex(redeemer.index() + 1n);
         }
@@ -1792,7 +1792,7 @@ export class TxBuilder {
       for (const redeemer of redeemers) {
         if (
           redeemer.tag() == RedeemerTag.Reward &&
-          redeemer.index() >= insertIdx
+          redeemer.index() >= BigInt(insertIdx)
         ) {
           redeemer.setIndex(redeemer.index() + 1n);
         }
