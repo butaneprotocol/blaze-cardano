@@ -1,0 +1,250 @@
+{
+  auxiliaryData: {
+    blob: Map(8) {
+      30n: "6",
+      50n: "d8799f9fd8799fd8799fd8799f581c1d1c186d5bc22eb56035c37e370f0dcc2c",
+      51n: "300e8e5f0fa46a6bfdda99ffd8799fd8799fd8799f581ca03de54eefd4acaf0e",
+      52n: "40dd1ca949fbcd2f6658f9703c8f59ca968a76ffffffff1a01443fd0ffd8799f",
+      53n: "d8799fd8799f581c75a79b1c1253366ba4644906178844832afa82ec54f5ff48",
+      54n: "85bf0bccffd8799fd8799fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32e",
+      55n: "daef134686bd2e349c15f6e7ffffffff1a178f0950ffff581c75a79b1c125336",
+      56n: "6ba4644906178844832afa82ec54f5ff4885bf0bccff,",
+    },
+    scripts: undefined,
+  },
+  body: {
+    auxiliaryDataHash: "7e21438196740ad052927d7b68c5d4a89016d6f43c92b46c3b5d594a2eb8073f",
+    certificates: undefined,
+    collateralReturn: {
+      address: "addr1q9660xcuzffnv6ayv3ysv9uggjpj475za320tl6gsklshnr00s3d9rwmuyfzthedt6wdfvewmth3x35xh5hrf8q47mnse8jx47",
+      datum: undefined,
+      datumHash: undefined,
+      scriptReference: undefined,
+      value: {
+        assets: Map(11) {
+          "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683130303736": 1n,
+          "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683130303737": 1n,
+          "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683132303532": 1n,
+          "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683132393230": 1n,
+          "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683132393231": 1n,
+          "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683133363334": 1n,
+          "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683133393139": 1n,
+          "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683135303236": 1n,
+          "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683138333135": 1n,
+          "38ad9dc3aec6a2f38e220142b9aa6ade63ebe71f65e7cc2b7d8a8535434c4159": 56830000n,
+          "42c4948ad7f920b0483418db49e3d67c7d89c590c7e7e596a5566041436c6179617665726131393637": 1n,
+        },
+        coins: 198984969n,
+      },
+    },
+    collaterals: [
+      {
+        index: 1,
+        txId: "86240359997e02a31e0cb8ec028df0af66c9485fbac4c35df41603faf725765e",
+      }
+    ],
+    donation: undefined,
+    fee: 277553n,
+    inputs: [
+      {
+        index: 0,
+        txId: "2ec0b31a6897c938e923c253accd69f734127dccc1b2089f16a9c2be175d87cb",
+      }, {
+        index: 1,
+        txId: "86240359997e02a31e0cb8ec028df0af66c9485fbac4c35df41603faf725765e",
+      }
+    ],
+    mint: undefined,
+    networkId: undefined,
+    outputs: [
+      {
+        address: "addr1x8rjw3pawl0kelu4mj3c8x20fsczf5pl744s9mxz9v8n7efvjel5h55fgjcxgchp830r7h2l5msrlpt8262r3nvr8ekstg4qrx",
+        datum: undefined,
+        datumHash: "cc7e2a9d8e8b02cebbe233e83171a4fcfecb9250eb21126ebf524d0541a7b72f",
+        scriptReference: undefined,
+        value: {
+          assets: Map(1) {
+            "94da605878403d07c144fe96cd50fe20c16186dd8d171c78ed6a8768436c6179436861726c6f747465343937": 1n,
+          },
+          coins: 1336100n,
+        },
+      }, {
+        address: "addr1q9660xcuzffnv6ayv3ysv9uggjpj475za320tl6gsklshnr00s3d9rwmuyfzthedt6wdfvewmth3x35xh5hrf8q47mnse8jx47",
+        datum: undefined,
+        datumHash: undefined,
+        scriptReference: undefined,
+        value: {
+          assets: Map(11) {
+            "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683130303736": 1n,
+            "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683130303737": 1n,
+            "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683132303532": 1n,
+            "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683132393230": 1n,
+            "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683132393231": 1n,
+            "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683133363334": 1n,
+            "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683133393139": 1n,
+            "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683135303236": 1n,
+            "13e3f9964fe386930ec178d12a43c96a7f5841270c2146fc509a9f3e436c61794e6174696f6e50697463683138333135": 1n,
+            "38ad9dc3aec6a2f38e220142b9aa6ade63ebe71f65e7cc2b7d8a8535434c4159": 56830000n,
+            "42c4948ad7f920b0483418db49e3d67c7d89c590c7e7e596a5566041436c6179617665726131393637": 1n,
+          },
+          coins: 199123746n,
+        },
+      }
+    ],
+    proposalProcedures: undefined,
+    referenceInputs: [
+      {
+        index: 0,
+        txId: "1693c508b6132e89b932754d657d28b24068ff5ff1715fec36c010d4d6470b3d",
+      }
+    ],
+    requiredExtraSignatures: [ "75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bcc"
+    ],
+    scriptIntegrityHash: "7e3e73ecc48545a5f5e9176dca93e6c5416ba41c27033e56e3e92544879c2ceb",
+    totalCollateral: 416330n,
+    treasuryValue: undefined,
+    update: undefined,
+    validityInterval: {
+      invalidBefore: undefined,
+      invalidHereafter: 134349005,
+    },
+    votingProcedures: undefined,
+    withdrawals: undefined,
+  },
+  id: "0979e1326b661f7b054cec27886a55e350b28fe3206888eb2abbf054274d7255",
+  isValid: true,
+  witness: {
+    bootstrap: undefined,
+    datums: [
+      {
+        cbor: "d8799f9fd8799fd8799fd8799f581c1d1c186d5bc22eb56035c37e370f0dcc2c300e8e5f0fa46a6bfdda99ffd8799fd8799fd8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ffffffff1a01908b10ffd8799fd8799fd8799f581c75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bccffd8799fd8799fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ffffffff1a1d1a1a90ffff581c75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bccff",
+        fields: {
+          cbor: "9f9fd8799fd8799fd8799f581c1d1c186d5bc22eb56035c37e370f0dcc2c300e8e5f0fa46a6bfdda99ffd8799fd8799fd8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ffffffff1a01908b10ffd8799fd8799fd8799f581c75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bccffd8799fd8799fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ffffffff1a1d1a1a90ffff581c75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bccff",
+          items: [
+            {
+              cbor: "9fd8799fd8799fd8799f581c1d1c186d5bc22eb56035c37e370f0dcc2c300e8e5f0fa46a6bfdda99ffd8799fd8799fd8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ffffffff1a01908b10ffd8799fd8799fd8799f581c75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bccffd8799fd8799fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ffffffff1a1d1a1a90ffff",
+              items: [
+                {
+                  cbor: "d8799fd8799fd8799f581c1d1c186d5bc22eb56035c37e370f0dcc2c300e8e5f0fa46a6bfdda99ffd8799fd8799fd8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ffffffff1a01908b10ff",
+                  fields: {
+                    cbor: "9fd8799fd8799f581c1d1c186d5bc22eb56035c37e370f0dcc2c300e8e5f0fa46a6bfdda99ffd8799fd8799fd8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ffffffff1a01908b10ff",
+                    items: [
+                      {
+                        cbor: "d8799fd8799f581c1d1c186d5bc22eb56035c37e370f0dcc2c300e8e5f0fa46a6bfdda99ffd8799fd8799fd8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ffffffff",
+                        fields: {
+                          cbor: "9fd8799f581c1d1c186d5bc22eb56035c37e370f0dcc2c300e8e5f0fa46a6bfdda99ffd8799fd8799fd8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ffffffff",
+                          items: [
+                            {
+                              cbor: "d8799f581c1d1c186d5bc22eb56035c37e370f0dcc2c300e8e5f0fa46a6bfdda99ff",
+                              fields: {
+                                cbor: "9f581c1d1c186d5bc22eb56035c37e370f0dcc2c300e8e5f0fa46a6bfdda99ff",
+                                items: [
+                                  Uint8Array(28) [ 29, 28, 24, 109, 91, 194, 46, 181, 96, 53, 195, 126, 55, 15, 13, 204, 44, 48, 14, 142, 95, 15, 164, 106, 107, 253, 218, 153 ]
+                                ],
+                              },
+                            }, {
+                              cbor: "d8799fd8799fd8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ffffff",
+                              fields: {
+                                cbor: "9fd8799fd8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ffffff",
+                                items: [
+                                  {
+                                    cbor: "d8799fd8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ffff",
+                                    fields: {
+                                      cbor: "9fd8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ffff",
+                                      items: [
+                                        {
+                                          cbor: "d8799f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ff",
+                                          fields: {
+                                            cbor: "9f581ca03de54eefd4acaf0e40dd1ca949fbcd2f6658f9703c8f59ca968a76ff",
+                                            items: [
+                                              Uint8Array(28) [ 160, 61, 229, 78, 239, 212, 172, 175, 14, 64, 221, 28, 169, 73, 251, 205, 47, 102, 88, 249, 112, 60, 143, 89, 202, 150, 138, 118 ]
+                                            ],
+                                          },
+                                        }
+                                      ],
+                                    },
+                                  }
+                                ],
+                              },
+                            }
+                          ],
+                        },
+                      }, 26250000n
+                    ],
+                  },
+                }, {
+                  cbor: "d8799fd8799fd8799f581c75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bccffd8799fd8799fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ffffffff1a1d1a1a90ff",
+                  fields: {
+                    cbor: "9fd8799fd8799f581c75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bccffd8799fd8799fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ffffffff1a1d1a1a90ff",
+                    items: [
+                      {
+                        cbor: "d8799fd8799f581c75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bccffd8799fd8799fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ffffffff",
+                        fields: {
+                          cbor: "9fd8799f581c75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bccffd8799fd8799fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ffffffff",
+                          items: [
+                            {
+                              cbor: "d8799f581c75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bccff",
+                              fields: {
+                                cbor: "9f581c75a79b1c1253366ba4644906178844832afa82ec54f5ff4885bf0bccff",
+                                items: [
+                                  Uint8Array(28) [ 117, 167, 155, 28, 18, 83, 54, 107, 164, 100, 73, 6, 23, 136, 68, 131, 42, 250, 130, 236, 84, 245, 255, 72, 133, 191, 11, 204 ]
+                                ],
+                              },
+                            }, {
+                              cbor: "d8799fd8799fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ffffff",
+                              fields: {
+                                cbor: "9fd8799fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ffffff",
+                                items: [
+                                  {
+                                    cbor: "d8799fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ffff",
+                                    fields: {
+                                      cbor: "9fd8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ffff",
+                                      items: [
+                                        {
+                                          cbor: "d8799f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ff",
+                                          fields: {
+                                            cbor: "9f581c6f7c22d28ddbe11225df2d5e9cd4b32edaef134686bd2e349c15f6e7ff",
+                                            items: [
+                                              Uint8Array(28) [ 111, 124, 34, 210, 141, 219, 225, 18, 37, 223, 45, 94, 156, 212, 179, 46, 218, 239, 19, 70, 134, 189, 46, 52, 156, 21, 246, 231 ]
+                                            ],
+                                          },
+                                        }
+                                      ],
+                                    },
+                                  }
+                                ],
+                              },
+                            }
+                          ],
+                        },
+                      }, 488250000n
+                    ],
+                  },
+                }
+              ],
+            }, Uint8Array(28) [ 117, 167, 155, 28, 18, 83, 54, 107, 164, 100, 73, 6, 23, 136, 68, 131, 42, 250, 130, 236, 84, 245, 255, 72, 133, 191, 11, 204 ]
+          ],
+        },
+      }
+    ],
+    redeemers: [
+      {
+        data: {
+          cbor: "d87a80",
+          fields: {
+            cbor: "80",
+            items: [],
+          },
+        },
+        executionUnits: {
+          memory: 120473,
+          steps: 33750663,
+        },
+        index: 0,
+        purpose: "spend",
+      }
+    ],
+    scripts: undefined,
+    signatures: Map {},
+  },
+}
