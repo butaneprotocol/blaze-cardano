@@ -1,3 +1,5 @@
+import { Unwrapped } from "../../packages/blaze-ogmios/dist/";
+//import { Ogmios as OgmiosV1 } from '../../packages/blaze-ogmios/dist/';
 import {
   Bip32PrivateKey,
   mnemonicToEntropy,
@@ -8,10 +10,10 @@ import {
   NetworkId,
   PlutusV2Script,
   PlutusData,
-} from "../../packages/blaze-core/dist/index.js";
-import { Kupmios } from "../../packages/blaze-query/dist/index.js";
-import { Blaze, makeValue } from "../../packages/blaze-sdk/dist/index.js";
-import { HotWallet } from "../../packages/blaze-wallet/dist/index.js";
+} from "../../packages/blaze-core/dist/index.mjs";
+import { Kupmios } from "../../packages/blaze-query/dist/index.mjs";
+import { Blaze } from "../../packages/blaze-sdk/dist/index.mjs";
+import { HotWallet } from "../../packages/blaze-wallet/dist/index.mjs";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -25,8 +27,9 @@ const kupoUrl = "http://localhost:1442";
 
 // Tested with Ogmios v6.3.0
 const ogmiosUrl = "ws://localhost:1337";
+const ogmios = await Unwrapped.Ogmios.new(ogmiosUrl);
 
-const provider = new Kupmios(kupoUrl, ogmiosUrl);
+const provider = new Kupmios(kupoUrl, ogmios as any);
 
 const mnemonic =
   "test test test test test test test test test test test test test test test test test test test test test test test sauce";
@@ -46,12 +49,13 @@ const alwaysTrueScript: Script = Script.newPlutusV2Script(
 
 const scriptAddress = addressFromValidator(NetworkId.Testnet, alwaysTrueScript);
 
-const txId = await blaze
+const tx = await blaze
   .newTransaction()
   .lockLovelace(scriptAddress, 50_000_000n, PlutusData.fromCbor(HexBlob("01")))
-  .complete()
-  .then(blaze.signTransaction)
-  .then(blaze.submitTransaction);
+  .complete();
+
+const signed = await blaze.signTransaction(tx);
+const txId = await blaze.provider.postTransactionToChain(signed);
 
 console.log(
   `Transaction with ID ${txId} has been successfully submitted to the blockchain.`,
@@ -67,13 +71,14 @@ await sleep(sleeptime);
 
 const scriptUtxos = await blaze.provider.getUnspentOutputs(scriptAddress);
 
-const txId1 = await blaze
+const tx1 = await blaze
   .newTransaction()
   .addInput(scriptUtxos[0], PlutusData.fromCbor(HexBlob("00")))
   .provideScript(alwaysTrueScript)
-  .complete()
-  .then(blaze.signTransaction)
-  .then(blaze.submitTransaction);
+  .complete();
+
+const signed1 = await blaze.signTransaction(tx1);
+const txId1 = await blaze.provider.postTransactionToChain(signed1);
 
 const confirmed1 = await blaze.provider.awaitTransactionConfirmation(txId1);
 
