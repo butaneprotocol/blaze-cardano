@@ -1,5 +1,12 @@
 # @blaze-cardano/tx
 
+## 0.5.17
+
+### Patch Changes
+
+- bdf17aa: Fix utxo comparison from object comparison to comparing the output reference manually
+- 73e34a6: Add balanceMultiAssetChange to avoid exceeding the max value size for an output
+
 ## 0.5.16
 
 ### Patch Changes
