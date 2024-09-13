@@ -1215,7 +1215,12 @@ export class TxBuilder {
     } else {
       // If no provided collateral inputs, iterate over the inputs to find the best candidate.
       for (const input of inputs) {
-        const utxo = scope.find((x) => x.input() == input);
+        const utxo = scope.find(
+          (x) =>
+            x.input().transactionId() === input.transactionId() &&
+            x.input().index() === input.index(),
+        );
+
         if (utxo) {
           // Check if the UTXO amount is sufficient for collateral.
           if (
@@ -1398,7 +1403,11 @@ export class TxBuilder {
       .collateral()!
       .values()
       .reduce((acc, input) => {
-        const utxo = scope.find((x) => x.input() == input);
+        const utxo = scope.find(
+          (x) =>
+            x.input().transactionId() === input.transactionId() &&
+            x.input().index() === input.index(),
+        );
         if (!utxo) {
           throw new Error(
             "balanceCollateralChange: Could not resolve some collateral input",
