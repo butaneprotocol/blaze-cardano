@@ -7,6 +7,7 @@ import {
   CborReader,
   CborWriter,
   CborReaderState,
+  PlutusV3Script,
 } from "@blaze-cardano/core";
 import { HexBlob } from "@blaze-cardano/core";
 import { UPLCDecoder } from "./decoder";
@@ -123,7 +124,7 @@ export function cborToScript(cbor: string, type: ScriptType): Script {
     } else if (type === "PlutusV2") {
       return Script.newPlutusV2Script(new PlutusV2Script(cborHex));
     } else {
-      throw new Error("Unsupported script type");
+      return Script.newPlutusV3Script(new PlutusV3Script(cborHex));
     }
   }
 }
