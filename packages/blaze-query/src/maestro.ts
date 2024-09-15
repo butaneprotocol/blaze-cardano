@@ -94,7 +94,7 @@ export class Maestro implements Provider {
             minPoolCost: params.min_stake_pool_cost.ada.lovelace,
             protocolVersion: params.version,
             maxValueSize: params.max_value_size.bytes,
-            collateralPercentage: params.collateral_percentage / 100,
+            collateralPercentage: params.collateral_percentage,
             maxCollateralInputs: params.max_collateral_inputs,
             costModels: costModels,
             prices: {

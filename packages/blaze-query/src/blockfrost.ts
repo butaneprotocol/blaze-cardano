@@ -112,7 +112,7 @@ export class Blockfrost implements Provider {
         minor: response.protocol_minor_ver,
       },
       maxValueSize: response.max_val_size,
-      collateralPercentage: response.collateral_percent / 100,
+      collateralPercentage: response.collateral_percent,
       maxCollateralInputs: response.max_collateral_inputs,
       costModels: costModels,
       prices: {
