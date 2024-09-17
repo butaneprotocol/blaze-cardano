@@ -165,10 +165,13 @@ export class TxBuilder {
    * This address will receive any remaining funds not allocated to outputs or fees.
    *
    * @param {Address} address - The address to receive the change.
+   * @param {boolean} [override=true] - Whether to override the change address if one is already set.
    * @returns {TxBuilder} The same transaction builder
    */
-  setChangeAddress(address: Address): TxBuilder {
-    this.changeAddress = address;
+  setChangeAddress(address: Address, override = true): TxBuilder {
+    if (override || !this.changeAddress) {
+      this.changeAddress = address;
+    }
     return this;
   }
 
@@ -189,10 +192,13 @@ export class TxBuilder {
    * The evaluator is used to execute Plutus scripts during transaction building.
    *
    * @param {Evaluator} evaluator - The evaluator to be used for script execution.
+   * @param {boolean} [override=true] - Whether to override the evaluator if one is already set.
    * @returns {TxBuilder} The same transaction builder
    */
-  useEvaluator(evaluator: Evaluator): TxBuilder {
-    this.evaluator = evaluator;
+  useEvaluator(evaluator: Evaluator, override = true): TxBuilder {
+    if (override || !this.evaluator) {
+      this.evaluator = evaluator;
+    }
     return this;
   }
 
