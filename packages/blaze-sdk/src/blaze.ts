@@ -51,8 +51,9 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
       const changeAddress = await this.wallet.getChangeAddress();
       tx.setNetworkId(await this.wallet.getNetworkId())
         .addUnspentOutputs(myUtxos)
-        .setChangeAddress(changeAddress)
-        .useEvaluator((x, y) => this.provider.evaluateTransaction(x, y));
+        // We do not want to override the change address if it was already set
+        .setChangeAddress(changeAddress, false)
+        .useEvaluator((x, y) => this.provider.evaluateTransaction(x, y), false);
     });
   }
 
