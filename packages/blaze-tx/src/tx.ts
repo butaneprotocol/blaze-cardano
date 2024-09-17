@@ -1558,7 +1558,10 @@ export class TxBuilder {
     this.calculateFees(draft_tx);
     excessValue = value.merge(
       excessValue,
-      new Value(-(bigintMax(this.fee, this.minimumFee) + this.feePadding)),
+      new Value(
+        -(bigintMax(this.fee, this.minimumFee) + this.feePadding) +
+          BigInt(preliminaryFee),
+      ),
     );
     this.balanceChange(excessValue);
     let evaluationFee: bigint = 0n;
