@@ -109,6 +109,7 @@ export class TxBuilder {
   private scriptScope: Set<Script> = new Set(); // A set of scripts included in the transaction.
   private scriptSeen: Set<ScriptHash> = new Set(); // A set of script hashes that have been processed.
   private changeAddress?: Address; // The address to send change to, if any.
+  private collateralChangeAddress?: Address; // The address to send collateral change to, if any.
   private rewardAddress?: Address; // The reward address to delegate from, if any.
   private networkId?: NetworkId; // The network ID for the transaction.
   private changeOutputIndex?: number; // The index of the change output in the transaction.
@@ -169,6 +170,18 @@ export class TxBuilder {
    */
   setChangeAddress(address: Address): TxBuilder {
     this.changeAddress = address;
+    return this;
+  }
+
+  /**
+   * Sets the collateral change address for the transaction.
+   * This address will receive the collateral change if there is any.
+   *
+   * @param {Address} address - The address to receive the collateral change.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  setCollateralChangeAddress(address: Address): TxBuilder {
+    this.collateralChangeAddress = address;
     return this;
   }
 
@@ -1316,7 +1329,7 @@ export class TxBuilder {
     }
     // Also set the collateral return to the output of the selected UTXO.
     const ret = new TransactionOutput(
-      this.changeAddress!,
+      this.collateralChangeAddress ?? this.changeAddress!,
       best.reduce(
         (acc, x) => value.merge(acc, x.output().amount()),
         value.zero(),
