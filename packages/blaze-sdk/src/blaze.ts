@@ -98,7 +98,12 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
    * @description This method sends the provided transaction to the blockchain network
    * using the configured wallet, or the configured provider if set.
    */
-  async submitTransaction(tx: Transaction, useProvider?: boolean): Promise<TransactionId> {
-    return useProvider ? this.provider.postTransactionToChain(tx) : this.wallet.postTransaction(tx);
+  async submitTransaction(
+    tx: Transaction,
+    useProvider?: boolean,
+  ): Promise<TransactionId> {
+    return useProvider
+      ? this.provider.postTransactionToChain(tx)
+      : this.wallet.postTransaction(tx);
   }
 }
