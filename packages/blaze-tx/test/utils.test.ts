@@ -13,7 +13,14 @@ describe("Fee Calculation", () => {
       Math.ceil(
         calculateReferenceScriptFee(
           [Script.newPlutusV3Script(new PlutusV3Script(largeScript))],
-          hardCodedProtocolParams,
+          {
+            ...hardCodedProtocolParams,
+            minFeeReferenceScripts:
+              hardCodedProtocolParams.minFeeReferenceScripts && {
+                ...hardCodedProtocolParams.minFeeReferenceScripts,
+                base: 44,
+              },
+          },
         ),
       ),
     ).toBe(4489380);
