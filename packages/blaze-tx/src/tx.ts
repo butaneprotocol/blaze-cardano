@@ -1620,7 +1620,7 @@ export class TxBuilder {
         "A transaction was built using fee padding. This is useful for working around changes to fee calculation, but ultimately is a bandaid. If you find yourself needing this, please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can fix the underlying inaccuracy!",
       );
     }
-    let final_size = draft_tx.toCbor().length / 2;
+    let final_size = draft_size;
     do {
       const oldEvaluationFee = evaluationFee;
       this.fee += BigInt(
