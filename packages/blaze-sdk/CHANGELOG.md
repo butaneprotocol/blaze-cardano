@@ -1,5 +1,126 @@
 # @blaze-cardano/sdk
 
+## 0.2.0
+
+### Minor Changes
+
+- 471d47d: Submit built transactions through the wallet by default, while allowing a provider option.
+
+### Patch Changes
+
+- c951eec: avoid preCompleteHook overriding user selections
+- Updated dependencies [c924f95]
+- Updated dependencies [471d47d]
+- Updated dependencies [c951eec]
+  - @blaze-cardano/tx@0.6.0
+  - @blaze-cardano/uplc@0.1.29
+  - @blaze-cardano/wallet@0.1.55
+
+## 0.1.35
+
+### Patch Changes
+
+- Updated dependencies [bdf17aa]
+- Updated dependencies [73e34a6]
+  - @blaze-cardano/tx@0.5.17
+  - @blaze-cardano/uplc@0.1.28
+  - @blaze-cardano/wallet@0.1.54
+
+## 0.1.34
+
+### Patch Changes
+
+- Updated dependencies [ff8fd0a]
+  - @blaze-cardano/tx@0.5.16
+  - @blaze-cardano/uplc@0.1.27
+  - @blaze-cardano/wallet@0.1.53
+
+## 0.1.33
+
+### Patch Changes
+
+- @blaze-cardano/query@0.2.17
+- @blaze-cardano/wallet@0.1.52
+
+## 0.1.32
+
+### Patch Changes
+
+- Updated dependencies [4cddb94]
+  - @blaze-cardano/tx@0.5.15
+  - @blaze-cardano/uplc@0.1.26
+  - @blaze-cardano/wallet@0.1.51
+
+## 0.1.31
+
+### Patch Changes
+
+- Updated dependencies [3d0f4b7]
+  - @blaze-cardano/core@0.4.5
+  - @blaze-cardano/query@0.2.16
+  - @blaze-cardano/tx@0.5.14
+  - @blaze-cardano/uplc@0.1.25
+  - @blaze-cardano/wallet@0.1.50
+
+## 0.1.30
+
+### Patch Changes
+
+- Updated dependencies [e12d65e]
+  - @blaze-cardano/tx@0.5.13
+  - @blaze-cardano/uplc@0.1.24
+  - @blaze-cardano/wallet@0.1.49
+
+## 0.1.29
+
+### Patch Changes
+
+- Updated dependencies [bb5da39]
+  - @blaze-cardano/query@0.2.15
+  - @blaze-cardano/tx@0.5.12
+  - @blaze-cardano/wallet@0.1.48
+  - @blaze-cardano/uplc@0.1.23
+
+## 0.1.28
+
+### Patch Changes
+
+- Updated dependencies [5e2b970]
+  - @blaze-cardano/tx@0.5.11
+  - @blaze-cardano/uplc@0.1.22
+  - @blaze-cardano/wallet@0.1.47
+
+## 0.1.27
+
+### Patch Changes
+
+- Updated dependencies [5369627]
+  - @blaze-cardano/tx@0.5.10
+  - @blaze-cardano/uplc@0.1.21
+  - @blaze-cardano/wallet@0.1.46
+
+## 0.1.26
+
+### Patch Changes
+
+- Updated dependencies [dcb0d76]
+  - @blaze-cardano/tx@0.5.9
+  - @blaze-cardano/uplc@0.1.20
+  - @blaze-cardano/wallet@0.1.45
+
+## 0.1.25
+
+### Patch Changes
+
+- Updated dependencies [476d4af]
+- Updated dependencies [3946a63]
+- Updated dependencies [a4e6808]
+  - @blaze-cardano/core@0.4.4
+  - @blaze-cardano/tx@0.5.8
+  - @blaze-cardano/query@0.2.14
+  - @blaze-cardano/uplc@0.1.19
+  - @blaze-cardano/wallet@0.1.44
+
 ## 0.1.24
 
 ### Patch Changes

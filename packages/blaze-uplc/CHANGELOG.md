@@ -1,5 +1,88 @@
 # @blaze-cardano/uplc
 
+## 0.1.29
+
+### Patch Changes
+
+- Updated dependencies [c924f95]
+- Updated dependencies [471d47d]
+- Updated dependencies [c951eec]
+  - @blaze-cardano/tx@0.6.0
+
+## 0.1.28
+
+### Patch Changes
+
+- Updated dependencies [bdf17aa]
+- Updated dependencies [73e34a6]
+  - @blaze-cardano/tx@0.5.17
+
+## 0.1.27
+
+### Patch Changes
+
+- Updated dependencies [ff8fd0a]
+  - @blaze-cardano/tx@0.5.16
+
+## 0.1.26
+
+### Patch Changes
+
+- Updated dependencies [4cddb94]
+  - @blaze-cardano/tx@0.5.15
+
+## 0.1.25
+
+### Patch Changes
+
+- Updated dependencies [3d0f4b7]
+  - @blaze-cardano/core@0.4.5
+  - @blaze-cardano/tx@0.5.14
+
+## 0.1.24
+
+### Patch Changes
+
+- Updated dependencies [e12d65e]
+  - @blaze-cardano/tx@0.5.13
+
+## 0.1.23
+
+### Patch Changes
+
+- Updated dependencies [bb5da39]
+  - @blaze-cardano/tx@0.5.12
+
+## 0.1.22
+
+### Patch Changes
+
+- Updated dependencies [5e2b970]
+  - @blaze-cardano/tx@0.5.11
+
+## 0.1.21
+
+### Patch Changes
+
+- Updated dependencies [5369627]
+  - @blaze-cardano/tx@0.5.10
+
+## 0.1.20
+
+### Patch Changes
+
+- Updated dependencies [dcb0d76]
+  - @blaze-cardano/tx@0.5.9
+
+## 0.1.19
+
+### Patch Changes
+
+- Updated dependencies [476d4af]
+- Updated dependencies [3946a63]
+  - @blaze-cardano/core@0.4.4
+  - @blaze-cardano/tx@0.5.8
+
 ## 0.1.18
 
 ### Patch Changes

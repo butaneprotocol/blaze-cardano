@@ -51,8 +51,9 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
       const changeAddress = await this.wallet.getChangeAddress();
       tx.setNetworkId(await this.wallet.getNetworkId())
         .addUnspentOutputs(myUtxos)
-        .setChangeAddress(changeAddress)
-        .useEvaluator((x, y) => this.provider.evaluateTransaction(x, y));
+        // We do not want to override the change address if it was already set
+        .setChangeAddress(changeAddress, false)
+        .useEvaluator((x, y) => this.provider.evaluateTransaction(x, y), false);
     });
   }
 
@@ -95,9 +96,14 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
    * @returns {Promise<TransactionId>} - The transaction ID.
    * @throws {Error} If the transaction submission fails.
    * @description This method sends the provided transaction to the blockchain network
-   * using the configured provider.
+   * using the configured wallet, or the configured provider if set.
    */
-  async submitTransaction(tx: Transaction): Promise<TransactionId> {
-    return this.provider.postTransactionToChain(tx);
+  async submitTransaction(
+    tx: Transaction,
+    useProvider?: boolean,
+  ): Promise<TransactionId> {
+    return useProvider
+      ? this.provider.postTransactionToChain(tx)
+      : this.wallet.postTransaction(tx);
   }
 }

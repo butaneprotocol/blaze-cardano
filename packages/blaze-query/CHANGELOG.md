@@ -1,5 +1,33 @@
 # @blaze-cardano/query
 
+## 0.2.17
+
+### Patch Changes
+
+- Updated dependencies [3653396]
+  - @blaze-cardano/ogmios@0.0.6
+
+## 0.2.16
+
+### Patch Changes
+
+- Updated dependencies [3d0f4b7]
+  - @blaze-cardano/core@0.4.5
+
+## 0.2.15
+
+### Patch Changes
+
+- bb5da39: patch: remove u5c until fix, patched eval
+
+## 0.2.14
+
+### Patch Changes
+
+- a4e6808: Bump utxorpc provider dependencies (@scarmuega), bump typedoc
+- Updated dependencies [476d4af]
+  - @blaze-cardano/core@0.4.4
+
 ## 0.2.13
 
 ### Patch Changes

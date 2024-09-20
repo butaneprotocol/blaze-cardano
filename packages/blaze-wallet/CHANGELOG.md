@@ -1,5 +1,98 @@
 # @blaze-cardano/wallet
 
+## 0.1.55
+
+### Patch Changes
+
+- Updated dependencies [c924f95]
+- Updated dependencies [471d47d]
+- Updated dependencies [c951eec]
+  - @blaze-cardano/tx@0.6.0
+
+## 0.1.54
+
+### Patch Changes
+
+- Updated dependencies [bdf17aa]
+- Updated dependencies [73e34a6]
+  - @blaze-cardano/tx@0.5.17
+
+## 0.1.53
+
+### Patch Changes
+
+- Updated dependencies [ff8fd0a]
+  - @blaze-cardano/tx@0.5.16
+
+## 0.1.52
+
+### Patch Changes
+
+- @blaze-cardano/query@0.2.17
+
+## 0.1.51
+
+### Patch Changes
+
+- Updated dependencies [4cddb94]
+  - @blaze-cardano/tx@0.5.15
+
+## 0.1.50
+
+### Patch Changes
+
+- Updated dependencies [3d0f4b7]
+  - @blaze-cardano/core@0.4.5
+  - @blaze-cardano/query@0.2.16
+  - @blaze-cardano/tx@0.5.14
+
+## 0.1.49
+
+### Patch Changes
+
+- Updated dependencies [e12d65e]
+  - @blaze-cardano/tx@0.5.13
+
+## 0.1.48
+
+### Patch Changes
+
+- Updated dependencies [bb5da39]
+  - @blaze-cardano/query@0.2.15
+  - @blaze-cardano/tx@0.5.12
+
+## 0.1.47
+
+### Patch Changes
+
+- Updated dependencies [5e2b970]
+  - @blaze-cardano/tx@0.5.11
+
+## 0.1.46
+
+### Patch Changes
+
+- Updated dependencies [5369627]
+  - @blaze-cardano/tx@0.5.10
+
+## 0.1.45
+
+### Patch Changes
+
+- Updated dependencies [dcb0d76]
+  - @blaze-cardano/tx@0.5.9
+
+## 0.1.44
+
+### Patch Changes
+
+- Updated dependencies [476d4af]
+- Updated dependencies [3946a63]
+- Updated dependencies [a4e6808]
+  - @blaze-cardano/core@0.4.4
+  - @blaze-cardano/tx@0.5.8
+  - @blaze-cardano/query@0.2.14
+
 ## 0.1.43
 
 ### Patch Changes

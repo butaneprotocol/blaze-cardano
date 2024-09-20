@@ -1,5 +1,81 @@
 # @blaze-cardano/tx
 
+## 0.6.0
+
+### Minor Changes
+
+- 471d47d: Submit built transactions through the wallet by default, while allowing a provider option.
+
+### Patch Changes
+
+- c924f95: Fix fee calculation before evaluation
+- c951eec: avoid preCompleteHook overriding user selections
+
+## 0.5.17
+
+### Patch Changes
+
+- bdf17aa: Fix utxo comparison from object comparison to comparing the output reference manually
+- 73e34a6: Add balanceMultiAssetChange to avoid exceeding the max value size for an output
+
+## 0.5.16
+
+### Patch Changes
+
+- ff8fd0a: search collateralUtxos when balancing collateral change
+
+## 0.5.15
+
+### Patch Changes
+
+- 4cddb94: patch: scriptDataHash recursive calc
+
+## 0.5.14
+
+### Patch Changes
+
+- Updated dependencies [3d0f4b7]
+  - @blaze-cardano/core@0.4.5
+
+## 0.5.13
+
+### Patch Changes
+
+- e12d65e: patch: eval update redeemers in tw
+
+## 0.5.12
+
+### Patch Changes
+
+- bb5da39: patch: remove u5c until fix, patched eval
+
+## 0.5.11
+
+### Patch Changes
+
+- 5e2b970: patch: fromCbor -> fromCore for no deserialisation bugs
+
+## 0.5.10
+
+### Patch Changes
+
+- 5369627: patch: evaluate recursively
+
+## 0.5.9
+
+### Patch Changes
+
+- dcb0d76: patch: fix balancer
+
+## 0.5.8
+
+### Patch Changes
+
+- 476d4af: Add a custom UTXO selection error
+- 3946a63: Add toCbor() function to print partial transaction
+- Updated dependencies [476d4af]
+  - @blaze-cardano/core@0.4.4
+
 ## 0.5.7
 
 ### Patch Changes

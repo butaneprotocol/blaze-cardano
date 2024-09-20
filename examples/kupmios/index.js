@@ -4,21 +4,21 @@ import {
   wordlist,
 } from "../../packages/blaze-core/dist/index.js";
 import { Kupmios } from "../../packages/blaze-query/dist/index.js";
-import { Unwrapped } from "../../packages/blaze-ogmios";
+import { Unwrapped } from "../../packages/blaze-ogmios/dist/index.js";
 import { Blaze } from "../../packages/blaze-sdk/dist/index.js";
 import { HotWallet } from "../../packages/blaze-wallet/dist/index.js";
 
 // Tested with Kupo v2.8.0
-const kupoUrl = "<YOUR KUPO ENDPOINT>";
+const kupoUrl = "http://localhost:1442";
 
 // Tested with Ogmios v6.3.0
-const ogmiosUrl = "<YOUR OGMIOS ENDPOINT>";
+const ogmiosUrl = "http://localhost:1337";
 const ogmios = await Unwrapped.Ogmios.new(ogmiosUrl);
 
 const provider = new Kupmios(kupoUrl, ogmios);
 
-const mnemonic = "<YOUR MNEMONIC THAT CONTAINS FUND TO SEND>";
-
+const mnemonic =
+  "test test test test test test test test test test test test test test test test test test test test test test test sauce";
 const entropy = mnemonicToEntropy(mnemonic, wordlist);
 const masterkey = Bip32PrivateKey.fromBip39Entropy(Buffer.from(entropy), "");
 

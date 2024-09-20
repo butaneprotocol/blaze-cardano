@@ -30,7 +30,7 @@ function isValidFilePath(filePath: string | undefined): boolean {
   try {
     path.parse(filePath);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
