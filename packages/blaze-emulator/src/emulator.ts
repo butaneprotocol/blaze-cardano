@@ -155,9 +155,9 @@ export class Emulator {
 
   stepForwardBlock(): void {
     this.clock.block++;
-    const blockMs = 20_000;
+    const blockMs = 20 * this.clock.slotLength;
     this.clock.time += blockMs;
-    this.clock.slot += Math.floor(blockMs / this.clock.slotLength);
+    this.clock.slot += 20;
 
     Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
       inputs.forEach(this.removeUtxo);
@@ -176,7 +176,7 @@ export class Emulator {
   /**
    * Starts the event loop for the ledger.
    * If the event loop is already running, it is cleared and restarted.
-   * The event loop calls the stepForwardBlock method every 20 seconds.
+   * The event loop calls the stepForwardBlock method every 20 slots.
    */
   startEventLoop() {
     if (this.eventLoop) {
@@ -184,7 +184,7 @@ export class Emulator {
     }
     this.eventLoop = setInterval(() => {
       this.stepForwardBlock();
-    }, 20000);
+    }, 20 * this.clock.slotLength);
   }
 
   /**
