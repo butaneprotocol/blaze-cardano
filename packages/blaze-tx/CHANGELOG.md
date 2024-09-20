@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.6.1
+
+### Patch Changes
+
+- 88ee831: Small fee calculation fix
+
 ## 0.6.0
 
 ### Minor Changes
