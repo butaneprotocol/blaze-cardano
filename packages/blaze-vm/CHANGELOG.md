@@ -1,5 +1,11 @@
 # @blaze-cardano/vm
 
+## 0.1.0
+
+### Minor Changes
+
+- 802b6ac: dependency change: use @lucid-evolution/uplc
+
 ## 0.0.38
 
 ### Patch Changes
