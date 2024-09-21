@@ -1,5 +1,22 @@
 # @blaze-cardano/tx
 
+## 0.6.1
+
+### Patch Changes
+
+- 88ee831: Small fee calculation fix
+
+## 0.6.0
+
+### Minor Changes
+
+- 471d47d: Submit built transactions through the wallet by default, while allowing a provider option.
+
+### Patch Changes
+
+- c924f95: Fix fee calculation before evaluation
+- c951eec: avoid preCompleteHook overriding user selections
+
 ## 0.5.17
 
 ### Patch Changes

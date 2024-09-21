@@ -1,5 +1,30 @@
 # @blaze-cardano/sdk
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [88ee831]
+  - @blaze-cardano/tx@0.6.1
+  - @blaze-cardano/uplc@0.1.30
+  - @blaze-cardano/wallet@0.1.56
+
+## 0.2.0
+
+### Minor Changes
+
+- 471d47d: Submit built transactions through the wallet by default, while allowing a provider option.
+
+### Patch Changes
+
+- c951eec: avoid preCompleteHook overriding user selections
+- Updated dependencies [c924f95]
+- Updated dependencies [471d47d]
+- Updated dependencies [c951eec]
+  - @blaze-cardano/tx@0.6.0
+  - @blaze-cardano/uplc@0.1.29
+  - @blaze-cardano/wallet@0.1.55
+
 ## 0.1.35
 
 ### Patch Changes

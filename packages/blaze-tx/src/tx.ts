@@ -109,6 +109,7 @@ export class TxBuilder {
   private scriptScope: Set<Script> = new Set(); // A set of scripts included in the transaction.
   private scriptSeen: Set<ScriptHash> = new Set(); // A set of script hashes that have been processed.
   private changeAddress?: Address; // The address to send change to, if any.
+  private collateralChangeAddress?: Address; // The address to send collateral change to, if any.
   private rewardAddress?: Address; // The reward address to delegate from, if any.
   private networkId?: NetworkId; // The network ID for the transaction.
   private changeOutputIndex?: number; // The index of the change output in the transaction.
@@ -165,10 +166,25 @@ export class TxBuilder {
    * This address will receive any remaining funds not allocated to outputs or fees.
    *
    * @param {Address} address - The address to receive the change.
+   * @param {boolean} [override=true] - Whether to override the change address if one is already set.
    * @returns {TxBuilder} The same transaction builder
    */
-  setChangeAddress(address: Address): TxBuilder {
-    this.changeAddress = address;
+  setChangeAddress(address: Address, override = true): TxBuilder {
+    if (override || !this.changeAddress) {
+      this.changeAddress = address;
+    }
+    return this;
+  }
+
+  /**
+   * Sets the collateral change address for the transaction.
+   * This address will receive the collateral change if there is any.
+   *
+   * @param {Address} address - The address to receive the collateral change.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  setCollateralChangeAddress(address: Address): TxBuilder {
+    this.collateralChangeAddress = address;
     return this;
   }
 
@@ -189,10 +205,13 @@ export class TxBuilder {
    * The evaluator is used to execute Plutus scripts during transaction building.
    *
    * @param {Evaluator} evaluator - The evaluator to be used for script execution.
+   * @param {boolean} [override=true] - Whether to override the evaluator if one is already set.
    * @returns {TxBuilder} The same transaction builder
    */
-  useEvaluator(evaluator: Evaluator): TxBuilder {
-    this.evaluator = evaluator;
+  useEvaluator(evaluator: Evaluator, override = true): TxBuilder {
+    if (override || !this.evaluator) {
+      this.evaluator = evaluator;
+    }
     return this;
   }
 
@@ -1316,7 +1335,7 @@ export class TxBuilder {
     }
     // Also set the collateral return to the output of the selected UTXO.
     const ret = new TransactionOutput(
-      this.changeAddress!,
+      this.collateralChangeAddress ?? this.changeAddress!,
       best.reduce(
         (acc, x) => value.merge(acc, x.output().amount()),
         value.zero(),
@@ -1394,8 +1413,9 @@ export class TxBuilder {
     // Calculate the total collateral based on the transaction fee and collateral percentage.
     const totalCollateral = BigInt(
       Math.ceil(
-        this.params.collateralPercentage *
-          Number(bigintMax(this.fee, this.minimumFee) + this.feePadding),
+        (this.params.collateralPercentage *
+          Number(bigintMax(this.fee, this.minimumFee) + this.feePadding)) /
+          100,
       ),
     );
     // Calculate the collateral value by summing up the amounts from collateral inputs.
@@ -1558,7 +1578,10 @@ export class TxBuilder {
     this.calculateFees(draft_tx);
     excessValue = value.merge(
       excessValue,
-      new Value(-(bigintMax(this.fee, this.minimumFee) + this.feePadding)),
+      new Value(
+        -(bigintMax(this.fee, this.minimumFee) + this.feePadding) +
+          BigInt(preliminaryFee),
+      ),
     );
     this.balanceChange(excessValue);
     let evaluationFee: bigint = 0n;
@@ -1598,7 +1621,7 @@ export class TxBuilder {
         "A transaction was built using fee padding. This is useful for working around changes to fee calculation, but ultimately is a bandaid. If you find yourself needing this, please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can fix the underlying inaccuracy!",
       );
     }
-    let final_size = draft_tx.toCbor().length / 2;
+    let final_size = draft_size;
     do {
       const oldEvaluationFee = evaluationFee;
       this.fee += BigInt(

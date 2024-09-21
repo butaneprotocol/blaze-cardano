@@ -75,7 +75,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
   minPoolCost: 170000000, // The minimum pool cost.
   protocolVersion: { major: 9, minor: 0 }, // The protocol version.
   maxValueSize: 5000, // The maximum value size.
-  collateralPercentage: 150 / 100, // The collateral percentage.
+  collateralPercentage: 150, // The collateral percentage.
   maxCollateralInputs: 3, // The maximum collateral inputs.
   costModels: new Map() // The cost models.
     .set(
