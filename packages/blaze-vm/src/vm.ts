@@ -14,7 +14,7 @@ import {
   fromHex,
   toHex,
 } from "@blaze-cardano/core";
-import * as U from "uplc-node";
+import * as U from "@lucid-evolution/uplc";
 
 /**
  * This function returns an evaluator function that can be used to evaluate a transaction.

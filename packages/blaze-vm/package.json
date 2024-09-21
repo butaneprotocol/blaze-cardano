@@ -31,6 +31,6 @@
   },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
-    "uplc-node": "^0.0.3"
+    "@lucid-evolution/uplc": "^0.2.15"
   }
 }
