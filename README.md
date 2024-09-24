@@ -75,10 +75,21 @@ const tx = await blaze
 // Dump the transaction for you to submit securely
 console.log(`Please sign and submit this transaction: ${tx.toCbor()}`);
 ```
+### Providers
+
+Blaze supports multiple providers for interacting with the Cardano blockchain. Below is a table of external and built-in providers:
+
+| Provider   | Type     | Link               |
+|------------|----------|--------------------|
+| Blockfrost | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/tree/main/packages)  |
+| Kupmios    | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/tree/main/packages)  |
+| Maestro    | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/tree/main/packages)  |
+| U5C        | External | [Repository](https://github.com/utxorpc/blaze-provider) |
 
 ### Docs
 
 Blaze channel is in the [TxPipe Discord](https://discord.gg/FAeAR6jX)!
+
 
 ### Runs on Blaze
 
