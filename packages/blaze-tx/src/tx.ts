@@ -1413,9 +1413,8 @@ export class TxBuilder {
     // Calculate the total collateral based on the transaction fee and collateral percentage.
     const totalCollateral = BigInt(
       Math.ceil(
-        (this.params.collateralPercentage *
-          Number(bigintMax(this.fee, this.minimumFee) + this.feePadding)) /
-          100,
+        (this.params.collateralPercentage / 100) *
+          Number(bigintMax(this.fee, this.minimumFee) + this.feePadding),
       ),
     );
     // Calculate the collateral value by summing up the amounts from collateral inputs.
