@@ -81,10 +81,10 @@ Blaze supports multiple providers for interacting with the Cardano blockchain. B
 
 | Provider   | Type     | Link               |
 |------------|----------|--------------------|
-| Blockfrost | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/tree/main/packages)  |
-| Kupmios    | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/tree/main/packages)  |
-| Maestro    | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/tree/main/packages)  |
-| U5C        | External | [Repository](https://github.com/utxorpc/blaze-provider) |
+| Blockfrost | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/blob/main/packages/blaze-query/src/blockfrost.ts)  |
+| Kupmios    | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/blob/main/packages/blaze-query/src/kupmios.ts)  |
+| Maestro    | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/blob/main/packages/blaze-query/src/maestro.ts)  |
+| UTxORPC (U5C)        | External | [Repository](https://github.com/utxorpc/blaze-provider) |
 
 ### Docs
 
