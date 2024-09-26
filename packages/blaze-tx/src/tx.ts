@@ -1518,8 +1518,35 @@ export class TxBuilder {
     excessValue = value.merge(excessValue, selectionResult.selectedValue);
     spareInputs = selectionResult.inputs;
     // Add selected inputs to the transaction.
-    for (const input of selectionResult.selectedInputs) {
-      this.addInput(input);
+    if (selectionResult.selectedInputs.length > 0) {
+      for (const input of selectionResult.selectedInputs) {
+        this.addInput(input);
+      }
+    } else {
+      if (this.body.inputs().size() == 0) {
+        if (!spareInputs[0]) {
+          throw new Error(
+            "No spare inputs available to add to the transaction",
+          );
+        }
+        // Select the input with the least number of different multiassets from spareInputs
+        const [inputWithLeastMultiAssets] = spareInputs.reduce(
+          ([minInput, minMultiAssetCount], currentInput) => {
+            const currentMultiAssetCount = value.assetTypes(
+              currentInput.output().amount(),
+            );
+            return currentMultiAssetCount < minMultiAssetCount
+              ? [currentInput, minMultiAssetCount]
+              : [minInput, value.assetTypes(minInput.output().amount())];
+          },
+          [spareInputs[0], value.assetTypes(spareInputs[0].output().amount())],
+        );
+        this.addInput(inputWithLeastMultiAssets);
+        // Remove the selected input from spareInputs
+        spareInputs = spareInputs.filter(
+          (input) => input !== inputWithLeastMultiAssets,
+        );
+      }
     }
     if (this.body.inputs().values().length == 0) {
       throw new Error(

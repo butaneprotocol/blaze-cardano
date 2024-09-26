@@ -2,6 +2,7 @@ import {
   Address,
   hardCodedProtocolParams,
   NetworkId,
+  RewardAccount,
   TransactionId,
   TransactionInput,
   TransactionOutput,
@@ -93,6 +94,7 @@ describe("Transaction Building", () => {
     // console.dir(tx.toCore(), {depth: null})
     expect(inputValue.toCbor()).toEqual(outputValue.toCbor());
   });
+
   it("Should correctly balance change for a really big output change", async () => {
     // $hosky
     const testAddress = Address.fromBech32(
@@ -168,5 +170,59 @@ describe("Transaction Building", () => {
       outputValue.multiasset()?.size,
     );
     expect(inputValue.toCbor()).toEqual(outputValue.toCbor());
+  });
+
+  it("A transaction should always have some inputs", async () => {
+    // $hosky
+    const testAddress = Address.fromBech32(
+      "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
+    );
+    const utxos = [
+      new TransactionUnspentOutput(
+        new TransactionInput(TransactionId("0".repeat(64)), 0n),
+        new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
+      ),
+      new TransactionUnspentOutput(
+        new TransactionInput(TransactionId("1".padStart(64, "0")), 0n),
+        new TransactionOutput(testAddress, value.makeValue(40_000_000n)),
+      ),
+    ];
+    const tx = await new TxBuilder(hardCodedProtocolParams)
+      .addUnspentOutputs(utxos)
+      .setNetworkId(NetworkId.Testnet)
+      .setChangeAddress(testAddress)
+      .addWithdrawal(
+        RewardAccount.fromCredential(
+          testAddress.getProps().paymentPart!,
+          NetworkId.Testnet,
+        ),
+        100_000_000n,
+      )
+      .payAssets(testAddress, value.makeValue(48_708_900n))
+      .complete();
+
+    const inputValue = value.merge(
+      tx
+        .body()
+        .inputs()
+        .values()
+        .map((x) =>
+          utxos
+            .find((y) => y.input().toCbor() == x.toCbor())!
+            .output()
+            .amount(),
+        )
+        .reduce(value.merge, value.zero()),
+      value.makeValue(100_000_000n),
+    );
+
+    const outputValue = value.merge(
+      flatten(tx.body().outputs().values())
+        .map((x) => x.amount())
+        .reduce(value.merge, value.zero()),
+      new Value(tx.body().fee()),
+    );
+    expect(inputValue.toCbor()).toEqual(outputValue.toCbor());
+    expect(tx.body().inputs().values().length).toBeGreaterThan(0);
   });
 });
