@@ -1,5 +1,15 @@
 # @blaze-cardano/tx
 
+## 0.7.0
+
+### Minor Changes
+
+- 0a667b8: This fixes incorrect calculation for collateral values from a recent fix.
+
+### Patch Changes
+
+- 1188757: patch: @AngelCastilloB Tx Builder wont select any inputs if withdrawal amount is enough to balance the transaction
+
 ## 0.6.1
 
 ### Patch Changes

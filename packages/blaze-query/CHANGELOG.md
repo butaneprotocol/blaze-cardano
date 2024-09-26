@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.2.18
+
+### Patch Changes
+
+- 719b768: Adjust Maestro::getUnspentOutputByNFT flow to prevent race condition.
+
 ## 0.2.17
 
 ### Patch Changes
