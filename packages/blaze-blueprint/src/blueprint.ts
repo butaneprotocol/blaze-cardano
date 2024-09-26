@@ -252,8 +252,16 @@ export async function generateBlueprint({
 }: BlueprintArgs) {
   const plutusJson: Blueprint = JSON.parse(await fs.readFile(infile, "utf8"));
 
-  const plutusVersion =
-    plutusJson.preamble.plutusVersion == "v2" ? '"PlutusV2"' : '"PlutusV1"';
+  const plutusVersions: { [key: string]: string } = {
+    v1: '"PlutusV1"',
+    v2: '"PlutusV2"',
+    v3: '"PlutusV3"',
+  };
+  
+  const plutusVersion = plutusVersions[plutusJson.preamble.plutusVersion];
+  if (!plutusVersion) {
+    throw new Error(`Unsupported Plutus version: ${plutusJson.preamble.plutusVersion}`);
+  }
 
   const definitions = plutusJson.definitions;
 
