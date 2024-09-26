@@ -206,10 +206,7 @@ export class Maestro implements Provider {
   }
 
   getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput> {
-    const asset = unit;
-    const query = `/assets/${asset}/`;
-
-    return fetch(`${this.url}${query}utxos?count=100`, {
+    return fetch(`${this.url}/assets/${unit}/utxos?count=2`, {
       headers: this.headers(),
     })
       .then((resp) => resp.json())
@@ -221,50 +218,50 @@ export class Maestro implements Provider {
               `getUnspentOutputs: Maestro threw "${response.message}"`,
             );
           }
-          const utxos: TransactionUnspentOutput[] = [];
-          for (const maestroUTxO of response.data) {
-            const txIn = new TransactionInput(
-              TransactionId(maestroUTxO.tx_hash),
-              BigInt(maestroUTxO.index),
-            );
 
-            const query2 = `/transactions/${maestroUTxO.tx_hash}/outputs/${maestroUTxO.index}/txo`;
-
-            fetch(`${this.url}${query2}?with_cbor=true`, {
-              headers: this.headers(),
-            })
-              .then((resp) => resp.json())
-              .then((json) => {
-                if (json) {
-                  const response =
-                    json as MaestroResponse<MaestroOneUTxOResponse>;
-                  if ("message" in response) {
-                    throw new Error(
-                      `getUnspentOutputs: Maestro threw "${response.message}"`,
-                    );
-                  }
-
-                  const txOut = TransactionOutput.fromCbor(
-                    HexBlob(response.data.txout_cbor),
-                  );
-                  utxos.push(new TransactionUnspentOutput(txIn, txOut));
-                } else {
-                  throw new Error(
-                    "getUnspentOutputByNFT: Could not parse response json",
-                  );
-                }
-              });
-          }
-
-          if (utxos.length !== 1) {
+          const utxo = response.data[0];
+          if (response.data.length !== 1 || !utxo) {
             throw new Error(
-              "getUnspentOutputByNFT: Expected 1 UTxO, got " + utxos.length,
+              "getUnspentOutputByNFT: Expected 1 UTxO, got " +
+                response.data.length,
             );
           }
 
-          return utxos[0];
+          return utxo;
+        } else {
+          throw new Error("getUnspentOutputs: Could not parse response json");
         }
-        throw new Error("getUnspentOutputs: Could not parse response json");
+      })
+      .then((utxo) => {
+        const txIn = new TransactionInput(
+          TransactionId(utxo.tx_hash),
+          BigInt(utxo.index),
+        );
+        const query = `/transactions/${utxo.tx_hash}/outputs/${utxo.index}/txo`;
+
+        return fetch(`${this.url}${query}?with_cbor=true`, {
+          headers: this.headers(),
+        })
+          .then((resp) => resp.json())
+          .then((json) => {
+            if (json) {
+              const response = json as MaestroResponse<MaestroOneUTxOResponse>;
+              if ("message" in response) {
+                throw new Error(
+                  `getUnspentOutputs: Maestro threw "${response.message}"`,
+                );
+              }
+
+              const txOut = TransactionOutput.fromCbor(
+                HexBlob(response.data.txout_cbor),
+              );
+              return new TransactionUnspentOutput(txIn, txOut);
+            } else {
+              throw new Error(
+                "getUnspentOutputByNFT: Could not parse response json",
+              );
+            }
+          });
       })
       .then((x) => x!);
   }
