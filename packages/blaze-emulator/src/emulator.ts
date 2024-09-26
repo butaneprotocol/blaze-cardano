@@ -504,7 +504,7 @@ export class Emulator {
 
     // Minimum collateral amount included
     const minCollateral = BigInt(
-      Math.ceil((this.params.collateralPercentage * Number(body.fee())) / 100),
+      Math.ceil((this.params.collateralPercentage / 100) * Number(body.fee())),
     );
 
     // If any scripts have been invoked, minimum collateral must be included
