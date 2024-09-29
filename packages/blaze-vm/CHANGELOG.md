@@ -1,5 +1,11 @@
 # @blaze-cardano/vm
 
+## 0.1.2
+
+### Patch Changes
+
+- 9ab9b2a: patch: vm regression (mem leaks)
+
 ## 0.1.1
 
 ### Patch Changes

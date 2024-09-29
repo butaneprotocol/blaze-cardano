@@ -1,5 +1,12 @@
 # @blaze-cardano/emulator
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [9ab9b2a]
+  - @blaze-cardano/vm@0.1.2
+
 ## 0.2.1
 
 ### Patch Changes
