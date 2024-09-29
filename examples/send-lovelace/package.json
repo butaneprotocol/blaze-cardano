@@ -8,7 +8,7 @@
     "send": "tsx index.ts"
   },
   "dependencies": {
-    "@blaze-cardano/sdk": "^0.0.1"
+    "@blaze-cardano/sdk": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.9.4"

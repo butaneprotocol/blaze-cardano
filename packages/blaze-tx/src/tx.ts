@@ -1421,7 +1421,7 @@ export class TxBuilder {
     const collateralValue = this.body
       .collateral()!
       .values()
-      .reduce((acc, input) => {
+      .reduce((acc: Value, input: TransactionInput) => {
         const utxo = scope.find(
           (x) =>
             x.input().transactionId() === input.transactionId() &&
