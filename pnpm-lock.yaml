@@ -410,9 +410,9 @@ importers:
       '@blaze-cardano/core':
         specifier: workspace:*
         version: link:../blaze-core
-      '@lucid-evolution/uplc':
-        specifier: ^0.2.15
-        version: 0.2.15
+      uplc-node:
+        specifier: ^0.0.3
+        version: 0.0.3
     devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
@@ -1086,9 +1086,6 @@ packages:
 
   '@libp2p/interface@1.7.0':
     resolution: {integrity: sha512-/zFyaIaIGW0aihhsH7/93vQdpWInUzFocxF11RO/029Y6h0SVjs24HHbils+DqaFDTqN+L7oNlBx2rM2MnmTjA==}
-
-  '@lucid-evolution/uplc@0.2.15':
-    resolution: {integrity: sha512-OoKQHeZyEVYp+ZfLHnft/3U14r80dv0zx15AtsGC+QQemlK/G5OdTI4bhQj0IUMVV9hTujDGLN4Msd8zu+OecQ==}
 
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
@@ -5467,8 +5464,6 @@ snapshots:
       multiformats: 13.2.2
       progress-events: 1.0.1
       uint8arraylist: 2.4.8
-
-  '@lucid-evolution/uplc@0.2.15': {}
 
   '@manypkg/find-root@1.1.0':
     dependencies:
