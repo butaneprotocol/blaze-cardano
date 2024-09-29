@@ -1,5 +1,13 @@
 # @blaze-cardano/tx
 
+## 0.7.1
+
+### Patch Changes
+
+- 7d03538: bump cardano-js-sdk
+- Updated dependencies [7d03538]
+  - @blaze-cardano/core@0.4.6
+
 ## 0.7.0
 
 ### Minor Changes

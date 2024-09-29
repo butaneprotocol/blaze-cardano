@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.4.6
+
+### Patch Changes
+
+- 7d03538: bump cardano-js-sdk
+
 ## 0.4.5
 
 ### Patch Changes
