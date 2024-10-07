@@ -261,8 +261,9 @@ export async function generateBlueprint({
   if (useSdk) {
     generator.useSDK();
   }
-  const validators = plutusJson.validators.map((validator) => {
+  const validators = plutusJson.validators.flatMap((validator) => {
     const title = validator.title;
+    if (title.endsWith(`.else`)) return [];
     const name = (() => {
       // Validators can reside under sub-directories and without replacing `/`
       // in the path the resulting `plutus.ts` will have validators with `/`
@@ -303,7 +304,7 @@ export async function generateBlueprint({
 
     const script = validator.compiledCode;
 
-    return `export interface ${name} {
+    return [`export interface ${name} {
     new (${paramsArgs.map((param) => param.join(":")).join(",")}): Script;${
       datum ? `\n${datumTitle}: ${generator.schemaToType(datumSchema)};` : ""
     }
@@ -322,7 +323,7 @@ export async function generateBlueprint({
     }},
     ${datum ? `{${datumTitle}: ${JSON.stringify(datumSchema)}},` : ""}
     {${redeemerTitle}: ${JSON.stringify(redeemerSchema)}},
-  ) as unknown as ${name};`;
+  ) as unknown as ${name};`];
   });
 
   const plutus = generator.imports + "\n\n" + validators.join("\n\n");
