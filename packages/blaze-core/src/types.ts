@@ -13,6 +13,9 @@ export type TokenMap = C.Cardano.TokenMap;
 export const Transaction = C.Serialization.Transaction;
 export type Transaction = C.Serialization.Transaction;
 
+export const TxCBOR = C.Serialization.TxCBOR;
+export type TxCBOR = C.Serialization.TxCBOR;
+
 export const TransactionId = C.Cardano.TransactionId;
 export type TransactionId = C.Cardano.TransactionId;
 
