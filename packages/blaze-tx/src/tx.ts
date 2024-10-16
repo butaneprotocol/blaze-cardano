@@ -536,6 +536,15 @@ export class TxBuilder {
   }
 
   /**
+   * This methods calculates the minimum ada required for a transaction output.
+   * @param {TransactionOutput} output - The transaction output to calculate the minimum ada for.
+   * @returns {bigint} The minimum ada required for the output.
+   */
+  private calculateMinAda(output: TransactionOutput): bigint {
+    const byteLength = BigInt(output.toCbor().length / 2);
+    return BigInt(this.params.coinsPerUtxoByte) * (byteLength + 160n);
+  }
+  /**
    * This method checks and alters the output of a transaction.
    * It ensures that the output meets the minimum ada requirements and does not exceed the maximum value size.
    *
@@ -543,10 +552,10 @@ export class TxBuilder {
    * @returns {TransactionOutput} The altered transaction output.
    * @throws {Error} If the output does not meet the minimum ada requirements or exceeds the maximum value size.
    */
+
   private checkAndAlterOutput(output: TransactionOutput): TransactionOutput {
     {
-      let byteLength = BigInt(output.toCbor().length / 2);
-      let minAda = BigInt(this.params.coinsPerUtxoByte) * (byteLength + 160n);
+      let minAda = this.calculateMinAda(output);
       let coin = output.amount().coin();
       while (coin < minAda) {
         const amount = output.amount();
@@ -560,8 +569,7 @@ export class TxBuilder {
         if (scriptRef) {
           output.setScriptRef(scriptRef);
         }
-        byteLength = BigInt(output.toCbor().length / 2);
-        minAda = BigInt(this.params.coinsPerUtxoByte) * (byteLength + 160n);
+        minAda = this.calculateMinAda(output);
         coin = output.amount().coin();
       }
     }
@@ -1219,8 +1227,14 @@ export class TxBuilder {
     // if there are provided collateral UTxOs, use them first
     if (providedCollateral.length > 0) {
       for (const utxo of providedCollateral) {
+        const hasMultiAsset = utxo.output().amount().multiasset() != undefined;
+        const output = utxo.output();
+        const outputMinAda = this.calculateMinAda(output);
+        const coinAmount = hasMultiAsset
+          ? output.amount().coin() - outputMinAda
+          : utxo.output().amount().coin();
         if (
-          utxo.output().amount().coin() >= 5_000_000 &&
+          coinAmount >= 5_000_000 &&
           utxo.output().address().getProps().paymentPart?.type ==
             CredentialType.KeyHash
         ) {
@@ -1242,8 +1256,15 @@ export class TxBuilder {
 
         if (utxo) {
           // Check if the UTXO amount is sufficient for collateral.
+          const hasMultiAsset =
+            utxo.output().amount().multiasset() != undefined;
+          const output = utxo.output();
+          const outputMinAda = this.calculateMinAda(output);
+          const coinAmount = hasMultiAsset
+            ? output.amount().coin() - outputMinAda
+            : utxo.output().amount().coin();
           if (
-            utxo.output().amount().coin() >= 5_000_000 &&
+            coinAmount >= 5_000_000 &&
             utxo.output().address().getProps().paymentPart?.type ==
               CredentialType.KeyHash
           ) {
