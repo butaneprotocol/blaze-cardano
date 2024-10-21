@@ -57,6 +57,7 @@ import {
   blake2b_256,
   RedeemerTag,
   StakeRegistration,
+  getBurnAddress,
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector, type SelectionResult } from "./coinSelection";
@@ -136,6 +137,7 @@ export class TxBuilder {
     inputs: TransactionUnspentOutput[],
     dearth: Value,
   ) => SelectionResult = micahsSelector;
+  private _burnAddress?: Address;
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -149,6 +151,13 @@ export class TxBuilder {
       0n,
       undefined,
     );
+  }
+
+  get burnAddress(): Address {
+    if (!this._burnAddress) {
+      this._burnAddress = getBurnAddress(this.networkId!);
+    }
+    return this._burnAddress;
   }
 
   private insertSorted<T extends string>(arr: T[], el: T) {
@@ -724,6 +733,35 @@ export class TxBuilder {
         scriptReference: scriptReference?.toCore(),
       }),
     );
+  }
+
+  private calculateMinAda(output: TransactionOutput): bigint {
+    const byteLength = BigInt(output.toCbor().length / 2);
+    return BigInt(this.params.coinsPerUtxoByte) * (byteLength + 160n);
+  }
+
+  /**
+   * Deploys a script by creating a new UTxO with the script as its reference.
+   *
+   * @param {Script} script - The script to be deployed.
+   * @param {Address} [address] - The address to lock the script to. Defaults to a burn address where the UTxO will be unspendable.
+   * @returns {TxBuilder} The same transaction builder.
+   *
+   *
+   * @example
+   * ```typescript
+   * const myScript = new PlutusV2Script("...");
+   * txBuilder.deployScript(myScript);
+   * // or
+   * txBuilder.deployScript(myScript, someAddress);
+   * ```
+   */
+  deployScript(script: Script, address: Address = this.burnAddress): TxBuilder {
+    const out = new TransactionOutput(address, new Value(0n));
+    out.setScriptRef(script);
+    out.amount().setCoin(this.calculateMinAda(out));
+    this.addOutput(out);
+    return this;
   }
 
   /**

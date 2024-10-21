@@ -19,6 +19,7 @@ import {
   hardCodedProtocolParams,
   Hash28ByteBase16,
   HexBlob,
+  NetworkId,
   PlutusData,
   PlutusV1Script,
   PlutusV2Script,
@@ -31,9 +32,9 @@ import {
   Value,
 } from "@blaze-cardano/core";
 import { PlutusLanguageVersion } from "@blaze-cardano/core";
-import { purposeToTag, type Provider } from "./types";
+import { purposeToTag, Provider } from "./provider";
 
-export class Blockfrost implements Provider {
+export class Blockfrost extends Provider {
   url: string;
   private projectId: string;
 
@@ -48,6 +49,7 @@ export class Blockfrost implements Provider {
       | "cardano-sanchonet";
     projectId: string;
   }) {
+    super(network == "cardano-mainnet" ? NetworkId.Mainnet : NetworkId.Testnet);
     this.url = `https://${network}.blockfrost.io/api/v0/`;
     this.projectId = projectId;
   }
