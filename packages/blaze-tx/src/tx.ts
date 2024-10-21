@@ -750,7 +750,7 @@ export class TxBuilder {
    *
    * @example
    * ```typescript
-   * const myScript = new PlutusV2Script("...");
+   * const myScript = Script.newPlutusV2Script(new PlutusV2Script("..."));
    * txBuilder.deployScript(myScript);
    * // or
    * txBuilder.deployScript(myScript, someAddress);
