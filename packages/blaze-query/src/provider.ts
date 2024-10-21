@@ -122,21 +122,21 @@ export abstract class Provider {
    * Resolves the script deployment by finding a UTxO containing the script reference.
    *
    * @param {Script | Hash28ByteBase16} script - The script or its hash to resolve.
-   * @param {Address} [address] - The address to search for the script deployment. Defaults to the burn address on Mainnet.
+   * @param {Address} [address] - The address to search for the script deployment. Defaults to a burn address.
    * @returns {Promise<TransactionUnspentOutput | undefined>} - The UTxO containing the script reference, or undefined if not found.
    *
    * @remarks
    * This is a default implementation that works but may not be optimal.
    * Subclasses of Provider should implement their own version for better performance.
    *
-   * The method searches for a UTxO at the given address (or the Blaze Mainnet burn address by default)
+   * The method searches for a UTxO at the given address (or a burn address by default)
    * that contains a script reference matching the provided script or script hash.
    *
    * @example
    * ```typescript
    * const scriptUtxo = await provider.resolveScriptRef(myScript);
    * if (scriptUtxo) {
-   *   console.log("Script found in UTxO:", scriptUtxo.txId());
+   *   console.log("Script found in UTxO:", scriptUtxo.input().toCore());
    * } else {
    *   console.log("Script not found");
    * }
