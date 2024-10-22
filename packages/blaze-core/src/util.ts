@@ -6,7 +6,6 @@ import type {
   PaymentAddress,
   Script,
   NetworkId,
-  Credential,
   Ed25519PrivateExtendedKeyHex,
   Ed25519PrivateNormalKeyHex,
 } from "./types";
@@ -18,6 +17,7 @@ import {
   AddressType,
   Hash32ByteBase16,
   Ed25519SignatureHex,
+  Credential,
 } from "./types";
 import { sha256 } from "@noble/hashes/sha256";
 import * as sha3 from "@noble/hashes/sha3";
@@ -268,6 +268,17 @@ export const addressFromCredentials = (
     networkId: network,
   });
 };
+
+const burnCred = Credential.fromCore({
+  hash: Hash28ByteBase16(
+    // From https://cardano-tools.io/burn-address
+    "bbece14f554b0020fe2715d05801f4680ebd40d11a58f14740b9f2c5",
+  ),
+  type: CredentialType.ScriptHash,
+});
+
+export const getBurnAddress = (network: NetworkId) =>
+  addressFromCredential(network, burnCred);
 
 /**
  * Interface for objects that can be serialized to CBOR.

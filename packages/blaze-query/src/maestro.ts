@@ -6,7 +6,7 @@ import type {
   CostModels,
   Credential,
 } from "@blaze-cardano/core";
-import { RedeemerTag } from "@blaze-cardano/core";
+import { NetworkId, RedeemerTag } from "@blaze-cardano/core";
 import {
   TransactionUnspentOutput,
   Address,
@@ -21,9 +21,9 @@ import {
   Redeemers,
   ExUnits,
 } from "@blaze-cardano/core";
-import type { Provider } from "./types";
+import { Provider } from "./provider";
 
-export class Maestro implements Provider {
+export class Maestro extends Provider {
   private url: string;
   private apiKey: string;
 
@@ -34,6 +34,7 @@ export class Maestro implements Provider {
     network: "mainnet" | "preview" | "preprod";
     apiKey: string;
   }) {
+    super(network == "mainnet" ? NetworkId.Mainnet : NetworkId.Testnet);
     this.url = `https://${network}.gomaestro-api.org/v1`;
     this.apiKey = apiKey;
   }

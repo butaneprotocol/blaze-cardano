@@ -9,8 +9,12 @@ import {
   type Transaction,
   type ProtocolParameters,
   type Redeemers,
+  type NetworkId,
+  type Hash28ByteBase16,
   RedeemerPurpose,
   RedeemerTag,
+  Script,
+  getBurnAddress,
 } from "@blaze-cardano/core";
 
 /**
@@ -18,6 +22,12 @@ import {
  * This class provides an interface for interacting with the blockchain.
  */
 export abstract class Provider {
+  network: NetworkId;
+
+  constructor(network: NetworkId) {
+    this.network = network;
+  }
+
   /**
    * Retrieves the parameters for a transaction.
    *
@@ -107,6 +117,41 @@ export abstract class Provider {
     tx: Transaction,
     additionalUtxos: TransactionUnspentOutput[],
   ): Promise<Redeemers>;
+
+  /**
+   * Resolves the script deployment by finding a UTxO containing the script reference.
+   *
+   * @param {Script | Hash28ByteBase16} script - The script or its hash to resolve.
+   * @param {Address} [address] - The address to search for the script deployment. Defaults to a burn address.
+   * @returns {Promise<TransactionUnspentOutput | undefined>} - The UTxO containing the script reference, or undefined if not found.
+   *
+   * @remarks
+   * This is a default implementation that works but may not be optimal.
+   * Subclasses of Provider should implement their own version for better performance.
+   *
+   * The method searches for a UTxO at the given address (or a burn address by default)
+   * that contains a script reference matching the provided script or script hash.
+   *
+   * @example
+   * ```typescript
+   * const scriptUtxo = await provider.resolveScriptRef(myScript);
+   * if (scriptUtxo) {
+   *   console.log("Script found in UTxO:", scriptUtxo.input().toCore());
+   * } else {
+   *   console.log("Script not found");
+   * }
+   * ```
+   */
+  async resolveScriptRef(
+    script: Script | Hash28ByteBase16,
+    address: Address = getBurnAddress(this.network),
+  ): Promise<TransactionUnspentOutput | undefined> {
+    const utxos = await this.getUnspentOutputs(address);
+    if (script instanceof Script) {
+      script = script.hash();
+    }
+    return utxos.find((utxo) => utxo.output().scriptRef()?.hash() === script);
+  }
 }
 
 /**

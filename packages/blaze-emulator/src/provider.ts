@@ -11,22 +11,24 @@ import {
   TransactionInput,
   PlutusData,
   TransactionOutput,
+  NetworkId,
 } from "@blaze-cardano/core";
 import { TransactionUnspentOutput } from "@blaze-cardano/core";
-import type { Provider } from "@blaze-cardano/query";
+import { Provider } from "@blaze-cardano/query";
 import type { Emulator } from "./emulator";
 
 /**
  * The EmulatorProvider class implements the Provider interface.
  * It provides methods to interact with the Emulator.
  */
-export class EmulatorProvider implements Provider {
+export class EmulatorProvider extends Provider {
   /**
    * The Emulator instance.
    */
   private emulator: Emulator;
 
   constructor(emulator: Emulator) {
+    super(NetworkId.Testnet);
     this.emulator = emulator;
   }
   getParameters(): Promise<ProtocolParameters> {

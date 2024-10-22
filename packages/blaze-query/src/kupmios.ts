@@ -25,12 +25,13 @@ import {
   PlutusV1Script,
   PlutusV2Script,
   PlutusV3Script,
+  NetworkId,
 } from "@blaze-cardano/core";
-import { purposeToTag, type Provider } from "./types";
+import { purposeToTag, Provider } from "./provider";
 import type { Unwrapped } from "@blaze-cardano/ogmios";
 import type * as Schema from "@cardano-ogmios/schema";
 
-export class Kupmios implements Provider {
+export class Kupmios extends Provider {
   kupoUrl: string;
   ogmios: Unwrapped.Ogmios;
 
@@ -48,6 +49,9 @@ export class Kupmios implements Provider {
    * @param ogmiosUrl - URL of the Ogmios service.
    */
   constructor(kupoUrl: string, ogmios: Unwrapped.Ogmios) {
+    super(
+      ogmios.url.includes("mainnet-v6") ? NetworkId.Mainnet : NetworkId.Testnet,
+    );
     this.kupoUrl = kupoUrl;
     this.ogmios = ogmios;
   }

@@ -15,7 +15,6 @@ import {
 import { HotWallet } from "@blaze-cardano/wallet";
 import { Emulator, EmulatorProvider } from "../src";
 import {
-  DEPLOYMENT_ADDR,
   ONE_PLUTUS_DATA,
   VOID_PLUTUS_DATA,
   alwaysTrueScript,
@@ -67,7 +66,8 @@ describe("Emulator", () => {
   });
 
   test("Should be able to pay from one wallet to another", async () => {
-    const tx = await (await blaze.newTransaction())
+    const tx = await blaze
+      .newTransaction()
       .payLovelace(wallet2.address, 2_000_000_000n)
       .complete();
     const txHash = await signAndSubmit(tx, blaze);
@@ -79,9 +79,8 @@ describe("Emulator", () => {
   });
 
   test("Should be able to spend from a script", async () => {
-    const tx = await (
-      await blaze.newTransaction()
-    )
+    const tx = await blaze
+      .newTransaction()
       .lockAssets(
         addressFromCredential(
           NetworkId.Testnet,
@@ -100,9 +99,8 @@ describe("Emulator", () => {
     const out = emulator.getOutput(inp);
     isDefined(out);
     isDefined(out.datum());
-    const spendTx = await (
-      await blaze.newTransaction()
-    )
+    const spendTx = await blaze
+      .newTransaction()
       .addInput(new TransactionUnspentOutput(inp, out), VOID_PLUTUS_DATA)
       .lockAssets(
         addressFromCredential(
@@ -125,25 +123,22 @@ describe("Emulator", () => {
   });
 
   test("Should be able to spend from a script with a reference input", async () => {
-    const refTx = await (await blaze.newTransaction())
-      .lockAssets(
-        DEPLOYMENT_ADDR,
-        makeValue(1_000_000_000n),
-        ONE_PLUTUS_DATA,
-        alwaysTrueScript,
-      )
+    const refTx = await blaze
+      .newTransaction()
+      .deployScript(alwaysTrueScript)
       .complete();
     const refTxHash = await signAndSubmit(refTx, blaze);
     emulator.awaitTransactionConfirmation(refTxHash);
-    const refIn = new TransactionInput(refTxHash, 0n);
-    const refUtxo = new TransactionUnspentOutput(
-      refIn,
-      emulator.getOutput(refIn)!,
-    );
+    const refUtxo = await provider.resolveScriptRef(alwaysTrueScript);
+    isDefined(refUtxo);
+    // const refIn = new TransactionInput(refTxHash, 0n);
+    // const refUtxo = new TransactionUnspentOutput(
+    //   refIn,
+    //   emulator.getOutput(refIn)!
+    // );
 
-    const tx = await (
-      await blaze.newTransaction()
-    )
+    const tx = await blaze
+      .newTransaction()
       .lockAssets(
         addressFromCredential(
           NetworkId.Testnet,
@@ -164,7 +159,8 @@ describe("Emulator", () => {
 
     isDefined(out);
 
-    const spendTx = await (await blaze.newTransaction())
+    const spendTx = await blaze
+      .newTransaction()
       .addInput(new TransactionUnspentOutput(inp, out), VOID_PLUTUS_DATA)
       .addReferenceInput(refUtxo)
       .complete();
@@ -184,7 +180,8 @@ describe("Emulator", () => {
       }),
     );
 
-    const tx = await (await blaze.newTransaction())
+    const tx = await blaze
+      .newTransaction()
       .lockAssets(
         addr,
         makeValue(1_000_000_000n),
@@ -200,7 +197,8 @@ describe("Emulator", () => {
 
     isDefined(out);
 
-    const spendTx = await (await blaze.newTransaction())
+    const spendTx = await blaze
+      .newTransaction()
       .addInput(new TransactionUnspentOutput(inp, out), VOID_PLUTUS_DATA)
       .complete();
     const spendTxHash = await signAndSubmit(spendTx, blaze);
@@ -212,9 +210,8 @@ describe("Emulator", () => {
 
   test("Should be able to mint from a policy", async () => {
     const policy = PolicyId(alwaysTrueScript.hash());
-    const tx = await (
-      await blaze.newTransaction()
-    )
+    const tx = await blaze
+      .newTransaction()
       .addMint(policy, new Map([[AssetName(""), 1n]]), VOID_PLUTUS_DATA)
       .provideScript(alwaysTrueScript)
       .complete();
