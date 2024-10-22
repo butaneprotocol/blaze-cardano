@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.7.2
+
+### Patch Changes
+
+- 7601789: Fix issue with collateral return below min ada utxo
+
 ## 0.7.1
 
 ### Patch Changes
