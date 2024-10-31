@@ -2,8 +2,8 @@ import WebSocket from "isomorphic-ws";
 import type * as schema from "./schema";
 
 export class Ogmios {
+  url: string;
   private ws: WebSocket;
-  private url: string;
   private requests: Record<
     string,
     { resolve: (value: any) => void; reject: (reason: any) => void }
