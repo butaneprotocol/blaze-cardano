@@ -1,5 +1,16 @@
 # @blaze-cardano/tx
 
+## 0.8.0
+
+### Minor Changes
+
+- f4ae116: feat: Script deployment methods for tx and script-ref resolving provider query
+
+### Patch Changes
+
+- Updated dependencies [f4ae116]
+  - @blaze-cardano/core@0.5.0
+
 ## 0.7.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @blaze-cardano/ogmios
 
+## 0.0.7
+
+### Patch Changes
+
+- f4ae116: feat: Script deployment methods for tx and script-ref resolving provider query
+
 ## 0.0.6
 
 ### Patch Changes

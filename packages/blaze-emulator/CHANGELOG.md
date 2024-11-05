@@ -1,5 +1,20 @@
 # @blaze-cardano/emulator
 
+## 0.3.0
+
+### Minor Changes
+
+- f4ae116: feat: Script deployment methods for tx and script-ref resolving provider query
+
+### Patch Changes
+
+- Updated dependencies [f4ae116]
+  - @blaze-cardano/query@0.3.0
+  - @blaze-cardano/core@0.5.0
+  - @blaze-cardano/tx@0.8.0
+  - @blaze-cardano/wallet@0.1.60
+  - @blaze-cardano/vm@0.1.3
+
 ## 0.2.3
 
 ### Patch Changes
