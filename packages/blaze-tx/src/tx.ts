@@ -1260,12 +1260,7 @@ export class TxBuilder {
     // if there are provided collateral UTxOs, use them first
     if (providedCollateral.length > 0) {
       for (const utxo of providedCollateral) {
-        const hasMultiAsset = utxo.output().amount().multiasset() != undefined;
-        const output = utxo.output();
-        const outputMinAda = this.calculateMinAda(output);
-        const coinAmount = hasMultiAsset
-          ? output.amount().coin() - outputMinAda
-          : utxo.output().amount().coin();
+        const coinAmount = this.getUtxoEffectiveCoin(utxo);
         if (
           coinAmount >= 5_000_000 &&
           utxo.output().address().getProps().paymentPart?.type ==
@@ -1289,13 +1284,7 @@ export class TxBuilder {
 
         if (utxo) {
           // Check if the UTXO amount is sufficient for collateral.
-          const hasMultiAsset =
-            utxo.output().amount().multiasset() != undefined;
-          const output = utxo.output();
-          const outputMinAda = this.calculateMinAda(output);
-          const coinAmount = hasMultiAsset
-            ? output.amount().coin() - outputMinAda
-            : utxo.output().amount().coin();
+          const coinAmount = this.getUtxoEffectiveCoin(utxo);
           if (
             coinAmount >= 5_000_000 &&
             utxo.output().address().getProps().paymentPart?.type ==
@@ -1316,8 +1305,9 @@ export class TxBuilder {
     // If there is no best fit still, iterate over all UTXOs to find the best candidate.
     if (!best) {
       for (const utxo of this.utxos.values()) {
+        const coinAmount = this.getUtxoEffectiveCoin(utxo);
         if (
-          utxo.output().amount().coin() >= 5_000_000n &&
+          coinAmount >= 5_000_000n &&
           utxo.output().address().getProps().paymentPart?.type ==
             CredentialType.KeyHash
         ) {
@@ -1351,15 +1341,17 @@ export class TxBuilder {
         // If we still haven't reached the necessary collateral amount, try to use any available UTxO
         if (adaAmount < 5_000_000n) {
           // create a sorted list of utxos by ada amount
-          const adaUtxos = [...this.utxos.values()].sort((a, b) =>
-            a.output().amount().coin() < b.output().amount().coin() ? -1 : 1,
-          );
+          const adaUtxos = [...this.utxos.values()].sort((a, b) => {
+            const aCoinAmount = this.getUtxoEffectiveCoin(a);
+            const bCoinAmount = this.getUtxoEffectiveCoin(b);
+            return aCoinAmount < bCoinAmount ? -1 : 1;
+          });
           for (
             let i = 0;
             i < Math.min(this.params.maxCollateralInputs, adaUtxos.length);
             i++
           ) {
-            adaAmount += adaUtxos[i]!.output().amount().coin();
+            adaAmount += this.getUtxoEffectiveCoin(adaUtxos[i]!);
             collateral.push(adaUtxos[i]!);
             if (adaAmount >= 5_000_000n) {
               break;
@@ -1396,6 +1388,22 @@ export class TxBuilder {
       ),
     );
     this.body.setCollateralReturn(ret);
+  }
+
+  /**
+   * Returns the effective coin value of the utxo substracting the min utxo needed for the multiasset in the utxo
+   *
+   * @param {TransactionUnspentOutput} utxo - The utxo to calculate the effective coin value
+   * @returns {bigint} The effective coin value of the utxo
+   * */
+  private getUtxoEffectiveCoin(utxo: TransactionUnspentOutput): bigint {
+    const output = utxo.output();
+    const multiasset = output.amount().multiasset();
+    const hasMultiasset = multiasset && multiasset.size > 0;
+    const outputMinAda = this.calculateMinAda(output);
+    return hasMultiasset
+      ? output.amount().coin() - outputMinAda
+      : output.amount().coin();
   }
 
   /**
