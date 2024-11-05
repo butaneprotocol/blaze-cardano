@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.8.1
+
+### Patch Changes
+
+- 97ca0f6: correctly consider min utxo requirements when preparing collateral
+
 ## 0.8.0
 
 ### Minor Changes
