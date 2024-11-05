@@ -1,5 +1,17 @@
 # @blaze-cardano/query
 
+## 0.3.0
+
+### Minor Changes
+
+- f4ae116: feat: Script deployment methods for tx and script-ref resolving provider query
+
+### Patch Changes
+
+- Updated dependencies [f4ae116]
+  - @blaze-cardano/core@0.5.0
+  - @blaze-cardano/ogmios@0.0.7
+
 ## 0.2.19
 
 ### Patch Changes
