@@ -1,5 +1,11 @@
 # @blaze-cardano/wallet
 
+## 0.2.0
+
+### Minor Changes
+
+- a7ba69b: Fix HotSignleWallet delegation part
+
 ## 0.1.61
 
 ### Patch Changes
