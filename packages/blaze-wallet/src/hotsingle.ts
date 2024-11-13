@@ -66,8 +66,10 @@ export class HotSingleWallet implements Wallet {
       );
     }
 
-    this.address = this.address = new Address({
-      type: AddressType.EnterpriseKey,
+    this.address = new Address({
+      type: this.stakePublicKey
+        ? AddressType.BasePaymentKeyStakeKey
+        : AddressType.EnterpriseKey,
       networkId: this.networkId,
       paymentPart: {
         type: CredentialType.KeyHash,
