@@ -438,6 +438,9 @@ importers:
       '@blaze-cardano/core':
         specifier: workspace:*
         version: link:../blaze-core
+      '@blaze-cardano/jest-config':
+        specifier: workspace:*
+        version: link:../blaze-jest-config
       '@blaze-cardano/query':
         specifier: workspace:*
         version: link:../blaze-query
@@ -451,9 +454,18 @@ importers:
       '@blaze-cardano/tsconfig':
         specifier: workspace:*
         version: link:../blaze-tsconfig
+      '@types/jest':
+        specifier: ^29.5.12
+        version: 29.5.12
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.16.5)(ts-node@10.9.2(@types/node@20.16.5)(typescript@5.5.4))
+      ts-jest:
+        specifier: ^29.2.3
+        version: 29.2.5(@babel/core@7.25.2)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.25.2))(esbuild@0.23.1)(jest@29.7.0(@types/node@20.16.5)(ts-node@10.9.2(@types/node@20.16.5)(typescript@5.5.4)))(typescript@5.5.4)
       tsup:
         specifier: ^8.0.2
         version: 8.2.4(postcss@8.4.31)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.5.1)
