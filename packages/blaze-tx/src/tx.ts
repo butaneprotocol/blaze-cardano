@@ -49,7 +49,6 @@ import {
   Hash,
   HashAsPubKeyHex,
   PolicyIdToHash,
-  fromHex,
   getPaymentAddress,
   Certificate,
   StakeDelegation,
@@ -910,8 +909,8 @@ export class TxBuilder {
       Array.from(
         { length: this.requiredWitnesses.size + this.additionalSigners },
         (_, i) => [
-          Ed25519PublicKeyHex(i.toString().padStart(64, "0")),
-          Ed25519SignatureHex(i.toString().padStart(128, "0")),
+          Ed25519PublicKeyHex(i.toString(16).padStart(64, "0")),
+          Ed25519SignatureHex(i.toString(16).padStart(128, "0")),
         ],
       );
 
@@ -1213,7 +1212,7 @@ export class TxBuilder {
     // Calculate the fee based on the transaction size and minimum fee parameters.
     let minFee =
       this.params.minFeeConstant +
-      fromHex(draft_tx.toCbor()).length * this.params.minFeeCoefficient;
+      (draft_tx.toCbor().length / 2) * this.params.minFeeCoefficient;
 
     if (this.params.minFeeReferenceScripts) {
       const utxoScope = [...this.utxoScope.values()];
@@ -1234,9 +1233,20 @@ export class TxBuilder {
       }
     }
 
+    const redeemers = draft_tx.witnessSet().redeemers();
+    if (redeemers) {
+      for (const redeemer of redeemers.values()) {
+        const exUnits = redeemer.exUnits();
+
+        // Calculate the fee contribution from this redeemer and add it to the total fee.
+        minFee += this.params.prices.memory * Number(exUnits.mem());
+        minFee += this.params.prices.steps * Number(exUnits.steps());
+      }
+    }
+
     this.fee = BigInt(Math.ceil(minFee));
     // Update the transaction body with the calculated fee.
-    this.body.setFee(bigintMax(this.fee, this.minimumFee));
+    this.body.setFee(bigintMax(this.fee, this.minimumFee) + this.feePadding);
   }
 
   /**
@@ -1560,8 +1570,7 @@ export class TxBuilder {
     );
     const preliminaryFee =
       this.params.minFeeConstant +
-      fromHex(preliminaryDraftTx.toCbor()).length *
-        this.params.minFeeCoefficient;
+      (preliminaryDraftTx.toCbor().length / 2) * this.params.minFeeCoefficient;
     let excessValue = this.getPitch(
       bigintMax(BigInt(Math.ceil(preliminaryFee)), this.minimumFee),
     );
@@ -1660,7 +1669,7 @@ export class TxBuilder {
     }
     this.balanceChange(excessValue);
     // Create a draft transaction for fee calculation.
-    const draft_tx = new Transaction(this.body, tw, auxiliaryData);
+    const draft_tx = new Transaction(this.body, tw, this.auxiliaryData);
     // Calculate and set the transaction fee.
     let draft_size = draft_tx.toCbor().length / 2;
     this.calculateFees(draft_tx);
@@ -1684,7 +1693,9 @@ export class TxBuilder {
         );
         throw e;
       }
-      this.fee += evaluationFee;
+      tw.setRedeemers(this.redeemers);
+      draft_tx.setWitnessSet(tw);
+      this.calculateFees(draft_tx);
       if (this.fee > this.minimumFee) {
         if (this.fee - evaluationFee > this.minimumFee) {
           excessValue = value.merge(excessValue, new Value(-evaluationFee));
@@ -1695,8 +1706,6 @@ export class TxBuilder {
           this.balanceChange(excessValue);
         }
       }
-      tw.setRedeemers(this.redeemers);
-      draft_tx.setWitnessSet(tw);
     }
     {
       const scriptDataHash = this.getScriptDataHash(tw);
@@ -1712,12 +1721,14 @@ export class TxBuilder {
     let final_size = draft_size;
     do {
       const oldEvaluationFee = evaluationFee;
-      this.fee += BigInt(
-        Math.ceil((final_size - draft_size) * this.params.minFeeCoefficient),
-      );
+      const newTW = this.buildTransactionWitnessSet();
+      const redeemers = tw.redeemers();
+      if (redeemers) newTW.setRedeemers(redeemers);
+      tw = newTW;
+      draft_tx.setWitnessSet(tw);
+      this.calculateFees(draft_tx);
       excessValue = this.getPitch();
 
-      this.body.setFee(bigintMax(this.fee, this.minimumFee) + this.feePadding);
       this.balanceChange(Value.fromCore(excessValue.toCore()));
       const changeOutput = this.body.outputs()[this.changeOutputIndex!]!;
       if (changeOutput.amount().coin() > excessValue.coin()) {
@@ -1739,16 +1750,16 @@ export class TxBuilder {
         }
         draft_tx.setBody(this.body);
         if (evaluationFee > 0) {
-          evaluationFee = await this.evaluate(draft_tx);
-          this.fee += evaluationFee - oldEvaluationFee;
+          await this.evaluate(draft_tx);
           tw.setRedeemers(this.redeemers);
+          draft_tx.setWitnessSet(tw);
+          this.calculateFees(draft_tx);
           {
             const scriptDataHash = this.getScriptDataHash(tw);
             if (scriptDataHash) {
               this.body.setScriptDataHash(scriptDataHash);
             }
           }
-          draft_tx.setWitnessSet(tw);
           if (evaluationFee > oldEvaluationFee) {
             continue;
           }
