@@ -1,5 +1,13 @@
 # @blaze-cardano/vm
 
+## 0.1.4
+
+### Patch Changes
+
+- 4a4eeae: Fix fee too small issue
+- Updated dependencies [4a4eeae]
+  - @blaze-cardano/core@0.5.1
+
 ## 0.1.3
 
 ### Patch Changes
