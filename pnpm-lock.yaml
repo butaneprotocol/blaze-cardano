@@ -450,6 +450,12 @@ importers:
       '@blaze-cardano/tx':
         specifier: workspace:*
         version: link:../blaze-tx
+      '@emurgo/cardano-message-signing-browser':
+        specifier: ^1.1.0
+        version: 1.1.0
+      '@emurgo/cardano-message-signing-nodejs':
+        specifier: ^1.1.0
+        version: 1.1.0
     devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
@@ -771,6 +777,12 @@ packages:
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
+
+  '@emurgo/cardano-message-signing-browser@1.1.0':
+    resolution: {integrity: sha512-LyeiGIqCyZu9DZnKsi4wlBjZA1MN+uy3Cqpb5J6RZWvFXDJnCoxrYB/EixUiGRD/la4WsldBgtPsrIHyGsVkpg==}
+
+  '@emurgo/cardano-message-signing-nodejs@1.1.0':
+    resolution: {integrity: sha512-PQRc8K8wZshEdmQenNUzVtiI8oJNF/1uAnBhidee5C4o1l2mDLOW+ur46HWHIFKQ6x8mSJTllcjMscHgzju0gQ==}
 
   '@esbuild/aix-ppc64@0.23.1':
     resolution: {integrity: sha512-6VhYk1diRqrhBAqpJEdjASR/+WVRtfjpqKuNw11cLiaWpAT/Uu+nokB+UJnevzy/P9C/ty6AOe0dwueMrGh/iQ==}
@@ -3847,6 +3859,10 @@ snapshots:
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
+
+  '@emurgo/cardano-message-signing-browser@1.1.0': {}
+
+  '@emurgo/cardano-message-signing-nodejs@1.1.0': {}
 
   '@esbuild/aix-ppc64@0.23.1':
     optional: true

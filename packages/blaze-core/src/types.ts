@@ -103,6 +103,9 @@ export type CredentialCore = C.Cardano.Credential;
 export const Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
 export type Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
 
+export const Ed25519PrivateKey = Crypto.Ed25519PrivateKey;
+export type Ed25519PrivateKey = Crypto.Ed25519PrivateKey;
+
 export type Ed25519PrivateNormalKeyHex = OpaqueString<"Ed25519PrivateKeyHex">;
 export const Ed25519PrivateNormalKeyHex = (
   value: string,

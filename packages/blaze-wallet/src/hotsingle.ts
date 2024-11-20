@@ -1,5 +1,6 @@
 import {
   Ed25519PublicKey,
+  Ed25519PrivateKey,
   HexBlob,
   blake2b_224,
   CredentialType,
@@ -24,6 +25,7 @@ import type {
 import type { Provider } from "@blaze-cardano/query";
 import type { Wallet, CIP30DataSignature } from "./types";
 import * as value from "@blaze-cardano/tx/value";
+import { signData } from "./utils";
 
 /**
  * Wallet class that interacts with the HotSingleWallet.
@@ -180,12 +182,33 @@ export class HotSingleWallet implements Wallet {
    * @returns {Promise<CIP30DataSignature>} - The signed data.
    */
   async signData(
-    _address: Address,
-    _payload: string,
+    address: Address,
+    payload: string,
   ): Promise<CIP30DataSignature> {
-    throw new Error(
-      "signData: Hot single wallet does not yet support data signing",
+    const paymentKey = address.getProps().paymentPart;
+    const paymentSigningKey = Ed25519PrivateKey.fromNormalHex(
+      this.paymentSigningKey,
     );
+    const stakeSigningKey =
+      this.stakeSigningKey &&
+      Ed25519PrivateKey.fromNormalHex(this.stakeSigningKey);
+    const signingPublic = await paymentSigningKey.toPublic();
+    const stakeSigningPublic = await stakeSigningKey?.toPublic();
+    const signingKeyHash = await signingPublic.hash();
+    const stakeSigningKeyHash = await stakeSigningPublic?.hash();
+    if (!paymentKey)
+      throw new Error("signData: Address does not have a payment key");
+
+    const signingKeyMap: Record<string, Ed25519PrivateKey> = {};
+    if (signingKeyHash)
+      signingKeyMap[signingKeyHash.hex().toString()] = paymentSigningKey;
+    if (stakeSigningKeyHash)
+      signingKeyMap[stakeSigningKeyHash.hex().toString()] = stakeSigningKey!;
+    const signingKey = signingKeyMap[paymentKey.hash.toString()];
+    if (!signingKey)
+      throw new Error("signData: Address does not have a signing key");
+
+    return signData(address.toBytes(), payload, signingKey);
   }
 
   /**

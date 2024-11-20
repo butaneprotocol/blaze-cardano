@@ -22,6 +22,7 @@ import {
 import type { Provider } from "@blaze-cardano/query";
 import type { Wallet, CIP30DataSignature } from "./types";
 import * as value from "@blaze-cardano/tx/value";
+import { signData } from "./utils";
 
 /**
  * Wallet class that interacts with the HotWallet.
@@ -29,6 +30,7 @@ import * as value from "@blaze-cardano/tx/value";
 export class HotWallet implements Wallet {
   private provider: Provider;
   private signingKey: Bip32PrivateKey;
+  private stakeSigningKey: Bip32PrivateKey | undefined;
   private publicKey: Bip32PublicKey;
   readonly address: Address;
   readonly rewardAddress: RewardAddress | undefined;
@@ -48,6 +50,7 @@ export class HotWallet implements Wallet {
     signingKey: Bip32PrivateKey,
     publicKey: Bip32PublicKey,
     provider: Provider,
+    stakePaymentKey?: Bip32PrivateKey,
   ) {
     this.address = address;
     this.rewardAddress = rewardAddress;
@@ -55,6 +58,7 @@ export class HotWallet implements Wallet {
     this.signingKey = signingKey;
     this.publicKey = publicKey;
     this.provider = provider;
+    this.stakeSigningKey = stakePaymentKey;
   }
 
   private static harden = (num: number): number => 0x80000000 + num;
@@ -66,6 +70,7 @@ export class HotWallet implements Wallet {
   ): Promise<{
     address: Address;
     paymentKey: Bip32PrivateKey;
+    stakePaymentKey: Bip32PrivateKey;
     publicKey: Bip32PublicKey;
   }> {
     if (
@@ -85,6 +90,7 @@ export class HotWallet implements Wallet {
 
     // 1852H/1815H/0H/0/0
     const paymentKey = await accountKey.derive([0, 0]);
+    const stakePaymentKey = await accountKey.derive([2, 0]);
 
     const address = new Address({
       type: addressType,
@@ -113,7 +119,8 @@ export class HotWallet implements Wallet {
 
     return {
       address,
-      paymentKey: paymentKey,
+      paymentKey,
+      stakePaymentKey,
       publicKey: await paymentKey.toPublic(),
     };
   }
@@ -126,7 +133,7 @@ export class HotWallet implements Wallet {
   ): Promise<HotWallet> {
     const rootKey = Bip32PrivateKey.fromHex(masterkey);
 
-    const { address, paymentKey, publicKey } =
+    const { address, paymentKey, stakePaymentKey, publicKey } =
       await this.generateAccountAddressFromMasterkey(
         rootKey,
         networkId,
@@ -139,6 +146,7 @@ export class HotWallet implements Wallet {
       paymentKey,
       publicKey,
       provider,
+      stakePaymentKey,
     );
   }
 
@@ -238,10 +246,27 @@ export class HotWallet implements Wallet {
    * @returns {Promise<CIP30DataSignature>} - The signed data.
    */
   async signData(
-    _address: Address,
-    _payload: string,
+    address: Address,
+    payload: string,
   ): Promise<CIP30DataSignature> {
-    throw new Error("signData: Hot wallet does not yet support data signing");
+    const paymentKey = address.getProps().paymentPart;
+    const signingPublic = await this.signingKey.toPublic();
+    const stakeSigningPublic = await this.stakeSigningKey?.toPublic();
+    const signingKeyHash = await signingPublic.toRawKey().hash();
+    const stakeSigningKeyHash = await stakeSigningPublic?.toRawKey().hash();
+    if (!paymentKey)
+      throw new Error("signData: Address does not have a payment key");
+    const signingKeyMap: Record<string, Bip32PrivateKey> = {};
+    if (signingKeyHash)
+      signingKeyMap[signingKeyHash.hex().toString()] = this.signingKey;
+    if (stakeSigningKeyHash)
+      signingKeyMap[stakeSigningKeyHash.hex().toString()] =
+        this.stakeSigningKey!;
+    const signingKey = signingKeyMap[paymentKey.hash.toString()];
+    if (!signingKey)
+      throw new Error("signData: Address does not have a signing key");
+
+    return signData(address.toBytes(), payload, signingKey.toRawKey());
   }
 
   /**
