@@ -25,7 +25,8 @@ export async function signData(
     COSEKey,
     KeyType,
   } = await import(
-    typeof process === "object"
+    // @ts-expect-error - TS doesn't recognize window object
+    typeof window === "undefined"
       ? "@emurgo/cardano-message-signing-nodejs"
       : "@emurgo/cardano-message-signing-browser"
   );
