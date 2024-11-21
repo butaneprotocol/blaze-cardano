@@ -53,18 +53,18 @@ export class HotSingleWallet implements Wallet {
     paymentSigningKey: Ed25519PrivateNormalKeyHex,
     networkId: NetworkId,
     provider: Provider,
-    stakeSigningKey?: Ed25519PrivateNormalKeyHex,
+    stakeSigningKey?: Ed25519PrivateNormalKeyHex
   ) {
     this.networkId = networkId;
     this.paymentSigningKey = paymentSigningKey;
     this.paymentPublicKey = Ed25519PublicKey.fromHex(
-      derivePublicKey(this.paymentSigningKey),
+      derivePublicKey(this.paymentSigningKey)
     );
 
     if (stakeSigningKey) {
       this.stakeSigningKey = stakeSigningKey;
       this.stakePublicKey = Ed25519PublicKey.fromHex(
-        derivePublicKey(this.stakeSigningKey),
+        derivePublicKey(this.stakeSigningKey)
       );
     }
 
@@ -111,7 +111,7 @@ export class HotSingleWallet implements Wallet {
   async getBalance(): Promise<Value> {
     return (await this.getUnspentOutputs()).reduce(
       (x, y) => value.merge(x, y.output().amount()),
-      value.zero(),
+      value.zero()
     );
   }
 
@@ -141,10 +141,19 @@ export class HotSingleWallet implements Wallet {
 
   /**
    * Retrieves the reward addresses controlled by the wallet.
-   * Always empty in this class instance.
    * @returns {Promise<RewardAddress[]>} - The reward addresses controlled by the wallet.
    */
   async getRewardAddresses(): Promise<RewardAddress[]> {
+    if (this.stakePublicKey) {
+      const rewardAddress = new Address({
+        type: AddressType.RewardKey,
+        networkId: this.networkId,
+        paymentPart: this.address.getProps().delegationPart,
+      }).asReward();
+
+      return rewardAddress ? [rewardAddress] : [];
+    }
+
     return [];
   }
 
@@ -156,11 +165,11 @@ export class HotSingleWallet implements Wallet {
    */
   async signTransaction(
     tx: Transaction,
-    partialSign: boolean = true,
+    partialSign: boolean = true
   ): Promise<TransactionWitnessSet> {
     if (partialSign == false) {
       throw new Error(
-        "signTx: Hot single wallet only supports partial signing = true",
+        "signTx: Hot single wallet only supports partial signing = true"
       );
     }
 
@@ -168,7 +177,7 @@ export class HotSingleWallet implements Wallet {
     const tws = new TransactionWitnessSet();
     const vkw = new VkeyWitness(
       this.paymentPublicKey.hex(),
-      Ed25519SignatureHex(signature),
+      Ed25519SignatureHex(signature)
     );
     tws.setVkeys(CborSet.fromCore([vkw.toCore()], VkeyWitness.fromCore));
     return tws;
@@ -183,11 +192,11 @@ export class HotSingleWallet implements Wallet {
    */
   async signData(
     address: Address,
-    payload: string,
+    payload: string
   ): Promise<CIP30DataSignature> {
     const paymentKey = address.getProps().paymentPart;
     const paymentSigningKey = Ed25519PrivateKey.fromNormalHex(
-      this.paymentSigningKey,
+      this.paymentSigningKey
     );
     const stakeSigningKey =
       this.stakeSigningKey &&
