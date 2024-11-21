@@ -10,7 +10,7 @@ import { type CIP30DataSignature } from "./types";
 export async function signData(
   addressHex: string,
   payload: string,
-  privateKey: Ed25519PrivateKey
+  privateKey: Ed25519PrivateKey,
 ): Promise<CIP30DataSignature> {
   const {
     Label,
@@ -34,7 +34,7 @@ export async function signData(
   protectedHeaders.set_algorithm_id(Label.from_algorithm_id(AlgorithmId.EdDSA));
   protectedHeaders.set_header(
     Label.new_text("address"),
-    CBORValue.new_bytes(fromHex(addressHex))
+    CBORValue.new_bytes(fromHex(addressHex)),
   );
   const protectedSerialized = ProtectedHeaderMap.new(protectedHeaders);
   const unprotectedHeaders = HeaderMap.new();
@@ -48,18 +48,18 @@ export async function signData(
   const coseSign1 = builder.build(signedSigStruc.bytes());
 
   const key = COSEKey.new(
-    Label.from_key_type(KeyType.OKP) //OKP
+    Label.from_key_type(KeyType.OKP), //OKP
   );
   key.set_algorithm_id(Label.from_algorithm_id(AlgorithmId.EdDSA));
   key.set_header(
     Label.new_int(Int.new_negative(BigNum.from_str("1"))),
     CBORValue.new_int(
-      Int.new_i32(6) //CurveType.Ed25519
-    )
+      Int.new_i32(6), //CurveType.Ed25519
+    ),
   ); // crv (-1) set to Ed25519 (6)
   key.set_header(
     Label.new_int(Int.new_negative(BigNum.from_str("2"))),
-    CBORValue.new_bytes(publicKey.bytes())
+    CBORValue.new_bytes(publicKey.bytes()),
   ); // x (-2) set to public key
 
   return {
