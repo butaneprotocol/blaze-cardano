@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.5.2
+
+### Patch Changes
+
+- bcf11d8: add sign data
+
 ## 0.5.1
 
 ### Patch Changes

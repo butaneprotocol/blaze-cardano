@@ -1,5 +1,15 @@
 # @blaze-cardano/wallet
 
+## 0.2.2
+
+### Patch Changes
+
+- bcf11d8: add sign data
+- Updated dependencies [bcf11d8]
+  - @blaze-cardano/core@0.5.2
+  - @blaze-cardano/query@0.3.2
+  - @blaze-cardano/tx@0.8.3
+
 ## 0.2.1
 
 ### Patch Changes

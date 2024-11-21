@@ -1,5 +1,11 @@
 # @blaze-cardano/tsconfig
 
+## 0.0.3
+
+### Patch Changes
+
+- bcf11d8: add sign data
+
 ## 0.0.2
 
 ### Patch Changes

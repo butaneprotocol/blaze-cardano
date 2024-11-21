@@ -1,5 +1,13 @@
 # @blaze-cardano/query
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [bcf11d8]
+  - @blaze-cardano/core@0.5.2
+  - @blaze-cardano/ogmios@0.0.7
+
 ## 0.3.1
 
 ### Patch Changes
