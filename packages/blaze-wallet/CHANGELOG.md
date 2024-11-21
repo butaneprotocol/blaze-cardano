@@ -1,5 +1,11 @@
 # @blaze-cardano/wallet
 
+## 0.3.1
+
+### Patch Changes
+
+- 28bd338: Fix message signing import
+
 ## 0.3.0
 
 ### Minor Changes
