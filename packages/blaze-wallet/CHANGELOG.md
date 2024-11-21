@@ -1,5 +1,11 @@
 # @blaze-cardano/wallet
 
+## 0.3.0
+
+### Minor Changes
+
+- 6982f75: Add getRewardAddresses implementation
+
 ## 0.2.2
 
 ### Patch Changes
