@@ -141,10 +141,19 @@ export class HotSingleWallet implements Wallet {
 
   /**
    * Retrieves the reward addresses controlled by the wallet.
-   * Always empty in this class instance.
    * @returns {Promise<RewardAddress[]>} - The reward addresses controlled by the wallet.
    */
   async getRewardAddresses(): Promise<RewardAddress[]> {
+    if (this.stakePublicKey) {
+      const rewardAddress = new Address({
+        type: AddressType.RewardKey,
+        networkId: this.networkId,
+        paymentPart: this.address.getProps().delegationPart,
+      }).asReward();
+
+      return rewardAddress ? [rewardAddress] : [];
+    }
+
     return [];
   }
 
