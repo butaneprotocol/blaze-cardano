@@ -64,7 +64,9 @@ function prettify_plutusData(data: PlutusData, indent: string): string {
     }
     return `${pretty}\n${indent}${ansiColors.fg.blue}}${ansiColors.reset}`;
   } else {
-    return `${ansiColors.fg.yellow}${data.asInteger()!.toString()}${ansiColors.reset}`;
+    return `${ansiColors.fg.yellow}${data.asInteger()!.toString()}${
+      ansiColors.reset
+    }`;
   }
 }
 

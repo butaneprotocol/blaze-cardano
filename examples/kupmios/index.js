@@ -41,5 +41,7 @@ console.log(
 const confirmed = await blaze.provider.awaitTransactionConfirmation(txId);
 
 console.log(
-  `Transaction ${confirmed ? "is confirmed and" : "was not"} accepted on the blockchain.`,
+  `Transaction ${
+    confirmed ? "is confirmed and" : "was not"
+  } accepted on the blockchain.`,
 );

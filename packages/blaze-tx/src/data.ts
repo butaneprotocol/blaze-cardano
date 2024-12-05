@@ -60,7 +60,14 @@ export type PSchema =
       dataType:
         | "integer"
         | "bytes"
-        | `#${"unit" | "boolean" | "integer" | "bytes" | "string" | "pair" | "list"}`;
+        | `#${
+            | "unit"
+            | "boolean"
+            | "integer"
+            | "bytes"
+            | "string"
+            | "pair"
+            | "list"}`;
     }
   | PList
   | PConstructor

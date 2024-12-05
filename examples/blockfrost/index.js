@@ -84,7 +84,9 @@ const nftName = Buffer.from(AssetId.getAssetName(nft), "hex").toString();
 const nftUTXO = await provider.getUnspentOutputByNFT(nft);
 
 console.log(`\n${nftName} Asset (NFT) found on the following UTxO:`);
-const nftUtxoRef = `${nftUTXO.input().transactionId()}#${nftUTXO.input().index()} `;
+const nftUtxoRef = `${nftUTXO.input().transactionId()}#${nftUTXO
+  .input()
+  .index()} `;
 console.log(nftUtxoRef + "\n");
 
 const txIns = [

@@ -76,7 +76,9 @@ export class Kupmios extends Provider {
     prefix: string | null,
     postfix: string | null,
   ): Promise<TransactionUnspentOutput[]> {
-    const url = `${this.kupoUrl}/matches/${prefix ? prefix : "*"}?unspent${postfix ? postfix : ""}`;
+    const url = `${this.kupoUrl}/matches/${prefix ? prefix : "*"}?unspent${
+      postfix ? postfix : ""
+    }`;
     // Debug: console.log(`Fetching unspent outputs from ${url}`);
     const result: any = await fetch(url).then((res) => res.json());
 
