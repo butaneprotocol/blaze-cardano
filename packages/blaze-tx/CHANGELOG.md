@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.8.4
+
+### Patch Changes
+
+- 96ceb2a: fix: fee to small - missing required signer in fake witness set
+
 ## 0.8.3
 
 ### Patch Changes
