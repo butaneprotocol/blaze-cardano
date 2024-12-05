@@ -491,13 +491,12 @@ export class Emulator {
 
     // Disjointness of inputs and reference inputs
     if (
-      inputs.some(
-        (input) =>
-          refInputs?.some(
-            (ref) =>
-              ref.transactionId() === input.transactionId() &&
-              ref.index() === input.index(),
-          ),
+      inputs.some((input) =>
+        refInputs?.some(
+          (ref) =>
+            ref.transactionId() === input.transactionId() &&
+            ref.index() === input.index(),
+        ),
       )
     ) {
       throw new Error("Inputs and reference inputs must be disjoint.");
