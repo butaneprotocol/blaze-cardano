@@ -4,7 +4,6 @@ import type {
   Script,
   ScriptHash,
   Ed25519KeyHashHex,
-  Hash28ByteBase16,
   Hash32ByteBase16,
   PolicyId,
   AssetName,
@@ -17,7 +16,9 @@ import type {
   PoolId,
   StakeDelegationCertificate,
   NetworkId,
-  AuxiliaryData,
+  AuxiliaryData} from "@blaze-cardano/core";
+import {
+  Hash28ByteBase16
 } from "@blaze-cardano/core";
 import {
   CborSet,
@@ -2025,6 +2026,9 @@ export class TxBuilder {
       Ed25519KeyHashHex,
       Hash<Ed25519KeyHashHex>
     > = this.body.requiredSigners() ?? CborSet.fromCore([], Hash.fromCore);
+    this.requiredWitnesses.add(
+      HashAsPubKeyHex(Hash28ByteBase16.fromEd25519KeyHashHex(signer)),
+    );
     // Convert the signer to a hash and add it to the set of required signers.
     const values = [...signers.values()];
     values.push(Hash.fromCore(signer));
