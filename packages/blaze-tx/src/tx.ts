@@ -1110,28 +1110,14 @@ export class TxBuilder {
   private getScriptDataHash(
     tw: TransactionWitnessSet,
   ): Hash32ByteBase16 | undefined {
-    // Extract redeemers and datums from the transaction witness set.
-    const redeemers = [...this.redeemers.values()];
+    // Extract datums from the transaction witness set.
     const datums = tw.plutusData()?.values().slice() || [];
     // Proceed only if there are datums or redeemers to process.
-    if (datums.length > 0 || redeemers.length > 0) {
+    if (datums.length > 0 || this.redeemers.size > 0) {
       // Initialize a CBOR writer to encode the script data.
       const writer = new CborWriter();
       // Encode redeemers and datums into CBOR format.
-      // In the conway era, the format changes
-      const conway = this.params.protocolVersion.major === 9;
-      if (conway && redeemers.length === 0) {
-        // An empty redeemer set is always an empty map, as of conway
-        writer.writeStartMap(0);
-      } else {
-        // TODO: in the conway era, this will support array, or map
-        // but in the next era, it will only support maps
-        // So, we should switch this to encoding as maps when we switch the witness set to encoding as maps
-        writer.writeStartArray(redeemers.length);
-        for (const redeemer of redeemers) {
-          writer.writeEncodedValue(Buffer.from(redeemer.toCbor(), "hex"));
-        }
-      }
+      writer.writeEncodedValue(Buffer.from(this.redeemers.toCbor(), "hex"));
       if (datums && datums.length > 0) {
         writer.writeStartArray(datums.length);
         for (const datum of datums) {
