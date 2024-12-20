@@ -1113,7 +1113,7 @@ export class TxBuilder {
     // Extract datums from the transaction witness set.
     const datums = tw.plutusData()?.values().slice() || [];
     // Proceed only if there are datums or redeemers to process.
-    if (datums.length > 0 || this.redeemers.size > 0) {
+    if (datums.length > 0 || this.redeemers.size() > 0) {
       // Initialize a CBOR writer to encode the script data.
       const writer = new CborWriter();
       // Encode redeemers and datums into CBOR format.
