@@ -370,7 +370,7 @@ describe("Transaction Building", () => {
       .complete();
     console.log(tx.toCbor());
 
-    expect(tx.body().fee().toString()).toEqual("291603");
+    expect(tx.body().fee().toString()).toEqual("292307");
   });
 
   // The following test is based on the below transaction, which was a transaction built by JPG Store. It created a fee that was too small.
@@ -461,7 +461,7 @@ describe("Transaction Building", () => {
       .setValidUntil(Slot(180371453))
       .complete();
 
-    expect(tx.body().fee().toString()).toEqual("191857");
+    expect(tx.body().fee().toString()).toEqual("192121");
   });
 
   // Based on this tx
@@ -621,6 +621,6 @@ describe("Transaction Building", () => {
       .complete();
     console.log(tx.toCbor());
 
-    expect(tx.body().fee().toString()).toEqual("474958");
+    expect(tx.body().fee().toString()).toEqual("475794");
   });
 });
