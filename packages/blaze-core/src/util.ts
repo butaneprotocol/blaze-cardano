@@ -309,6 +309,11 @@ export type CborSet<A, B extends CborSerializable<A>> = C.Serialization.CborSet<
 >;
 
 /**
+ * Helper function to set the serialization era.
+ */
+export const setInConwayEra = C.setInConwayEra;
+
+/**
  * Exporting HexBlob, OpaqueString, and typedHex.
  */
 export type { OpaqueString };

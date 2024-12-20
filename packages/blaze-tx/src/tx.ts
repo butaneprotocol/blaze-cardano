@@ -17,6 +17,7 @@ import type {
   StakeDelegationCertificate,
   NetworkId,
   AuxiliaryData,
+  HexBlob,
 } from "@blaze-cardano/core";
 import { Hash28ByteBase16 } from "@blaze-cardano/core";
 import {
@@ -57,6 +58,7 @@ import {
   RedeemerTag,
   StakeRegistration,
   getBurnAddress,
+  setInConwayEra,
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector, type SelectionResult } from "./coinSelection";
@@ -90,6 +92,14 @@ constraints:
     mustValidateIn
     mustValidateInTimeRange
 */
+
+export interface IScriptData {
+  redeemersEncoded: Buffer;
+  datumsEncoded: Buffer | undefined;
+  costModelsEncoded: Buffer;
+  hashedData: HexBlob;
+  scriptDataHash: Hash32ByteBase16;
+}
 
 /**
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
@@ -143,6 +153,7 @@ export class TxBuilder {
    * Initializes a new transaction body with an empty set of inputs, outputs, and no fee.
    */
   constructor(params: ProtocolParameters) {
+    setInConwayEra(true);
     this.params = params;
     this.body = new TransactionBody(
       CborSet.fromCore([], TransactionInput.fromCore),
@@ -1105,65 +1116,78 @@ export class TxBuilder {
    * This hash is crucial for the validation of Plutus scripts in the transaction.
    *
    * @param {TransactionWitnessSet} tw - The transaction witness set containing Plutus data.
+   * @returns {IScriptData | undefined} The full lscript data if datums or redeemers are present, otherwise undefined.
+   */
+  private getScriptData(tw: TransactionWitnessSet): IScriptData | undefined {
+    // Extract datums from the transaction witness set.
+    const datums = tw.plutusData();
+    const datumSize = datums?.size() || 0;
+
+    // Proceed only if there are datums or redeemers to process.
+    if (datumSize === 0 && this.redeemers.size() === 0) {
+      return undefined;
+    }
+
+    // Initialize a CBOR writer to encode the script data.
+    const writer = new CborWriter();
+
+    // Initialize a container for used cost models.
+    const usedCostModels = new Costmdls();
+    // Populate the used cost models based on the languages used in the transaction.
+    for (let i = 0; i <= Object.keys(this.usedLanguages).length; i++) {
+      if (this.usedLanguages[i as PlutusLanguageVersion]) {
+        // Retrieve the cost model for the current language version.
+        const cm = this.params.costModels.get(i);
+        // Throw an error if the cost model is missing.
+        if (cm == undefined) {
+          throw new Error(
+            `complete: Could not find cost model for Plutus Language Version ${i}`,
+          );
+        }
+        // Insert the cost model into the used cost models container.
+        usedCostModels.insert(new CostModel(i, cm));
+      }
+    }
+    // Encode the used cost models into CBOR format.
+    const costModelsEncoded = Buffer.from(
+      usedCostModels.languageViewsEncoding(),
+      "hex",
+    );
+
+    const redeemersEncoded = Buffer.from(this.redeemers.toCbor(), "hex");
+    const datumsEncoded = datums && Buffer.from(datums.toCbor(), "hex");
+
+    // Encode redeemers, datums, and costModels into CBOR format.
+    writer.writeEncodedValue(redeemersEncoded);
+    if (datumsEncoded) {
+      writer.writeEncodedValue(datumsEncoded);
+    }
+    writer.writeEncodedValue(costModelsEncoded);
+
+    const hashedData = writer.encodeAsHex();
+    const scriptDataHash = blake2b_256(hashedData);
+
+    const result: IScriptData = {
+      redeemersEncoded,
+      datumsEncoded,
+      costModelsEncoded,
+      hashedData,
+      scriptDataHash,
+    };
+
+    return result;
+  }
+
+  /**
+   * Helper method to just get the script data hash from a TransactionWitnessSet.
+   *
+   * @param {TransactionWitnessSet} tw - The transaction witness set containing Plutus data.
    * @returns {Hash32ByteBase16 | undefined} The script data hash if datums or redeemers are present, otherwise undefined.
    */
   private getScriptDataHash(
     tw: TransactionWitnessSet,
   ): Hash32ByteBase16 | undefined {
-    // Extract redeemers and datums from the transaction witness set.
-    const redeemers = [...this.redeemers.values()];
-    const datums = tw.plutusData()?.values().slice() || [];
-    // Proceed only if there are datums or redeemers to process.
-    if (datums.length > 0 || redeemers.length > 0) {
-      // Initialize a CBOR writer to encode the script data.
-      const writer = new CborWriter();
-      // Encode redeemers and datums into CBOR format.
-      // In the conway era, the format changes
-      const conway = this.params.protocolVersion.major === 9;
-      if (conway && redeemers.length === 0) {
-        // An empty redeemer set is always an empty map, as of conway
-        writer.writeStartMap(0);
-      } else {
-        // TODO: in the conway era, this will support array, or map
-        // but in the next era, it will only support maps
-        // So, we should switch this to encoding as maps when we switch the witness set to encoding as maps
-        writer.writeStartArray(redeemers.length);
-        for (const redeemer of redeemers) {
-          writer.writeEncodedValue(Buffer.from(redeemer.toCbor(), "hex"));
-        }
-      }
-      if (datums && datums.length > 0) {
-        writer.writeStartArray(datums.length);
-        for (const datum of datums) {
-          writer.writeEncodedValue(Buffer.from(datum.toCbor(), "hex"));
-        }
-      }
-      // Initialize a container for used cost models.
-      const usedCostModels = new Costmdls();
-      // Populate the used cost models based on the languages used in the transaction.
-      for (let i = 0; i <= Object.keys(this.usedLanguages).length; i++) {
-        if (this.usedLanguages[i as PlutusLanguageVersion]) {
-          // Retrieve the cost model for the current language version.
-          const cm = this.params.costModels.get(i);
-          // Throw an error if the cost model is missing.
-          if (cm == undefined) {
-            throw new Error(
-              `complete: Could not find cost model for Plutus Language Version ${i}`,
-            );
-          }
-          // Insert the cost model into the used cost models container.
-          usedCostModels.insert(new CostModel(i, cm));
-        }
-      }
-      // Encode the used cost models into CBOR format.
-      writer.writeEncodedValue(
-        Buffer.from(usedCostModels.languageViewsEncoding(), "hex"),
-      );
-      // Generate and return the script data hash.
-      return blake2b_256(writer.encodeAsHex());
-    }
-    // Return undefined if there are no datums or redeemers.
-    return undefined;
+    return this.getScriptData(tw)?.scriptDataHash;
   }
 
   /**
