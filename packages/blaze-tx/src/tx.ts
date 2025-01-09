@@ -61,8 +61,9 @@ import {
   setInConwayEra,
 } from "@blaze-cardano/core";
 import * as value from "./value";
-import { micahsSelector, type SelectionResult } from "./coinSelection";
-import { calculateReferenceScriptFee } from "./utils";
+import { micahsSelector } from "./coinSelectors/micahsSelector";
+import { calculateMinAda, calculateReferenceScriptFee } from "./utils";
+import type { CoinSelectionFunc, SelectionResult } from "./types";
 
 /*
 methods we want to implement somewhere in new blaze (from haskell codebase):
@@ -142,10 +143,7 @@ export class TxBuilder {
   private consumedSpendInputs: string[] = [];
   private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
   private feePadding: bigint = 0n; // A padding to add onto the fee; use only in emergencies, and open a ticket so we can fix the fee calculation please!
-  private coinSelector: (
-    inputs: TransactionUnspentOutput[],
-    dearth: Value,
-  ) => SelectionResult = micahsSelector;
+  private coinSelector: CoinSelectionFunc = micahsSelector;
   private _burnAddress?: Address;
 
   /**
@@ -560,8 +558,7 @@ export class TxBuilder {
    * @returns {bigint} The minimum ada required for the output.
    */
   private calculateMinAda(output: TransactionOutput): bigint {
-    const byteLength = BigInt(output.toCbor().length / 2);
-    return BigInt(this.params.coinsPerUtxoByte) * (byteLength + 160n);
+    return calculateMinAda(output, this.params.coinsPerUtxoByte);
   }
   /**
    * This method checks and alters the output of a transaction.
@@ -1608,10 +1605,13 @@ export class TxBuilder {
     const selectionResult = this.coinSelector(
       spareInputs,
       value.negate(value.negatives(excessValue)),
+      preliminaryFee,
+      new Value(0n),
+      this.params.coinsPerUtxoByte
     );
     // Update the excess value and spare inputs based on the selection result.
     excessValue = value.merge(excessValue, selectionResult.selectedValue);
-    spareInputs = selectionResult.inputs;
+    spareInputs = selectionResult.availableInputs;
     // Add selected inputs to the transaction.
     if (selectionResult.selectedInputs.length > 0) {
       for (const input of selectionResult.selectedInputs) {
@@ -1768,7 +1768,7 @@ export class TxBuilder {
           spareInputs,
           excessDifference,
         );
-        spareInputs = selectionResult.inputs;
+        spareInputs = selectionResult.availableInputs;
         for (const input of selectionResult.selectedInputs) {
           this.addInput(input);
         }
