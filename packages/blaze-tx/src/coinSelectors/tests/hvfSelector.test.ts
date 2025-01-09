@@ -8,10 +8,7 @@ import {
   AssetId,
 } from "@blaze-cardano/core";
 import { createHash } from "node:crypto";
-import {
-  hvfSelector,
-  recursive,
-} from "../hvfSelector";
+import { hvfSelector, recursive } from "../hvfSelector";
 import { sortLargestFirst } from "../../utils";
 
 const sha256 = (input: string) =>
@@ -33,7 +30,7 @@ const createDummyAssets = (lovelaceAmount: bigint, numAssets: number) => {
 const createDummyUTxO = (
   index: number,
   lovelaceAmount: bigint,
-  numAssets: number
+  numAssets: number,
 ): TransactionUnspentOutput =>
   TransactionUnspentOutput.fromCore([
     {
@@ -46,7 +43,7 @@ const createDummyUTxO = (
        */
       // address: PaymentAddress(`addr_test${sha256(index.toString())}`),
       address: PaymentAddress(
-        "addr_test1qrp8nglm8d8x9w783c5g0qa4spzaft5z5xyx0kp495p8wksjrlfzuz6h4ssxlm78v0utlgrhryvl2gvtgp53a6j9zngqtjfk6s"
+        "addr_test1qrp8nglm8d8x9w783c5g0qa4spzaft5z5xyx0kp495p8wksjrlfzuz6h4ssxlm78v0utlgrhryvl2gvtgp53a6j9zngqtjfk6s",
       ),
       value: createDummyAssets(lovelaceAmount, numAssets).toCore(),
       scriptReference: undefined,
@@ -60,10 +57,7 @@ describe("recursive", () => {
       createDummyUTxO(1, 9_798_383n, 0),
       createDummyUTxO(2, 3_662_726n, 7),
     ];
-    const program = recursive(
-      sortLargestFirst(inputs),
-      new Value(5_000_000n)
-    );
+    const program = recursive(sortLargestFirst(inputs), new Value(5_000_000n));
 
     expect(program.selectedInputs).toEqual([inputs[1]]);
   });
@@ -74,10 +68,7 @@ describe("recursive", () => {
       createDummyUTxO(1, 5_000_000n, 1),
       createDummyUTxO(2, 3_662_726n, 7),
     ];
-    const program = recursive(
-      sortLargestFirst(inputs),
-      new Value(5_900_000n)
-    );
+    const program = recursive(sortLargestFirst(inputs), new Value(5_900_000n));
 
     expect(program.selectedInputs).toEqual([inputs[1], inputs[2]]);
   });
@@ -88,10 +79,7 @@ describe("recursive", () => {
       createDummyUTxO(1, 5_000_000n, 0),
       createDummyUTxO(2, 466_272n, 0),
     ];
-    const program = recursive(
-      sortLargestFirst(inputs),
-      new Value(5_200_000n)
-    );
+    const program = recursive(sortLargestFirst(inputs), new Value(5_200_000n));
 
     expect(program.selectedInputs).toEqual([inputs[1], inputs[0], inputs[2]]);
   });
@@ -104,9 +92,9 @@ describe("recursive", () => {
     ];
 
     expect(() =>
-      recursive(sortLargestFirst(inputs), new Value(5_200_000n))
+      recursive(sortLargestFirst(inputs), new Value(5_200_000n)),
     ).toThrow(
-      'Your wallet does not have enough funds to cover required minimum ADA for change output: {"coins":"6832057n"}. Or it contains UTxOs with reference scripts; which are excluded from coin selection.'
+      'Your wallet does not have enough funds to cover required minimum ADA for change output: {"coins":"6832057n"}. Or it contains UTxOs with reference scripts; which are excluded from coin selection.',
     );
   });
 
@@ -125,10 +113,7 @@ describe("recursive", () => {
       createDummyUTxO(10, 781143n, 0),
     ];
 
-    const program = recursive(
-      sortLargestFirst(inputs),
-      new Value(5_200_000n)
-    );
+    const program = recursive(sortLargestFirst(inputs), new Value(5_200_000n));
     const expectedSelection = [
       inputs[1],
       inputs[3],
@@ -151,7 +136,7 @@ describe("recursive", () => {
       createDummyUTxO(2, 466_272n, 0),
     ];
     const program = recursive(sortLargestFirst(inputs), new Value(5_000n));
-    expect(program.selectedInputs).toEqual([inputs[0], inputs[2]])
+    expect(program.selectedInputs).toEqual([inputs[0], inputs[2]]);
   });
 });
 
@@ -160,9 +145,13 @@ describe("hvfSelector", () => {
     const inputs: TransactionUnspentOutput[] = [
       createDummyUTxO(0, 1_000_000n, 0),
       createDummyUTxO(1, 578_000n, 0),
-      createDummyUTxO(2, 10_000n, 0)
-    ]
-    const program = hvfSelector(sortLargestFirst(inputs), new Value(600_000n), 10_000);
+      createDummyUTxO(2, 10_000n, 0),
+    ];
+    const program = hvfSelector(
+      sortLargestFirst(inputs),
+      new Value(600_000n),
+      10_000,
+    );
     expect(program.selectedInputs).toEqual([inputs[1], inputs[0], inputs[2]]);
-  })
-})
+  });
+});

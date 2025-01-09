@@ -30,11 +30,11 @@ export function getScriptSize(script: Script): number {
  */
 export function calculateReferenceScriptFee(
   refScripts: Script[],
-  params: ProtocolParameters
+  params: ProtocolParameters,
 ): number {
   let referenceScriptSize = refScripts.reduce(
     (acc, refScript) => acc + getScriptSize(refScript),
-    0
+    0,
   );
 
   const { base, multiplier, range } = params.minFeeReferenceScripts!;
@@ -58,7 +58,7 @@ export function calculateReferenceScriptFee(
  */
 export function calculateMinAda(
   output: TransactionOutput,
-  coinsPerUtxoByte?: number
+  coinsPerUtxoByte?: number,
 ): bigint {
   const byteLength = BigInt(output.toCbor().length / 2);
   return (
@@ -70,11 +70,11 @@ export function calculateMinAda(
 /**
  * Wraps JSON.stringify with a serializer for bigints.
  * @param {any} value The value you want to stringify.
- * @returns 
+ * @returns
  */
 export const stringifyBigint: typeof JSON.stringify = (value) =>
   JSON.stringify(value, (_k, v) =>
-    typeof v === "bigint" ? v.toString() + "n" : v
+    typeof v === "bigint" ? v.toString() + "n" : v,
   );
 
 /**
@@ -83,7 +83,7 @@ export const stringifyBigint: typeof JSON.stringify = (value) =>
  * @returns {TransactionUnspentOutput[]}
  */
 export function sortLargestFirst(
-  inputs: TransactionUnspentOutput[]
+  inputs: TransactionUnspentOutput[],
 ): TransactionUnspentOutput[] {
   return [...inputs].sort((a, b) => {
     const lovelaceA = Number(a.output().amount().coin());
@@ -104,13 +104,13 @@ export function sortLargestFirst(
 
 /**
  * Utility function to compare the equality of two UTxOs.
- * @param {TransactionUnspentOutput} self 
- * @param {TransactionUnspentOutput} that 
+ * @param {TransactionUnspentOutput} self
+ * @param {TransactionUnspentOutput} that
  * @returns {boolean}
  */
 export const isEqualUTxO = (
   self: TransactionUnspentOutput,
-  that: TransactionUnspentOutput
+  that: TransactionUnspentOutput,
 ) =>
   self.input().transactionId() === that.input().transactionId() &&
   self.input().index() === that.input().index();

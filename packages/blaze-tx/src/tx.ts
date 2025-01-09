@@ -1607,7 +1607,7 @@ export class TxBuilder {
       value.negate(value.negatives(excessValue)),
       preliminaryFee,
       new Value(0n),
-      this.params.coinsPerUtxoByte
+      this.params.coinsPerUtxoByte,
     );
     // Update the excess value and spare inputs based on the selection result.
     excessValue = value.merge(excessValue, selectionResult.selectedValue);

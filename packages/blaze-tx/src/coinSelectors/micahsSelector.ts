@@ -50,7 +50,11 @@ function wideSelection(
       acc = value.merge(acc, bestStep[1]);
     }
   }
-  return { selectedInputs, selectedValue: acc, availableInputs: availableInputs };
+  return {
+    selectedInputs,
+    selectedValue: acc,
+    availableInputs: availableInputs,
+  };
 }
 
 /**
@@ -101,7 +105,11 @@ function deepSelection(
       acc = value.merge(acc, bestStep[1]);
     }
   }
-  return { selectedInputs, selectedValue: acc, availableInputs: availableInputs };
+  return {
+    selectedInputs,
+    selectedValue: acc,
+    availableInputs: availableInputs,
+  };
 }
 
 /**
@@ -113,7 +121,7 @@ function deepSelection(
  */
 export const micahsSelector: CoinSelectionFunc = (
   inputs,
-  dearth
+  dearth,
 ): SelectionResult => {
   const wideResult = wideSelection(inputs, dearth);
   const remainingDearth = value.positives(
@@ -138,4 +146,4 @@ export const micahsSelector: CoinSelectionFunc = (
     ),
     availableInputs: deepResult.availableInputs,
   };
-}
+};

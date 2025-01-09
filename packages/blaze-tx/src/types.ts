@@ -18,5 +18,5 @@ export type CoinSelectionFunc = (
   collectedAssets: Value,
   preliminaryFee?: number,
   externalAssets?: Value,
-  coinsPerUtxoByte?: number
-) => SelectionResult
+  coinsPerUtxoByte?: number,
+) => SelectionResult;

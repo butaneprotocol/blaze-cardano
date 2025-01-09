@@ -21,7 +21,7 @@ import { calculateMinAda, isEqualUTxO, stringifyBigint } from "../utils";
 export const selectUTxOs = (
   utxos: TransactionUnspentOutput[],
   totalRequired: Value,
-  includeUTxOsWithScriptRef: boolean = false
+  includeUTxOsWithScriptRef: boolean = false,
 ): TransactionUnspentOutput[] => {
   const selectedUtxos: TransactionUnspentOutput[] = [];
   let isSelected = false;
@@ -64,7 +64,7 @@ export const selectUTxOs = (
 const calculateExtraLovelace = (
   leftoverAssets: Value,
   address: Address,
-  coinsPerUtxoByte: number
+  coinsPerUtxoByte: number,
 ): Value => {
   const output = new TransactionOutput(address, leftoverAssets);
   const minLovelace = calculateMinAda(output, coinsPerUtxoByte);
@@ -91,21 +91,21 @@ export const recursive = (
   inputs: TransactionUnspentOutput[],
   requiredAssets: Value,
   externalAssets: Value = new Value(0n),
-  coinsPerUtxoByte: number = hardCodedProtocolParams.coinsPerUtxoByte
+  coinsPerUtxoByte: number = hardCodedProtocolParams.coinsPerUtxoByte,
 ): SelectionResult => {
   const firstInput = inputs[0];
   let selected: TransactionUnspentOutput[] = selectUTxOs(
     inputs,
-    requiredAssets
+    requiredAssets,
   );
   if (!firstInput || selected.length === 0) {
     throw new Error(
-      `Your wallet does not have enough funds to cover the required assets: ${stringifyBigint(requiredAssets.toCore())}. Or it contains UTxOs with reference scripts; which are excluded from coin selection.`
+      `Your wallet does not have enough funds to cover the required assets: ${stringifyBigint(requiredAssets.toCore())}. Or it contains UTxOs with reference scripts; which are excluded from coin selection.`,
     );
   }
 
   const selectedAssets: Value = value.sum(
-    selected.map((s) => s.output().amount())
+    selected.map((s) => s.output().amount()),
   );
 
   let availableAssets = value.sub(selectedAssets, requiredAssets);
@@ -114,25 +114,25 @@ export const recursive = (
   let extraLovelace: Value | undefined = calculateExtraLovelace(
     availableAssets,
     firstInput.output().address(),
-    coinsPerUtxoByte
+    coinsPerUtxoByte,
   );
 
   let remainingInputs = inputs;
 
   while (extraLovelace.coin() > 0n) {
     remainingInputs = remainingInputs.filter(
-      (i, index) => !selected[index] || !isEqualUTxO(i, selected[index])
+      (i, index) => !selected[index] || !isEqualUTxO(i, selected[index]),
     );
-    
+
     const extraSelected = selectUTxOs(remainingInputs, extraLovelace);
     if (extraSelected.length === 0) {
       throw new Error(
-        `Your wallet does not have enough funds to cover required minimum ADA for change output: ${stringifyBigint(extraLovelace.toCore())}. Or it contains UTxOs with reference scripts; which are excluded from coin selection.`
+        `Your wallet does not have enough funds to cover required minimum ADA for change output: ${stringifyBigint(extraLovelace.toCore())}. Or it contains UTxOs with reference scripts; which are excluded from coin selection.`,
       );
     }
 
     const extraSelectedAssets: Value = value.sum(
-      extraSelected.map((v) => v.output().amount())
+      extraSelected.map((v) => v.output().amount()),
     );
     selected = [...selected, ...extraSelected];
     availableAssets = value.sum([availableAssets, extraSelectedAssets]);
@@ -140,7 +140,7 @@ export const recursive = (
     extraLovelace = calculateExtraLovelace(
       availableAssets,
       firstInput.output().address(),
-      coinsPerUtxoByte
+      coinsPerUtxoByte,
     );
   }
 
@@ -154,21 +154,21 @@ export const recursive = (
 /**
  * This coin selection algorithm follows a Highest Value First (HVF) function, taking into consideration things like fee estimation.
  * Inspiration taken from Lucid Evolution: https://github.com/Anastasia-Labs/lucid-evolution/blob/main/packages/lucid/src/tx-builder/internal/CompleteTxBuilder.ts#L789
- * @param inputs 
- * @param collectedAssets 
- * @param externalAssets 
- * @param coinsPerUtxoByte 
- * @returns 
+ * @param inputs
+ * @param collectedAssets
+ * @param externalAssets
+ * @param coinsPerUtxoByte
+ * @returns
  */
 export const hvfSelector: CoinSelectionFunc = (
   inputs,
   collectedAssets,
   preliminaryFee = 0,
   externalAssets = new Value(0n),
-  coinsPerUtxoByte = hardCodedProtocolParams.coinsPerUtxoByte
+  coinsPerUtxoByte = hardCodedProtocolParams.coinsPerUtxoByte,
 ) => {
   const requiredAssets = new Value(
-    collectedAssets.coin() + externalAssets.coin() + BigInt(preliminaryFee)
+    collectedAssets.coin() + externalAssets.coin() + BigInt(preliminaryFee),
   );
   const nonRequiredAssets = new Value(0n);
 
@@ -177,13 +177,19 @@ export const hvfSelector: CoinSelectionFunc = (
     const nonRequiredMultiAsset = nonRequiredAssets.multiasset()?.get(id);
     if (amount < 0n) {
       if (nonRequiredMultiAsset) {
-        (nonRequiredAssets.multiasset() as TokenMap).set(id, nonRequiredMultiAsset + amount);
+        (nonRequiredAssets.multiasset() as TokenMap).set(
+          id,
+          nonRequiredMultiAsset + amount,
+        );
       } else {
         nonRequiredAssets.setMultiasset(new Map([[AssetId(id), amount]]));
       }
     } else {
       if (requiredMultiAsset) {
-        (requiredAssets.multiasset() as TokenMap).set(id, requiredMultiAsset + amount);
+        (requiredAssets.multiasset() as TokenMap).set(
+          id,
+          requiredMultiAsset + amount,
+        );
       } else {
         requiredAssets.setMultiasset(new Map([[AssetId(id), amount]]));
       }
@@ -191,4 +197,4 @@ export const hvfSelector: CoinSelectionFunc = (
   });
 
   return recursive(inputs, requiredAssets, nonRequiredAssets, coinsPerUtxoByte);
-}
+};
