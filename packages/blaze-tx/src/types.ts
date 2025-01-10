@@ -5,9 +5,9 @@ import type { TransactionUnspentOutput, Value } from "@blaze-cardano/core";
  * It includes the selected inputs, the total value of the selected inputs, and the remaining inputs.
  */
 export type SelectionResult = {
+  leftoverInputs: TransactionUnspentOutput[];
   selectedInputs: TransactionUnspentOutput[];
   selectedValue: Value;
-  availableInputs: TransactionUnspentOutput[];
 };
 
 /**

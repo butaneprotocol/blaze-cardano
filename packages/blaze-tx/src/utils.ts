@@ -5,6 +5,7 @@ import {
   type TransactionUnspentOutput,
   type ProtocolParameters,
   type Script,
+  TransactionInput,
 } from "@blaze-cardano/core";
 
 export function getScriptSize(script: Script): number {
@@ -30,11 +31,11 @@ export function getScriptSize(script: Script): number {
  */
 export function calculateReferenceScriptFee(
   refScripts: Script[],
-  params: ProtocolParameters,
+  params: ProtocolParameters
 ): number {
   let referenceScriptSize = refScripts.reduce(
     (acc, refScript) => acc + getScriptSize(refScript),
-    0,
+    0
   );
 
   const { base, multiplier, range } = params.minFeeReferenceScripts!;
@@ -58,7 +59,7 @@ export function calculateReferenceScriptFee(
  */
 export function calculateMinAda(
   output: TransactionOutput,
-  coinsPerUtxoByte?: number,
+  coinsPerUtxoByte?: number
 ): bigint {
   const byteLength = BigInt(output.toCbor().length / 2);
   return (
@@ -74,7 +75,7 @@ export function calculateMinAda(
  */
 export const stringifyBigint: typeof JSON.stringify = (value) =>
   JSON.stringify(value, (_k, v) =>
-    typeof v === "bigint" ? v.toString() + "n" : v,
+    typeof v === "bigint" ? v.toString() + "n" : v
   );
 
 /**
@@ -83,7 +84,7 @@ export const stringifyBigint: typeof JSON.stringify = (value) =>
  * @returns {TransactionUnspentOutput[]}
  */
 export function sortLargestFirst(
-  inputs: TransactionUnspentOutput[],
+  inputs: TransactionUnspentOutput[]
 ): TransactionUnspentOutput[] {
   return [...inputs].sort((a, b) => {
     const lovelaceA = Number(a.output().amount().coin());
@@ -110,7 +111,15 @@ export function sortLargestFirst(
  */
 export const isEqualUTxO = (
   self: TransactionUnspentOutput,
-  that: TransactionUnspentOutput,
-) =>
-  self.input().transactionId() === that.input().transactionId() &&
-  self.input().index() === that.input().index();
+  that: TransactionUnspentOutput
+) => isEqualInput(self.input(), that.input());
+
+/**
+ * Utility function to compare the equality of two inputs.
+ * @param {TransactionInput} self
+ * @param {TransactionInput} that
+ * @returns {boolean}
+ */
+export const isEqualInput = (self: TransactionInput, that: TransactionInput) =>
+  self.transactionId() === that.transactionId() &&
+  self.index() === that.index();

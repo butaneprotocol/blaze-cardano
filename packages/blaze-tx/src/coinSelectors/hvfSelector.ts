@@ -144,9 +144,11 @@ export const recursive = (
     );
   }
 
+  const leftoverInputs = inputs.filter(i => !selected.includes(i));
+
   return {
     selectedInputs: selected,
-    availableInputs: inputs,
+    leftoverInputs,
     selectedValue: selectedAssets,
   };
 };

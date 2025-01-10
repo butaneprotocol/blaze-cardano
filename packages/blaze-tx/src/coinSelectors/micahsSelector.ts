@@ -53,7 +53,7 @@ function wideSelection(
   return {
     selectedInputs,
     selectedValue: acc,
-    availableInputs: availableInputs,
+    leftoverInputs: availableInputs,
   };
 }
 
@@ -108,7 +108,7 @@ function deepSelection(
   return {
     selectedInputs,
     selectedValue: acc,
-    availableInputs: availableInputs,
+    leftoverInputs: availableInputs,
   };
 }
 
@@ -127,7 +127,7 @@ export const micahsSelector: CoinSelectionFunc = (
   const remainingDearth = value.positives(
     value.sub(dearth, wideResult.selectedValue),
   );
-  const deepResult = deepSelection(wideResult.availableInputs, remainingDearth);
+  const deepResult = deepSelection(wideResult.leftoverInputs, remainingDearth);
   const finalDearth = value.positives(
     value.sub(remainingDearth, deepResult.selectedValue),
   );
@@ -144,6 +144,6 @@ export const micahsSelector: CoinSelectionFunc = (
       wideResult.selectedValue,
       deepResult.selectedValue,
     ),
-    availableInputs: deepResult.availableInputs,
+    leftoverInputs: deepResult.leftoverInputs,
   };
 };
