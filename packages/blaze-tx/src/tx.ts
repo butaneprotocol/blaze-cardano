@@ -1159,7 +1159,7 @@ export class TxBuilder {
 
     // Encode redeemers, datums, and costModels into CBOR format.
     writer.writeEncodedValue(redeemersEncoded);
-    if (datumsEncoded) {
+    if (datumSize > 0 && datumsEncoded) {
       writer.writeEncodedValue(datumsEncoded);
     }
     writer.writeEncodedValue(costModelsEncoded);
