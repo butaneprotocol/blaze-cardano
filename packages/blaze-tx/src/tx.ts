@@ -825,7 +825,7 @@ export class TxBuilder {
    * @returns {TransactionWitnessSet} A constructed transaction witness set.
    * @throws {Error} If a required script cannot be resolved by its hash.
    */
-  private buildTransactionWitnessSet(): TransactionWitnessSet {
+  protected buildTransactionWitnessSet(): TransactionWitnessSet {
     const tw = new TransactionWitnessSet();
     // Script lookup table to map script hashes to script objects
     const scriptLookup: Record<ScriptHash, Script> = {};
@@ -1118,7 +1118,7 @@ export class TxBuilder {
    * @param {TransactionWitnessSet} tw - The transaction witness set containing Plutus data.
    * @returns {IScriptData | undefined} The full lscript data if datums or redeemers are present, otherwise undefined.
    */
-  private getScriptData(tw: TransactionWitnessSet): IScriptData | undefined {
+  protected getScriptData(tw: TransactionWitnessSet): IScriptData | undefined {
     // Extract datums from the transaction witness set.
     const datums = tw.plutusData();
     const datumSize = datums?.size() || 0;
