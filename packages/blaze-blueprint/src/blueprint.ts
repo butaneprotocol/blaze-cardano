@@ -17,7 +17,7 @@ type Blueprint = {
       };
     };
     redeemer: {
-      title: string;
+      title?: string;
       schema: {
         $ref: string;
       };
@@ -281,7 +281,9 @@ export async function generateBlueprint({
       : null;
 
     const redeemer = validator.redeemer;
-    const redeemerTitle = Generator.snakeToCamel(redeemer.title);
+    const redeemerTitle = redeemer.title
+      ? Generator.snakeToCamel(redeemer.title)
+      : null;
     const redeemerSchema = Generator.resolveSchema(
       redeemer.schema,
       definitions,
