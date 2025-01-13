@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.10.0
+
+### Minor Changes
+
+- e65d4c9: Fixes a bug where encoded datums in the scriptData were being added even if the datum was empty.
+
 ## 0.9.0
 
 ### Minor Changes
