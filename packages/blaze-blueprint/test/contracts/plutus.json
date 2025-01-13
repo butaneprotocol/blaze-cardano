@@ -3,16 +3,16 @@
     "title": "blueprint/test",
     "description": "Aiken contracts for project 'blueprint/test'",
     "version": "0.0.0",
-    "plutusVersion": "v2",
+    "plutusVersion": "v3",
     "compiler": {
       "name": "Aiken",
-      "version": "v1.0.29-alpha+16fb02e"
+      "version": "v1.1.9+2217206"
     },
     "license": "Apache-2.0"
   },
   "validators": [
     {
-      "title": "always_true.spend",
+      "title": "always_true.script.spend",
       "datum": {
         "title": "_datum",
         "schema": {
@@ -39,11 +39,39 @@
           }
         }
       ],
-      "compiledCode": "5848010000323232322322322322322533300a4a229309b2b1bad0013233001001375800444a6660120022930991980180198060011bad300a001375c0026eb40055cd2ab9f5742ae881",
-      "hash": "d0cf08dca31123692a4b93c9d063eeff8ae5bc71282544bcdbc296d5"
+      "compiledCode": "58650101003232323232232232253330063232323232533300b3370e900118061baa0011323322324a26eb4014c03c004c03cc040004c034dd50008b1806980700198060011805801180580098041baa00114984d958dd70009bad0015734aae7555cf2ba15745",
+      "hash": "b9671ae22e957e3242e8eeb43936bf09a636baf2723e862588a79f1f"
     },
     {
-      "title": "nested/sometimes_true.spend",
+      "title": "always_true.script.else",
+      "redeemer": {
+        "schema": {}
+      },
+      "parameters": [
+        {
+          "title": "_param1",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        },
+        {
+          "title": "_param2",
+          "schema": {
+            "$ref": "#/definitions/ByteArray"
+          }
+        }
+      ],
+      "compiledCode": "58650101003232323232232232253330063232323232533300b3370e900118061baa0011323322324a26eb4014c03c004c03cc040004c034dd50008b1806980700198060011805801180580098041baa00114984d958dd70009bad0015734aae7555cf2ba15745",
+      "hash": "b9671ae22e957e3242e8eeb43936bf09a636baf2723e862588a79f1f"
+    },
+    {
+      "title": "nested/sometimes_true.script.spend",
+      "datum": {
+        "title": "datum",
+        "schema": {
+          "$ref": "#/definitions/Data"
+        }
+      },
       "redeemer": {
         "title": "redeemer",
         "schema": {
@@ -58,13 +86,33 @@
           }
         }
       ],
-      "compiledCode": "581e01000032232232253330063371000800429309b2b1bad001375a002ae681",
-      "hash": "ed3f8f41ef1cd903d9ae4304191ab71c97422189df37d70174d73b7d"
+      "compiledCode": "5862010100323232323223225333004323232323253330093370e900118051baa0011323322337100146eb4014c034004c034c038004c02cdd50008b1805980600198050011804801180480098031baa00114984d958dd6800ab9a5573aaae795d0aba21",
+      "hash": "1ff2f061f65111d2934d6c8623754d3a6269d466c19109b80f97b271"
+    },
+    {
+      "title": "nested/sometimes_true.script.else",
+      "redeemer": {
+        "schema": {}
+      },
+      "parameters": [
+        {
+          "title": "param",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        }
+      ],
+      "compiledCode": "5862010100323232323223225333004323232323253330093370e900118051baa0011323322337100146eb4014c034004c034c038004c02cdd50008b1805980600198050011804801180480098031baa00114984d958dd6800ab9a5573aaae795d0aba21",
+      "hash": "1ff2f061f65111d2934d6c8623754d3a6269d466c19109b80f97b271"
     }
   ],
   "definitions": {
     "ByteArray": {
       "dataType": "bytes"
+    },
+    "Data": {
+      "title": "Data",
+      "description": "Any Plutus data."
     },
     "Int": {
       "dataType": "integer"

@@ -5,7 +5,7 @@ type Blueprint = {
     title: string;
     description: string;
     version: string;
-    plutusVersion: "v2" | "v1";
+    plutusVersion: "v3" | "v2" | "v1";
     license: string;
   };
   validators: {
@@ -17,7 +17,7 @@ type Blueprint = {
       };
     };
     redeemer: {
-      title?: string;
+      title: string;
       schema: {
         $ref: string;
       };
@@ -252,8 +252,16 @@ export async function generateBlueprint({
 }: BlueprintArgs) {
   const plutusJson: Blueprint = JSON.parse(await fs.readFile(infile, "utf8"));
 
-  const plutusVersion =
-    plutusJson.preamble.plutusVersion == "v2" ? '"PlutusV2"' : '"PlutusV1"';
+  const plutusVersion = (() => {
+    switch (plutusJson.preamble.plutusVersion) {
+      case "v3":
+        return '"PlutusV3"';
+      case "v2":
+        return '"PlutusV2"';
+      default:
+        return '"PlutusV1"';
+    }
+  })();
 
   const definitions = plutusJson.definitions;
 
@@ -268,10 +276,11 @@ export async function generateBlueprint({
       // in the path the resulting `plutus.ts` will have validators with `/`
       // in their names.
       const processedTitle = title.replace("/", "_");
-      const [a, b] = processedTitle.split(".");
+      const [a, b, c] = processedTitle.split(".");
       return (
         Generator.upperFirst(Generator.snakeToCamel(a!)) +
-        Generator.upperFirst(Generator.snakeToCamel(b!))
+        Generator.upperFirst(Generator.snakeToCamel(b!)) +
+        Generator.upperFirst(Generator.snakeToCamel(c!))
       );
     })();
     const datum = validator.datum;
@@ -309,7 +318,7 @@ export async function generateBlueprint({
     new (${paramsArgs.map((param) => param.join(":")).join(",")}): Script;${
       datum ? `\n${datumTitle}: ${generator.schemaToType(datumSchema)};` : ""
     }
-    ${redeemerTitle}: ${generator.schemaToType(redeemerSchema)};
+    ${redeemerTitle ? `${redeemerTitle}: ${generator.schemaToType(redeemerSchema)};` : ""}
   };
 
   export const ${name} = Object.assign(
@@ -323,7 +332,7 @@ export async function generateBlueprint({
         : `return cborToScript("${script}", ${plutusVersion});`
     }},
     ${datum ? `{${datumTitle}: ${JSON.stringify(datumSchema)}},` : ""}
-    {${redeemerTitle}: ${JSON.stringify(redeemerSchema)}},
+    ${redeemerTitle ? `{${redeemerTitle}: ${JSON.stringify(redeemerSchema)}},` : ""}
   ) as unknown as ${name};`;
   });
 
