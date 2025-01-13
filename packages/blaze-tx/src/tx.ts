@@ -94,9 +94,9 @@ constraints:
 */
 
 export interface IScriptData {
-  redeemersEncoded: Buffer;
-  datumsEncoded: Buffer | undefined;
-  costModelsEncoded: Buffer;
+  redeemersEncoded: string;
+  datumsEncoded: string | undefined;
+  costModelsEncoded: string;
   hashedData: HexBlob;
   scriptDataHash: Hash32ByteBase16;
 }
@@ -1159,7 +1159,7 @@ export class TxBuilder {
 
     // Encode redeemers, datums, and costModels into CBOR format.
     writer.writeEncodedValue(redeemersEncoded);
-    if (datumsEncoded) {
+    if (datumSize > 0 && datumsEncoded) {
       writer.writeEncodedValue(datumsEncoded);
     }
     writer.writeEncodedValue(costModelsEncoded);
@@ -1168,9 +1168,9 @@ export class TxBuilder {
     const scriptDataHash = blake2b_256(hashedData);
 
     const result: IScriptData = {
-      redeemersEncoded,
-      datumsEncoded,
-      costModelsEncoded,
+      redeemersEncoded: redeemersEncoded.toString("hex"),
+      datumsEncoded: datumsEncoded ? datumsEncoded.toString("hex") : undefined,
+      costModelsEncoded: costModelsEncoded.toString("hex"),
       hashedData,
       scriptDataHash,
     };
