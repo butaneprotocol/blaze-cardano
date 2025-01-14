@@ -1,5 +1,15 @@
 # @blaze-cardano/blueprint
 
+## 0.5.0
+
+### Minor Changes
+
+- 5255dcf: support PlutusV3 aiken blueprints
+
+### Patch Changes
+
+- 5255dcf: handle redeemers with no title
+
 ## 0.4.2
 
 ### Patch Changes
