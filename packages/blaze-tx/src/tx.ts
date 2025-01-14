@@ -63,7 +63,7 @@ import { micahsSelector, type SelectionResult } from "./coinSelection";
 import {
   calculateReferenceScriptFee,
   computeScriptDataHash,
-  IScriptData,
+  type IScriptData,
 } from "./utils";
 
 /*
