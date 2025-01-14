@@ -75,7 +75,7 @@ export interface IScriptData {
  * @param datums - The datums in the witness set of the transaction
  * @param usedCostModels - The cost models for any languages used in the transaction
  */
-export function computeScriptDataHash(
+export function computeScriptData(
   redeemers: Redeemers,
   datums: ReturnType<TransactionWitnessSet["plutusData"]>, // TODO: weird import shenanigans
   usedCostModels: Costmdls,

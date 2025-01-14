@@ -62,7 +62,7 @@ import * as value from "./value";
 import { micahsSelector, type SelectionResult } from "./coinSelection";
 import {
   calculateReferenceScriptFee,
-  computeScriptDataHash,
+  computeScriptData,
   type IScriptData,
 } from "./utils";
 
@@ -1132,7 +1132,7 @@ export class TxBuilder {
       }
     }
 
-    return computeScriptDataHash(
+    return computeScriptData(
       this.redeemers,
       tw.plutusData(),
       usedCostModels,
