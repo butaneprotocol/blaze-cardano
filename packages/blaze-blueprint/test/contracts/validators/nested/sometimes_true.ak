@@ -1,7 +1,16 @@
-use aiken/transaction.{ScriptContext}
+use cardano/transaction.{OutputReference, Transaction}
 
-validator(param: Int) {
-  pub fn spend(redeemer: Int, _context: ScriptContext) {
+validator script(param: Int) {
+  spend(
+    datum: Option<Data>,
+    redeemer: Int,
+    utxo: OutputReference,
+    self: Transaction,
+  ) {
     redeemer > param
+  }
+
+  else(_) {
+    fail
   }
 }
