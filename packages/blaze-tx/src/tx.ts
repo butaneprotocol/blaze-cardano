@@ -1025,10 +1025,14 @@ export class TxBuilder {
     if (spareAmount != 0n) {
       return value.merge(tilt, new Value(-spareAmount)); // Subtract 5 ADA from the excess.
     }
-    return value.merge(
-      tilt,
-      this.body.outputs()[this.changeOutputIndex!]!.amount(),
-    );
+    if (this.changeOutputIndex !== undefined) {
+      return value.merge(
+        tilt,
+        this.body.outputs()[this.changeOutputIndex]!.amount(),
+      );
+    }
+
+    return tilt;
   }
 
   private balanced() {
