@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.10.1
+
+### Patch Changes
+
+- 5986ca1: support zero fee transactions
+
 ## 0.10.0
 
 ### Minor Changes
