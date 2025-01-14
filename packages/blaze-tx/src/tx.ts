@@ -1132,11 +1132,7 @@ export class TxBuilder {
       }
     }
 
-    return computeScriptData(
-      this.redeemers,
-      tw.plutusData(),
-      usedCostModels,
-    );
+    return computeScriptData(this.redeemers, tw.plutusData(), usedCostModels);
   }
 
   /**
