@@ -17,7 +17,6 @@ import type {
   StakeDelegationCertificate,
   NetworkId,
   AuxiliaryData,
-  HexBlob,
 } from "@blaze-cardano/core";
 import { Hash28ByteBase16 } from "@blaze-cardano/core";
 import {
@@ -46,7 +45,6 @@ import {
   VkeyWitness,
   Costmdls,
   CostModel,
-  CborWriter,
   Hash,
   HashAsPubKeyHex,
   PolicyIdToHash,
@@ -62,7 +60,11 @@ import {
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector, type SelectionResult } from "./coinSelection";
-import { calculateReferenceScriptFee } from "./utils";
+import {
+  calculateReferenceScriptFee,
+  computeScriptData,
+  type IScriptData,
+} from "./utils";
 
 /*
 methods we want to implement somewhere in new blaze (from haskell codebase):
@@ -92,14 +94,6 @@ constraints:
     mustValidateIn
     mustValidateInTimeRange
 */
-
-export interface IScriptData {
-  redeemersEncoded: string;
-  datumsEncoded: string | undefined;
-  costModelsEncoded: string;
-  hashedData: HexBlob;
-  scriptDataHash: Hash32ByteBase16;
-}
 
 /**
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
@@ -408,6 +402,7 @@ export class TxBuilder {
       this.requiredPlutusScripts.add(key.hash);
       const datum = utxo.output().datum();
       if (!datum) {
+        // TODO: as of chang, this is no longer true
         throw new Error(
           "addInput: Cannot spend with redeemer when datum is missing!",
         );
@@ -825,7 +820,7 @@ export class TxBuilder {
    * @returns {TransactionWitnessSet} A constructed transaction witness set.
    * @throws {Error} If a required script cannot be resolved by its hash.
    */
-  private buildTransactionWitnessSet(): TransactionWitnessSet {
+  protected buildTransactionWitnessSet(): TransactionWitnessSet {
     const tw = new TransactionWitnessSet();
     // Script lookup table to map script hashes to script objects
     const scriptLookup: Record<ScriptHash, Script> = {};
@@ -1118,19 +1113,7 @@ export class TxBuilder {
    * @param {TransactionWitnessSet} tw - The transaction witness set containing Plutus data.
    * @returns {IScriptData | undefined} The full lscript data if datums or redeemers are present, otherwise undefined.
    */
-  private getScriptData(tw: TransactionWitnessSet): IScriptData | undefined {
-    // Extract datums from the transaction witness set.
-    const datums = tw.plutusData();
-    const datumSize = datums?.size() || 0;
-
-    // Proceed only if there are datums or redeemers to process.
-    if (datumSize === 0 && this.redeemers.size() === 0) {
-      return undefined;
-    }
-
-    // Initialize a CBOR writer to encode the script data.
-    const writer = new CborWriter();
-
+  protected getScriptData(tw: TransactionWitnessSet): IScriptData | undefined {
     // Initialize a container for used cost models.
     const usedCostModels = new Costmdls();
     // Populate the used cost models based on the languages used in the transaction.
@@ -1138,44 +1121,18 @@ export class TxBuilder {
       if (this.usedLanguages[i as PlutusLanguageVersion]) {
         // Retrieve the cost model for the current language version.
         const cm = this.params.costModels.get(i);
-        // Throw an error if the cost model is missing.
+        // Throw an error if the cost model is missing. Note that we add one to the language version for the sake of the error message
         if (cm == undefined) {
           throw new Error(
-            `complete: Could not find cost model for Plutus Language Version ${i}`,
+            `complete: Could not find cost model for Plutus Language Version ${i + 1}`,
           );
         }
         // Insert the cost model into the used cost models container.
         usedCostModels.insert(new CostModel(i, cm));
       }
     }
-    // Encode the used cost models into CBOR format.
-    const costModelsEncoded = Buffer.from(
-      usedCostModels.languageViewsEncoding(),
-      "hex",
-    );
 
-    const redeemersEncoded = Buffer.from(this.redeemers.toCbor(), "hex");
-    const datumsEncoded = datums && Buffer.from(datums.toCbor(), "hex");
-
-    // Encode redeemers, datums, and costModels into CBOR format.
-    writer.writeEncodedValue(redeemersEncoded);
-    if (datumSize > 0 && datumsEncoded) {
-      writer.writeEncodedValue(datumsEncoded);
-    }
-    writer.writeEncodedValue(costModelsEncoded);
-
-    const hashedData = writer.encodeAsHex();
-    const scriptDataHash = blake2b_256(hashedData);
-
-    const result: IScriptData = {
-      redeemersEncoded: redeemersEncoded.toString("hex"),
-      datumsEncoded: datumsEncoded ? datumsEncoded.toString("hex") : undefined,
-      costModelsEncoded: costModelsEncoded.toString("hex"),
-      hashedData,
-      scriptDataHash,
-    };
-
-    return result;
+    return computeScriptData(this.redeemers, tw.plutusData(), usedCostModels);
   }
 
   /**
