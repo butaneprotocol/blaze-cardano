@@ -83,15 +83,11 @@ export class Blockfrost extends Provider {
     }
     // Build cost models
     const costModels: CostModels = new Map();
-    for (const cm of Object.keys(
-      response.cost_models,
-    ) as BlockfrostLanguageVersions[]) {
-      const costModel: number[] = [];
-      const keys = Object.keys(response.cost_models[cm]).sort();
-      for (const key of keys) {
-        costModel.push(response.cost_models[cm][key]!);
-      }
-      costModels.set(fromBlockfrostLanguageVersion(cm), costModel);
+    for (const [key, value] of Object.entries(response.cost_models_raw)) {
+      costModels.set(
+        fromBlockfrostLanguageVersion(key as BlockfrostLanguageVersions),
+        value,
+      );
     }
 
     return {
@@ -737,6 +733,7 @@ export interface BlockfrostProtocolParametersResponse {
   min_pool_cost: number;
   nonce: string;
   cost_models: Record<BlockfrostLanguageVersions, { [key: string]: number }>;
+  cost_models_raw: Record<BlockfrostLanguageVersions, number[]>;
   price_mem: string;
   price_step: string;
   max_tx_ex_mem: number;
