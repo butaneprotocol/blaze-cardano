@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.3.4
+
+### Patch Changes
+
+- 57d4c3c: fix cost model encoding for plutusv3
+
 ## 0.3.3
 
 ### Patch Changes
