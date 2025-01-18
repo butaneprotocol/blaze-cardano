@@ -882,7 +882,7 @@ export class TxBuilder {
             sn.push(script.asNative()!);
           } else {
             throw new Error(
-              `complete: Could not resolve script hash: ${script.hash()} (was not native script). Did you forget to add a redeemer?`,
+              `complete: Could not resolve script hash: ${script.hash()} (was not native script). Did you forget to add a redeemer, attach a reference input, or call provideScript?`,
             );
           }
         }
