@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.10.2
+
+### Patch Changes
+
+- 96ab592: Error handling improvements for missing redeemers.
+
 ## 0.10.1
 
 ### Patch Changes
