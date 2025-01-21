@@ -8,8 +8,8 @@ import {
   AssetId,
 } from "@blaze-cardano/core";
 import { createHash } from "node:crypto";
-import { hvfSelector, recursive } from "../hvfSelector";
-import { sortLargestFirst } from "../../utils";
+import { hvfSelector, recursive } from "../../src/coinSelectors/hvfSelector";
+import { sortLargestFirst } from "../../src/utils";
 
 const sha256 = (input: string) =>
   createHash("sha256").update(input).digest("hex");
@@ -139,16 +139,16 @@ describe("recursive", () => {
     expect(program.selectedInputs).toEqual([inputs[0], inputs[2]]);
   });
 
-  it.only("should throw error when no suitable inputs found", async () => {
+  it("should throw error when no suitable inputs found", async () => {
     const inputs: TransactionUnspentOutput[] = [
-      createDummyUTxO(0, 7_625_851n, 32),
-      createDummyUTxO(1, 1_392_130n, 1),
-      createDummyUTxO(2, 1_120_310n, 0),
-      createDummyUTxO(3, 1_985_579n, 1),
+      createDummyUTxO(0, 7_625_851n, 32), // Min ADA: 6_120_200
     ];
 
-    const program = recursive(sortLargestFirst(inputs), new Value(5_000_000n));
-    expect(program.selectedInputs).toEqual([]);
+    expect(() =>
+      recursive(sortLargestFirst(inputs), new Value(5_000_000n)),
+    ).toThrow(
+      'Your wallet does not have enough funds to cover required minimum ADA for change output: {"coins":"3494349n"}. Or it contains UTxOs with reference scripts; which are excluded from coin selection.',
+    );
   });
 });
 

@@ -158,6 +158,7 @@ export const recursive = (
  * Inspiration taken from Lucid Evolution: https://github.com/Anastasia-Labs/lucid-evolution/blob/main/packages/lucid/src/tx-builder/internal/CompleteTxBuilder.ts#L789
  * @param inputs
  * @param collectedAssets
+ * @param preliminaryFee
  * @param externalAssets
  * @param coinsPerUtxoByte
  * @returns
