@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.6.0
+
+### Minor Changes
+
+- 42c01d5: Updates script data function to be more thorough (for future debugging), and also set the TxBuilder to use Conway era serialization across the board.
+
 ## 0.5.2
 
 ### Patch Changes

@@ -17,7 +17,7 @@ import { type Exact, Data } from "@blaze-cardano/tx";
 import type { TArray } from "@sinclair/typebox";
 
 // TODO: Use the c-js-sdk enums for this if possible
-export type ScriptType = "Native" | "PlutusV1" | "PlutusV2";
+export type ScriptType = "Native" | "PlutusV1" | "PlutusV2" | "PlutusV3";
 
 /**
  * Applies parameters to a UPLC program encoded as a hex blob.
@@ -123,8 +123,10 @@ export function cborToScript(cbor: string, type: ScriptType): Script {
       return Script.newPlutusV1Script(new PlutusV1Script(cborHex));
     } else if (type === "PlutusV2") {
       return Script.newPlutusV2Script(new PlutusV2Script(cborHex));
-    } else {
+    } else if (type == "PlutusV3") {
       return Script.newPlutusV3Script(new PlutusV3Script(cborHex));
+    } else {
+      throw new Error("Unsupported script type");
     }
   }
 }

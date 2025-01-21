@@ -1,5 +1,34 @@
 # @blaze-cardano/uplc
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [5986ca1]
+  - @blaze-cardano/tx@0.10.1
+
+## 0.2.0
+
+### Minor Changes
+
+- 5255dcf: support PlutusV3 aiken blueprints
+
+## 0.1.40
+
+### Patch Changes
+
+- Updated dependencies [e65d4c9]
+  - @blaze-cardano/tx@0.10.0
+
+## 0.1.39
+
+### Patch Changes
+
+- Updated dependencies [42c01d5]
+- Updated dependencies [42c01d5]
+  - @blaze-cardano/tx@0.9.0
+  - @blaze-cardano/core@0.6.0
+
 ## 0.1.38
 
 ### Patch Changes

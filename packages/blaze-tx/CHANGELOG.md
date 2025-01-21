@@ -1,5 +1,30 @@
 # @blaze-cardano/tx
 
+## 0.10.1
+
+### Patch Changes
+
+- 5986ca1: support zero fee transactions
+
+## 0.10.0
+
+### Minor Changes
+
+- e65d4c9: Fixes a bug where encoded datums in the scriptData were being added even if the datum was empty.
+
+## 0.9.0
+
+### Minor Changes
+
+- 42c01d5: Updates script data function to be more thorough (for future debugging), and also set the TxBuilder to use Conway era serialization across the board.
+
+### Patch Changes
+
+- 42c01d5: Encode redeemers as a map when generating a script data hash.
+- Updated dependencies [42c01d5]
+  - @blaze-cardano/core@0.6.0
+  - @blaze-cardano/vm@0.1.6
+
 ## 0.8.4
 
 ### Patch Changes
