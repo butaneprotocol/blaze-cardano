@@ -144,7 +144,7 @@ export const recursive = (
     );
   }
 
-  const leftoverInputs = inputs.filter(i => !selected.includes(i));
+  const leftoverInputs = inputs.filter((i) => !selected.includes(i));
 
   return {
     selectedInputs: selected,

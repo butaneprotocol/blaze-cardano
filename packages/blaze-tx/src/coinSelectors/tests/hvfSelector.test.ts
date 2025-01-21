@@ -144,12 +144,12 @@ describe("recursive", () => {
       createDummyUTxO(0, 7_625_851n, 32),
       createDummyUTxO(1, 1_392_130n, 1),
       createDummyUTxO(2, 1_120_310n, 0),
-      createDummyUTxO(3, 1_985_579n, 1)
+      createDummyUTxO(3, 1_985_579n, 1),
     ];
 
     const program = recursive(sortLargestFirst(inputs), new Value(5_000_000n));
-    expect(program.selectedInputs).toEqual([])
-  })
+    expect(program.selectedInputs).toEqual([]);
+  });
 });
 
 describe("hvfSelector", () => {
