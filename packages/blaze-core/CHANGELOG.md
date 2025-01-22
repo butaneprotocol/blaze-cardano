@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.6.1
+
+### Patch Changes
+
+- 18a36c1: bump: cjs/core
+
 ## 0.6.0
 
 ### Minor Changes
