@@ -135,8 +135,12 @@ export type CredentialType = C.Cardano.CredentialType;
 export const Certificate = C.Serialization.Certificate;
 export type Certificate = C.Serialization.Certificate;
 
-export const PoolId = C.Cardano.PoolId;
-export type PoolId = C.Cardano.PoolId;
+export const PoolId: {
+  (value: string): PoolId;
+  fromKeyHash(value: Crypto.Ed25519KeyHashHex): PoolId;
+  toKeyHash(poolId: PoolId): Crypto.Ed25519KeyHashHex;
+} = C.Cardano.PoolId;
+export type PoolId = OpaqueString<'PoolId'>;
 
 export const StakeRegistration = C.Serialization.StakeRegistration;
 export type StakeRegistration = C.Serialization.StakeRegistration;
@@ -215,8 +219,13 @@ export type CborReader = C.Serialization.CborReader;
 export const CborReaderState = C.Serialization.CborReaderState;
 export type CborReaderState = C.Serialization.CborReaderState;
 
-export const RewardAccount = C.Cardano.RewardAccount;
-export type RewardAccount = C.Cardano.RewardAccount;
+export const RewardAccount: {
+  (value: string): C.Cardano.RewardAccount;
+  toHash(rewardAccount: C.Cardano.RewardAccount): Hash28ByteBase16;
+  fromCredential(credential: C.Cardano.Credential, networkId: C.Cardano.NetworkId): C.Cardano.RewardAccount;
+  toNetworkId(rewardAccount: C.Cardano.RewardAccount): C.Cardano.NetworkId;
+} = C.Cardano.RewardAccount;
+export type RewardAccount = OpaqueString<'RewardAccount'>;
 
 export const Hash = C.Serialization.Hash;
 export type Hash<T extends string> = C.Serialization.Hash<T>;
