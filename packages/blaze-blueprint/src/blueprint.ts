@@ -216,7 +216,8 @@ const PlutusData = Core.PlutusData;`;
     );
   }
 
-  static snakeToCamel(s: string): string {
+  static snakeToCamel(s: string | undefined): string {
+    if (!s) return "";
     const withUnderscore = s.charAt(0) === "_" ? s.charAt(0) : "";
     return (
       withUnderscore +
@@ -278,9 +279,9 @@ export async function generateBlueprint({
       const processedTitle = title.replace("/", "_");
       const [a, b, c] = processedTitle.split(".");
       return (
-        Generator.upperFirst(Generator.snakeToCamel(a!)) +
-        Generator.upperFirst(Generator.snakeToCamel(b!)) +
-        Generator.upperFirst(Generator.snakeToCamel(c!))
+        Generator.upperFirst(Generator.snakeToCamel(a)) +
+        Generator.upperFirst(Generator.snakeToCamel(b)) +
+        Generator.upperFirst(Generator.snakeToCamel(c))
       );
     })();
     const datum = validator.datum;
