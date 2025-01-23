@@ -623,4 +623,39 @@ describe("Transaction Building", () => {
 
     expect(tx.body().fee().toString()).toEqual("475794");
   });
+
+  it("should not use coin selection when set to false", async () => {
+    // $hosky
+    const testAddress = Address.fromBech32(
+      "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
+    );
+    const tx = new TxBuilder(hardCodedProtocolParams)
+      .setNetworkId(NetworkId.Testnet)
+      .setChangeAddress(testAddress)
+      .addWithdrawal(
+        RewardAccount.fromCredential(
+          testAddress.getProps().paymentPart!,
+          NetworkId.Testnet,
+        ),
+        100_000_000n,
+      )
+      .payAssets(testAddress, value.makeValue(48_708_900n));
+
+    try {
+      await tx.complete(false) 
+    } catch(e) {
+      expect((e as Error).message).toEqual("Change output has more than inputs provide. Missing coin: 49840323. Missing multiassets: undefined")
+    }
+
+    tx.addInput(
+      new TransactionUnspentOutput(
+        new TransactionInput(TransactionId("0".repeat(64)), 0n),
+        new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
+      )
+    )
+
+    const txComplete = await tx.complete(false);
+    expect(txComplete.body().inputs().values().length).toEqual(1);
+    expect(txComplete.body().outputs().length).toEqual(2);
+  })
 });
