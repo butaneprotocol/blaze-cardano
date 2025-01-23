@@ -642,20 +642,22 @@ describe("Transaction Building", () => {
       .payAssets(testAddress, value.makeValue(48_708_900n));
 
     try {
-      await tx.complete(false) 
-    } catch(e) {
-      expect((e as Error).message).toEqual("Change output has more than inputs provide. Missing coin: 49840323. Missing multiassets: undefined")
+      await tx.complete(false);
+    } catch (e) {
+      expect((e as Error).message).toEqual(
+        "Change output has more than inputs provide. Missing coin: 49840323. Missing multiassets: undefined",
+      );
     }
 
     tx.addInput(
       new TransactionUnspentOutput(
         new TransactionInput(TransactionId("0".repeat(64)), 0n),
         new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
-      )
-    )
+      ),
+    );
 
     const txComplete = await tx.complete(false);
     expect(txComplete.body().inputs().values().length).toEqual(1);
     expect(txComplete.body().outputs().length).toEqual(2);
-  })
+  });
 });
