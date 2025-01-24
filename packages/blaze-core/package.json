@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/core",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Blaze cardano core library",
   "exports": {
     ".": {
@@ -22,21 +22,21 @@
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
     "eslint": "^8.57.1",
-    "terser": "^5.34.1",
-    "tsup": "^8.3.0",
-    "typescript": "^5.6.2"
+    "terser": "^5.37.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "@cardano-sdk/core": "^0.40.1",
-    "@cardano-sdk/crypto": "^0.1.30",
+    "@cardano-sdk/core": "^0.45.0",
+    "@cardano-sdk/crypto": "^0.1.32",
     "@cardano-sdk/util": "^0.15.5",
-    "@noble/curves": "^1.6.0",
-    "@noble/ed25519": "^2.1.0",
-    "@noble/hashes": "^1.5.0",
-    "@scure/bip39": "^1.4.0",
+    "@noble/curves": "^1.8.1",
+    "@noble/ed25519": "^2.2.3",
+    "@noble/hashes": "^1.7.1",
+    "@scure/bip39": "^1.5.4",
     "blakejs": "^1.2.1"
   }
 }
