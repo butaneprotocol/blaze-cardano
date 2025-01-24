@@ -1160,6 +1160,9 @@ export class TxBuilder {
    * @param {Value} excessValue - The excess value that needs to be returned as change.
    */
   private balanceChange(excessValue: Value) {
+    if (excessValue.coin() === 0n) {
+      return;
+    }
     // Retrieve the multiasset map from the excess value.
     const tokenMap = excessValue.multiasset();
     // If the multiasset map exists, iterate over its keys.
@@ -1620,12 +1623,6 @@ export class TxBuilder {
     excessValue = this.balanceMultiAssetChange(excessValue);
     // Balance the change output with the updated excess value.
     this.balanceChange(excessValue);
-    // Ensure a change output index has been set after balancing.
-    if (this.changeOutputIndex === undefined) {
-      throw new Error(
-        "Unreachable! Somehow change balancing succeeded but still failed.",
-      );
-    }
     // Build the transaction witness set for fee estimation and script validation.
     //excessValue = this.getPitch(false)
     let tw = this.buildTransactionWitnessSet();
@@ -1716,7 +1713,7 @@ export class TxBuilder {
 
       this.balanceChange(Value.fromCore(excessValue.toCore()));
       const changeOutput = this.body.outputs()[this.changeOutputIndex!]!;
-      if (changeOutput.amount().coin() > excessValue.coin()) {
+      if (changeOutput && changeOutput.amount().coin() > excessValue.coin()) {
         const excessDifference = value.merge(
           changeOutput!.amount(),
           value.negate(excessValue),
