@@ -2,8 +2,12 @@ import {
   blake2b_256,
   CborReader,
   CborWriter,
+  hardCodedProtocolParams,
   type ProtocolParameters,
   type Script,
+  type TransactionInput,
+  type TransactionOutput,
+  type TransactionUnspentOutput,
 } from "@blaze-cardano/core";
 import type {
   Redeemers,
@@ -56,6 +60,78 @@ export function calculateReferenceScriptFee(
   return refFee;
 }
 
+/**
+ * This methods calculates the minimum ada required for a transaction output.
+ * @param {TransactionOutput} output - The transaction output to calculate the minimum ada for.
+ * @param {number} coinsPerUtxoByte - The coinsPerUtxoByte value from the protocol parameters.
+ * @returns {bigint} The minimum ada required for the output.
+ */
+export function calculateMinAda(
+  output: TransactionOutput,
+  coinsPerUtxoByte?: number,
+): bigint {
+  const byteLength = BigInt(output.toCbor().length / 2);
+  return (
+    BigInt(coinsPerUtxoByte || hardCodedProtocolParams.coinsPerUtxoByte) *
+    (byteLength + 160n)
+  );
+}
+
+/**
+ * Wraps JSON.stringify with a serializer for bigints.
+ * @param {any} value The value you want to stringify.
+ * @returns
+ */
+export const stringifyBigint: typeof JSON.stringify = (value) =>
+  JSON.stringify(value, (_k, v) =>
+    typeof v === "bigint" ? v.toString() + "n" : v,
+  );
+
+/**
+ * Sorts a list of UTxOs by highest total value first.
+ * @param {TransactionUnspentOutput[]} inputs A list of UTxOs to sort.
+ * @returns {TransactionUnspentOutput[]}
+ */
+export function sortLargestFirst(
+  inputs: TransactionUnspentOutput[],
+): TransactionUnspentOutput[] {
+  return [...inputs].sort((a, b) => {
+    const lovelaceA = Number(a.output().amount().coin());
+    const lovelaceB = Number(b.output().amount().coin());
+
+    if (lovelaceA === lovelaceB) {
+      const aMultiAssetCount = a.output().amount().multiasset()?.size || 0;
+      const bMultiAssetCount = a.output().amount().multiasset()?.size || 0;
+      // Add 1 for lovelace.
+      return (
+        Object.keys(aMultiAssetCount + 1).length -
+        Object.keys(bMultiAssetCount + 1).length
+      );
+    }
+    return -1 * (lovelaceA - lovelaceB);
+  });
+}
+
+/**
+ * Utility function to compare the equality of two UTxOs.
+ * @param {TransactionUnspentOutput} self
+ * @param {TransactionUnspentOutput} that
+ * @returns {boolean}
+ */
+export const isEqualUTxO = (
+  self: TransactionUnspentOutput,
+  that: TransactionUnspentOutput,
+) => isEqualInput(self.input(), that.input());
+
+/**
+ * Utility function to compare the equality of two inputs.
+ * @param {TransactionInput} self
+ * @param {TransactionInput} that
+ * @returns {boolean}
+ */
+export const isEqualInput = (self: TransactionInput, that: TransactionInput) =>
+  self.transactionId() === that.transactionId() &&
+  self.index() === that.index();
 export interface IScriptData {
   redeemersEncoded: string;
   datumsEncoded: string | undefined;
