@@ -1,5 +1,14 @@
 # @blaze-cardano/uplc
 
+## 0.2.4
+
+### Patch Changes
+
+- 5472a55: Export decoder/encoder
+- Updated dependencies [bd6c264]
+- Updated dependencies [bd6c264]
+  - @blaze-cardano/tx@0.10.4
+
 ## 0.2.3
 
 ### Patch Changes

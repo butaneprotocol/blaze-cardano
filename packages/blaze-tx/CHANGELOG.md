@@ -1,5 +1,12 @@
 # @blaze-cardano/tx
 
+## 0.10.4
+
+### Patch Changes
+
+- bd6c264: zero change outputs
+- bd6c264: Zero change outputs
+
 ## 0.10.3
 
 ### Patch Changes
