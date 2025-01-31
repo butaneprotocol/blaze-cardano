@@ -1237,167 +1237,60 @@ export class TxBuilder {
    * Prepares the collateral for the transaction by selecting suitable UTXOs.
    * Throws an error if suitable collateral cannot be found or if some inputs cannot be resolved.
    */
-  private prepareCollateral() {
+  private prepareCollateral(useCoinSelection: boolean = true) {
     // Retrieve provided collateral inputs
     const providedCollateral = [...this.collateralUtxos.values()].sort(
       (a, b) =>
-        a.output().amount().coin() < b.output().amount().coin() ? -1 : 1,
+        a.output().amount().coin() < b.output().amount().coin() ? -1 : 1
     );
-    // Retrieve inputs from the transaction body and available UTXOs within scope.
-    const inputs = [...this.body.inputs().values()];
-    const scope = [...this.utxoScope.values()];
-    // Initialize variables to track the best UTXO for collateral and its ranking.
-    let [best, rank]: [TransactionUnspentOutput[] | undefined, number] = [
-      undefined,
-      99,
-    ];
-    // if there are provided collateral UTxOs, use them first
-    if (providedCollateral.length > 0) {
-      for (const utxo of providedCollateral) {
-        const coinAmount = this.getUtxoEffectiveCoin(utxo);
-        if (
-          coinAmount >= 5_000_000 &&
-          utxo.output().address().getProps().paymentPart?.type ==
-            CredentialType.KeyHash
-        ) {
-          const ranking = value.assetTypes(utxo.output().amount());
-          if (ranking < rank) {
-            rank = ranking;
-            best = [utxo];
-          }
-        }
-      }
+
+    const totalValue = value.sum(
+      providedCollateral.map((pc) => pc.output().amount())
+    );
+
+    const requiredLovelace = BigInt(
+      Math.ceil(Number(this.fee) * this.params.collateralPercentage)
+    );
+
+    if (!useCoinSelection) {
+      const tis = CborSet.fromCore([], TransactionInput.fromCore);
+      tis.setValues(providedCollateral.map((pc) => pc.input()));
+      this.body.setCollateral(tis);
+      this.body.setCollateralReturn(
+        new TransactionOutput(
+          this.collateralChangeAddress ?? this.changeAddress!,
+          value.merge(totalValue, value.negatives(new Value(requiredLovelace)))
+        )
+      );
     } else {
-      // If no provided collateral inputs, iterate over the inputs to find the best candidate.
-      for (const input of inputs) {
-        const utxo = scope.find(
-          (x) =>
-            x.input().transactionId() === input.transactionId() &&
-            x.input().index() === input.index(),
+      let remainingLovelace = BigInt(requiredLovelace);
+      
+      while (remainingLovelace > 0n) {
+        const { selectedInputs, selectedValue } = this.coinSelector(
+          [...this.utxos.values()],
+          new Value(remainingLovelace),
+          Number(this.fee)
         );
 
-        if (utxo) {
-          // Check if the UTXO amount is sufficient for collateral.
-          const coinAmount = this.getUtxoEffectiveCoin(utxo);
-          if (
-            coinAmount >= 5_000_000 &&
-            utxo.output().address().getProps().paymentPart?.type ==
-              CredentialType.KeyHash
-          ) {
-            const ranking = value.assetTypes(utxo.output().amount());
-            // Update the best UTXO and its ranking if it's a better candidate.
-            if (ranking < rank) {
-              rank = ranking;
-              best = [utxo];
-            }
-          }
-        } else {
-          throw new Error("prepareCollateral: could not resolve some input");
-        }
+        remainingLovelace -= selectedValue.coin();
+        const currentCollateral = this.body.collateral()?.values() || [];
+        const collateralSet = CborSet.fromCore([], TransactionInput.fromCore);
+        collateralSet.setValues([
+          ...currentCollateral,
+          ...selectedInputs.map((si) => si.input()),
+        ]);
+        this.body.setCollateral(collateralSet);
+        this.body.setCollateralReturn(
+          new TransactionOutput(
+            this.collateralChangeAddress ?? this.changeAddress!,
+            value.merge(
+              value.sum(selectedInputs.map((si) => si.output().amount())),
+              value.negatives(new Value(requiredLovelace))
+            )
+          )
+        );
       }
     }
-    // If there is no best fit still, iterate over all UTXOs to find the best candidate.
-    if (!best) {
-      for (const utxo of this.utxos.values()) {
-        const coinAmount = this.getUtxoEffectiveCoin(utxo);
-        if (
-          coinAmount >= 5_000_000n &&
-          utxo.output().address().getProps().paymentPart?.type ==
-            CredentialType.KeyHash
-        ) {
-          const ranking = value.assetTypes(utxo.output().amount());
-          if (ranking < rank) {
-            rank = ranking;
-            best = [utxo];
-          }
-        }
-      }
-      if (best) {
-        for (const bestUtxo of best) {
-          this.utxoScope.add(bestUtxo);
-        }
-      } else {
-        const collateral: TransactionUnspentOutput[] = [];
-        let adaAmount = 0n;
-        // Check the provided collateral inputs to see if we can build valid collateral
-        for (
-          let i = 0;
-          i <
-          Math.min(this.params.maxCollateralInputs, providedCollateral.length);
-          i++
-        ) {
-          adaAmount += providedCollateral[i]!.output().amount().coin();
-          collateral.push(providedCollateral[i]!);
-          if (adaAmount >= 5_000_000n) {
-            break;
-          }
-        }
-        // If we still haven't reached the necessary collateral amount, try to use any available UTxO
-        if (adaAmount < 5_000_000n) {
-          // create a sorted list of utxos by ada amount
-          const adaUtxos = [...this.utxos.values()].sort((a, b) => {
-            const aCoinAmount = this.getUtxoEffectiveCoin(a);
-            const bCoinAmount = this.getUtxoEffectiveCoin(b);
-            return aCoinAmount < bCoinAmount ? -1 : 1;
-          });
-          for (
-            let i = 0;
-            i < Math.min(this.params.maxCollateralInputs, adaUtxos.length);
-            i++
-          ) {
-            adaAmount += this.getUtxoEffectiveCoin(adaUtxos[i]!);
-            collateral.push(adaUtxos[i]!);
-            if (adaAmount >= 5_000_000n) {
-              break;
-            }
-          }
-        }
-        if (adaAmount <= 5_000_000) {
-          throw new Error(
-            "prepareCollateral: could not find enough collateral (5 ada minimum)",
-          );
-        }
-        best = collateral;
-      }
-    }
-    // Set the selected UTXO as collateral in the transaction body.
-    const tis = CborSet.fromCore([], TransactionInput.fromCore);
-    tis.setValues(best.map((x) => x.input()));
-    this.body.setCollateral(tis);
-
-    for (const bestUtxo of best) {
-      const key = bestUtxo.output().address().getProps().paymentPart!;
-      if (key.type == CredentialType.ScriptHash) {
-        this.requiredNativeScripts.add(key.hash);
-      } else {
-        this.requiredWitnesses.add(HashAsPubKeyHex(key.hash));
-      }
-    }
-    // Also set the collateral return to the output of the selected UTXO.
-    const ret = new TransactionOutput(
-      this.collateralChangeAddress ?? this.changeAddress!,
-      best.reduce(
-        (acc, x) => value.merge(acc, x.output().amount()),
-        value.zero(),
-      ),
-    );
-    this.body.setCollateralReturn(ret);
-  }
-
-  /**
-   * Returns the effective coin value of the utxo substracting the min utxo needed for the multiasset in the utxo
-   *
-   * @param {TransactionUnspentOutput} utxo - The utxo to calculate the effective coin value
-   * @returns {bigint} The effective coin value of the utxo
-   * */
-  private getUtxoEffectiveCoin(utxo: TransactionUnspentOutput): bigint {
-    const output = utxo.output();
-    const multiasset = output.amount().multiasset();
-    const hasMultiasset = multiasset && multiasset.size > 0;
-    const outputMinAda = this.calculateMinAda(output);
-    return hasMultiasset
-      ? output.amount().coin() - outputMinAda
-      : output.amount().coin();
   }
 
   /**
