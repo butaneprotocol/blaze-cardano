@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/uplc",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Blaze untyped plutus core library",
   "exports": {
     ".": {
