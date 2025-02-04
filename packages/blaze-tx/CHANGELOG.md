@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.10.5
+
+### Patch Changes
+
+- 1d7ba70: Added the ability to opt-out of coin selection on complete.
+
 ## 0.10.4
 
 ### Patch Changes
