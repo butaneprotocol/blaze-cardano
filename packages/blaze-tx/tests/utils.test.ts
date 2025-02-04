@@ -34,20 +34,11 @@ describe("Fee Calculation", () => {
       Address.fromBech32(
         "addr_test1qrp8nglm8d8x9w783c5g0qa4spzaft5z5xyx0kp495p8wksjrlfzuz6h4ssxlm78v0utlgrhryvl2gvtgp53a6j9zngqtjfk6s",
       ),
-      value.makeValue(100_000n)
-    )
+      value.makeValue(100_000n),
+    );
 
-    expect(
-      calculateMinAda(
-        output,
-      ).toString()
-    ).toEqual("969750")
+    expect(calculateMinAda(output).toString()).toEqual("969750");
 
-    expect(
-      calculateMinAda(
-        output,
-        5000
-      ).toString()
-    ).toEqual("1125000")
-  })
+    expect(calculateMinAda(output, 5000).toString()).toEqual("1125000");
+  });
 });
