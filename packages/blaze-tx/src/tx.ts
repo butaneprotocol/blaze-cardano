@@ -1528,7 +1528,7 @@ export class TxBuilder {
    *                 or if balancing the change output fails.
    * @returns {Promise<Transaction>} A new Transaction object with all components set and ready for submission.
    */
-  async complete(): Promise<Transaction> {
+  async complete(coinSelection: boolean = true): Promise<Transaction> {
     // Execute pre-complete hooks
     if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
       for (const hook of this.preCompleteHooks) {
@@ -1568,55 +1568,61 @@ export class TxBuilder {
         spareInputs.push(utxo);
       }
     }
-    // Perform coin selection to cover any negative excess value.
-    const selectionResult = this.coinSelector(
-      spareInputs,
-      value.negate(value.negatives(excessValue)),
-    );
-    // Update the excess value and spare inputs based on the selection result.
-    excessValue = value.merge(excessValue, selectionResult.selectedValue);
-    spareInputs = selectionResult.inputs;
-    // Add selected inputs to the transaction.
-    if (selectionResult.selectedInputs.length > 0) {
-      for (const input of selectionResult.selectedInputs) {
-        this.addInput(input);
-      }
-    } else {
-      if (this.body.inputs().size() == 0) {
-        if (!spareInputs[0]) {
-          throw new Error(
-            "No spare inputs available to add to the transaction",
+
+    if (coinSelection) {
+      // Perform coin selection to cover any negative excess value.
+      const selectionResult = this.coinSelector(
+        spareInputs,
+        value.negate(value.negatives(excessValue)),
+      );
+      // Update the excess value and spare inputs based on the selection result.
+      excessValue = value.merge(excessValue, selectionResult.selectedValue);
+      spareInputs = selectionResult.inputs;
+      // Add selected inputs to the transaction.
+      if (selectionResult.selectedInputs.length > 0) {
+        for (const input of selectionResult.selectedInputs) {
+          this.addInput(input);
+        }
+      } else {
+        if (this.body.inputs().size() == 0) {
+          if (!spareInputs[0]) {
+            throw new Error(
+              "No spare inputs available to add to the transaction",
+            );
+          }
+          // Select the input with the least number of different multiassets from spareInputs
+          const [inputWithLeastMultiAssets] = spareInputs.reduce(
+            ([minInput, minMultiAssetCount], currentInput) => {
+              const currentMultiAssetCount = value.assetTypes(
+                currentInput.output().amount(),
+              );
+              return currentMultiAssetCount < minMultiAssetCount
+                ? [currentInput, minMultiAssetCount]
+                : [minInput, value.assetTypes(minInput.output().amount())];
+            },
+            [
+              spareInputs[0],
+              value.assetTypes(spareInputs[0].output().amount()),
+            ],
+          );
+          this.addInput(inputWithLeastMultiAssets);
+          // Remove the selected input from spareInputs
+          spareInputs = spareInputs.filter(
+            (input) => input !== inputWithLeastMultiAssets,
           );
         }
-        // Select the input with the least number of different multiassets from spareInputs
-        const [inputWithLeastMultiAssets] = spareInputs.reduce(
-          ([minInput, minMultiAssetCount], currentInput) => {
-            const currentMultiAssetCount = value.assetTypes(
-              currentInput.output().amount(),
-            );
-            return currentMultiAssetCount < minMultiAssetCount
-              ? [currentInput, minMultiAssetCount]
-              : [minInput, value.assetTypes(minInput.output().amount())];
-          },
-          [spareInputs[0], value.assetTypes(spareInputs[0].output().amount())],
-        );
-        this.addInput(inputWithLeastMultiAssets);
-        // Remove the selected input from spareInputs
-        spareInputs = spareInputs.filter(
-          (input) => input !== inputWithLeastMultiAssets,
+      }
+      if (this.body.inputs().values().length == 0) {
+        throw new Error(
+          "TxBuilder: resolved empty input set, cannot construct transaction!",
         );
       }
-    }
-    if (this.body.inputs().values().length == 0) {
-      throw new Error(
-        "TxBuilder: resolved empty input set, cannot construct transaction!",
-      );
-    }
-    // Ensure the coin selection has eliminated all negative values.
-    if (!value.empty(value.negatives(excessValue))) {
-      throw new Error(
-        "Unreachable! Somehow coin selection succeeded but still failed.",
-      );
+      // Ensure the coin selection has eliminated all negative values.
+      if (!value.empty(value.negatives(excessValue))) {
+        throw new Error(
+          "Unreachable! Somehow coin selection succeeded but still failed.",
+        );
+      }
     }
 
     // We first balance the native assets  to avoid issues with the max value size being exceeded
@@ -1718,6 +1724,13 @@ export class TxBuilder {
           changeOutput!.amount(),
           value.negate(excessValue),
         );
+
+        if (!coinSelection) {
+          throw new Error(
+            `Change output has more than inputs provide. Missing coin: ${excessDifference.coin()}. Missing multiassets: ${JSON.stringify(excessDifference.multiasset()?.entries(), (_, v) => (typeof v === "bigint" ? v.toString() : v))}`,
+          );
+        }
+
         // we must add more inputs, to cover the difference
         if (spareInputs.length == 0) {
           throw new Error("Tx builder could not satisfy coin selection");
