@@ -1266,6 +1266,7 @@ export class TxBuilder {
       const tis = CborSet.fromCore([], TransactionInput.fromCore);
       tis.setValues(providedCollateral.map((pc) => pc.input()));
       this.body.setCollateral(tis);
+      this.body.setTotalCollateral(requiredLovelace);
       this.body.setCollateralReturn(
         new TransactionOutput(
           this.collateralChangeAddress ?? this.changeAddress!,
