@@ -40,11 +40,11 @@ export function getScriptSize(script: Script): number {
  */
 export function calculateReferenceScriptFee(
   refScripts: Script[],
-  params: ProtocolParameters
+  params: ProtocolParameters,
 ): number {
   let referenceScriptSize = refScripts.reduce(
     (acc, refScript) => acc + getScriptSize(refScript),
-    0
+    0,
   );
 
   const { base, multiplier, range } = params.minFeeReferenceScripts!;
@@ -68,7 +68,7 @@ export function calculateReferenceScriptFee(
  */
 export function calculateMinAda(
   output: TransactionOutput,
-  coinsPerUtxoByte?: number
+  coinsPerUtxoByte?: number,
 ): bigint {
   const byteLength = BigInt(output.toCbor().length / 2);
   return (
@@ -100,7 +100,7 @@ export function getUtxoEffectiveCoin(utxo: TransactionUnspentOutput): bigint {
  */
 export const stringifyBigint: typeof JSON.stringify = (value) =>
   JSON.stringify(value, (_k, v) =>
-    typeof v === "bigint" ? v.toString() + "n" : v
+    typeof v === "bigint" ? v.toString() + "n" : v,
   );
 
 /**
@@ -109,7 +109,7 @@ export const stringifyBigint: typeof JSON.stringify = (value) =>
  * @returns {TransactionUnspentOutput[]}
  */
 export function sortLargestFirst(
-  inputs: TransactionUnspentOutput[]
+  inputs: TransactionUnspentOutput[],
 ): TransactionUnspentOutput[] {
   return [...inputs].sort((a, b) => {
     const lovelaceA = Number(a.output().amount().coin());
@@ -136,7 +136,7 @@ export function sortLargestFirst(
  */
 export const isEqualUTxO = (
   self: TransactionUnspentOutput,
-  that: TransactionUnspentOutput
+  that: TransactionUnspentOutput,
 ) => isEqualInput(self.input(), that.input());
 
 /**
@@ -170,7 +170,7 @@ export interface IScriptData {
 export function computeScriptData(
   redeemers: Redeemers,
   datums: ReturnType<TransactionWitnessSet["plutusData"]>, // TODO: weird import shenanigans
-  usedCostModels: Costmdls
+  usedCostModels: Costmdls,
 ): IScriptData | undefined {
   const writeDatums = datums && (datums?.size() ?? 0) > 0;
   // If there are no redeemers *or* datums in the witness set, we don't need a script data hash at all
@@ -185,7 +185,7 @@ export function computeScriptData(
     : undefined;
   const costModelsEncoded = Buffer.from(
     usedCostModels.languageViewsEncoding(),
-    "hex"
+    "hex",
   );
 
   // Write out the script data hash to the cbor writer
