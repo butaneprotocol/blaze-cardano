@@ -12,10 +12,9 @@ import {
 import type {
   Redeemers,
   TransactionWitnessSet,
-  HexBlob,
-  Hash32ByteBase16,
   Costmdls,
 } from "@blaze-cardano/core";
+import type { IScriptData } from "./types";
 
 export function getScriptSize(script: Script): number {
   const cborReader = new CborReader(script.toCbor());
@@ -132,13 +131,6 @@ export const isEqualUTxO = (
 export const isEqualInput = (self: TransactionInput, that: TransactionInput) =>
   self.transactionId() === that.transactionId() &&
   self.index() === that.index();
-export interface IScriptData {
-  redeemersEncoded: string;
-  datumsEncoded: string | undefined;
-  costModelsEncoded: string;
-  hashedData: HexBlob;
-  scriptDataHash: Hash32ByteBase16;
-}
 
 /**
  * Calculates the correct script data hash for a transaction

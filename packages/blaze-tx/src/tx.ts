@@ -60,13 +60,12 @@ import {
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelectors/micahsSelector";
-import { type SelectionResult, type CoinSelectionFunc } from "./types";
+import type { IScriptData, SelectionResult, CoinSelectionFunc } from "./types";
 import {
   calculateMinAda,
   calculateReferenceScriptFee,
   computeScriptData,
   isEqualInput,
-  type IScriptData,
 } from "./utils";
 
 /*
@@ -1390,9 +1389,7 @@ export class TxBuilder {
       .values()
       .reduce((acc: Value, input: TransactionInput) => {
         const utxo = scope.find(
-          (x) =>
-            x.input().transactionId() === input.transactionId() &&
-            x.input().index() === input.index(),
+          (x) => isEqualInput(x.input(), input)
         );
         if (!utxo) {
           throw new Error(
