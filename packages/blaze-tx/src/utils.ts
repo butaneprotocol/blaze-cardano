@@ -2,7 +2,6 @@ import {
   blake2b_256,
   CborReader,
   CborWriter,
-  hardCodedProtocolParams,
   type ProtocolParameters,
   type Script,
   type TransactionInput,
@@ -67,13 +66,10 @@ export function calculateReferenceScriptFee(
  */
 export function calculateMinAda(
   output: TransactionOutput,
-  coinsPerUtxoByte?: number,
+  coinsPerUtxoByte: number,
 ): bigint {
   const byteLength = BigInt(output.toCbor().length / 2);
-  return (
-    BigInt(coinsPerUtxoByte || hardCodedProtocolParams.coinsPerUtxoByte) *
-    (byteLength + 160n)
-  );
+  return BigInt(coinsPerUtxoByte) * (byteLength + 160n);
 }
 
 /**
@@ -120,7 +116,9 @@ export function sortLargestFirst(
 export const isEqualUTxO = (
   self: TransactionUnspentOutput,
   that: TransactionUnspentOutput,
-) => isEqualInput(self.input(), that.input());
+) =>
+  isEqualInput(self.input(), that.input()) &&
+  isEqualOutput(self.output(), that.output());
 
 /**
  * Utility function to compare the equality of two inputs.
@@ -128,9 +126,21 @@ export const isEqualUTxO = (
  * @param {TransactionInput} that
  * @returns {boolean}
  */
-export const isEqualInput = (self: TransactionInput, that: TransactionInput) =>
-  self.transactionId() === that.transactionId() &&
-  self.index() === that.index();
+export const isEqualInput = (
+  self: TransactionInput,
+  that: TransactionInput,
+): boolean => self.toCbor() === that.toCbor();
+
+/**
+ * Utility function to compare the equality of two outputs.
+ * @param {TransactionOutput} self
+ * @param {TransactionOutput} that
+ * @returns {boolean}
+ */
+export const isEqualOutput = (
+  self: TransactionOutput,
+  that: TransactionOutput,
+): boolean => self.toCbor() === that.toCbor();
 
 /**
  * Calculates the correct script data hash for a transaction

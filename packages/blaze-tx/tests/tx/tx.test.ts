@@ -368,9 +368,8 @@ describe("Transaction Building", () => {
         value.makeValue(557_070_000n),
       )
       .complete();
-    // console.log(tx.toCbor());
 
-    expect(tx.body().fee().toString()).toEqual("292307");
+    expect(tx.body().fee().toString()).toEqual("293891");
   });
 
   // The following test is based on the below transaction, which was a transaction built by JPG Store. It created a fee that was too small.
@@ -618,7 +617,7 @@ describe("Transaction Building", () => {
       .setAuxiliaryData(auxData)
       .complete();
 
-    expect(tx.body().fee().toString()).toEqual("475794");
+    expect(tx.body().fee().toString()).toEqual("477378");
   });
 
   it("should not use coin selection when set to false", async () => {
@@ -639,7 +638,7 @@ describe("Transaction Building", () => {
       .payAssets(testAddress, value.makeValue(48_708_900n));
 
     try {
-      await tx.complete(false);
+      await tx.complete({ coinSelection: false });
     } catch (e) {
       expect((e as Error).message).toEqual(
         "Change output has more than inputs provide. Missing coin: 49840323. Missing multiassets: undefined",
@@ -653,7 +652,7 @@ describe("Transaction Building", () => {
       ),
     );
 
-    const txComplete = await tx.complete(false);
+    const txComplete = await tx.complete({ coinSelection: false });
     expect(txComplete.body().inputs().values().length).toEqual(1);
     expect(txComplete.body().outputs().length).toEqual(2);
   });

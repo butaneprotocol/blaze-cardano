@@ -1273,9 +1273,16 @@ export class TxBuilder {
         ),
       );
     } else {
-      let remainingLovelace = BigInt(requiredLovelace);
+      let remainingLovelace = BigInt(requiredLovelace)
+      let iterations = 0;
 
       while (remainingLovelace > 0n) {
+        if (iterations > 20) {
+          throw new Error(
+            "prepareCollateral: it took more than 20 iterations to find collateral, so we're aborting.",
+          );
+        }
+
         const { selectedInputs, selectedValue } = this.coinSelector(
           [...this.utxos.values()],
           new Value(remainingLovelace),
@@ -1287,12 +1294,15 @@ export class TxBuilder {
         const collateralSet = CborSet.fromCore([], TransactionInput.fromCore);
         collateralSet.setValues([
           ...currentCollateral,
+          ...providedCollateral.map(pc => pc.input()),
           ...selectedInputs.map((si) => si.input()),
         ]);
 
-        const totalCollateralInput = value.sum(
-          selectedInputs.map((si) => si.output().amount()),
-        );
+        const totalCollateralInput = value.sum([
+          ...selectedInputs.map((si) => si.output().amount()),
+          ...providedCollateral.map(pc => pc.output().amount())
+        ]);
+        
         const collateralReturn = value.sub(
           totalCollateralInput,
           new Value(requiredLovelace),
@@ -1306,6 +1316,13 @@ export class TxBuilder {
             collateralReturn,
           ),
         );
+
+        // Append the updated fee difference to the remaining collateral requirement.
+        const oldFee = BigInt(this.fee);
+        this.calculateFees();
+        remainingLovelace += this.fee - oldFee;
+        
+        iterations++;
       }
     }
   }
@@ -1359,57 +1376,6 @@ export class TxBuilder {
   }
 
   /**
-   * Balances the collateral change by creating a transaction output that returns the excess collateral.
-   * Throws an error if the change address is not set.
-   */
-  private balanceCollateralChange() {
-    // Ensure a change address is set before proceeding.
-    if (!this.changeAddress) {
-      throw new Error("balanceCollateralChange: change address not set");
-    }
-    const collateral = this.body.collateral();
-    if (!collateral || collateral.size() == 0) {
-      return;
-    }
-    // Retrieve available UTXOs within scope.
-    const scope = [
-      ...this.utxoScope.values(),
-      ...this.collateralUtxos.values(),
-    ];
-    // Calculate the total collateral based on the transaction fee and collateral percentage.
-    const totalCollateral = BigInt(
-      Math.ceil(
-        (this.params.collateralPercentage / 100) *
-          Number(bigintMax(this.fee, this.minimumFee) + this.feePadding),
-      ),
-    );
-    // Calculate the collateral value by summing up the amounts from collateral inputs.
-    const collateralValue = this.body
-      .collateral()!
-      .values()
-      .reduce((acc: Value, input: TransactionInput) => {
-        const utxo = scope.find(
-          (x) => isEqualInput(x.input(), input)
-        );
-        if (!utxo) {
-          throw new Error(
-            "balanceCollateralChange: Could not resolve some collateral input",
-          );
-        }
-        return value.merge(utxo.output().amount(), acc);
-      }, value.zero());
-    // Create a transaction output for the change address with the adjusted collateral value.
-    this.body.setCollateralReturn(
-      new TransactionOutput(
-        this.changeAddress,
-        value.merge(collateralValue, new Value(-totalCollateral)),
-      ),
-    );
-    // Update the transaction body with the total collateral amount.
-    this.body.setTotalCollateral(totalCollateral);
-  }
-
-  /**
    * Prints the transaction cbor in its current state without trying to complete it
    * @returns {string} The CBOR representation of the transaction
    * */
@@ -1432,7 +1398,9 @@ export class TxBuilder {
    *                 or if balancing the change output fails.
    * @returns {Promise<Transaction>} A new Transaction object with all components set and ready for submission.
    */
-  async complete(coinSelection: boolean = true): Promise<Transaction> {
+  async complete(
+    { coinSelection }: { coinSelection: boolean } = { coinSelection: true },
+  ): Promise<Transaction> {
     // Execute pre-complete hooks
     if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
       for (const hook of this.preCompleteHooks) {
@@ -1607,17 +1575,20 @@ export class TxBuilder {
         }
       }
     }
+
     {
       const scriptDataHash = this.getScriptDataHash(tw);
       if (scriptDataHash) {
         this.body.setScriptDataHash(scriptDataHash);
       }
     }
+
     if (this.feePadding > 0n) {
       console.warn(
         "A transaction was built using fee padding. This is useful for working around changes to fee calculation, but ultimately is a bandaid. If you find yourself needing this, please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can fix the underlying inaccuracy!",
       );
     }
+
     let final_size = draft_size;
     do {
       const oldEvaluationFee = evaluationFee;
@@ -1672,9 +1643,7 @@ export class TxBuilder {
           }
         }
       }
-      if (this.body.collateral()) {
-        this.balanceCollateralChange();
-      }
+
       draft_tx.setBody(this.body);
       draft_size = final_size;
       final_size = draft_tx.toCbor().length / 2;
