@@ -1,5 +1,12 @@
 # @blaze-cardano/uplc
 
+## 0.2.6
+
+### Patch Changes
+
+- Updated dependencies [2b4c1a6]
+  - @blaze-cardano/tx@0.10.6
+
 ## 0.2.5
 
 ### Patch Changes
