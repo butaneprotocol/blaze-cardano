@@ -78,22 +78,6 @@ export function calculateMinAda(
 }
 
 /**
- * Returns the effective coin value of the utxo substracting the min utxo needed for the multiasset in the utxo
- *
- * @param {TransactionUnspentOutput} utxo - The utxo to calculate the effective coin value
- * @returns {bigint} The effective coin value of the utxo
- * */
-export function getUtxoEffectiveCoin(utxo: TransactionUnspentOutput): bigint {
-  const output = utxo.output();
-  const multiasset = output.amount().multiasset();
-  const hasMultiasset = multiasset && multiasset.size > 0;
-  const outputMinAda = calculateMinAda(output);
-  return hasMultiasset
-    ? output.amount().coin() - outputMinAda
-    : output.amount().coin();
-}
-
-/**
  * Wraps JSON.stringify with a serializer for bigints.
  * @param {any} value The value you want to stringify.
  * @returns

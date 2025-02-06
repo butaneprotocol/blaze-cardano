@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.10.6
+
+### Patch Changes
+
+- 2b4c1a6: Adds a new Coin Selection algorithm as an export (while keeping the default selection algo intact for now).
+
 ## 0.10.5
 
 ### Patch Changes
