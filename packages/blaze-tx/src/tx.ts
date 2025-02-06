@@ -59,10 +59,13 @@ import {
   setInConwayEra,
 } from "@blaze-cardano/core";
 import * as value from "./value";
-import { micahsSelector, type SelectionResult } from "./coinSelection";
+import { micahsSelector } from "./coinSelectors/micahsSelector";
+import { type SelectionResult, type CoinSelectionFunc } from "./types";
 import {
+  calculateMinAda,
   calculateReferenceScriptFee,
   computeScriptData,
+  isEqualInput,
   type IScriptData,
 } from "./utils";
 
@@ -136,10 +139,7 @@ export class TxBuilder {
   private consumedSpendInputs: string[] = [];
   private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
   private feePadding: bigint = 0n; // A padding to add onto the fee; use only in emergencies, and open a ticket so we can fix the fee calculation please!
-  private coinSelector: (
-    inputs: TransactionUnspentOutput[],
-    dearth: Value,
-  ) => SelectionResult = micahsSelector;
+  private coinSelector: CoinSelectionFunc = micahsSelector;
   private _burnAddress?: Address;
 
   /**
@@ -555,8 +555,7 @@ export class TxBuilder {
    * @returns {bigint} The minimum ada required for the output.
    */
   private calculateMinAda(output: TransactionOutput): bigint {
-    const byteLength = BigInt(output.toCbor().length / 2);
-    return BigInt(this.params.coinsPerUtxoByte) * (byteLength + 160n);
+    return calculateMinAda(output, this.params.coinsPerUtxoByte);
   }
   /**
    * This method checks and alters the output of a transaction.
@@ -963,10 +962,7 @@ export class TxBuilder {
       let utxo: TransactionUnspentOutput | undefined;
       // Find the matching UTxO for the input.
       for (const iterUtxo of this.utxoScope.values()) {
-        if (
-          iterUtxo.input().transactionId() == input.transactionId() &&
-          iterUtxo.input().index() == input.index()
-        ) {
+        if (isEqualInput(iterUtxo.input(), input)) {
           utxo = iterUtxo;
         }
       }
@@ -1563,8 +1559,16 @@ export class TxBuilder {
       bigintMax(BigInt(Math.ceil(preliminaryFee)), this.minimumFee),
     );
     let spareInputs: TransactionUnspentOutput[] = [];
-    for (const [utxo] of this.utxos.entries()) {
-      if (!inputs.includes(utxo.input())) {
+    for (const utxo of this.utxos.values()) {
+      let hasInput = false;
+      for (const input of inputs) {
+        if (isEqualInput(input, utxo.input())) {
+          hasInput = true;
+          break;
+        }
+      }
+
+      if (!hasInput) {
         spareInputs.push(utxo);
       }
     }
@@ -1577,7 +1581,7 @@ export class TxBuilder {
       );
       // Update the excess value and spare inputs based on the selection result.
       excessValue = value.merge(excessValue, selectionResult.selectedValue);
-      spareInputs = selectionResult.inputs;
+      spareInputs = selectionResult.leftoverInputs;
       // Add selected inputs to the transaction.
       if (selectionResult.selectedInputs.length > 0) {
         for (const input of selectionResult.selectedInputs) {
@@ -1739,7 +1743,7 @@ export class TxBuilder {
           spareInputs,
           excessDifference,
         );
-        spareInputs = selectionResult.inputs;
+        spareInputs = selectionResult.leftoverInputs;
         for (const input of selectionResult.selectedInputs) {
           this.addInput(input);
         }

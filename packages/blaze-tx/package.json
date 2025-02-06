@@ -21,7 +21,9 @@
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
