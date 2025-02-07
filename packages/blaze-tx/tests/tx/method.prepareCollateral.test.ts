@@ -255,13 +255,13 @@ describe("prepareCollateral method", () => {
       )
       .addReferenceInput(refUtxo)
       .addUnspentOutputs([userUtxo1, userUtxo2])
-      .provideCollateral([userUtxo1])
-      
-    txBuilder.calculateFees()
+      .provideCollateral([userUtxo1]);
+
+    txBuilder.calculateFees();
     txBuilder.prepareCollateral();
 
     expect(txBuilder.toCbor()).toEqual(
-      "84a5021a0003122c0dd90102828258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f008258200ca317ce7d328c7d835f2bcf4ed8299ae239dd102560e99096be22549a21650e001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a00892630111a000473d012d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a0f5f6",
+      "84a5021a00030bfc0dd90102818258200ca317ce7d328c7d835f2bcf4ed8299ae239dd102560e99096be22549a21650e001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a00759e30111a000473d012d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a0f5f6",
     );
   });
 

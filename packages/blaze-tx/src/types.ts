@@ -15,6 +15,10 @@ export type SelectionResult = {
   selectedValue: Value;
 };
 
+export interface UseCoinSelectionArgs {
+  useCoinSelection: boolean;
+}
+
 /**
  * The coin selection function to choose which inputs to use for the transaction.
  */

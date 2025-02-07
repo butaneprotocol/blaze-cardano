@@ -73,6 +73,21 @@ export function calculateMinAda(
 }
 
 /**
+ * Calculate the required "collateral" the a transaction must put up if it is running smart contracts.
+ * This is to prevent DDOS attacks with failing scripts, and must be some percentage above the total fee of the script.
+ *
+ * @param {bigint} fee The full transaction fee
+ * @param {number} collateralPercentage The protocol parameter defining the buffer above the fee that is required
+ * @returns {bigint}
+ */
+export function calculateRequiredCollateral(
+  fee: bigint,
+  collateralPercentage: number,
+): bigint {
+  return BigInt(Math.ceil(Number(fee) * (collateralPercentage / 100)));
+}
+
+/**
  * Wraps JSON.stringify with a serializer for bigints.
  * @param {any} value The value you want to stringify.
  * @returns
