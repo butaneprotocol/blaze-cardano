@@ -174,7 +174,7 @@ describe("Transaction Building", () => {
       new Value(tx.body().fee()),
     );
 
-    console.log(tx.body().fee())
+    console.log(tx.body().fee());
 
     // console.log("Change: ", tx.body().outputs().at(1)?.amount().coin());
 
@@ -647,11 +647,8 @@ describe("Transaction Building", () => {
             ),
             0n,
           ),
-          new TransactionOutput(
-            testAddress,
-            value.makeValue(1_000_000n)
-          )
-        )
+          new TransactionOutput(testAddress, value.makeValue(1_000_000n)),
+        ),
       )
       .payAssets(testAddress, value.makeValue(48_708_900n));
 

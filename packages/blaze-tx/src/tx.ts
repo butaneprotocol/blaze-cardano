@@ -152,7 +152,10 @@ export class TxBuilder {
    * Constructs a new instance of the TxBuilder class.
    * Initializes a new transaction body with an empty set of inputs, outputs, and no fee.
    */
-  constructor(params: ProtocolParameters) {
+  constructor(
+    params: ProtocolParameters,
+    private tracing: boolean = false,
+  ) {
     setInConwayEra(true);
     this.params = params;
     this.body = new TransactionBody(
@@ -168,6 +171,29 @@ export class TxBuilder {
       this._burnAddress = getBurnAddress(this.networkId!);
     }
     return this._burnAddress;
+  }
+
+  /**
+   * Internal tracing functiong to log.
+   *
+   * @param {string} msg Describe message.
+   * @param {any[]} extra Extra variables you want to print in the trace message.
+   */
+  private trace(msg: string, ...extra: any[]): void {
+    if (!this.tracing) {
+      return;
+    }
+
+    this.trace(msg, ...extra);
+  }
+
+  /**
+   * Hook to allow an existing instance to turn on tracing.
+   *
+   * @param {boolean} enabled Whether to enable tracing.
+   */
+  public enableTracing(enabled: boolean): void {
+    this.tracing = enabled;
   }
 
   private insertSorted<T extends string>(arr: T[], el: T) {
@@ -1133,10 +1159,10 @@ export class TxBuilder {
     // NOTE: it's important to check value.empty here, and not just the excessValue.coin() because
     // there may only be excess native assets
     if (value.empty(surplusValue)) {
-      console.log("No surplus value to distribute to change");
+      this.trace("No surplus value to distribute to change");
       return;
     }
-    console.log(`Distributing surplus value to the change output`);
+    this.trace(`Distributing surplus value to the change output`);
     // First, identify an existing or create a new change output
     const outputs = this.body.outputs();
     const changeOutput = this.getOrCreateChangeOutput();
@@ -1148,12 +1174,12 @@ export class TxBuilder {
     // Split it, in case it's too large
     const changeOutputs = this.splitOutputIfNeeded(newChangeOutput);
     if (changeOutputs.length > 1) {
-      console.log(
+      this.trace(
         `Change output split into ${changeOutputs.length} outputs because of size`,
       );
     }
     for (const output of changeOutputs) {
-      console.log(` - ${output.amount().coin()}`);
+      this.trace(` - ${output.amount().coin()}`);
     }
     // And then, add those back into the body, updating the changeOutputIndex for any new outputs we add
     for (let idx = 0; idx < changeOutputs.length; idx++) {
@@ -1455,7 +1481,7 @@ export class TxBuilder {
     // this.body.setNetworkId(this.networkId);
     let iterations = 0;
     while (iterations < 10) {
-      console.log(`Starting iteration ${iterations}`);
+      this.trace(`Starting iteration ${iterations}`);
       iterations += 1;
       // Gather all inputs from the transaction body.
       const inputs = [...this.body.inputs().values()];
@@ -1473,7 +1499,7 @@ export class TxBuilder {
           await this.evaluate(new Transaction(this.body, witnessSet));
         } catch (e) {
           // TODO: just throw a custom error type with the traces + txCbor
-          console.log(
+          this.trace(
             `An error occurred when trying to evaluate this transaction. Body CBOR: ${this.body.toCbor()}`,
           );
 
@@ -1500,7 +1526,7 @@ export class TxBuilder {
 
       // Perform initial checks and preparations for coin selection.
       this.calculateFees();
-      console.log(`Fee calculated to be ${this.fee.toString()}`);
+      this.trace(`Fee calculated to be ${this.fee.toString()}`);
 
       // Compute the update script data hash now that we have the witness set
       const scriptDataHash = this.getScriptDataHash(witnessSet);
@@ -1524,7 +1550,7 @@ export class TxBuilder {
           spareInputs.push(utxo);
         }
       }
-      console.log(
+      this.trace(
         `Identified ${spareInputs.length} spare inputs: ${stringifyBigint(spareInputs.map((si) => si.toCore()))}`,
       );
 
@@ -1532,10 +1558,10 @@ export class TxBuilder {
       // i.e. Sum(inputs) - (fee + Sum(outputs))
       let surplusAndDeficits = this.getAssetSurplus();
       const deficit = value.negatives(surplusAndDeficits);
-      console.log("SAD Coin: ", surplusAndDeficits.coin());
-      console.log("Deficit Coin: ", deficit.coin());
+      this.trace("SAD Coin: ", surplusAndDeficits.coin());
+      this.trace("Deficit Coin: ", deficit.coin());
       for (const output of this.body.outputs()) {
-        console.log(" - ", output.amount().coin());
+        this.trace(" - ", output.amount().coin());
       }
 
       // If we have a deficit in ADA, try to pull that from the change UTxO, which may have been over-committed
@@ -1543,28 +1569,28 @@ export class TxBuilder {
         const recoveredAmount = this.recoverLovelaceFromChangeOutput(
           -deficit.coin(),
         );
-        console.log(
+        this.trace(
           `Recovered ${recoveredAmount} lovelace from the change output.`,
         );
         deficit.setCoin(deficit.coin() + recoveredAmount);
         surplusAndDeficits.setCoin(surplusAndDeficits.coin() + recoveredAmount);
       }
-      console.log("SAD Coin: ", surplusAndDeficits.coin());
-      console.log("Deficit Coin: ", deficit.coin());
+      this.trace("SAD Coin: ", surplusAndDeficits.coin());
+      this.trace("Deficit Coin: ", deficit.coin());
       for (const output of this.body.outputs()) {
-        console.log(" - ", output.amount().coin());
+        this.trace(" - ", output.amount().coin());
       }
 
       if (!value.empty(surplusAndDeficits)) {
-        console.log(`Transaction is imbalanced`, surplusAndDeficits.toCore());
+        this.trace(`Transaction is imbalanced`, surplusAndDeficits.toCore());
         if (useCoinSelection && !value.empty(deficit)) {
-          console.log(`Running coin selection to satisfy imbalance`);
+          this.trace(`Running coin selection to satisfy imbalance`);
           // Perform coin selection to cover any negative excess value.
           const selectionResult = this.coinSelector(
             spareInputs,
             value.negate(deficit),
           );
-          console.log(
+          this.trace(
             `Selected ${selectionResult.selectedInputs.length} inputs`,
             selectionResult.selectedInputs.map((si) => si.input().toCore()),
           );
@@ -1646,7 +1672,7 @@ export class TxBuilder {
       }
     }
 
-    console.log("Transaction succesfully balanced");
+    this.trace("Transaction succesfully balanced");
     // Return the fully constructed transaction.
     const finalWitnessSet = this.buildFinalWitnessSet([]);
     return new Transaction(this.body, finalWitnessSet, this.auxiliaryData);
