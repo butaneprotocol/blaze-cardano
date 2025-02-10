@@ -60,7 +60,7 @@ import {
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelectors/micahsSelector";
-import {
+import type {
   IScriptData,
   SelectionResult,
   CoinSelectionFunc,
@@ -72,6 +72,7 @@ import {
   calculateRequiredCollateral,
   computeScriptData,
   isEqualInput,
+  stringifyBigint,
 } from "./utils";
 
 /*
@@ -815,10 +816,10 @@ export class TxBuilder {
   }
 
   /**
-   * Builds a placeholder transaction witness set required for the transaction.
+   * Builds a full witness set with the provided signatures
    *
    * This includes collecting all necessary scripts (native, Plutus V1, V2, V3),
-   * Placeholder VKey signatures, redeemers, and Plutus data required for script validation.
+   * vkey signatures, redeemers, and Plutus data required for script validation.
    *
    * It organizes these components into a structured format that can be
    * serialized and included in the transaction.
@@ -826,7 +827,9 @@ export class TxBuilder {
    * @returns {TransactionWitnessSet} A constructed transaction witness set.
    * @throws {Error} If a required script cannot be resolved by its hash.
    */
-  protected buildPlaceholderWitnessSet(): TransactionWitnessSet {
+  protected buildFinalWitnessSet(
+    signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][],
+  ): TransactionWitnessSet {
     const tw = new TransactionWitnessSet();
     // Script lookup table to map script hashes to script objects
     const scriptLookup: Record<ScriptHash, Script> = {};
@@ -917,16 +920,8 @@ export class TxBuilder {
     }
     // Process vkey witnesses
     // const vkeyWitnesses = CborSet.fromCore([], VkeyWitness.fromCore);
-    const requiredWitnesses: [Ed25519PublicKeyHex, Ed25519SignatureHex][] =
-      Array.from(
-        { length: this.requiredWitnesses.size + this.additionalSigners },
-        (_, i) => [
-          Ed25519PublicKeyHex(i.toString(16).padStart(64, "0")),
-          Ed25519SignatureHex(i.toString(16).padStart(128, "0")),
-        ],
-      );
 
-    tw.setVkeys(CborSet.fromCore(requiredWitnesses, VkeyWitness.fromCore));
+    tw.setVkeys(CborSet.fromCore(signatures, VkeyWitness.fromCore));
     tw.setRedeemers(this.redeemers);
     // Process Plutus data
     const plutusData = CborSet.fromCore([], PlutusData.fromCore);
@@ -943,6 +938,33 @@ export class TxBuilder {
   }
 
   /**
+   * Builds a placeholder transaction witness set required for the transaction.
+   *
+   * This includes collecting all necessary scripts (native, Plutus V1, V2, V3),
+   * redeemers, and Plutus data required for script validation.
+   *
+   * Includes placeholder signatures for the known required signers, so we estimate the transaction size accurately
+   *
+   * It organizes these components into a structured format that can be
+   * serialized and included in the transaction.
+   *
+   * @returns {TransactionWitnessSet} A constructed transaction witness set.
+   * @throws {Error} If a required script cannot be resolved by its hash.
+   */
+  protected buildPlaceholderWitnessSet(): TransactionWitnessSet {
+    const placeholderSignatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][] =
+      Array.from(
+        { length: this.requiredWitnesses.size + this.additionalSigners },
+        (_, i) => [
+          Ed25519PublicKeyHex(i.toString(16).padStart(64, "0")),
+          Ed25519SignatureHex(i.toString(16).padStart(128, "0")),
+        ],
+      );
+
+    return this.buildFinalWitnessSet(placeholderSignatures);
+  }
+
+  /**
    * Calculates the total net change of assets from a transaction.
    * That is, all sources of assets (inputs, withrawal certificates, etc) minus all destinations (outputs, minting, fees, etc)
    * In a balanced / well-formed transaction, this should be zero
@@ -950,7 +972,7 @@ export class TxBuilder {
    * @returns {Value} The net value that represents the transaction's pitch.
    * @throws {Error} If a corresponding UTxO for an input cannot be found.
    */
-  private getAssetDelta(): Value {
+  private getAssetSurplus(): Value {
     // Calculate withdrawal amounts.
     let withdrawalAmount = 0n;
     const withdrawals = this.body.withdrawals();
@@ -1025,89 +1047,8 @@ export class TxBuilder {
       value.merge(inputValue, value.negate(outputValue)),
       mintValue,
     );
-    if (this.changeOutputIndex !== undefined) {
-      return value.merge(
-        tilt,
-        this.body.outputs()[this.changeOutputIndex]!.amount(),
-      );
-    }
 
     return tilt;
-  }
-
-  private balanced() {
-    let withdrawalAmount = 0n;
-    const withdrawals = this.body.withdrawals();
-    if (withdrawals !== undefined) {
-      for (const account of withdrawals.keys()) {
-        withdrawalAmount += withdrawals.get(account)!;
-      }
-    }
-    // Initialize values for input, output, and minted amounts.
-    let inputValue = new Value(withdrawalAmount);
-    let outputValue = new Value(bigintMax(this.fee, this.minimumFee));
-    const mintValue = new Value(0n, this.body.mint());
-
-    // Aggregate the total input value from all inputs.
-    for (const input of this.body.inputs().values()) {
-      let utxo: TransactionUnspentOutput | undefined;
-      // Find the matching UTxO for the input.
-      for (const iterUtxo of this.utxoScope.values()) {
-        if (
-          iterUtxo.input().transactionId() == input.transactionId() &&
-          iterUtxo.input().index() == input.index()
-        ) {
-          utxo = iterUtxo;
-        }
-      }
-      // Throw an error if a matching UTxO cannot be found.
-      if (!utxo) {
-        throw new Error("Unreachable! UTxO missing!");
-      }
-      // Merge the UTxO's output amount into the total input value.
-      inputValue = value.merge(inputValue, utxo.output().amount());
-    }
-    for (const output of this.body.outputs().values()) {
-      outputValue = value.merge(outputValue, output.amount());
-    }
-
-    for (const cert of this.body.certs()?.values() || []) {
-      switch (cert.kind()) {
-        case 0: // Stake Registration
-          outputValue = value.merge(
-            outputValue,
-            new Value(BigInt(this.params.stakeKeyDeposit)),
-          );
-          break;
-        case 1: // Stake Deregistration
-          inputValue = value.merge(
-            inputValue,
-            new Value(BigInt(this.params.stakeKeyDeposit)),
-          );
-          break;
-        case 3: // Pool Registration
-          if (this.params.poolDeposit) {
-            outputValue = value.merge(
-              outputValue,
-              new Value(BigInt(this.params.poolDeposit)),
-            );
-          }
-          break;
-        case 4: // Pool Retirement
-          if (this.params.poolDeposit) {
-            inputValue = value.merge(
-              inputValue,
-              new Value(BigInt(this.params.poolDeposit)),
-            );
-          }
-          break;
-      }
-    }
-    const tilt = value.merge(
-      value.merge(inputValue, value.negate(outputValue)),
-      mintValue,
-    );
-    return tilt.toCbor() == value.zero().toCbor();
   }
 
   /**
@@ -1152,55 +1093,154 @@ export class TxBuilder {
   }
 
   /**
+   * We may have overcommitted some lovelace from our inputs just as part of balance change;
+   * On the next time around, we may want to "recover" that lovelace to cover the slightly increased fee, etc.
+   */
+  private recoverLovelaceFromChangeOutput(lovelace: bigint): bigint {
+    if (this.changeOutputIndex === undefined) {
+      return 0n;
+    }
+    const outputs = this.body.outputs();
+    const changeOutput = outputs[this.changeOutputIndex]!;
+    const minLovelace = this.calculateMinAda(changeOutput);
+    if (minLovelace > changeOutput.amount().coin()) {
+      throw new Error(
+        `Unreachable! Somehow we created a change output with less than the minimum required lovelace: ${minLovelace}, ${changeOutput.amount().coin()}`,
+      );
+    }
+    const newCoin = bigintMax(
+      minLovelace,
+      changeOutput.amount().coin() - lovelace,
+    );
+    const recoveredAmount = changeOutput.amount().coin() - newCoin;
+    changeOutput.amount().setCoin(newCoin);
+    outputs[this.changeOutputIndex] = changeOutput;
+    this.body.setOutputs(outputs);
+    return recoveredAmount;
+  }
+
+  /**
    * Given some excess value on a transaction, ensure this is returned as change to the change address
    *
-   * @param {Value | undefined} excessValue The excess value to balance into the change output(s)
+   * @param {Value | undefined} surplusValue The excess value to balance into the change output(s)
    */
-  private adjustChangeOutput(excessValue?: Value) {
+  private adjustChangeOutput(surplusValue?: Value) {
     // For convenience, if someone calls adjustChangeOutput without a value,
     // we use the delta between the inputs and outputs
-    excessValue ??= this.getAssetDelta();
+    surplusValue ??= this.getAssetSurplus();
     // If the transaction is already balanced, we don't need to do anything
     // This avoids creating an "empty" change output, for example on Hydra which has 0 fees, etc.
     // NOTE: it's important to check value.empty here, and not just the excessValue.coin() because
     // there may only be excess native assets
-    if (value.empty(excessValue)) {
+    if (value.empty(surplusValue)) {
+      console.log("No surplus value to distribute to change");
       return;
     }
-    // First, identify or create a change output
-    // TODO: in practice we should probably have multiple change outputs for clean
-    // asset separation!
+    console.log(`Distributing surplus value to the change output`);
+    // First, identify an existing or create a new change output
     const outputs = this.body.outputs();
-    let changeOutput: TransactionOutput;
-    if (undefined !== this.changeOutputIndex) {
-      // NOTE: if changeOutputIndex is set, it must have happened in a previous round
-      // and so there must be an output at that index
-      const maybeChangeOutput = outputs[this.changeOutputIndex];
-      if (undefined === maybeChangeOutput) {
-        throw new Error(
-          "adjustChangeOutput: Unreachable! If this.changeOutputIndex is set, it must point to a valid output!",
-        );
-      }
-      changeOutput = maybeChangeOutput;
-    } else {
-      changeOutput = new TransactionOutput(this.changeAddress!, value.zero());
-      this.addOutput(changeOutput);
-      this.changeOutputIndex = this.outputsCount - 1;
-    }
-    // Add the excess value to to the change output
-    // TODO: If the change output gets too big, we should probably split it
-    const newChangeOutputAmount = value.merge(
-      changeOutput.amount(),
-      excessValue,
+    const changeOutput = this.getOrCreateChangeOutput();
+    // Add the excess value to that output
+    const newChangeOutput = new TransactionOutput(
+      this.changeAddress!,
+      value.merge(changeOutput.amount(), surplusValue),
     );
-    changeOutput.amount().setCoin(newChangeOutputAmount.coin());
-    if (undefined !== newChangeOutputAmount.multiasset()) {
-      // NOTE: this is a safe ! because we just checked it
-      changeOutput.amount().setMultiasset(newChangeOutputAmount.multiasset()!);
+    // Split it, in case it's too large
+    const changeOutputs = this.splitOutputIfNeeded(newChangeOutput);
+    if (changeOutputs.length > 1) {
+      console.log(
+        `Change output split into ${changeOutputs.length} outputs because of size`,
+      );
+    }
+    for (const output of changeOutputs) {
+      console.log(` - ${output.amount().coin()}`);
+    }
+    // And then, add those back into the body, updating the changeOutputIndex for any new outputs we add
+    for (let idx = 0; idx < changeOutputs.length; idx++) {
+      // In most cases, the output won't be split, so the first time through the loop, we just overwrite the existing output
+      if (idx === 0) {
+        outputs[this.changeOutputIndex!] = changeOutputs[idx]!;
+      } else {
+        // But, we might have split into multiple! so now, the last added change output should become the new change output index
+        this.changeOutputIndex = outputs.length;
+        outputs.push(changeOutputs[idx]!);
+      }
     }
 
-    outputs[this.changeOutputIndex] = this.checkAndAlterOutput(changeOutput);
+    // Set those back to the body
     this.body.setOutputs(outputs);
+  }
+
+  private getOrCreateChangeOutput(): TransactionOutput {
+    if (this.changeOutputIndex === undefined) {
+      this.changeOutputIndex = this.body.outputs().length;
+      this.addOutput(
+        this.checkAndAlterOutput(
+          new TransactionOutput(this.changeAddress!, value.zero()),
+        ),
+      );
+    }
+    const outputs = this.body.outputs();
+    return outputs[this.changeOutputIndex]!;
+  }
+
+  private splitOutputIfNeeded(output: TransactionOutput): TransactionOutput[] {
+    const outputSize = output.toCbor().length / 2;
+    if (outputSize < this.params.maxValueSize) {
+      return [this.checkAndAlterOutput(output)];
+    }
+
+    // This method wouldn't know what to do with datums and reference scripts, so
+    // throw an error if they are set
+    if (output.datum() !== undefined || output.scriptRef() !== undefined) {
+      throw new Error(
+        "Invariant Violated: Don't know how to split output with datums or script references",
+      );
+    }
+
+    const outputs: TransactionOutput[] = [];
+    let nextOutput = new TransactionOutput(output.address(), value.zero());
+    let remainingLovelace = output.amount().coin();
+
+    for (const [asset, quantity] of Array.from(
+      output.amount().multiasset()?.entries() ?? [],
+    )) {
+      const prospectiveValue = value.merge(
+        nextOutput.amount(),
+        value.makeValue(0n, [asset, quantity]),
+      );
+      const prospectiveOutput = new TransactionOutput(
+        nextOutput.address(),
+        prospectiveValue,
+      );
+      const prospectiveSize = prospectiveOutput.toCbor().length / 2;
+      // We might end up with some lovelace left over after accounting for all the minUTxO of each split UTxO
+      // So, we leave a little buffer to hold that ADA; Nobody is going to worry about a UTxO that is only
+      // 90% of the size it could be...
+      if (prospectiveSize > this.params.maxValueSize * 0.9) {
+        const correctedOutput = this.checkAndAlterOutput(nextOutput);
+        outputs.push(correctedOutput);
+        remainingLovelace -= correctedOutput.amount().coin();
+        nextOutput = new TransactionOutput(
+          output.address(),
+          value.makeValue(0n, [asset, quantity]),
+        );
+      } else {
+        nextOutput = prospectiveOutput;
+      }
+    }
+    if (!value.empty(nextOutput.amount())) {
+      const correctedOutput = this.checkAndAlterOutput(nextOutput);
+      outputs.push(correctedOutput);
+      remainingLovelace -= correctedOutput.amount().coin();
+    }
+    if (remainingLovelace > 0n) {
+      const lastOutput = outputs.length - 1;
+      outputs[lastOutput]!.amount().setCoin(
+        outputs[lastOutput]!.amount().coin() + remainingLovelace,
+      );
+    }
+    return outputs;
   }
 
   /**
@@ -1222,6 +1262,8 @@ export class TxBuilder {
       (draft_tx.toCbor().length / 2) * this.params.minFeeCoefficient;
 
     if (this.params.minFeeReferenceScripts) {
+      // The minFeeReferenceScripts parameter governs the cost of *reference scripts*, not to be confused with *reference inputs*
+      // The cardano-node parses the reference script, even if it's on the inputs, and so that extra parsing cost needs to be paid for
       const utxoScope = [...this.utxoScope.values()];
       const allInputs = [
         ...draft_tx.body().inputs().values(),
@@ -1230,7 +1272,7 @@ export class TxBuilder {
       const refScripts = allInputs
         .map((x) =>
           utxoScope
-            .find((y) => y.input().toCbor() == x.toCbor())!
+            .find((y) => isEqualInput(y.input(), x))!
             .output()
             .scriptRef(),
         )
@@ -1251,16 +1293,31 @@ export class TxBuilder {
       }
     }
 
-    this.fee = BigInt(Math.ceil(minFee));
-    // Update the transaction body with the calculated fee.
-    this.body.setFee(bigintMax(this.fee, this.minimumFee) + this.feePadding);
+    // Warn if we're using minimumFee or feePadding, as the goal is for blaze to perfectly estimate the transaction fees
+    if (this.minimumFee > 0n || this.feePadding > 0n) {
+      console.warn(
+        "A transaction was built using fee padding. This is useful for working around changes to fee calculation, but ultimately is a bandaid. If you find yourself needing this, please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can fix the underlying inaccuracy!",
+      );
+    }
+
+    const fee =
+      bigintMax(BigInt(Math.ceil(minFee)), this.minimumFee) + this.feePadding;
+    // Update the variosu places we store the fee
+    // TODO: why is this duplicated in so many places? can we simplify?
+    this.fee = fee;
+    this.body.setFee(fee);
+    draft_tx.body().setFee(fee);
   }
 
   /**
    * Prepares the collateral for the transaction by selecting suitable UTXOs.
-   * Throws an error if suitable collateral cannot be found or if some inputs cannot be resolved.
+   * Throws an error if suitable collateral cannot be found or if some inputs cannot be resolved.{boolean}
    */
-  private prepareCollateral({ useCoinSelection = true }: UseCoinSelectionArgs) {
+  public prepareCollateral(
+    { useCoinSelection = true }: UseCoinSelectionArgs = {
+      useCoinSelection: true,
+    },
+  ) {
     if (!useCoinSelection) {
       // Retrieve provided collateral inputs
       const providedCollateral = [...this.collateralUtxos.values()].sort(
@@ -1318,7 +1375,7 @@ export class TxBuilder {
         if (selectedInputs.length > this.params.maxCollateralInputs) {
           // TODO: custom error type so dApps can respond to this specifically
           throw new Error(
-            `prepareCollateral: In order to satisfy the collateral requirement of ${requiredCollateral} lovelace, we would need more than ${this.params.maxCollateralInputs} collateral inputs.` +
+            `prepareCollateral: In order to satisfy the collateral requirement of ${requiredCollateral.toString()} lovelace, we would need more than ${this.params.maxCollateralInputs} collateral inputs.` +
               ` This can happen if the wallet consists of many UTxOs with a very small amount of ADA.`,
           );
         }
@@ -1372,9 +1429,11 @@ export class TxBuilder {
    *                 or if balancing the change output fails.
    * @returns {Promise<Transaction>} A new Transaction object with all components set and ready for submission.
    */
-  async complete({
-    useCoinSelection = true,
-  }: UseCoinSelectionArgs): Promise<Transaction> {
+  async complete(
+    { useCoinSelection = true }: UseCoinSelectionArgs = {
+      useCoinSelection: true,
+    },
+  ): Promise<Transaction> {
     // Execute pre-complete hooks
     if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
       for (const hook of this.preCompleteHooks) {
@@ -1394,96 +1453,33 @@ export class TxBuilder {
     }
     // TODO: Potential bug with js SDK where setting the network to testnet causes the tx body CBOR to fail
     // this.body.setNetworkId(this.networkId);
-    let evaluationFee: bigint = 0n;
     let iterations = 0;
     while (iterations < 10) {
+      console.log(`Starting iteration ${iterations}`);
       iterations += 1;
       // Gather all inputs from the transaction body.
       const inputs = [...this.body.inputs().values()];
-      // Perform initial checks and preparations for coin selection.
-      const draftTx = new Transaction(this.body, new TransactionWitnessSet());
-      this.calculateFees(draftTx);
-
-      let excessValue = this.getAssetDelta();
-
-      let spareInputs: TransactionUnspentOutput[] = [];
-      for (const utxo of this.utxos.values()) {
-        let hasInput = false;
-        for (const input of inputs) {
-          if (isEqualInput(input, utxo.input())) {
-            hasInput = true;
-            break;
-          }
-        }
-
-        if (!hasInput) {
-          spareInputs.push(utxo);
-        }
-      }
-
-      if (useCoinSelection) {
-        // Perform coin selection to cover any negative excess value.
-        const selectionResult = this.coinSelector(
-          spareInputs,
-          value.negate(value.negatives(excessValue)),
-        );
-        // Update the excess value and spare inputs based on the selection result.
-        excessValue = value.merge(excessValue, selectionResult.selectedValue);
-        spareInputs = selectionResult.leftoverInputs;
-        // Add selected inputs to the transaction.
-        if (selectionResult.selectedInputs.length > 0) {
-          for (const input of selectionResult.selectedInputs) {
-            this.addInput(input);
-          }
-        } else {
-          if (this.body.inputs().size() == 0) {
-            // TODO: this is a weird fallback coin selection; we should just let coin selection fail here,
-            // rather than trying to do something smart
-            if (!spareInputs[0]) {
-              throw new Error(
-                "No spare inputs available to add to the transaction",
-              );
-            }
-            // Select the input with the least number of different multiassets from spareInputs
-            const [inputWithLeastMultiAssets] = spareInputs.reduce(
-              ([minInput, minMultiAssetCount], currentInput) => {
-                const currentMultiAssetCount = value.assetTypes(
-                  currentInput.output().amount(),
-                );
-                return currentMultiAssetCount < minMultiAssetCount
-                  ? [currentInput, minMultiAssetCount]
-                  : [minInput, value.assetTypes(minInput.output().amount())];
-              },
-              [
-                spareInputs[0],
-                value.assetTypes(spareInputs[0].output().amount()),
-              ],
-            );
-            this.addInput(inputWithLeastMultiAssets);
-            // Remove the selected input from spareInputs
-            spareInputs = spareInputs.filter(
-              (input) => input !== inputWithLeastMultiAssets,
-            );
-          }
-        }
-        if (this.body.inputs().values().length == 0) {
-          throw new Error(
-            "TxBuilder: resolved empty input set, cannot construct transaction!",
-          );
-        }
-        // Ensure the coin selection has eliminated all negative values.
-        if (!value.empty(value.negatives(excessValue))) {
-          throw new Error(
-            "Unreachable! Somehow coin selection succeeded but still failed.",
-          );
-        }
-      }
-
-      // Balance the change output with the updated excess value.
-      this.adjustChangeOutput(excessValue);
 
       // Build the transaction witness set for fee estimation and script validation.
-      let witnessSet = this.buildPlaceholderWitnessSet();
+      // NOTE: redeemer budgets might be off, so they'll be corrected by the second time through the loop
+      const witnessSet = this.buildPlaceholderWitnessSet();
+
+      // Evaluate each of the scripts to determine a evaluation fee
+      if (this.redeemers.size() > 0) {
+        this.prepareCollateral({ useCoinSelection });
+        // Evaluating the scripts may update the budgets in the redeemer, so we do this early to get a good cost estimate
+        try {
+          // TODO: in practice, this seems to be *slightly* overestimating the CPU steps
+          await this.evaluate(new Transaction(this.body, witnessSet));
+        } catch (e) {
+          // TODO: just throw a custom error type with the traces + txCbor
+          console.log(
+            `An error occurred when trying to evaluate this transaction. Body CBOR: ${this.body.toCbor()}`,
+          );
+
+          throw e;
+        }
+      }
 
       // Verify and set the auxiliary data
       const auxiliaryData = this.auxiliaryData;
@@ -1501,129 +1497,159 @@ export class TxBuilder {
           );
         }
       }
-      draftTx.setAuxiliaryData(auxiliaryData);
 
-      if (this.redeemers.size() > 0) {
-        this.prepareCollateral({ useCoinSelection });
-        // Evaluate the scripts so we can get the execution costs
-        let newEvaluationFee = 0n;
-        try {
-          newEvaluationFee = await this.evaluate(draftTx);
-        } catch (e) {
-          // TODO: just throw a custom error type with the traces + txCbor
-          console.log(
-            `An error occurred when trying to evaluate this transaction. Full CBOR: ${draftTx.toCbor()}`,
-          );
-          throw e;
-        }
-        if (newEvaluationFee !== evaluationFee) {
-          evaluationFee = newEvaluationFee;
-          continue;
-        }
+      // Perform initial checks and preparations for coin selection.
+      this.calculateFees();
+      console.log(`Fee calculated to be ${this.fee.toString()}`);
+
+      // Compute the update script data hash now that we have the witness set
+      const scriptDataHash = this.getScriptDataHash(witnessSet);
+      if (scriptDataHash) {
+        // TODO: can we collapse draftTx into body?
+        this.body.setScriptDataHash(scriptDataHash);
       }
-      /*
-      let evaluationFee: bigint = 0n;
-      if (this.redeemers.size() > 0) {
-        this.prepareCollateral();
-        witnessSet = this.buildPlaceholderWitnessSet();
-        try {
-          evaluationFee = await this.evaluate(draftTx);
-        } catch (e) {
-          console.log(
-            `An error occurred when trying to evaluate this transaction. Full CBOR: ${draftTx.toCbor()}`,
-          );
-          throw e;
-        }
-        witnessSet.setRedeemers(this.redeemers);
-        draftTx.setWitnessSet(witnessSet);
-        this.calculateFees(draftTx);
-        if (this.fee > this.minimumFee) {
-          if (this.fee - evaluationFee > this.minimumFee) {
-            excessValue = value.merge(excessValue, new Value(-evaluationFee));
-            this.balanceChange(excessValue);
-          } else {
-            const feeChange = this.fee - this.minimumFee;
-            excessValue = value.merge(excessValue, new Value(-feeChange));
-            this.balanceChange(excessValue);
+
+      // Classify inputs as either part of the transaction, or "spare" for UTxO selection
+      let spareInputs: TransactionUnspentOutput[] = [];
+      for (const utxo of this.utxos.values()) {
+        let hasInput = false;
+        for (const input of inputs) {
+          if (isEqualInput(input, utxo.input())) {
+            hasInput = true;
+            break;
           }
         }
-      }
 
-      {
-        const scriptDataHash = this.getScriptDataHash(witnessSet);
-        if (scriptDataHash) {
-          this.body.setScriptDataHash(scriptDataHash);
+        if (!hasInput) {
+          spareInputs.push(utxo);
         }
       }
+      console.log(
+        `Identified ${spareInputs.length} spare inputs: ${stringifyBigint(spareInputs.map((si) => si.toCore()))}`,
+      );
 
-      if (this.feePadding > 0n) {
-        console.warn(
-          "A transaction was built using fee padding. This is useful for working around changes to fee calculation, but ultimately is a bandaid. If you find yourself needing this, please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can fix the underlying inaccuracy!",
-        );
+      // Compute the unspent surplus from the inputs, and the deficit spending from the outputs
+      // i.e. Sum(inputs) - (fee + Sum(outputs))
+      let surplusAndDeficits = this.getAssetSurplus();
+      const deficit = value.negatives(surplusAndDeficits);
+      console.log("SAD Coin: ", surplusAndDeficits.coin());
+      console.log("Deficit Coin: ", deficit.coin());
+      for (const output of this.body.outputs()) {
+        console.log(" - ", output.amount().coin());
       }
 
-      const oldEvaluationFee = evaluationFee;
-      const newTW = this.buildPlaceholderWitnessSet();
-      const redeemers = witnessSet.redeemers();
-      if (redeemers) newTW.setRedeemers(redeemers);
-      witnessSet = newTW;
-      draft_tx.setWitnessSet(witnessSet);
-      this.calculateFees(draft_tx);
-      excessValue = this.getPitch();
-
-      this.balanceChange(Value.fromCore(excessValue.toCore()));
-      const changeOutput = this.body.outputs()[this.changeOutputIndex!]!;
-      if (changeOutput && changeOutput.amount().coin() > excessValue.coin()) {
-        const excessDifference = value.merge(
-          changeOutput!.amount(),
-          value.negate(excessValue),
+      // If we have a deficit in ADA, try to pull that from the change UTxO, which may have been over-committed
+      if (deficit.coin() < 0n) {
+        const recoveredAmount = this.recoverLovelaceFromChangeOutput(
+          -deficit.coin(),
         );
+        console.log(
+          `Recovered ${recoveredAmount} lovelace from the change output.`,
+        );
+        deficit.setCoin(deficit.coin() + recoveredAmount);
+        surplusAndDeficits.setCoin(surplusAndDeficits.coin() + recoveredAmount);
+      }
+      console.log("SAD Coin: ", surplusAndDeficits.coin());
+      console.log("Deficit Coin: ", deficit.coin());
+      for (const output of this.body.outputs()) {
+        console.log(" - ", output.amount().coin());
+      }
 
-        if (!coinSelection) {
-          throw new Error(
-            `Change output has more than inputs provide. Missing coin: ${excessDifference.coin()}. Missing multiassets: ${JSON.stringify(excessDifference.multiasset()?.entries(), (_, v) => (typeof v === "bigint" ? v.toString() : v))}`,
+      if (!value.empty(surplusAndDeficits)) {
+        console.log(`Transaction is imbalanced`, surplusAndDeficits.toCore());
+        if (useCoinSelection && !value.empty(deficit)) {
+          console.log(`Running coin selection to satisfy imbalance`);
+          // Perform coin selection to cover any negative excess value.
+          const selectionResult = this.coinSelector(
+            spareInputs,
+            value.negate(deficit),
           );
-        }
-
-        // we must add more inputs, to cover the difference
-        if (spareInputs.length == 0) {
-          throw new Error("Tx builder could not satisfy coin selection");
-        }
-        const selectionResult = this.coinSelector(
-          spareInputs,
-          excessDifference,
-        );
-        spareInputs = selectionResult.leftoverInputs;
-        for (const input of selectionResult.selectedInputs) {
-          this.addInput(input);
-        }
-        draft_tx.setBody(this.body);
-        if (evaluationFee > 0) {
-          await this.evaluate(draft_tx);
-          witnessSet.setRedeemers(this.redeemers);
-          draft_tx.setWitnessSet(witnessSet);
-          this.calculateFees(draft_tx);
-          {
-            const scriptDataHash = this.getScriptDataHash(witnessSet);
-            if (scriptDataHash) {
-              this.body.setScriptDataHash(scriptDataHash);
+          console.log(
+            `Selected ${selectionResult.selectedInputs.length} inputs`,
+            selectionResult.selectedInputs.map((si) => si.input().toCore()),
+          );
+          spareInputs = selectionResult.leftoverInputs;
+          // Add selected inputs to the transaction.
+          if (selectionResult.selectedInputs.length > 0) {
+            for (const input of selectionResult.selectedInputs) {
+              this.addInput(input);
+            }
+          } else {
+            if (this.body.inputs().size() == 0) {
+              // TODO: this is a weird fallback coin selection; we should just let coin selection fail here,
+              // rather than trying to do something smart
+              if (!spareInputs[0]) {
+                throw new Error(
+                  "No spare inputs available to add to the transaction",
+                );
+              }
+              // Select the input with the least number of different multiassets from spareInputs
+              const [inputWithLeastMultiAssets] = spareInputs.reduce(
+                ([minInput, minMultiAssetCount], currentInput) => {
+                  const currentMultiAssetCount = value.assetTypes(
+                    currentInput.output().amount(),
+                  );
+                  return currentMultiAssetCount < minMultiAssetCount
+                    ? [currentInput, minMultiAssetCount]
+                    : [minInput, value.assetTypes(minInput.output().amount())];
+                },
+                [
+                  spareInputs[0],
+                  value.assetTypes(spareInputs[0].output().amount()),
+                ],
+              );
+              this.addInput(inputWithLeastMultiAssets);
+              // Remove the selected input from spareInputs
+              spareInputs = spareInputs.filter(
+                (input) => input !== inputWithLeastMultiAssets,
+              );
             }
           }
-          if (evaluationFee > oldEvaluationFee) {
-            continue;
+          if (this.body.inputs().values().length == 0) {
+            throw new Error(
+              "TxBuilder: resolved empty input set, cannot construct transaction!",
+            );
+          }
+          // excessValue is the unspent surplus from the inputs (or negative for the deficits)
+          // so we add in the selected value which should now represent the new assetDelta
+          // alternatively, this should just equal this.getAssetSurplus() now that we've added all
+          // these inputs
+          surplusAndDeficits = value.merge(
+            surplusAndDeficits,
+            selectionResult.selectedValue,
+          );
+          // Ensure the coin selection has eliminated all negative values.
+          if (!value.empty(value.negatives(surplusAndDeficits))) {
+            throw new Error(
+              "Unreachable! CoinSelection is expected to throw an error if it can't reach the goal, but it returned a selection result that didn't satisfy the goal.",
+            );
           }
         }
-      }
 
-      this.balanceCollateralChange();
-      draft_tx.setBody(this.body);
-      draft_size = final_size;
-      final_size = draft_tx.toCbor().length / 2;
-    */
+        // Balance the change output with the updated excess value.
+
+        this.adjustChangeOutput(surplusAndDeficits);
+      } else if (this.body.inputs().size() === 0) {
+        // A transaction must have at least one input, or it's vulnerable to replay attacks!
+        // For example, someone withdrawing 100 ADA staking rewards might be able to balance the transaction
+        // without providing inputs!
+        // This would allow someone in the future to submit this tx again to withdraw their staking rewards!
+        // So, we must add at least one input, and then do another round of balancing
+        if (spareInputs.length === 0) {
+          throw new Error(
+            "A transaction must have at least one input, but there are no available spare inputs to add.",
+          );
+        }
+        this.addInput(spareInputs[0]!);
+      } else {
+        break;
+      }
     }
+
+    console.log("Transaction succesfully balanced");
     // Return the fully constructed transaction.
-    tw.setVkeys(CborSet.fromCore([], VkeyWitness.fromCore));
-    return new Transaction(this.body, tw, this.auxiliaryData);
+    const finalWitnessSet = this.buildFinalWitnessSet([]);
+    return new Transaction(this.body, finalWitnessSet, this.auxiliaryData);
   }
 
   /**
