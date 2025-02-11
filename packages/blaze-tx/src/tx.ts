@@ -1372,7 +1372,7 @@ export class TxBuilder {
       this.body.setCollateralReturn(
         new TransactionOutput(
           this.collateralChangeAddress ?? this.changeAddress!,
-          value.merge(totalValue, value.negatives(new Value(requiredLovelace))),
+          value.merge(totalValue, value.negate(new Value(requiredLovelace))),
         ),
       );
     } else {

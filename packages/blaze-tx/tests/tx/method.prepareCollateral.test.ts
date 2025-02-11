@@ -75,18 +75,21 @@ describe("prepareCollateral method", () => {
       }),
     );
 
-    txBuilder.setChangeAddress(
-      Address.fromBech32(
-        "addr1z8ax5k9mutg07p2ngscu3chsauktmstq92z9de938j8nqau9fw8fnewskjvp0hg0yk89g5gq4c57nlz3tktjxy3avezqg4csxs",
-      ),
-    );
-    txBuilder.addReferenceInput(refUtxo);
-    txBuilder.addUnspentOutputs([userUtxo]);
+    txBuilder
+      .setChangeAddress(
+        Address.fromBech32(
+          "addr1z8ax5k9mutg07p2ngscu3chsauktmstq92z9de938j8nqau9fw8fnewskjvp0hg0yk89g5gq4c57nlz3tktjxy3avezqg4csxs",
+        ),
+      )
+      .addReferenceInput(refUtxo)
+      .addUnspentOutputs([userUtxo]);
+
+    // Calculate the fees beforehand since collateral depends on fee amount.
     txBuilder.calculateFees();
     txBuilder.prepareCollateral();
 
     expect(txBuilder.toCbor()).toEqual(
-      "84a5021a00030bfc0dd90102818258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a003cdaf0111a000473d012d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a0f5f6",
+      "84a5021a0002f7e00dd90102818258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a003cdaf0111a000473d012d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a0f5f6",
     );
   });
 
@@ -161,22 +164,25 @@ describe("prepareCollateral method", () => {
       }),
     );
 
-    txBuilder.setChangeAddress(
-      Address.fromBech32(
-        "addr1z8ax5k9mutg07p2ngscu3chsauktmstq92z9de938j8nqau9fw8fnewskjvp0hg0yk89g5gq4c57nlz3tktjxy3avezqg4csxs",
-      ),
-    );
-    txBuilder.addReferenceInput(refUtxo);
-    txBuilder.addUnspentOutputs([userUtxo1, userUtxo2]);
+    txBuilder
+      .setChangeAddress(
+        Address.fromBech32(
+          "addr1z8ax5k9mutg07p2ngscu3chsauktmstq92z9de938j8nqau9fw8fnewskjvp0hg0yk89g5gq4c57nlz3tktjxy3avezqg4csxs",
+        ),
+      )
+      .addReferenceInput(refUtxo)
+      .addUnspentOutputs([userUtxo1, userUtxo2]);
+
+    // Calculate fees beforehand since collateral depends on a set fee amount.
     txBuilder.calculateFees();
     txBuilder.prepareCollateral();
 
     expect(txBuilder.toCbor()).toEqual(
-      "84a5021a00030bfc0dd90102818258200ca317ce7d328c7d835f2bcf4ed8299ae239dd102560e99096be22549a21650e001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a00759e30111a000473d012d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a0f5f6",
+      "84a5021a0002f7e00dd90102818258200ca317ce7d328c7d835f2bcf4ed8299ae239dd102560e99096be22549a21650e001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a00759e30111a000473d012d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a0f5f6",
     );
   });
 
-  it("should prepare the collateral correctly when multiple utxos are present, and an explicit collateral is set", async () => {
+  it("should prepare the collateral correctly when multiple utxos are present, a collateral is manually set, and coin selection is set to false", async () => {
     /**
      * This test uses a successful SundaeSwap order cancellation as the test case.
      */
@@ -258,14 +264,14 @@ describe("prepareCollateral method", () => {
       .provideCollateral([userUtxo1]);
 
     txBuilder.calculateFees();
-    txBuilder.prepareCollateral();
+    txBuilder.prepareCollateral({ useCoinSelection: false });
 
     expect(txBuilder.toCbor()).toEqual(
-      "84a5021a00030bfc0dd90102818258200ca317ce7d328c7d835f2bcf4ed8299ae239dd102560e99096be22549a21650e001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a00759e30111a000473d012d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a0f5f6",
+      "84a5021a0002f7e00dd90102818258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a000f1430111a000473d012d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a0f5f6",
     );
   });
 
-  it("should prepare the collateral correclty when providing explicit collateral utxos", async () => {
+  it("should prepare the collateral correclty when providing explicit collateral utxos and coin selection is set to false", async () => {
     /**
      * This test uses a successful SundaeSwap order cancellation as the test case.
      */
@@ -347,7 +353,7 @@ describe("prepareCollateral method", () => {
     txBuilder.prepareCollateral({ useCoinSelection: false });
 
     expect(txBuilder.toCbor()).toEqual(
-      "84a5021a0002f7e00dd90102828258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f008258200ca317ce7d328c7d835f2bcf4ed8299ae239dd102560e99096be22549a21650e001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a008d9a00111a000473d012d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a0f5f6",
+      "84a5021a0002f7e00dd90102828258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f008258200ca317ce7d328c7d835f2bcf4ed8299ae239dd102560e99096be22549a21650e001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a00892630111a000473d012d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a0f5f6",
     );
   });
 });

@@ -174,7 +174,7 @@ describe("Transaction Building", () => {
       new Value(tx.body().fee()),
     );
 
-    console.log(tx.body().fee());
+    expect(tx.body().fee().toString()).toEqual("1992425");
 
     // console.log("Change: ", tx.body().outputs().at(1)?.amount().coin());
 

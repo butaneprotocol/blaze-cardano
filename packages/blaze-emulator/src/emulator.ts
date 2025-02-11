@@ -513,6 +513,7 @@ export class Emulator {
         collateralAmount - (body.collateralReturn()?.amount().coin() ?? 0n) <
         minCollateral
       ) {
+        console.log(collateralAmount, body.collateralReturn()?.amount().coin(), minCollateral);
         throw new Error("Collateral inputs are insufficient.");
       }
 
