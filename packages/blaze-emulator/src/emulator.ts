@@ -513,7 +513,11 @@ export class Emulator {
         collateralAmount - (body.collateralReturn()?.amount().coin() ?? 0n) <
         minCollateral
       ) {
-        console.log(collateralAmount, body.collateralReturn()?.amount().coin(), minCollateral);
+        console.log(
+          collateralAmount,
+          body.collateralReturn()?.amount().coin(),
+          minCollateral,
+        );
         throw new Error("Collateral inputs are insufficient.");
       }
 
@@ -710,14 +714,18 @@ export class Emulator {
         ),
       );
 
+    let refScriptFee = 0n;
     if (refInputs && this.params.minFeeReferenceScripts) {
       const refScripts = [...inputs, ...refInputs]
         .map((x) => this.getOutput(x)!.scriptRef())
         .filter((x) => x !== undefined);
-      fee += BigInt(
+
+      refScriptFee += BigInt(
         Math.ceil(calculateReferenceScriptFee(refScripts, this.params)),
       );
     }
+
+    fee += refScriptFee;
 
     if (fee > body.fee())
       throw new Error(

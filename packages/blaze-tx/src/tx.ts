@@ -184,16 +184,18 @@ export class TxBuilder {
       return;
     }
 
-    this.trace(msg, ...extra);
+    console.log(msg, ...extra);
   }
 
   /**
    * Hook to allow an existing instance to turn on tracing.
    *
    * @param {boolean} enabled Whether to enable tracing.
+   * @returns {TxBuilder}
    */
-  public enableTracing(enabled: boolean): void {
+  public enableTracing(enabled: boolean): TxBuilder {
     this.tracing = enabled;
+    return this;
   }
 
   private insertSorted<T extends string>(arr: T[], el: T) {
@@ -978,9 +980,46 @@ export class TxBuilder {
    * @throws {Error} If a required script cannot be resolved by its hash.
    */
   protected buildPlaceholderWitnessSet(): TransactionWitnessSet {
+    /**
+     * Recalculate required signatures/redeemers for each input so we know
+     * we're up to date on the expected amount.
+     */
+    this.body
+      .inputs()
+      .values()
+      .forEach((input) => {
+        const output = [...this.utxoScope.values()]
+          .find((utxo) => isEqualInput(utxo.input(), input))
+          ?.output();
+        if (!output) {
+          return;
+        }
+
+        const key = output.address().getProps().paymentPart;
+        if (!key) {
+          return;
+        }
+
+        if (key.type == CredentialType.ScriptHash) {
+          const nativeScript = output.scriptRef()?.asNative() !== undefined;
+          if (nativeScript) {
+            this.requiredNativeScripts.add(key.hash);
+          } else {
+            this.requiredPlutusScripts.add(key.hash);
+          }
+        } else {
+          this.requiredWitnesses.add(HashAsPubKeyHex(key.hash));
+        }
+      });
+
     const placeholderSignatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][] =
       Array.from(
-        { length: this.requiredWitnesses.size + this.additionalSigners },
+        {
+          length:
+            this.requiredWitnesses.size +
+            this.additionalSigners +
+            this.requiredPlutusScripts.size,
+        },
         (_, i) => [
           Ed25519PublicKeyHex(i.toString(16).padStart(64, "0")),
           Ed25519SignatureHex(i.toString(16).padStart(128, "0")),
@@ -1275,18 +1314,19 @@ export class TxBuilder {
    *
    * @param {Transaction} draft_tx - The draft transaction to calculate fees for.
    */
-  public calculateFees(
-    draft_tx: Transaction = new Transaction(
-      this.body,
-      this.buildPlaceholderWitnessSet(),
-      this.auxiliaryData,
-    ),
-  ) {
-    // Calculate the fee based on the transaction size and minimum fee parameters.
-    let minFee =
-      this.params.minFeeConstant +
-      (draft_tx.toCbor().length / 2) * this.params.minFeeCoefficient;
+  public calculateFees() {
+    const draft_ws = this.buildPlaceholderWitnessSet();
+    const draft_tx = new Transaction(this.body, draft_ws, this.auxiliaryData);
 
+    // Get the transaction's size in bytes.
+    const txSize = draft_tx.toCbor().length / 2;
+
+    // Calculate the fee based on the transaction size and minimum fee parameters.
+    let minFee = Math.ceil(
+      this.params.minFeeConstant + txSize * this.params.minFeeCoefficient,
+    );
+
+    let refScriptFee = 0;
     if (this.params.minFeeReferenceScripts) {
       // The minFeeReferenceScripts parameter governs the cost of *reference scripts*, not to be confused with *reference inputs*
       // The cardano-node parses the reference script, even if it's on the inputs, and so that extra parsing cost needs to be paid for
@@ -1295,6 +1335,7 @@ export class TxBuilder {
         ...draft_tx.body().inputs().values(),
         ...(draft_tx.body().referenceInputs()?.values() ?? []),
       ];
+
       const refScripts = allInputs
         .map((x) =>
           utxoScope
@@ -1303,21 +1344,27 @@ export class TxBuilder {
             .scriptRef(),
         )
         .filter((x) => x !== undefined);
+
       if (refScripts.length > 0) {
-        minFee += calculateReferenceScriptFee(refScripts, this.params);
+        refScriptFee += calculateReferenceScriptFee(refScripts, this.params);
       }
     }
 
+    minFee += Math.ceil(refScriptFee);
+
+    let evalFee = 0;
     const redeemers = draft_tx.witnessSet().redeemers();
     if (redeemers) {
       for (const redeemer of redeemers.values()) {
         const exUnits = redeemer.exUnits();
 
         // Calculate the fee contribution from this redeemer and add it to the total fee.
-        minFee += this.params.prices.memory * Number(exUnits.mem());
-        minFee += this.params.prices.steps * Number(exUnits.steps());
+        evalFee += this.params.prices.memory * Number(exUnits.mem());
+        evalFee += this.params.prices.steps * Number(exUnits.steps());
       }
     }
+
+    minFee += Math.ceil(evalFee);
 
     // Warn if we're using minimumFee or feePadding, as the goal is for blaze to perfectly estimate the transaction fees
     if (this.minimumFee > 0n || this.feePadding > 0n) {
@@ -1332,7 +1379,6 @@ export class TxBuilder {
     // TODO: why is this duplicated in so many places? can we simplify?
     this.fee = fee;
     this.body.setFee(fee);
-    draft_tx.body().setFee(fee);
   }
 
   /**
@@ -1344,6 +1390,13 @@ export class TxBuilder {
       useCoinSelection: true,
     },
   ) {
+    if (this.redeemers.size() === 0) {
+      this.trace(
+        "prepareCollateral: No redeemers, skipping collateral preparation.",
+      );
+      return;
+    }
+
     if (!useCoinSelection) {
       // Retrieve provided collateral inputs
       const providedCollateral = [...this.collateralUtxos.values()].sort(
@@ -1355,10 +1408,21 @@ export class TxBuilder {
         providedCollateral.map((pc) => pc.output().amount()),
       );
 
-      const requiredLovelace = calculateRequiredCollateral(
+      const requiredCollateral = calculateRequiredCollateral(
         this.fee,
         this.params.collateralPercentage,
       );
+
+      const collateralReturn = value.merge(
+        totalValue,
+        value.negate(new Value(requiredCollateral)),
+      );
+
+      this.trace(`Preparing collateral...`, {
+        requiredCollateral,
+        providedCollateral: totalValue.coin(),
+        collateralReturn: collateralReturn.coin(),
+      });
 
       const tis = CborSet.fromCore([], TransactionInput.fromCore);
       tis.setValues(
@@ -1368,16 +1432,16 @@ export class TxBuilder {
         }),
       );
       this.body.setCollateral(tis);
-      this.body.setTotalCollateral(requiredLovelace);
+      this.body.setTotalCollateral(requiredCollateral);
       this.body.setCollateralReturn(
         new TransactionOutput(
           this.collateralChangeAddress ?? this.changeAddress!,
-          value.merge(totalValue, value.negate(new Value(requiredLovelace))),
+          collateralReturn,
         ),
       );
     } else {
       const requiredCollateral = calculateRequiredCollateral(
-        this.fee,
+        this.body.fee(),
         this.params.collateralPercentage,
       );
       this.body.setTotalCollateral(requiredCollateral);
@@ -1389,6 +1453,12 @@ export class TxBuilder {
         providedCollateral,
         new Value(requiredCollateral),
       );
+
+      this.trace(`Preparing collateral with coin selection...`, {
+        requiredCollateral,
+        providedCollateral: providedCollateral.coin(),
+        collateralReturn: collateralReturn.coin(),
+      });
 
       if (providedCollateral.coin() < requiredCollateral) {
         // TODO: filter this.utxos to exclude those already on the inputs
@@ -1480,6 +1550,7 @@ export class TxBuilder {
     // TODO: Potential bug with js SDK where setting the network to testnet causes the tx body CBOR to fail
     // this.body.setNetworkId(this.networkId);
     let iterations = 0;
+    let lastFee = 0n;
     while (iterations < 10) {
       this.trace(`Starting iteration ${iterations}`);
       iterations += 1;
@@ -1489,23 +1560,6 @@ export class TxBuilder {
       // Build the transaction witness set for fee estimation and script validation.
       // NOTE: redeemer budgets might be off, so they'll be corrected by the second time through the loop
       const witnessSet = this.buildPlaceholderWitnessSet();
-
-      // Evaluate each of the scripts to determine a evaluation fee
-      if (this.redeemers.size() > 0) {
-        this.prepareCollateral({ useCoinSelection });
-        // Evaluating the scripts may update the budgets in the redeemer, so we do this early to get a good cost estimate
-        try {
-          // TODO: in practice, this seems to be *slightly* overestimating the CPU steps
-          await this.evaluate(new Transaction(this.body, witnessSet));
-        } catch (e) {
-          // TODO: just throw a custom error type with the traces + txCbor
-          this.trace(
-            `An error occurred when trying to evaluate this transaction. Body CBOR: ${this.body.toCbor()}`,
-          );
-
-          throw e;
-        }
-      }
 
       // Verify and set the auxiliary data
       const auxiliaryData = this.auxiliaryData;
@@ -1521,6 +1575,29 @@ export class TxBuilder {
           throw new Error(
             "TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash",
           );
+        }
+      }
+
+      // Evaluate each of the scripts to determine a evaluation fee
+      if (
+        this.redeemers.size() > 0 &&
+        this.body.inputs().size() > 0 &&
+        this.body.outputs().length > 0
+      ) {
+        // Evaluating the scripts may update the budgets in the redeemer, so we do this early to get a good cost estimate
+        const tx = new Transaction(this.body, witnessSet, this.auxiliaryData);
+
+        try {
+          // TODO: in practice, this seems to be *slightly* overestimating the CPU steps
+          this.trace(`Evaluating transaction CBOR: ${tx.toCbor()}`);
+          await this.evaluate(tx);
+        } catch (e) {
+          // TODO: just throw a custom error type with the traces + txCbor
+          this.trace(
+            `An error occurred when trying to evaluate the above transaction CBOR.`,
+          );
+
+          throw e;
         }
       }
 
@@ -1580,6 +1657,9 @@ export class TxBuilder {
       for (const output of this.body.outputs()) {
         this.trace(" - ", output.amount().coin());
       }
+
+      // Prepare and balance the collateral.
+      this.prepareCollateral({ useCoinSelection });
 
       if (!value.empty(surplusAndDeficits)) {
         this.trace(`Transaction is imbalanced`, surplusAndDeficits.toCore());
@@ -1667,9 +1747,13 @@ export class TxBuilder {
           );
         }
         this.addInput(spareInputs[0]!);
-      } else {
+      }
+
+      if (lastFee === this.fee) {
         break;
       }
+
+      lastFee = BigInt(this.fee);
     }
 
     this.trace("Transaction succesfully balanced");
