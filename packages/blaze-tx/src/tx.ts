@@ -283,7 +283,7 @@ export class TxBuilder {
 
   /**
    * Sets the donation to the treasury in lovelace
-   * 
+   *
    * @param {bigint} donation - The amount of lovelace to donate back to the treasury
    * @returns {TxBuilder} The same transaction builder
    */
