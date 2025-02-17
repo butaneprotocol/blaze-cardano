@@ -282,6 +282,17 @@ export class TxBuilder {
   }
 
   /**
+   * Sets the donation to the treasury in lovelace
+   * 
+   * @param {bigint} donation - The amount of lovelace to donate back to the treasury
+   * @returns {TxBuilder} The same transaction builder
+   */
+  setDonation(donation: bigint): TxBuilder {
+    this.body.setDonation(donation);
+    return this;
+  }
+
+  /**
    * Sets an additional padding to add onto the transactions.
    * Use this only in emergencies, and please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can correct the fee calculation!
    *
