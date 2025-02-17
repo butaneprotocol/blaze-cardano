@@ -955,6 +955,8 @@ export class TxBuilder {
    * @throws {Error} If a corresponding UTxO for an input cannot be found.
    */
   private getPitch(spareAmount: bigint = 0n): Value {
+    const donationAmount = this.body.donation() ?? 0n;
+
     // Calculate withdrawal amounts.
     let withdrawalAmount = 0n;
     const withdrawals = this.body.withdrawals();
@@ -965,7 +967,7 @@ export class TxBuilder {
     }
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(withdrawalAmount);
-    let outputValue = new Value(bigintMax(this.fee, this.minimumFee));
+    let outputValue = new Value(donationAmount + bigintMax(this.fee, this.minimumFee));
     const mintValue = new Value(0n, this.body.mint());
 
     // Aggregate the total input value from all inputs.
@@ -1691,6 +1693,7 @@ export class TxBuilder {
       try {
         evaluationFee = await this.evaluate(draft_tx);
       } catch (e) {
+        console.error(JSON.stringify(e, null, 2));
         console.log(
           `An error occurred when trying to evaluate this transaction. Full CBOR: ${draft_tx.toCbor()}`,
         );
