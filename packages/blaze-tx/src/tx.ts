@@ -967,7 +967,9 @@ export class TxBuilder {
     }
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(withdrawalAmount);
-    let outputValue = new Value(donationAmount + bigintMax(this.fee, this.minimumFee));
+    let outputValue = new Value(
+      donationAmount + bigintMax(this.fee, this.minimumFee),
+    );
     const mintValue = new Value(0n, this.body.mint());
 
     // Aggregate the total input value from all inputs.
@@ -1055,7 +1057,9 @@ export class TxBuilder {
     }
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(withdrawalAmount);
-    let outputValue = new Value(donationAmount + bigintMax(this.fee, this.minimumFee));
+    let outputValue = new Value(
+      donationAmount + bigintMax(this.fee, this.minimumFee),
+    );
     const mintValue = new Value(0n, this.body.mint());
 
     // Aggregate the total input value from all inputs.
