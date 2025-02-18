@@ -16,6 +16,23 @@ import {
 
 import { TxBuilder } from "../../src";
 
+class Test_TxBuilder extends TxBuilder {
+  constructor() {
+    super(hardCodedProtocolParams);
+  }
+
+  public test_prepareCollateral(
+    { useCoinSelection }: { useCoinSelection: boolean } = {
+      useCoinSelection: true,
+    },
+  ) {
+    // Calculate fees manually since we aren't using complete.
+    super.calculateFees();
+    super.prepareCollateral({ useCoinSelection });
+    return this;
+  }
+}
+
 const changeAddress = Address.fromBech32(
   "addr1z8ax5k9mutg07p2ngscu3chsauktmstq92z9de938j8nqau9fw8fnewskjvp0hg0yk89g5gq4c57nlz3tktjxy3avezqg4csxs",
 );
@@ -47,7 +64,7 @@ describe("prepareCollateral method", () => {
     /**
      * This test uses a successful SundaeSwap order cancellation as the test case.
      */
-    const txBuilder = new TxBuilder(hardCodedProtocolParams);
+    const txBuilder = new Test_TxBuilder();
     txBuilder.setNetworkId(NetworkId.Mainnet);
 
     const cancelScript = Script.newPlutusV2Script(
@@ -82,8 +99,7 @@ describe("prepareCollateral method", () => {
       .addInput(orderUtxo, voidRedeemer);
 
     // Calculate the fees beforehand since collateral depends on fee amount.
-    txBuilder.calculateFees();
-    txBuilder.prepareCollateral();
+    txBuilder.test_prepareCollateral();
 
     expect(txBuilder.toCbor()).toEqual(
       "84a600d90102818258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f00021a001a69240dd90102818258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a0019b10a111a00279db612d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a200d9010281825820000000000000000000000000000000000000000000000000000000000000000058400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005a182000082d87a80821a00d59f801b00000002540be400f5f6",
@@ -94,7 +110,7 @@ describe("prepareCollateral method", () => {
     /**
      * This test uses a successful SundaeSwap order cancellation as the test case.
      */
-    const txBuilder = new TxBuilder(hardCodedProtocolParams);
+    const txBuilder = new Test_TxBuilder();
     txBuilder.setNetworkId(NetworkId.Mainnet);
 
     const cancelScript = Script.newPlutusV2Script(
@@ -160,9 +176,7 @@ describe("prepareCollateral method", () => {
       .addUnspentOutputs([orderUtxo, userUtxo])
       .addInput(orderUtxo, voidRedeemer);
 
-    // Calculate fees beforehand since collateral depends on a set fee amount.
-    txBuilder.calculateFees();
-    txBuilder.prepareCollateral();
+    txBuilder.test_prepareCollateral();
 
     expect(txBuilder.toCbor()).toEqual(
       "84a600d90102818258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f00021a001a69240dd90102818258200ca317ce7d328c7d835f2bcf4ed8299ae239dd102560e99096be22549a21650e001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a0052744a111a00279db612d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a200d9010281825820000000000000000000000000000000000000000000000000000000000000000058400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005a182000082d87a80821a00d59f801b00000002540be400f5f6",
@@ -173,7 +187,7 @@ describe("prepareCollateral method", () => {
     /**
      * This test uses a successful SundaeSwap order cancellation as the test case.
      */
-    const txBuilder = new TxBuilder(hardCodedProtocolParams);
+    const txBuilder = new Test_TxBuilder();
     txBuilder.setNetworkId(NetworkId.Mainnet);
 
     const cancelScript = Script.newPlutusV2Script(
@@ -222,8 +236,7 @@ describe("prepareCollateral method", () => {
       .provideCollateral([userUtxo])
       .addInput(orderUtxo, voidRedeemer);
 
-    txBuilder.calculateFees();
-    txBuilder.prepareCollateral({ useCoinSelection: false });
+    txBuilder.test_prepareCollateral({ useCoinSelection: false });
 
     expect(txBuilder.toCbor()).toEqual(
       "84a600d90102818258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f00021a001a69240dd90102818258200ca317ce7d328c7d835f2bcf4ed8299ae239dd102560e99096be22549a21650e001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a0052744a111a00279db612d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a200d9010281825820000000000000000000000000000000000000000000000000000000000000000058400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005a182000082d87a80821a00d59f801b00000002540be400f5f6",
@@ -234,7 +247,7 @@ describe("prepareCollateral method", () => {
     /**
      * This test uses a successful SundaeSwap order cancellation as the test case.
      */
-    const txBuilder = new TxBuilder(hardCodedProtocolParams);
+    const txBuilder = new Test_TxBuilder();
     txBuilder.setNetworkId(NetworkId.Mainnet);
 
     const cancelScript = Script.newPlutusV2Script(
@@ -282,8 +295,7 @@ describe("prepareCollateral method", () => {
       .provideCollateral([orderUtxo, userUtxo])
       .addInput(orderUtxo, voidRedeemer);
 
-    txBuilder.calculateFees();
-    txBuilder.prepareCollateral({ useCoinSelection: false });
+    txBuilder.test_prepareCollateral({ useCoinSelection: false });
 
     expect(txBuilder.toCbor()).toEqual(
       "84a600d90102818258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f00021a001a69240dd90102828258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f008258200ca317ce7d328c7d835f2bcf4ed8299ae239dd102560e99096be22549a21650e001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a0093c30a111a00279db612d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a200d9010281825820000000000000000000000000000000000000000000000000000000000000000058400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005a182000082d87a80821a00d59f801b00000002540be400f5f6",
@@ -291,7 +303,7 @@ describe("prepareCollateral method", () => {
   });
 
   it("should not prepare collateral if there are no redeemers", () => {
-    const txBuilder = new TxBuilder(hardCodedProtocolParams);
+    const txBuilder = new Test_TxBuilder();
     txBuilder.setNetworkId(NetworkId.Mainnet);
 
     const userUtxo = new TransactionUnspentOutput(
@@ -316,8 +328,7 @@ describe("prepareCollateral method", () => {
       .addUnspentOutputs([userUtxo])
       .lockLovelace(orderUtxo.output().address(), 1_000_000n, orderDatum);
 
-    txBuilder.calculateFees();
-    txBuilder.prepareCollateral();
+    txBuilder.test_prepareCollateral();
 
     expect(txBuilder.toCbor()).toEqual(
       "84a20181a300583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d6644011a001e2fb2028201d81858e1d8799fd8799f581c2f36866691fa75a9aab66dec99f7cc2d297ca09e34d9ce68cde04773ffd8799f581c854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d6644ff1a00138800d8799fd8799fd8799f581c96a76d0f179b25ff5d20435ef093361a7be63ca504b1962f8723d741ffd8799fd8799fd8799f581c854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d6644ffffffffd87980ffd87a9f9f40401a000f4240ff9f581c9a9693a9a37912a5097918f97918d15240c92ab729a0b7c4aa144d774653554e4441451a05af931cffff43d87980ff021a000293e5a0f5f6",

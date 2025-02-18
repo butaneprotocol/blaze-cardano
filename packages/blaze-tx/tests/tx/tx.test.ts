@@ -671,4 +671,36 @@ describe("Transaction Building", () => {
     expect(txComplete.body().inputs().values().length).toEqual(2);
     expect(txComplete.body().outputs().length).toEqual(2);
   });
+
+  it("should build a transaction correctly when including a donation to the treasury", async () => {
+    // $hosky
+    const testAddress = Address.fromBech32(
+      "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
+    );
+    const tx = new TxBuilder(hardCodedProtocolParams)
+      .setNetworkId(NetworkId.Testnet)
+      .setChangeAddress(testAddress)
+      .addUnspentOutputs([
+        new TransactionUnspentOutput(
+          new TransactionInput(
+            TransactionId(
+              "7f11d088de6c214c25dbeff5a98ef5cb4f34741c062ead606859bee58ae0794d",
+            ),
+            0n,
+          ),
+          new TransactionOutput(testAddress, value.makeValue(1_000_000n)),
+        ),
+        new TransactionUnspentOutput(
+          new TransactionInput(TransactionId("0".repeat(64)), 0n),
+          new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
+        ),
+      ])
+      .payAssets(testAddress, value.makeValue(48_708_900n))
+      .setDonation(1_000_000n);
+
+    const txComplete = await tx.complete();
+    expect(txComplete.toCbor()).toEqual(
+      "84a400d90102828258200000000000000000000000000000000000000000000000000000000000000000008258207f11d088de6c214c25dbeff5a98ef5cb4f34741c062ead606859bee58ae0794d00018282583901f44f8751f03d767ba51c4fe988ed289b7ced4c7e832223d44b31bcce2341d750452778e9a0962600af8e05eef6697c83df9f492103bc8b531a02e73d2482583901f44f8751f03d767ba51c4fe988ed289b7ced4c7e832223d44b31bcce2341d750452778e9a0962600af8e05eef6697c83df9f492103bc8b531a00111b57021a00029805161a000f4240a0f5f6",
+    );
+  });
 });

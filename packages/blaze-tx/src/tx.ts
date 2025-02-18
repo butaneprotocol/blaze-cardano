@@ -316,6 +316,17 @@ export class TxBuilder {
   }
 
   /**
+   * Sets the donation to the treasury in lovelace
+   *
+   * @param {bigint} donation - The amount of lovelace to donate back to the treasury
+   * @returns {TxBuilder} The same transaction builder
+   */
+  setDonation(donation: bigint): TxBuilder {
+    this.body.setDonation(donation);
+    return this;
+  }
+
+  /**
    * Sets an additional padding to add onto the transactions.
    * Use this only in emergencies, and please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can correct the fee calculation!
    *
@@ -1012,6 +1023,61 @@ export class TxBuilder {
         }
       });
 
+    for (const cert of this.body.certs()?.values() || []) {
+      switch (cert.kind()) {
+        case 0: // Stake Registration
+          this.requiredWitnesses.add(
+            HashAsPubKeyHex(cert.asStakeRegistration()!.stakeCredential().hash),
+          );
+          break;
+        case 1: // Stake Deregistration
+          this.requiredWitnesses.add(
+            HashAsPubKeyHex(
+              cert.asStakeDeregistration()!.stakeCredential().hash,
+            ),
+          );
+          break;
+        case 2: // Stake Delegation
+          this.requiredWitnesses.add(
+            HashAsPubKeyHex(cert.asStakeDelegation()!.stakeCredential().hash),
+          );
+          break;
+        case 3: // Pool Registration
+          this.requiredWitnesses.add(
+            Ed25519PublicKeyHex(
+              cert.asPoolRegistration()!.poolParameters().operator(),
+            ),
+          );
+          break;
+        case 4: // Pool Retirement
+          this.requiredWitnesses.add(
+            Ed25519PublicKeyHex(cert.asPoolRetirement()!.poolKeyHash()),
+          );
+          break;
+        case 16: // dRep Registration
+          this.requiredWitnesses.add(
+            HashAsPubKeyHex(
+              cert.asRegisterDelegateRepresentativeCert()!.credential().hash,
+            ),
+          );
+          break;
+        case 17: // dRep Unregstration
+          this.requiredWitnesses.add(
+            HashAsPubKeyHex(
+              cert.asUnregisterDelegateRepresentativeCert()!.credential().hash,
+            ),
+          );
+          break;
+        case 18: // dRep Update
+          this.requiredWitnesses.add(
+            HashAsPubKeyHex(
+              cert.asUpdateDelegateRepresentativeCert()!.credential().hash,
+            ),
+          );
+          break;
+      }
+    }
+
     const placeholderSignatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][] =
       Array.from(
         {
@@ -1048,7 +1114,9 @@ export class TxBuilder {
     }
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(withdrawalAmount);
-    let outputValue = new Value(bigintMax(this.fee, this.minimumFee));
+    let outputValue = new Value(
+      bigintMax(this.fee, this.minimumFee) + (this.body.donation() ?? 0n),
+    );
     const mintValue = new Value(0n, this.body.mint());
 
     // Aggregate the total input value from all inputs.
@@ -1314,7 +1382,7 @@ export class TxBuilder {
    *
    * @param {Transaction} draft_tx - The draft transaction to calculate fees for.
    */
-  public calculateFees() {
+  protected calculateFees() {
     const draft_ws = this.buildPlaceholderWitnessSet();
     const draft_tx = new Transaction(this.body, draft_ws, this.auxiliaryData);
 
@@ -1385,7 +1453,7 @@ export class TxBuilder {
    * Prepares the collateral for the transaction by selecting suitable UTXOs.
    * Throws an error if suitable collateral cannot be found or if some inputs cannot be resolved.{boolean}
    */
-  public prepareCollateral(
+  protected prepareCollateral(
     { useCoinSelection = true }: UseCoinSelectionArgs = {
       useCoinSelection: true,
     },
