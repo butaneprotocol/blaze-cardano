@@ -1047,7 +1047,7 @@ export class TxBuilder {
   }
 
   private balanced() {
-    let donationAmount = this.body.donation() ?? 0n;
+    const donationAmount = this.body.donation() ?? 0n;
     let withdrawalAmount = 0n;
     const withdrawals = this.body.withdrawals();
     if (withdrawals !== undefined) {
