@@ -1045,6 +1045,7 @@ export class TxBuilder {
   }
 
   private balanced() {
+    let donationAmount = this.body.donation() ?? 0n;
     let withdrawalAmount = 0n;
     const withdrawals = this.body.withdrawals();
     if (withdrawals !== undefined) {
@@ -1054,7 +1055,7 @@ export class TxBuilder {
     }
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(withdrawalAmount);
-    let outputValue = new Value(bigintMax(this.fee, this.minimumFee));
+    let outputValue = new Value(donationAmount + bigintMax(this.fee, this.minimumFee));
     const mintValue = new Value(0n, this.body.mint());
 
     // Aggregate the total input value from all inputs.
