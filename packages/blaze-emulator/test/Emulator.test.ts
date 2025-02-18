@@ -78,7 +78,7 @@ describe("Emulator", () => {
     expect(out.amount().coin()).toEqual(2_000_000_000n);
   });
 
-  test("Should be able to spend from a script", async () => {
+  test("Should be able to spend from a script only", async () => {
     const tx = await blaze
       .newTransaction()
       .lockAssets(
@@ -136,7 +136,6 @@ describe("Emulator", () => {
     //   refIn,
     //   emulator.getOutput(refIn)!
     // );
-
     const tx = await blaze
       .newTransaction()
       .lockAssets(

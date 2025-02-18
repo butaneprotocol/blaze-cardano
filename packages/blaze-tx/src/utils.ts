@@ -2,7 +2,6 @@ import {
   blake2b_256,
   CborReader,
   CborWriter,
-  hardCodedProtocolParams,
   type ProtocolParameters,
   type Script,
   type TransactionInput,
@@ -12,10 +11,9 @@ import {
 import type {
   Redeemers,
   TransactionWitnessSet,
-  HexBlob,
-  Hash32ByteBase16,
   Costmdls,
 } from "@blaze-cardano/core";
+import type { IScriptData } from "./types";
 
 export function getScriptSize(script: Script): number {
   const cborReader = new CborReader(script.toCbor());
@@ -68,13 +66,25 @@ export function calculateReferenceScriptFee(
  */
 export function calculateMinAda(
   output: TransactionOutput,
-  coinsPerUtxoByte?: number,
+  coinsPerUtxoByte: number,
 ): bigint {
   const byteLength = BigInt(output.toCbor().length / 2);
-  return (
-    BigInt(coinsPerUtxoByte || hardCodedProtocolParams.coinsPerUtxoByte) *
-    (byteLength + 160n)
-  );
+  return BigInt(coinsPerUtxoByte) * (byteLength + 160n);
+}
+
+/**
+ * Calculate the required "collateral" the a transaction must put up if it is running smart contracts.
+ * This is to prevent DDOS attacks with failing scripts, and must be some percentage above the total fee of the script.
+ *
+ * @param {bigint} fee The full transaction fee
+ * @param {number} collateralPercentage The protocol parameter defining the buffer above the fee that is required
+ * @returns {bigint}
+ */
+export function calculateRequiredCollateral(
+  fee: bigint,
+  collateralPercentage: number,
+): bigint {
+  return BigInt(Math.ceil(Number(fee) * (collateralPercentage / 100)));
 }
 
 /**
@@ -121,7 +131,9 @@ export function sortLargestFirst(
 export const isEqualUTxO = (
   self: TransactionUnspentOutput,
   that: TransactionUnspentOutput,
-) => isEqualInput(self.input(), that.input());
+) =>
+  isEqualInput(self.input(), that.input()) &&
+  isEqualOutput(self.output(), that.output());
 
 /**
  * Utility function to compare the equality of two inputs.
@@ -129,16 +141,21 @@ export const isEqualUTxO = (
  * @param {TransactionInput} that
  * @returns {boolean}
  */
-export const isEqualInput = (self: TransactionInput, that: TransactionInput) =>
-  self.transactionId() === that.transactionId() &&
-  self.index() === that.index();
-export interface IScriptData {
-  redeemersEncoded: string;
-  datumsEncoded: string | undefined;
-  costModelsEncoded: string;
-  hashedData: HexBlob;
-  scriptDataHash: Hash32ByteBase16;
-}
+export const isEqualInput = (
+  self: TransactionInput,
+  that: TransactionInput,
+): boolean => self.toCbor() === that.toCbor();
+
+/**
+ * Utility function to compare the equality of two outputs.
+ * @param {TransactionOutput} self
+ * @param {TransactionOutput} that
+ * @returns {boolean}
+ */
+export const isEqualOutput = (
+  self: TransactionOutput,
+  that: TransactionOutput,
+): boolean => self.toCbor() === that.toCbor();
 
 /**
  * Calculates the correct script data hash for a transaction

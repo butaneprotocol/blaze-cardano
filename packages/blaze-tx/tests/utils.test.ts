@@ -37,7 +37,12 @@ describe("Fee Calculation", () => {
       value.makeValue(100_000n),
     );
 
-    expect(calculateMinAda(output).toString()).toEqual("969750");
+    expect(
+      calculateMinAda(
+        output,
+        hardCodedProtocolParams.coinsPerUtxoByte,
+      ).toString(),
+    ).toEqual("969750");
 
     expect(calculateMinAda(output, 5000).toString()).toEqual("1125000");
   });

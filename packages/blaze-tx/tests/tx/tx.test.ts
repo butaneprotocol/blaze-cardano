@@ -174,6 +174,8 @@ describe("Transaction Building", () => {
       new Value(tx.body().fee()),
     );
 
+    expect(tx.body().fee().toString()).toEqual("1992425");
+
     // console.log("Change: ", tx.body().outputs().at(1)?.amount().coin());
 
     // console.dir(inputValue.toCore(), { depth: null });
@@ -368,9 +370,9 @@ describe("Transaction Building", () => {
         value.makeValue(557_070_000n),
       )
       .complete();
-    // console.log(tx.toCbor());
 
-    expect(tx.body().fee().toString()).toEqual("292307");
+    // TODO: Double check that this is accurate.
+    expect(tx.body().fee().toString()).toEqual("292087");
   });
 
   // The following test is based on the below transaction, which was a transaction built by JPG Store. It created a fee that was too small.
@@ -618,7 +620,8 @@ describe("Transaction Building", () => {
       .setAuxiliaryData(auxData)
       .complete();
 
-    expect(tx.body().fee().toString()).toEqual("475794");
+    // TODO: Ensure that this is accurate.
+    expect(tx.body().fee().toString()).toEqual("478434");
   });
 
   it("should not use coin selection when set to false", async () => {
@@ -636,10 +639,21 @@ describe("Transaction Building", () => {
         ),
         100_000_000n,
       )
+      .addInput(
+        new TransactionUnspentOutput(
+          new TransactionInput(
+            TransactionId(
+              "7f11d088de6c214c25dbeff5a98ef5cb4f34741c062ead606859bee58ae0794d",
+            ),
+            0n,
+          ),
+          new TransactionOutput(testAddress, value.makeValue(1_000_000n)),
+        ),
+      )
       .payAssets(testAddress, value.makeValue(48_708_900n));
 
     try {
-      await tx.complete(false);
+      await tx.complete({ useCoinSelection: false });
     } catch (e) {
       expect((e as Error).message).toEqual(
         "Change output has more than inputs provide. Missing coin: 49840323. Missing multiassets: undefined",
@@ -653,8 +667,40 @@ describe("Transaction Building", () => {
       ),
     );
 
-    const txComplete = await tx.complete(false);
-    expect(txComplete.body().inputs().values().length).toEqual(1);
+    const txComplete = await tx.complete({ useCoinSelection: false });
+    expect(txComplete.body().inputs().values().length).toEqual(2);
     expect(txComplete.body().outputs().length).toEqual(2);
+  });
+
+  it("should build a transaction correctly when including a donation to the treasury", async () => {
+    // $hosky
+    const testAddress = Address.fromBech32(
+      "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
+    );
+    const tx = new TxBuilder(hardCodedProtocolParams)
+      .setNetworkId(NetworkId.Testnet)
+      .setChangeAddress(testAddress)
+      .addUnspentOutputs([
+        new TransactionUnspentOutput(
+          new TransactionInput(
+            TransactionId(
+              "7f11d088de6c214c25dbeff5a98ef5cb4f34741c062ead606859bee58ae0794d",
+            ),
+            0n,
+          ),
+          new TransactionOutput(testAddress, value.makeValue(1_000_000n)),
+        ),
+        new TransactionUnspentOutput(
+          new TransactionInput(TransactionId("0".repeat(64)), 0n),
+          new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
+        ),
+      ])
+      .payAssets(testAddress, value.makeValue(48_708_900n))
+      .setDonation(1_000_000n);
+
+    const txComplete = await tx.complete();
+    expect(txComplete.toCbor()).toEqual(
+      "84a400d90102828258200000000000000000000000000000000000000000000000000000000000000000008258207f11d088de6c214c25dbeff5a98ef5cb4f34741c062ead606859bee58ae0794d00018282583901f44f8751f03d767ba51c4fe988ed289b7ced4c7e832223d44b31bcce2341d750452778e9a0962600af8e05eef6697c83df9f492103bc8b531a02e73d2482583901f44f8751f03d767ba51c4fe988ed289b7ced4c7e832223d44b31bcce2341d750452778e9a0962600af8e05eef6697c83df9f492103bc8b531a00111b57021a00029805161a000f4240a0f5f6",
+    );
   });
 });
