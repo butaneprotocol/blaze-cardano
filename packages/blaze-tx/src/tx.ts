@@ -282,6 +282,17 @@ export class TxBuilder {
   }
 
   /**
+   * Sets the donation to the treasury in lovelace
+   *
+   * @param {bigint} donation - The amount of lovelace to donate back to the treasury
+   * @returns {TxBuilder} The same transaction builder
+   */
+  setDonation(donation: bigint): TxBuilder {
+    this.body.setDonation(donation);
+    return this;
+  }
+
+  /**
    * Sets an additional padding to add onto the transactions.
    * Use this only in emergencies, and please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can correct the fee calculation!
    *
@@ -944,6 +955,8 @@ export class TxBuilder {
    * @throws {Error} If a corresponding UTxO for an input cannot be found.
    */
   private getPitch(spareAmount: bigint = 0n): Value {
+    const donationAmount = this.body.donation() ?? 0n;
+
     // Calculate withdrawal amounts.
     let withdrawalAmount = 0n;
     const withdrawals = this.body.withdrawals();
@@ -954,7 +967,9 @@ export class TxBuilder {
     }
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(withdrawalAmount);
-    let outputValue = new Value(bigintMax(this.fee, this.minimumFee));
+    let outputValue = new Value(
+      donationAmount + bigintMax(this.fee, this.minimumFee),
+    );
     const mintValue = new Value(0n, this.body.mint());
 
     // Aggregate the total input value from all inputs.
@@ -1032,6 +1047,7 @@ export class TxBuilder {
   }
 
   private balanced() {
+    const donationAmount = this.body.donation() ?? 0n;
     let withdrawalAmount = 0n;
     const withdrawals = this.body.withdrawals();
     if (withdrawals !== undefined) {
@@ -1041,7 +1057,9 @@ export class TxBuilder {
     }
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(withdrawalAmount);
-    let outputValue = new Value(bigintMax(this.fee, this.minimumFee));
+    let outputValue = new Value(
+      donationAmount + bigintMax(this.fee, this.minimumFee),
+    );
     const mintValue = new Value(0n, this.body.mint());
 
     // Aggregate the total input value from all inputs.

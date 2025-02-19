@@ -723,7 +723,7 @@ export class Emulator {
         `Insufficient transaction fee. Supplied: ${body.fee()}, Required: ${fee}`,
       );
 
-    netValue = V.sub(netValue, new Value(body.fee()));
+    netValue = V.sub(netValue, new Value(body.fee() + (body.donation() ?? 0n)));
     if (!V.empty(netValue))
       throw new Error(
         `Value not conserved. Leftover Value: ${netValue.coin()}, ${Array.from(
