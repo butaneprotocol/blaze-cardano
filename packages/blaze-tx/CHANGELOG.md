@@ -1,5 +1,38 @@
 # @blaze-cardano/tx
 
+## 0.10.6
+
+### Patch Changes
+
+- 2b4c1a6: Adds a new Coin Selection algorithm as an export (while keeping the default selection algo intact for now).
+
+## 0.10.5
+
+### Patch Changes
+
+- 1d7ba70: Added the ability to opt-out of coin selection on complete.
+
+## 0.10.4
+
+### Patch Changes
+
+- bd6c264: zero change outputs
+- bd6c264: Zero change outputs
+
+## 0.10.3
+
+### Patch Changes
+
+- Updated dependencies [18a36c1]
+  - @blaze-cardano/core@0.6.1
+  - @blaze-cardano/vm@0.1.7
+
+## 0.10.2
+
+### Patch Changes
+
+- 96ab592: Error handling improvements for missing redeemers.
+
 ## 0.10.1
 
 ### Patch Changes

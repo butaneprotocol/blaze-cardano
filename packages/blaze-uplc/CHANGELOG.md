@@ -1,5 +1,43 @@
 # @blaze-cardano/uplc
 
+## 0.2.6
+
+### Patch Changes
+
+- Updated dependencies [2b4c1a6]
+  - @blaze-cardano/tx@0.10.6
+
+## 0.2.5
+
+### Patch Changes
+
+- Updated dependencies [1d7ba70]
+  - @blaze-cardano/tx@0.10.5
+
+## 0.2.4
+
+### Patch Changes
+
+- 5472a55: Export decoder/encoder
+- Updated dependencies [bd6c264]
+- Updated dependencies [bd6c264]
+  - @blaze-cardano/tx@0.10.4
+
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [18a36c1]
+  - @blaze-cardano/core@0.6.1
+  - @blaze-cardano/tx@0.10.3
+
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [96ab592]
+  - @blaze-cardano/tx@0.10.2
+
 ## 0.2.1
 
 ### Patch Changes

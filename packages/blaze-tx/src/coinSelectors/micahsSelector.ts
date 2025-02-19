@@ -1,16 +1,7 @@
 import type { TransactionUnspentOutput } from "@blaze-cardano/core";
 import { Value, UTxOSelectionError } from "@blaze-cardano/core";
-import * as value from "./value";
-
-/**
- * The result of a coin selection operation.
- * It includes the selected inputs, the total value of the selected inputs, and the remaining inputs.
- */
-export type SelectionResult = {
-  selectedInputs: TransactionUnspentOutput[];
-  selectedValue: Value;
-  inputs: TransactionUnspentOutput[];
-};
+import * as value from "../value";
+import type { CoinSelectionFunc, SelectionResult } from "../types";
 
 /**
  * The wide selection algorithm is a multiasset coin selector that doesn't care about magnitude.
@@ -59,7 +50,11 @@ function wideSelection(
       acc = value.merge(acc, bestStep[1]);
     }
   }
-  return { selectedInputs, selectedValue: acc, inputs: availableInputs };
+  return {
+    selectedInputs,
+    selectedValue: acc,
+    leftoverInputs: availableInputs,
+  };
 }
 
 /**
@@ -110,7 +105,11 @@ function deepSelection(
       acc = value.merge(acc, bestStep[1]);
     }
   }
-  return { selectedInputs, selectedValue: acc, inputs: availableInputs };
+  return {
+    selectedInputs,
+    selectedValue: acc,
+    leftoverInputs: availableInputs,
+  };
 }
 
 /**
@@ -120,15 +119,15 @@ function deepSelection(
  * @param {Value} dearth - The value to be covered by the selected inputs.
  * @returns {SelectionResult} The result of the coin selection operation.
  */
-export function micahsSelector(
-  inputs: TransactionUnspentOutput[],
-  dearth: Value,
-): SelectionResult {
+export const micahsSelector: CoinSelectionFunc = (
+  inputs,
+  dearth,
+): SelectionResult => {
   const wideResult = wideSelection(inputs, dearth);
   const remainingDearth = value.positives(
     value.sub(dearth, wideResult.selectedValue),
   );
-  const deepResult = deepSelection(wideResult.inputs, remainingDearth);
+  const deepResult = deepSelection(wideResult.leftoverInputs, remainingDearth);
   const finalDearth = value.positives(
     value.sub(remainingDearth, deepResult.selectedValue),
   );
@@ -145,6 +144,6 @@ export function micahsSelector(
       wideResult.selectedValue,
       deepResult.selectedValue,
     ),
-    inputs: deepResult.inputs,
+    leftoverInputs: deepResult.leftoverInputs,
   };
-}
+};

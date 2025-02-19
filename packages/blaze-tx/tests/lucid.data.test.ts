@@ -225,7 +225,6 @@ test("Roundtrip data any", () => {
     Data.to(datum, Data.Any() as unknown as Data),
     Data.Any() as unknown as Data,
   );
-  console.log(newDatum);
   expect(datum).toEqual(newDatum);
 });
 

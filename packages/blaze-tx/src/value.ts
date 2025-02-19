@@ -25,6 +25,27 @@ export function merge(a: Value, b: Value): Value {
 }
 
 /**
+ * Sums up a list of values into a single value instance.
+ *
+ * @param {...Value} values - An array of values.
+ * @returns {Value} - The resulting Value object after summing up.
+ */
+export function sum(values: Value[]): Value {
+  const newValue = new Value(0n);
+  const newMultiAsset: TokenMap = new Map();
+  values.forEach((value) => {
+    newValue.setCoin(newValue.coin() + value.coin());
+    value.multiasset()?.forEach((amount, id) => {
+      const existingValue = newMultiAsset.get(id) || 0n;
+      newMultiAsset.set(id, existingValue + amount);
+    });
+  });
+
+  newValue.setMultiasset(newMultiAsset);
+  return newValue;
+}
+
+/**
  * Negates the coin and multiasset values of a Value object.
  *
  * @param {Value} v - The Value object to negate.

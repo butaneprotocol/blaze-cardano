@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.5.1
+
+### Patch Changes
+
+- 7e47a79: fix: validator title handling
+
 ## 0.5.0
 
 ### Minor Changes
