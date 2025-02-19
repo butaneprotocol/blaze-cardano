@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.4.0
+
+### Minor Changes
+
+- b00a663: created hydra provider
+
 ## 0.3.6
 
 ### Patch Changes
