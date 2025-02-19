@@ -1387,6 +1387,12 @@ export class TxBuilder {
     const draft_tx = new Transaction(this.body, draft_ws, this.auxiliaryData);
 
     // Get the transaction's size in bytes.
+    // NOTE: This will over-estimate the fee by 176 lovelace,
+    // which is derived from wrapping the vkeywitnesses in a 258 tag.
+    // This produces 4 extra bytes in the transaction, but some wallets (after signing)
+    // Don't include this wrapper, and thus *can* accept a lower fee.
+    // However, nodes in the future will not support this and will require a 258 tag wrapper,
+    // so we leave this alone and accept the slightly higher fee for future compatability.
     const txSize = draft_tx.toCbor().length / 2;
 
     // Calculate the fee based on the transaction size and minimum fee parameters.
