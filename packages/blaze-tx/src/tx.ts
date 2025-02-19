@@ -1822,7 +1822,7 @@ export class TxBuilder {
     const vals = [...certs.values(), delegationCertificate];
     certs.setValues(vals);
     this.body.setCerts(certs);
-    let credentialHash = delegator.toCore().hash;
+    const credentialHash = delegator.toCore().hash;
     const insertIdx = this.insertSorted(
       this.consumedDelegationHashes,
       credentialHash,
@@ -1908,7 +1908,7 @@ export class TxBuilder {
 
   /**
    * Adds a certificate to deregister a stake account.
-   * 
+   *
    * @param {Credential} credential - The credential to deregister.
    * @returns {TxBuilder} The updated transaction builder.
    */
@@ -1923,7 +1923,7 @@ export class TxBuilder {
     const vals = [...certs.values(), deregistrationCertificate];
     certs.setValues(vals);
     this.body.setCerts(certs);
-    let credentialHash = credential.toCore().hash;
+    const credentialHash = credential.toCore().hash;
     // TODO: is this insertSorted mechanism a lurking bug, since the order might change?
     const insertIdx = this.insertSorted(
       this.consumedDeregisterHashes,
