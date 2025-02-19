@@ -1,5 +1,17 @@
 # @blaze-cardano/tx
 
+## 0.11.0
+
+### Minor Changes
+
+- 745c11d: Adds a setDonation function for treasury donations
+
+### Patch Changes
+
+- Updated dependencies [dd4395a]
+  - @blaze-cardano/core@0.6.2
+  - @blaze-cardano/vm@0.1.8
+
 ## 0.10.6
 
 ### Patch Changes

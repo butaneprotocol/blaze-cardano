@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.6.2
+
+### Patch Changes
+
+- dd4395a: Add updated plutus v3 cost models for the emulator
+
 ## 0.6.1
 
 ### Patch Changes
