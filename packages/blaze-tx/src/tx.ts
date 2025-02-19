@@ -1698,7 +1698,6 @@ export class TxBuilder {
       try {
         evaluationFee = await this.evaluate(draft_tx);
       } catch (e) {
-        console.error(JSON.stringify(e, null, 2));
         console.log(
           `An error occurred when trying to evaluate this transaction. Full CBOR: ${draft_tx.toCbor()}`,
         );
