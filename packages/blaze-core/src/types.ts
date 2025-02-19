@@ -145,6 +145,9 @@ export type PoolId = OpaqueString<"PoolId">;
 export const StakeRegistration = C.Serialization.StakeRegistration;
 export type StakeRegistration = C.Serialization.StakeRegistration;
 
+export const StakeDeregistration = C.Serialization.StakeDeregistration;
+export type StakeDeregistration = C.Serialization.StakeDeregistration;
+
 export const StakeDelegation = C.Serialization.StakeDelegation;
 export type StakeDelegation = C.Serialization.StakeDelegation;
 
