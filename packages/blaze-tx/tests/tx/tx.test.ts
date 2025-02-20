@@ -21,9 +21,9 @@ import {
   Metadata,
   Ed25519KeyHashHex,
 } from "@blaze-cardano/core";
+import { makeUplcEvaluator } from "@blaze-cardano/vm";
 import * as value from "../../src/value";
 import { TxBuilder } from "../../src/tx";
-import { makeUplcEvaluator } from "@blaze-cardano/vm";
 
 function flatten<U>(iterator: IterableIterator<U> | undefined): U[] {
   if (!iterator) {

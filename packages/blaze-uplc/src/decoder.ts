@@ -137,7 +137,6 @@ export class UPLCDecoder extends FlatDecoder {
     } else if (dataType == "ByteString") {
       return this.#decodeByteString();
     } else if (dataType == "String") {
-      console.warn("ByteString needs to be decoded to string");
       return this.#decodeByteString();
     } else if (dataType == "Unit") {
       return 0n;

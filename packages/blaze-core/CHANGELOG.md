@@ -1,5 +1,17 @@
 # @blaze-cardano/core
 
+## 0.6.3
+
+### Patch Changes
+
+- 4d7bfa6: Add support for deregistering stake credentials and fixes delegation for scripts
+
+## 0.6.2
+
+### Patch Changes
+
+- dd4395a: Add updated plutus v3 cost models for the emulator
+
 ## 0.6.1
 
 ### Patch Changes

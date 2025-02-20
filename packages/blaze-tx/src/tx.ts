@@ -55,6 +55,7 @@ import {
   blake2b_256,
   RedeemerTag,
   StakeRegistration,
+  StakeDeregistration,
   getBurnAddress,
   setInConwayEra,
 } from "@blaze-cardano/core";
@@ -140,8 +141,10 @@ export class TxBuilder {
   private additionalSigners = 0;
   private evaluator?: Evaluator;
 
+  private consumedDelegationHashes: Hash28ByteBase16[] = [];
   private consumedMintHashes: Hash28ByteBase16[] = [];
   private consumedWithdrawalHashes: Hash28ByteBase16[] = [];
+  private consumedDeregisterHashes: Hash28ByteBase16[] = [];
   private consumedSpendInputs: string[] = [];
   private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
   private feePadding: bigint = 0n; // A padding to add onto the fee; use only in emergencies, and open a ticket so we can fix the fee calculation please!
@@ -1862,14 +1865,27 @@ export class TxBuilder {
     const vals = [...certs.values(), delegationCertificate];
     certs.setValues(vals);
     this.body.setCerts(certs);
+    const credentialHash = delegator.toCore().hash;
+    const insertIdx = this.insertSorted(
+      this.consumedDelegationHashes,
+      credentialHash,
+    );
     const delegatorCredential = delegator.toCore();
     if (delegatorCredential.type == CredentialType.ScriptHash) {
       if (redeemer) {
         this.requiredPlutusScripts.add(delegatorCredential.hash);
         const redeemers = [...this.redeemers.values()];
+        for (const redeemer of redeemers) {
+          if (
+            redeemer.tag() == RedeemerTag.Reward &&
+            redeemer.index() >= BigInt(insertIdx)
+          ) {
+            redeemer.setIndex(redeemer.index() + 1n);
+          }
+        }
         redeemers.push(
           Redeemer.fromCore({
-            index: 256, // todo: fix
+            index: insertIdx,
             purpose: RedeemerPurpose["certificate"],
             data: redeemer.toCore(),
             executionUnits: {
@@ -1934,11 +1950,56 @@ export class TxBuilder {
   }
 
   /**
-   * Adds a certificate to deregister a staker.
-   * @throws {Error} Method not implemented.
+   * Adds a certificate to deregister a stake account.
+   *
+   * @param {Credential} credential - The credential to deregister.
+   * @returns {TxBuilder} The updated transaction builder.
    */
-  addDeregisterStake() {
-    throw new Error("Method not implemented.");
+  addDeregisterStake(credential: Credential, redeemer?: PlutusData) {
+    const stakeDeregistration: StakeDeregistration = new StakeDeregistration(
+      credential.toCore(),
+    );
+    const deregistrationCertificate: Certificate =
+      Certificate.newStakeDeregistration(stakeDeregistration);
+    const certs =
+      this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const vals = [...certs.values(), deregistrationCertificate];
+    certs.setValues(vals);
+    this.body.setCerts(certs);
+    const credentialHash = credential.toCore().hash;
+    // TODO: is this insertSorted mechanism a lurking bug, since the order might change?
+    const insertIdx = this.insertSorted(
+      this.consumedDeregisterHashes,
+      credentialHash,
+    );
+    // TODO: this should probably be based on whether the credential is a script credential
+    if (redeemer) {
+      this.requiredPlutusScripts.add(credentialHash);
+      const redeemers = [...this.redeemers.values()];
+      for (const redeemer of redeemers) {
+        if (
+          redeemer.tag() == RedeemerTag.Reward &&
+          redeemer.index() >= BigInt(insertIdx)
+        ) {
+          redeemer.setIndex(redeemer.index() + 1n);
+        }
+      }
+      // Add the redeemer to the list of redeemers with execution units based on transaction parameters.
+      redeemers.push(
+        Redeemer.fromCore({
+          index: insertIdx,
+          purpose: RedeemerPurpose["certificate"], // TODO: Confirm the purpose of the redeemer.
+          data: redeemer.toCore(),
+          executionUnits: {
+            memory: this.params.maxExecutionUnitsPerTransaction.memory,
+            steps: this.params.maxExecutionUnitsPerTransaction.steps,
+          },
+        }),
+      );
+      // Update the transaction with the new list of redeemers.
+      this.redeemers.setValues(redeemers);
+    }
+    return this;
   }
 
   /**
