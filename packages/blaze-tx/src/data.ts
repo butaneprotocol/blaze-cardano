@@ -344,6 +344,7 @@ export const Data = {
 };
 
 export type Exact<T> = T extends TSchema ? Static<T> : T;
+
 function to<T>(data: Exact<T>, type: T, recType?: string): PlutusData;
 function to(data: Data, type?: never): PlutusData;
 function to<T extends TSchema>(
