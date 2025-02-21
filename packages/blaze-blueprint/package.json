@@ -16,6 +16,7 @@
   "scripts": {
     "build": "tsup src/index.ts src/cli.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
+    "dev:cli": "tsup src/index.ts src/cli.ts --format esm,cjs --watch --dts",
     "lint": "eslint .",
     "test": "cd test && tsx blueprint_generate.ts && cd .. && jest",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",

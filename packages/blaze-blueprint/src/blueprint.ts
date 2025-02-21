@@ -41,6 +41,8 @@ import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`;
 
   pdataImport = `import { type PlutusData } from "@blaze-cardano/core";`;
 
+  refTypeNames = new Map<string, string>();
+
   useSDK() {
     this.imports = `// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
@@ -52,20 +54,20 @@ const Script = Core.Script;`;
 const PlutusData = Core.PlutusData;`;
   }
 
-  static resolveSchema(schema: Declaration<Schema> | Annotated<Schema>, definitions: Record<string, Annotated<Schema>>): Schema | Annotated<Schema> {
+  static inlineSchema(schema: Declaration<Schema> | Annotated<Schema>, definitions: Record<string, Annotated<Schema>>, stack: string[] = []): Schema | Annotated<Schema> {
     if ("items" in schema) {
       if (schema.items instanceof Array) {
         let items: Schema[] = schema.items;
         return {
           ...schema,
           items: items.map((item) =>
-            this.resolveSchema(item, definitions),
+            this.inlineSchema(item, definitions, stack),
           ),
         };
       } else {
         return {
           ...schema,
-          items: this.resolveSchema(schema.items, definitions),
+          items: this.inlineSchema(schema.items, definitions, stack),
         };
       }
     } else if ("anyOf" in schema) {
@@ -74,7 +76,7 @@ const PlutusData = Core.PlutusData;`;
         anyOf: schema.anyOf.map(a => ({
           ...a,
           fields: a.fields.map(field => ({
-            ...this.resolveSchema(field, definitions),
+            ...this.inlineSchema(field, definitions, stack),
             title: field.title
               ? Generator.snakeToCamel(field.title)
               : undefined,
@@ -84,8 +86,8 @@ const PlutusData = Core.PlutusData;`;
     } else if ("keys" in schema && "values" in schema) {
       return {
         ...schema,
-        keys: this.resolveSchema(schema.keys, definitions),
-        values: this.resolveSchema(schema.values, definitions),
+        keys: this.inlineSchema(schema.keys, definitions, stack),
+        values: this.inlineSchema(schema.values, definitions, stack),
       };
     } else {
       if ("$ref" in schema) {
@@ -99,10 +101,15 @@ const PlutusData = Core.PlutusData;`;
         if (definitions[refKey] === undefined) {
           throw new Error(`Schema refers to ${schema.$ref}, which doesn't appear in the definitions`)
         }
+        if (stack.includes(refKey)) {
+          console.warn(`Schema ${refKey} is recursive, which isn't supported quite yet; buttoming out with any.`);
+          return `any`;
+        }
 
-        const resolved = this.resolveSchema(
+        const resolved = this.inlineSchema(
           definitions[refKey],
           definitions,
+          [refKey, ...stack],
         );
         return resolved;
       } else {
@@ -111,7 +118,7 @@ const PlutusData = Core.PlutusData;`;
     }
   }
 
-  schemaToType(schema: Schema | Annotated<Schema> | Data | Annotated<Data> | Annotated<Constructor>): string {
+  schemaToType(schema: Declaration<Schema> | Annotated<Declaration<Schema>> | Data | Annotated<Data> | Annotated<Constructor>, definitions: Record<string, Annotated<Schema>>): string {
     if (!schema) throw new Error("Could not generate type.");
 
     if ("dataType" in schema) {
@@ -129,7 +136,7 @@ const PlutusData = Core.PlutusData;`;
             return `{${schema.fields
               .map(
                 field =>
-                  `${field.title || "wrapper"}: ${this.schemaToType(field)}`,
+                  `${field.title || "wrapper"}: ${this.schemaToType(field, definitions)}`,
               )
               .join(";")}}`;
           }
@@ -137,15 +144,15 @@ const PlutusData = Core.PlutusData;`;
         case "list": {
           if (schema.items instanceof Array) {
             let items: Schema[] = schema.items;
-            let itemTypes = items.map(item => this.schemaToType(item));
+            let itemTypes = items.map(item => this.schemaToType(item, definitions));
             return `[${itemTypes.join(", ")}]`;
           } else {
-            return `Array<${this.schemaToType(schema.items)}>`;
+            return `Array<${this.schemaToType(schema.items, definitions)}>`;
           }
         }
         case "map": {
-          let keysType = this.schemaToType(schema.keys);
-          let valuesType = this.schemaToType(schema.values);
+          let keysType = this.schemaToType(schema.keys, definitions);
+          let valuesType = this.schemaToType(schema.values, definitions);
           return `Map<${keysType}, ${valuesType}>`;
         }
         case undefined: {
@@ -159,7 +166,7 @@ const PlutusData = Core.PlutusData;`;
     } else if ("anyOf" in schema) {
       // When enum has only one entry it's a single constructor/record object
       if (schema.anyOf.length === 1) {
-        return this.schemaToType(schema.anyOf[0]);
+        return this.schemaToType(schema.anyOf[0], definitions);
       }
       if (Generator.isUnit(schema)) {
         throw new Error("unreachable?")
@@ -168,7 +175,7 @@ const PlutusData = Core.PlutusData;`;
         return "boolean";
       }
       if (Generator.isNullable(schema)) {
-        return `${this.schemaToType(schema.anyOf[0].fields[0]!)} | null`;
+        return `${this.schemaToType(schema.anyOf[0].fields[0]!, definitions)} | null`;
       }
       return schema.anyOf
         .map(entry => {
@@ -178,10 +185,10 @@ const PlutusData = Core.PlutusData;`;
           const key = entry.title;
           let valueType: string;
           if (entry.fields[0]?.title) {
-            let fields = entry.fields.map(f => `${f.title}: ${this.schemaToType(f)}`).join(", ");
+            let fields = entry.fields.map(f => `${f.title}: ${this.schemaToType(f, definitions)}`).join(", ");
             valueType = `{ ${fields} }`;
           } else {
-            let elementType = entry.fields.map(this.schemaToType).join(", ");
+            let elementType = entry.fields.map(f => this.schemaToType(f, definitions)).join(", ");
             valueType = `[ ${elementType} ]`;
           }
 
@@ -189,7 +196,23 @@ const PlutusData = Core.PlutusData;`;
           }
         )
         .join(" | ");
+    } else if ("$ref" in schema) {
+      let fullName = schema.$ref.replaceAll("~1", "/");
+      let refKey = fullName.split("#/definitions/")[1];
+      if (!refKey) {
+        throw new Error(`Schema has an undefined or empty string $ref`);
+      }
+      if (definitions[refKey] === undefined) {
+        throw new Error(`Schema refers to ${schema.$ref} (${refKey}), which doesn't appear in the definitions`)
+      }
+      if (this.refTypeNames.has(refKey)) {
+        return this.refTypeNames.get(refKey)!;
+      }
+      return this.schemaToType(definitions[refKey], definitions);
+    } else {
+      return "any";
     }
+    console.log(schema, definitions);
     throw new Error("Could not type cast data.");
   }
 
@@ -223,8 +246,8 @@ const PlutusData = Core.PlutusData;`;
     );
   }
 
-  static snakeToCamel(s: string | undefined): string {
-    if (!s) return "";
+  static snakeToCamel(s: string | undefined): string | undefined {
+    if (!s) return undefined;
     const withUnderscore = s.charAt(0) === "_" ? s.charAt(0) : "";
     return (
       withUnderscore +
@@ -236,7 +259,8 @@ const PlutusData = Core.PlutusData;`;
     );
   }
 
-  static upperFirst(s: string): string {
+  static upperFirst(s: string | undefined): string | undefined {
+    if (!s) return undefined;
     const withUnderscore = s.charAt(0) === "_" ? s.charAt(0) : "";
     return (
       withUnderscore +
@@ -273,6 +297,25 @@ export async function generateBlueprint({
   const definitions = plutusJson.definitions;
 
   const generator = new Generator();
+  for (const key of Object.keys(definitions)) {
+    // TODO: it would be nice to have a better sense of what definitions we should emit and which not
+    if (key.startsWith("List")) {
+      continue;
+    }
+    if (key.startsWith("Pair")) {
+      continue;
+    }
+    const typeName = key.replaceAll("/", "_");
+    generator.refTypeNames.set(key, typeName);
+  }
+  console.log(generator.refTypeNames);
+
+  const typeDefinitionParts = [];
+  for (const [key, typeName] of generator.refTypeNames.entries()) {
+    const value = definitions[key]!;
+    typeDefinitionParts.push(`export type ${typeName} = ${generator.schemaToType(value, definitions)};`);
+  }
+
   if (useSdk) {
     generator.useSDK();
   }
@@ -285,61 +328,93 @@ export async function generateBlueprint({
       const processedTitle = title.replace("/", "_");
       const [a, b, c] = processedTitle.split(".");
       return (
-        Generator.upperFirst(Generator.snakeToCamel(a)) +
-        Generator.upperFirst(Generator.snakeToCamel(b)) +
-        Generator.upperFirst(Generator.snakeToCamel(c))
+        Generator.upperFirst(Generator.snakeToCamel(a))! +
+        Generator.upperFirst(Generator.snakeToCamel(b))! +
+        Generator.upperFirst(Generator.snakeToCamel(c))!
       );
     })();
     const datum = validator.datum;
-    const datumTitle = datum ? Generator.snakeToCamel(datum.title) : null;
-    const datumSchema: Schema | Annotated<Schema> | null = datum
-      ? Generator.resolveSchema(datum.schema, definitions)
-      : null;
+    const datumTitle = Generator.snakeToCamel(datum?.title);
+    const datumSchema = datum?.schema;
 
     const redeemer = validator.redeemer;
-    const redeemerTitle = redeemer.title
-      ? Generator.snakeToCamel(redeemer.title)
-      : null;
-    const redeemerSchema = Generator.resolveSchema(
-      redeemer.schema,
-      definitions,
-    );
+    const redeemerTitle = Generator.snakeToCamel(redeemer?.title);
+    const redeemerSchema = redeemer?.schema;
 
     const params = validator.parameters || [];
+
+    const paramNames = params.map(param => Generator.snakeToCamel(param.title));
     const paramsSchema = {
       dataType: "list",
-      items: params.map((param) =>
-        Generator.resolveSchema(param.schema, definitions),
-      ),
+      items: params.map(param => Generator.inlineSchema(param.schema, definitions)),
     };
-
-    const paramsArgs = params.map((param, index) => [
-      Generator.snakeToCamel(param.title),
-      generator.schemaToType(paramsSchema.items[index]!),
-    ]);
+    const paramTypes = params.map(param => generator.schemaToType(param.schema, definitions));
+    const paramsArgs = params.map((_, idx) => {
+      const name = paramNames[idx]!;
+      const paramType = paramTypes[idx]!;
+      return `${name}: ${paramType}`;
+    });
 
     const script = validator.compiledCode;
+    const constructorArgsString = `${paramsArgs.join(",\n  ")}`
+    const parts = [];
 
-    return `export interface ${name} {
-    new (${paramsArgs.map((param) => param.join(":")).join(",")}): Script;${datum ? `\n${datumTitle}: ${generator.schemaToType(datumSchema!)};` : ""
-      }
-    ${redeemerTitle ? `${redeemerTitle}: ${generator.schemaToType(redeemerSchema)};` : ""}
-  };
+    parts.push(
+      `export interface ${name} {`,
+      `  scriptBytes: string;`,
+      `  new(${constructorArgsString}): Script;`,
+    );
+    if (!!datum) {
+      parts.push(`  ${datumTitle}: ${generator.schemaToType(datumSchema!, definitions)};`);
+    }
+    if (!!redeemer) {
+      parts.push(`  ${redeemerTitle}: ${generator.schemaToType(redeemerSchema, definitions)};`);
+    }
+    parts.push('}');
 
-  export const ${name} = Object.assign(
-    function (${paramsArgs.map((param) => param.join(":")).join(",")}) {${paramsArgs.length > 0
-        ? `return cborToScript(applyParamsToScript("${script}", [${paramsArgs
-          .map((param) => param[0])
-          .join(",")}], ${JSON.stringify(
-            paramsSchema,
-          )} as any), ${plutusVersion});`
-        : `return cborToScript("${script}", ${plutusVersion});`
-      }},
-    ${datum ? `{${datumTitle}: ${JSON.stringify(datumSchema)}},` : ""}
-    ${redeemerTitle ? `{${redeemerTitle}: ${JSON.stringify(redeemerSchema)}},` : ""}
-  ) as unknown as ${name};`;
+    parts.push(
+      `export const ${name} = Object.assign(`,
+      `  function (${paramsArgs.join(",")}) {`,
+    )
+    if (paramsArgs.length > 0) {
+      parts.push(
+        `    return cborToScript(`,
+        `      applyParamsToScript(`,
+        `        ${name}.scriptBytes, `,
+        `        [${paramNames.join(", ")}],`,
+        `        ${JSON.stringify(paramsSchema)} as any,`,
+        `      ),`,
+        `      ${plutusVersion},`,
+        `    );`
+      );
+    } else {
+      parts.push(
+        `    return cborToScript("${script}", ${plutusVersion});`,
+      );
+    }
+    parts.push('  },');
+    parts.push(
+      `  { scriptBytes: "${script}" },`,
+    )
+    if (!!datum) {
+      parts.push(`  { ${datumTitle}: ${JSON.stringify(Generator.inlineSchema(datumSchema!, definitions))} },`)
+    }
+    if (!!redeemer) {
+      parts.push(`  { ${redeemerTitle}: ${JSON.stringify(Generator.inlineSchema(redeemerSchema!, definitions))} },`)
+    }
+    parts.push(
+      `) as unknown as ${name};\n`
+    )
+
+    return parts.join("\n");
   });
 
-  const plutus = generator.imports + "\n\n" + validators.join("\n\n");
+  const plutus = [
+    generator.imports,
+    "\n",
+    typeDefinitionParts.join("\n"),
+     "\n",
+     validators.join("\n\n")
+  ].join('\n');
   await fs.writeFile(outfile, plutus);
 }
