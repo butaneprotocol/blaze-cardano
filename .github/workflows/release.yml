@@ -50,8 +50,9 @@ jobs:
       - name: 🚀 Snapshot Release (non-main branches)
         if: github.ref != 'refs/heads/main'
         run: |
-          # Setup npm authentication
+          # Setup npm authentication with scope
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
+          echo "@blaze-cardano:registry=https://registry.npmjs.org/" >> ~/.npmrc
           
           # Get branch name and commit hash for snapshot
           BRANCH=${GITHUB_REF#refs/heads/}
@@ -59,8 +60,8 @@ jobs:
           
           # Build and publish snapshot
           pnpm turbo run build
-          pnpm changeset version --snapshot
-          pnpm changeset publish --tag dev --no-git-tag
+          pnpm changeset version --snapshot dev
+          pnpm changeset publish --tag dev --no-git-tag --access public
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
