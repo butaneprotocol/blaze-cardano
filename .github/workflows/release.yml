@@ -55,8 +55,7 @@ jobs:
           COMMIT=$(git rev-parse --short HEAD)
           
           # Version and publish snapshot
-          pnpm changeset version --snapshot
-          pnpm release
+          pnpm release-dev
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
