@@ -50,7 +50,7 @@ export class HotWallet implements Wallet {
     signingKey: Bip32PrivateKey,
     publicKey: Bip32PublicKey,
     provider: Provider,
-    stakePaymentKey?: Bip32PrivateKey,
+    stakePaymentKey?: Bip32PrivateKey
   ) {
     this.address = address;
     this.rewardAddress = rewardAddress;
@@ -66,7 +66,7 @@ export class HotWallet implements Wallet {
   static async generateAccountAddressFromMasterkey(
     masterkey: Bip32PrivateKey,
     networkId: NetworkId = NetworkId.Testnet,
-    addressType: AddressType = AddressType.BasePaymentKeyStakeKey,
+    addressType: AddressType = AddressType.BasePaymentKeyStakeKey
   ): Promise<{
     address: Address;
     paymentKey: Bip32PrivateKey;
@@ -78,7 +78,7 @@ export class HotWallet implements Wallet {
       addressType !== AddressType.EnterpriseKey
     ) {
       throw new Error(
-        "Hot wallets only support the BasePaymentKeyStakeKey and EnterpriseKey adresses!",
+        "Hot wallets only support the BasePaymentKeyStakeKey and EnterpriseKey adresses!"
       );
     }
 
@@ -98,7 +98,7 @@ export class HotWallet implements Wallet {
       paymentPart: {
         type: CredentialType.KeyHash,
         hash: Hash28ByteBase16.fromEd25519KeyHashHex(
-          (await (await paymentKey.toPublic()).toRawKey().hash()).hex(),
+          (await (await paymentKey.toPublic()).toRawKey().hash()).hex()
         ),
       },
       delegationPart:
@@ -112,7 +112,7 @@ export class HotWallet implements Wallet {
                   await (await (await accountKey.derive([2, 0])).toPublic())
                     .toRawKey()
                     .hash()
-                ).hex(),
+                ).hex()
               ),
             },
     });
@@ -129,7 +129,7 @@ export class HotWallet implements Wallet {
     masterkey: Bip32PrivateKeyHex,
     provider: Provider,
     networkId: NetworkId = NetworkId.Testnet,
-    addressType: AddressType = AddressType.BasePaymentKeyStakeKey,
+    addressType: AddressType = AddressType.BasePaymentKeyStakeKey
   ): Promise<HotWallet> {
     const rootKey = Bip32PrivateKey.fromHex(masterkey);
 
@@ -137,7 +137,7 @@ export class HotWallet implements Wallet {
       await this.generateAccountAddressFromMasterkey(
         rootKey,
         networkId,
-        addressType,
+        addressType
       );
 
     return new HotWallet(
@@ -146,7 +146,7 @@ export class HotWallet implements Wallet {
       paymentKey,
       publicKey,
       provider,
-      stakePaymentKey,
+      stakePaymentKey
     );
   }
 
@@ -215,27 +215,51 @@ export class HotWallet implements Wallet {
    * Requests a transaction signature from the wallet.
    * @param {string} tx - The transaction to sign.
    * @param {boolean} partialSign - Whether to partially sign the transaction.
+   * @param {boolean} signWithStakeKey - Whether to also sign the transaction with the stake key.
    * @returns {Promise<TransactionWitnessSet>} - The signed transaction.
    */
   async signTransaction(
     tx: Transaction,
     partialSign: boolean = true,
+    signWithStakeKey: boolean = false
   ): Promise<TransactionWitnessSet> {
     if (partialSign == false) {
       throw new Error(
-        "signTx: Hot wallet only supports partial signing = true",
+        "signTx: Hot wallet only supports partial signing = true"
       );
     }
 
     const signature = await this.signingKey
       .toRawKey()
       .sign(HexBlob(tx.getId()));
+
     const tws = new TransactionWitnessSet();
-    const vkw = new VkeyWitness(
+
+    const payemntVkw = new VkeyWitness(
       this.publicKey.toRawKey().hex(),
-      signature.hex(),
+      signature.hex()
     );
-    tws.setVkeys(CborSet.fromCore([vkw.toCore()], VkeyWitness.fromCore));
+
+    const vkeys = [payemntVkw.toCore()];
+
+    if (signWithStakeKey) {
+      if (!this.stakeSigningKey) {
+        throw new Error(
+          "signTx: Signing with stake key requested but no stake key is available"
+        );
+      }
+      const stakeSignature = await this.stakeSigningKey
+        .toRawKey()
+        .sign(HexBlob(tx.getId()));
+      const stakePublicKey = (await this.stakeSigningKey.toPublic())
+        .toRawKey()
+        .hex();
+      const stakeVkw = new VkeyWitness(stakePublicKey, stakeSignature.hex());
+
+      vkeys.push(stakeVkw.toCore());
+    }
+
+    tws.setVkeys(CborSet.fromCore(vkeys, VkeyWitness.fromCore));
     return tws;
   }
 
@@ -247,7 +271,7 @@ export class HotWallet implements Wallet {
    */
   async signData(
     address: Address,
-    payload: string,
+    payload: string
   ): Promise<CIP30DataSignature> {
     const paymentKey = address.getProps().paymentPart;
     const signingPublic = await this.signingKey.toPublic();
