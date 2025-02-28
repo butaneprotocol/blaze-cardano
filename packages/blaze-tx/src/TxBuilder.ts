@@ -52,7 +52,6 @@ import {
   Certificate,
   StakeDelegation,
   CertificateType,
-  blake2b_256,
   RedeemerTag,
   StakeRegistration,
   StakeDeregistration,
@@ -72,8 +71,11 @@ import {
   calculateReferenceScriptFee,
   calculateRequiredCollateral,
   computeScriptData,
+  getAuxiliaryDataHash,
+  insertSorted,
   isEqualInput,
   stringifyBigint,
+  assertPaymentsAddress,
 } from "./utils";
 
 /*
@@ -169,11 +171,25 @@ export class TxBuilder {
     );
   }
 
+  /**
+   * Returns the burn address.
+   *
+   * @returns {Address}
+   */
   get burnAddress(): Address {
     if (!this._burnAddress) {
       this._burnAddress = getBurnAddress(this.networkId!);
     }
     return this._burnAddress;
+  }
+
+  /**
+   * Returns the number of transaction outputs in the current transaction body.
+   *
+   * @returns {number} The number of transaction outputs.
+   */
+  get outputsCount(): number {
+    return this.body.outputs().length;
   }
 
   /**
@@ -199,16 +215,6 @@ export class TxBuilder {
   public enableTracing(enabled: boolean): TxBuilder {
     this.tracing = enabled;
     return this;
-  }
-
-  private insertSorted<T extends string>(arr: T[], el: T) {
-    const index = arr.findIndex((x) => x.localeCompare(el) > 0);
-    if (index == -1) {
-      arr.push(el);
-    } else {
-      arr.splice(index, 0, el);
-    }
-    return index == -1 ? arr.length - 1 : index;
   }
 
   /**
@@ -424,7 +430,7 @@ export class TxBuilder {
     this.body.setInputs(inputs);
 
     const oref = utxo.input().transactionId() + utxo.input().index().toString();
-    const insertIdx = this.insertSorted(this.consumedSpendInputs, oref);
+    const insertIdx = insertSorted(this.consumedSpendInputs, oref);
 
     const redeemers = [...this.redeemers.values()];
     for (const redeemer of redeemers) {
@@ -521,7 +527,7 @@ export class TxBuilder {
    * @param {TransactionUnspentOutput[]} utxos - the UTxOs to add as collateral
    * @returns {TxBuilder} The same transaction builder
    */
-  provideCollateral(utxos: TransactionUnspentOutput[]) {
+  provideCollateral(utxos: TransactionUnspentOutput[]): TxBuilder {
     for (const utxo of utxos) {
       this.collateralUtxos.add(utxo);
     }
@@ -542,7 +548,7 @@ export class TxBuilder {
     assets: Map<AssetName, bigint>,
     redeemer?: PlutusData,
   ) {
-    const insertIdx = this.insertSorted(
+    const insertIdx = insertSorted(
       this.consumedMintHashes,
       PolicyIdToHash(policy),
     );
@@ -605,6 +611,7 @@ export class TxBuilder {
   private calculateMinAda(output: TransactionOutput): bigint {
     return calculateMinAda(output, this.params.coinsPerUtxoByte);
   }
+
   /**
    * This method checks and alters the output of a transaction.
    * It ensures that the output meets the minimum ada requirements and does not exceed the maximum value size.
@@ -665,15 +672,6 @@ export class TxBuilder {
     outputs.push(output);
     this.body.setOutputs(outputs);
     return this;
-  }
-
-  /**
-   * Returns the number of transaction outputs in the current transaction body.
-   *
-   * @returns {number} The number of transaction outputs.
-   */
-  get outputsCount(): number {
-    return this.body.outputs().length;
   }
 
   /**
@@ -1641,7 +1639,7 @@ export class TxBuilder {
       // Verify and set the auxiliary data
       const auxiliaryData = this.auxiliaryData;
       if (auxiliaryData) {
-        const auxiliaryDataHash = this.getAuxiliaryDataHash(auxiliaryData);
+        const auxiliaryDataHash = getAuxiliaryDataHash(auxiliaryData);
         if (auxiliaryDataHash != this.body.auxiliaryDataHash()) {
           throw new Error(
             "TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash",
@@ -1866,7 +1864,7 @@ export class TxBuilder {
     certs.setValues(vals);
     this.body.setCerts(certs);
     const credentialHash = delegator.toCore().hash;
-    const insertIdx = this.insertSorted(
+    const insertIdx = insertSorted(
       this.consumedDelegationHashes,
       credentialHash,
     );
@@ -1955,7 +1953,7 @@ export class TxBuilder {
    * @param {Credential} credential - The credential to deregister.
    * @returns {TxBuilder} The updated transaction builder.
    */
-  addDeregisterStake(credential: Credential, redeemer?: PlutusData) {
+  addDeregisterStake(credential: Credential, redeemer?: PlutusData): TxBuilder {
     const stakeDeregistration: StakeDeregistration = new StakeDeregistration(
       credential.toCore(),
     );
@@ -1968,7 +1966,7 @@ export class TxBuilder {
     this.body.setCerts(certs);
     const credentialHash = credential.toCore().hash;
     // TODO: is this insertSorted mechanism a lurking bug, since the order might change?
-    const insertIdx = this.insertSorted(
+    const insertIdx = insertSorted(
       this.consumedDeregisterHashes,
       credentialHash,
     );
@@ -2072,7 +2070,7 @@ export class TxBuilder {
         "addWithdrawal: The RewardAccount provided does not have an associated stake credential.",
       );
     }
-    const insertIdx = this.insertSorted(
+    const insertIdx = insertSorted(
       this.consumedWithdrawalHashes,
       withdrawalHash,
     );
@@ -2158,28 +2156,14 @@ export class TxBuilder {
   }
 
   /**
-   * Computes the hash of the auxiliary data if it exists.
-   *
-   * @param {AuxiliaryData} auxiliaryData - The auxiliary data to hash.
-   * @returns {Hash32ByteBase16 | undefined} The hash of the auxiliary data or undefined if no auxiliary data is provided.
-   */
-  private getAuxiliaryDataHash(
-    auxiliaryData: AuxiliaryData,
-  ): Hash32ByteBase16 | undefined {
-    return auxiliaryData ? blake2b_256(auxiliaryData.toCbor()) : undefined;
-  }
-
-  /**
    * Sets the auxiliary data for the transaction and updates the transaction's auxiliary data hash.
    *
    * @param {AuxiliaryData} auxiliaryData - The auxiliary data to set.
    * @returns {TxBuilder} The same transaction builder
    */
   setAuxiliaryData(auxiliaryData: AuxiliaryData): TxBuilder {
-    const auxiliaryDataHash = this.getAuxiliaryDataHash(auxiliaryData);
-    if (auxiliaryDataHash) {
-      this.body.setAuxiliaryDataHash(auxiliaryDataHash);
-    }
+    const auxiliaryDataHash = getAuxiliaryDataHash(auxiliaryData);
+    this.body.setAuxiliaryDataHash(auxiliaryDataHash);
     this.auxiliaryData = auxiliaryData;
     return this;
   }
@@ -2215,23 +2199,6 @@ export class TxBuilder {
     }
     this.preCompleteHooks.push(hook);
     return this;
-  }
-}
-
-/**
- * Asserts that the given address is a valid payment address.
- * @param {Address} address - The address to be checked.
- * @throws {Error} If the address has no payment part or if the payment credential is a script hash.
- */
-function assertPaymentsAddress(address: Address) {
-  const props = address.getProps();
-  if (!props.paymentPart) {
-    throw new Error("assertPaymentsAddress: address has no payment part!");
-  }
-  if (props.paymentPart.type == CredentialType.ScriptHash) {
-    throw new Error(
-      "assertPaymentsAddress: address payment credential cannot be a script hash!",
-    );
   }
 }
 

@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - '**'
+      - "**"
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -29,7 +29,7 @@ jobs:
         with:
           cache: "pnpm"
           node-version: "latest"
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: 🛠️ Install dependencies
         run: pnpm install --frozen-lockfile
@@ -53,11 +53,11 @@ jobs:
           # Setup npm authentication with scope
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
           echo "@blaze-cardano:registry=https://registry.npmjs.org/" >> ~/.npmrc
-          
+
           # Get branch name and commit hash for snapshot
           BRANCH=${GITHUB_REF#refs/heads/}
           COMMIT=$(git rev-parse --short HEAD)
-          
+
           # Build and publish snapshot
           pnpm turbo run build
           pnpm changeset version --snapshot dev

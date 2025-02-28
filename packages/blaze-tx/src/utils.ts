@@ -2,6 +2,7 @@ import {
   blake2b_256,
   CborReader,
   CborWriter,
+  CredentialType,
   type ProtocolParameters,
   type Script,
   type TransactionInput,
@@ -12,6 +13,9 @@ import type {
   Redeemers,
   TransactionWitnessSet,
   Costmdls,
+  AuxiliaryData,
+  Hash32ByteBase16,
+  Address,
 } from "@blaze-cardano/core";
 import type { IScriptData } from "./types";
 
@@ -209,3 +213,68 @@ export function computeScriptData(
     scriptDataHash,
   };
 }
+
+/**
+ * Given an array and a string, it mutates the provided array and inserts
+ * the string after the closest match. It returns the index at which the
+ * string was inserted.
+ *
+ * @param {string[]} arr An array of strings to mutate.
+ * @param {string} el The element to insert in provided array.
+ * @returns {number} The index of the insert.
+ */
+export const insertSorted = (arr: string[], el: string): number => {
+  const index = arr.findIndex((x) => x.localeCompare(el) > 0);
+  if (index === -1) {
+    arr.push(el);
+    return arr.length - 1;
+  }
+
+  arr.splice(index, 0, el);
+  return index;
+};
+
+/**
+ * Computes the hash of the auxiliary data if it exists.
+ *
+ * @param {AuxiliaryData} data - The auxiliary data to hash.
+ * @returns {Hash32ByteBase16} The hash of the auxiliary data or undefined if no auxiliary data is provided.
+ */
+export const getAuxiliaryDataHash = (data: AuxiliaryData): Hash32ByteBase16 =>
+  blake2b_256(data.toCbor());
+
+/**
+ * Asserts that the given address is a valid payment address.
+ *
+ * @param {Address} address - The address to be checked.
+ * @throws {Error} If the address has no payment part or if the payment credential is a script hash.
+ */
+export const assertPaymentsAddress = (address: Address): never | void => {
+  const props = address.getProps();
+  if (!props.paymentPart) {
+    throw new Error("assertPaymentsAddress: address has no payment part!");
+  }
+  if (props.paymentPart.type == CredentialType.ScriptHash) {
+    throw new Error(
+      "assertPaymentsAddress: address payment credential cannot be a script hash!",
+    );
+  }
+};
+
+/**
+ * Asserts that the given address is a valid lock address.
+ *
+ * @param {Address} address - The address to be checked.
+ * @throws {Error} If the address has no payment part or if the payment credential is not a script hash.
+ */
+export const assertLockAddress = (address: Address): never | void => {
+  const props = address.getProps();
+  if (!props.paymentPart) {
+    throw new Error("assertLockAddress: address has no payment part!");
+  }
+  if (props.paymentPart.type != CredentialType.ScriptHash) {
+    throw new Error(
+      "assertLockAddress: address payment credential must be a script hash!",
+    );
+  }
+};

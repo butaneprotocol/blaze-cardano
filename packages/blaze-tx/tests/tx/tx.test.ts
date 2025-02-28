@@ -23,7 +23,7 @@ import {
 } from "@blaze-cardano/core";
 import { makeUplcEvaluator } from "@blaze-cardano/vm";
 import * as value from "../../src/value";
-import { TxBuilder } from "../../src/tx";
+import { TxBuilder } from "../../src/TxBuilder";
 
 function flatten<U>(iterator: IterableIterator<U> | undefined): U[] {
   if (!iterator) {
