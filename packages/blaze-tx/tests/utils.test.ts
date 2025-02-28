@@ -11,6 +11,7 @@ import * as value from "../src/value";
 import {
   assertLockAddress,
   assertPaymentsAddress,
+  bigintMax,
   calculateMinAda,
   calculateReferenceScriptFee,
   getAuxiliaryDataHash,
@@ -111,3 +112,11 @@ describe("assertLockAddress", () => {
     expect(() => assertLockAddress(address)).toThrow();
   });
 });
+
+describe("bigintMax", () => {
+  it("should work correctly", () => {
+    expect(bigintMax(1n, 2n)).toEqual(2n);
+    expect(bigintMax(-1n, 0n)).toEqual(0n);
+    expect(bigintMax(100n, 100n)).toEqual(100n);
+  })
+})

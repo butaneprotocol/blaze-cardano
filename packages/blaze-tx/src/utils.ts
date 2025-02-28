@@ -278,3 +278,13 @@ export const assertLockAddress = (address: Address): never | void => {
     );
   }
 };
+
+/**
+ * Returns the maximum of two BigInt values.
+ * @param {bigint} a - The first bigint value.
+ * @param {bigint} b - The second bigint value.
+ * @returns {bigint} The maximum value.
+ */
+export const bigintMax = (a: bigint, b: bigint): bigint => {
+  return a > b ? a : b;
+}

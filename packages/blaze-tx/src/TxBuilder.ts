@@ -76,6 +76,8 @@ import {
   isEqualInput,
   stringifyBigint,
   assertPaymentsAddress,
+  assertLockAddress,
+  bigintMax
 } from "./utils";
 
 /*
@@ -2200,31 +2202,4 @@ export class TxBuilder {
     this.preCompleteHooks.push(hook);
     return this;
   }
-}
-
-/**
- * Asserts that the given address is a valid lock address.
- * @param {Address} address - The address to be checked.
- * @throws {Error} If the address has no payment part or if the payment credential is not a script hash.
- */
-function assertLockAddress(address: Address) {
-  const props = address.getProps();
-  if (!props.paymentPart) {
-    throw new Error("assertLockAddress: address has no payment part!");
-  }
-  if (props.paymentPart.type != CredentialType.ScriptHash) {
-    throw new Error(
-      "assertLockAddress: address payment credential must be a script hash!",
-    );
-  }
-}
-
-/**
- * Returns the maximum of two BigInt values.
- * @param {bigint} a - The first bigint value.
- * @param {bigint} b - The second bigint value.
- * @returns {bigint} The maximum value.
- */
-function bigintMax(a: bigint, b: bigint): bigint {
-  return a > b ? a : b;
 }
