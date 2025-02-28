@@ -215,11 +215,13 @@ export class HotWallet implements Wallet {
    * Requests a transaction signature from the wallet.
    * @param {string} tx - The transaction to sign.
    * @param {boolean} partialSign - Whether to partially sign the transaction.
+   * @param {boolean} signWithStakeKey - Whether to also sign the transaction with the stake key.
    * @returns {Promise<TransactionWitnessSet>} - The signed transaction.
    */
   async signTransaction(
     tx: Transaction,
     partialSign: boolean = true,
+    signWithStakeKey: boolean = false,
   ): Promise<TransactionWitnessSet> {
     if (partialSign == false) {
       throw new Error(
@@ -230,12 +232,34 @@ export class HotWallet implements Wallet {
     const signature = await this.signingKey
       .toRawKey()
       .sign(HexBlob(tx.getId()));
+
     const tws = new TransactionWitnessSet();
-    const vkw = new VkeyWitness(
+
+    const payemntVkw = new VkeyWitness(
       this.publicKey.toRawKey().hex(),
       signature.hex(),
     );
-    tws.setVkeys(CborSet.fromCore([vkw.toCore()], VkeyWitness.fromCore));
+
+    const vkeys = [payemntVkw.toCore()];
+
+    if (signWithStakeKey) {
+      if (!this.stakeSigningKey) {
+        throw new Error(
+          "signTx: Signing with stake key requested but no stake key is available",
+        );
+      }
+      const stakeSignature = await this.stakeSigningKey
+        .toRawKey()
+        .sign(HexBlob(tx.getId()));
+      const stakePublicKey = (await this.stakeSigningKey.toPublic())
+        .toRawKey()
+        .hex();
+      const stakeVkw = new VkeyWitness(stakePublicKey, stakeSignature.hex());
+
+      vkeys.push(stakeVkw.toCore());
+    }
+
+    tws.setVkeys(CborSet.fromCore(vkeys, VkeyWitness.fromCore));
     return tws;
   }
 

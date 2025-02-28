@@ -1,5 +1,11 @@
 # @blaze-cardano/wallet
 
+## 0.4.0
+
+### Minor Changes
+
+- d5bc041: Add the ability to sign with the stake key
+
 ## 0.3.14
 
 ### Patch Changes
