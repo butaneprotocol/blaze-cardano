@@ -118,5 +118,5 @@ describe("bigintMax", () => {
     expect(bigintMax(1n, 2n)).toEqual(2n);
     expect(bigintMax(-1n, 0n)).toEqual(0n);
     expect(bigintMax(100n, 100n)).toEqual(100n);
-  })
-})
+  });
+});

@@ -287,4 +287,4 @@ export const assertLockAddress = (address: Address): never | void => {
  */
 export const bigintMax = (a: bigint, b: bigint): bigint => {
   return a > b ? a : b;
-}
+};
