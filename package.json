@@ -11,7 +11,8 @@
     "docs": "typedoc --skipErrorChecking && mkdir docs/logo && cp logo/BLAZE_LOGO2.svg docs/logo/BLAZE_LOGO2.svg",
     "fmt": "prettier -w .",
     "changeset": "changeset",
-    "release": "turbo run build && changeset publish"
+    "release": "turbo run build && changeset publish",
+    "release-dev": "turbo run build && changeset version --snapshot && changeset publish --tag dev"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",

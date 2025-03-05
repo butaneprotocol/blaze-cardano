@@ -115,7 +115,7 @@ export function positives(v: Value): Value {
 }
 
 /**
- * Filters out the negative coin and multiasset values from a Value object.
+ * Filters a Value object to retain only the negative coin and multiasset values.
  *
  * @param {Value} v - The Value object to filter.
  * @returns {Value} - A new Value object containing only negative values.

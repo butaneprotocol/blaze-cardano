@@ -2,7 +2,7 @@ import {
   blake2b_256,
   CborReader,
   CborWriter,
-  hardCodedProtocolParams,
+  CredentialType,
   type ProtocolParameters,
   type Script,
   type TransactionInput,
@@ -12,10 +12,12 @@ import {
 import type {
   Redeemers,
   TransactionWitnessSet,
-  HexBlob,
-  Hash32ByteBase16,
   Costmdls,
+  AuxiliaryData,
+  Hash32ByteBase16,
+  Address,
 } from "@blaze-cardano/core";
+import type { IScriptData } from "./types";
 
 export function getScriptSize(script: Script): number {
   const cborReader = new CborReader(script.toCbor());
@@ -68,13 +70,25 @@ export function calculateReferenceScriptFee(
  */
 export function calculateMinAda(
   output: TransactionOutput,
-  coinsPerUtxoByte?: number,
+  coinsPerUtxoByte: number,
 ): bigint {
   const byteLength = BigInt(output.toCbor().length / 2);
-  return (
-    BigInt(coinsPerUtxoByte || hardCodedProtocolParams.coinsPerUtxoByte) *
-    (byteLength + 160n)
-  );
+  return BigInt(coinsPerUtxoByte) * (byteLength + 160n);
+}
+
+/**
+ * Calculate the required "collateral" the a transaction must put up if it is running smart contracts.
+ * This is to prevent DDOS attacks with failing scripts, and must be some percentage above the total fee of the script.
+ *
+ * @param {bigint} fee The full transaction fee
+ * @param {number} collateralPercentage The protocol parameter defining the buffer above the fee that is required
+ * @returns {bigint}
+ */
+export function calculateRequiredCollateral(
+  fee: bigint,
+  collateralPercentage: number,
+): bigint {
+  return BigInt(Math.ceil(Number(fee) * (collateralPercentage / 100)));
 }
 
 /**
@@ -121,7 +135,9 @@ export function sortLargestFirst(
 export const isEqualUTxO = (
   self: TransactionUnspentOutput,
   that: TransactionUnspentOutput,
-) => isEqualInput(self.input(), that.input());
+) =>
+  isEqualInput(self.input(), that.input()) &&
+  isEqualOutput(self.output(), that.output());
 
 /**
  * Utility function to compare the equality of two inputs.
@@ -129,16 +145,21 @@ export const isEqualUTxO = (
  * @param {TransactionInput} that
  * @returns {boolean}
  */
-export const isEqualInput = (self: TransactionInput, that: TransactionInput) =>
-  self.transactionId() === that.transactionId() &&
-  self.index() === that.index();
-export interface IScriptData {
-  redeemersEncoded: string;
-  datumsEncoded: string | undefined;
-  costModelsEncoded: string;
-  hashedData: HexBlob;
-  scriptDataHash: Hash32ByteBase16;
-}
+export const isEqualInput = (
+  self: TransactionInput,
+  that: TransactionInput,
+): boolean => self.toCbor() === that.toCbor();
+
+/**
+ * Utility function to compare the equality of two outputs.
+ * @param {TransactionOutput} self
+ * @param {TransactionOutput} that
+ * @returns {boolean}
+ */
+export const isEqualOutput = (
+  self: TransactionOutput,
+  that: TransactionOutput,
+): boolean => self.toCbor() === that.toCbor();
 
 /**
  * Calculates the correct script data hash for a transaction
@@ -192,3 +213,78 @@ export function computeScriptData(
     scriptDataHash,
   };
 }
+
+/**
+ * Given an array and a string, it mutates the provided array and inserts
+ * the string after the closest match. It returns the index at which the
+ * string was inserted.
+ *
+ * @param {string[]} arr An array of strings to mutate.
+ * @param {string} el The element to insert in provided array.
+ * @returns {number} The index of the insert.
+ */
+export const insertSorted = (arr: string[], el: string): number => {
+  const index = arr.findIndex((x) => x.localeCompare(el) > 0);
+  if (index === -1) {
+    arr.push(el);
+    return arr.length - 1;
+  }
+
+  arr.splice(index, 0, el);
+  return index;
+};
+
+/**
+ * Computes the hash of the auxiliary data if it exists.
+ *
+ * @param {AuxiliaryData} data - The auxiliary data to hash.
+ * @returns {Hash32ByteBase16} The hash of the auxiliary data or undefined if no auxiliary data is provided.
+ */
+export const getAuxiliaryDataHash = (data: AuxiliaryData): Hash32ByteBase16 =>
+  blake2b_256(data.toCbor());
+
+/**
+ * Asserts that the given address is a valid payment address.
+ *
+ * @param {Address} address - The address to be checked.
+ * @throws {Error} If the address has no payment part or if the payment credential is a script hash.
+ */
+export const assertPaymentsAddress = (address: Address): never | void => {
+  const props = address.getProps();
+  if (!props.paymentPart) {
+    throw new Error("assertPaymentsAddress: address has no payment part!");
+  }
+  if (props.paymentPart.type == CredentialType.ScriptHash) {
+    throw new Error(
+      "assertPaymentsAddress: address payment credential cannot be a script hash!",
+    );
+  }
+};
+
+/**
+ * Asserts that the given address is a valid lock address.
+ *
+ * @param {Address} address - The address to be checked.
+ * @throws {Error} If the address has no payment part or if the payment credential is not a script hash.
+ */
+export const assertLockAddress = (address: Address): never | void => {
+  const props = address.getProps();
+  if (!props.paymentPart) {
+    throw new Error("assertLockAddress: address has no payment part!");
+  }
+  if (props.paymentPart.type != CredentialType.ScriptHash) {
+    throw new Error(
+      "assertLockAddress: address payment credential must be a script hash!",
+    );
+  }
+};
+
+/**
+ * Returns the maximum of two BigInt values.
+ * @param {bigint} a - The first bigint value.
+ * @param {bigint} b - The second bigint value.
+ * @returns {bigint} The maximum value.
+ */
+export const bigintMax = (a: bigint, b: bigint): bigint => {
+  return a > b ? a : b;
+};
