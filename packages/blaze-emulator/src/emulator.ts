@@ -654,7 +654,26 @@ export class Emulator {
       ...datumHashes,
     ].forEach((hash) => {
       if (!consumed.has(hash)) {
-        throw new Error(`Extraneous witness. ${hash} has not been consumed.`);
+        let witnessType;
+        switch (true) {
+          case vkeyHashes.has(hash as any):
+            witnessType = "VKey";
+            break;
+          case attachedNativeHashes.has(hash as any):
+            witnessType = "Native";
+            break;
+          case attachedPlutusHashes.has(hash as any):
+            witnessType = "Plutus";
+            break;
+          case datumHashes.includes(hash as any):
+            witnessType = "Datum";
+            break;
+          default:
+            witnessType = "Unknown";
+        }
+        throw new Error(
+          `Extraneous ${witnessType} witness. ${hash} has not been consumed.`,
+        );
       }
     });
 

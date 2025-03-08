@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
-    "@blaze-cardano/vm": "workspace:*"
+    "@blaze-cardano/vm": "workspace:*",
+    "@blaze-cardano/data": "workspace:*"
   }
 }
