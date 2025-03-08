@@ -1,4 +1,7 @@
 {
   "extends": "@blaze-cardano/tsconfig/base.json",
-  "exclude": ["dist", ".turbo", "node_modules"]
+  "exclude": ["dist", ".turbo", "node_modules"],
+  "compilerOptions": {
+    "noUnusedLocals": false
+  }
 }

@@ -1,0 +1,41 @@
+{
+  "name": "@blaze-cardano/data",
+  "version": "0.5.1",
+  "description": "Plutus Data parsing and serialization",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
+    "lint": "eslint .",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.28",
+    "@blaze-cardano/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@blaze-cardano/eslint-config": "workspace:*",
+    "@blaze-cardano/jest-config": "workspace:*",
+    "@blaze-cardano/tsconfig": "workspace:*",
+    "@types/jest": "^29.5.12",
+    "commander": "^12.1.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.3",
+    "tsup": "^8.2.3",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.4"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
