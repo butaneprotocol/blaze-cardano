@@ -20,10 +20,13 @@ import {
   Metadatum,
   Metadata,
   Ed25519KeyHashHex,
+  Credential,
+  CredentialType,
 } from "@blaze-cardano/core";
 import { makeUplcEvaluator } from "@blaze-cardano/vm";
 import * as value from "../../src/value";
 import { TxBuilder } from "../../src/TxBuilder";
+import { Data } from "../../src";
 
 function flatten<U>(iterator: IterableIterator<U> | undefined): U[] {
   if (!iterator) {
@@ -670,6 +673,66 @@ describe("Transaction Building", () => {
     const txComplete = await tx.complete({ useCoinSelection: false });
     expect(txComplete.body().inputs().values().length).toEqual(2);
     expect(txComplete.body().outputs().length).toEqual(2);
+  });
+
+  it("should correctly build a transaction when deregistering stake from a payment credential", async () => {
+    const testAddress = Address.fromBech32(
+      "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
+    );
+
+    const credential = Credential.fromCore({
+      hash: testAddress.getProps().paymentPart!.hash,
+      type: CredentialType.KeyHash,
+    });
+
+    const tx = await new TxBuilder(hardCodedProtocolParams)
+      .setNetworkId(NetworkId.Testnet)
+      .setChangeAddress(testAddress)
+      .addUnspentOutputs([
+        new TransactionUnspentOutput(
+          new TransactionInput(TransactionId("0".repeat(64)), 0n),
+          new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
+        ),
+      ])
+      .addDeregisterStake(credential)
+      .complete();
+
+    expect(tx.toCbor()).toEqual(
+      "84a400d9010281825820000000000000000000000000000000000000000000000000000000000000000000018182583901f44f8751f03d767ba51c4fe988ed289b7ced4c7e832223d44b31bcce2341d750452778e9a0962600af8e05eef6697c83df9f492103bc8b531a0316e8ab021a00028c5504d901028182018200581cf44f8751f03d767ba51c4fe988ed289b7ced4c7e832223d44b31bccea0f5f6",
+    );
+  });
+
+  it("should correctly build a transaction when deregistering stake from a script credential", async () => {
+    const testAddress = Address.fromBech32(
+      "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
+    );
+
+    const alwaysTrueScript = Script.newPlutusV2Script(
+      new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
+    );
+
+    const credential = Credential.fromCore({
+      hash: alwaysTrueScript.hash(),
+      type: CredentialType.ScriptHash,
+    });
+
+    const tx = await new TxBuilder(hardCodedProtocolParams)
+      .useEvaluator(makeUplcEvaluator(hardCodedProtocolParams, 1, 1))
+      .setNetworkId(NetworkId.Testnet)
+      .setChangeAddress(testAddress)
+      .addUnspentOutputs([
+        new TransactionUnspentOutput(
+          new TransactionInput(TransactionId("0".repeat(64)), 0n),
+          new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
+        ),
+      ])
+      .provideScript(alwaysTrueScript)
+      .addDeregisterStake(credential, Data.void())
+      .complete();
+
+    expect(tx.toCbor()).toEqual(
+      "84a800d9010281825820000000000000000000000000000000000000000000000000000000000000000000018182583901f44f8751f03d767ba51c4fe988ed289b7ced4c7e832223d44b31bcce2341d750452778e9a0962600af8e05eef6697c83df9f492103bc8b531a0316b655021a0002beab04d901028182018201581c39c520d0627aafa728f7e4dd10142b77c257813c36f57e2cb88f72a50b5820897a7518496ae87c5925439e33b42d39252da54e79291aea2c831f3012e3564b0dd90102818258200000000000000000000000000000000000000000000000000000000000000000001082583901f44f8751f03d767ba51c4fe988ed289b7ced4c7e832223d44b31bcce2341d750452778e9a0962600af8e05eef6697c83df9f492103bc8b531a02f6d27f111a00041e01a205a182020082d87980821904b01a0002afe406d901028152510100003222253330044a229309b2b2b9a1f5f6",
+    );
   });
 
   it("should build a transaction correctly when including a donation to the treasury", async () => {
