@@ -1,6 +1,7 @@
 import {
   type Address,
   AssetId,
+  CredentialType,
   hardCodedProtocolParams,
   type TokenMap,
   TransactionOutput,
@@ -199,5 +200,13 @@ export const hvfSelector: CoinSelectionFunc = (
     }
   });
 
-  return recursive(inputs, requiredAssets, nonRequiredAssets, coinsPerUtxoByte);
+  const cleanInputs = inputs.filter(utxo => {
+    if (utxo.output().address().getProps().paymentPart?.type === CredentialType.ScriptHash) {
+      return false;
+    }
+
+    return true;
+  });
+
+  return recursive(cleanInputs, requiredAssets, nonRequiredAssets, coinsPerUtxoByte);
 };

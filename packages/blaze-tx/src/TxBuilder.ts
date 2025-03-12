@@ -78,6 +78,7 @@ import {
   assertPaymentsAddress,
   assertLockAddress,
   bigintMax,
+  isEqualUTxO,
 } from "./utils";
 
 /*
@@ -625,24 +626,22 @@ export class TxBuilder {
    */
 
   private checkAndAlterOutput(output: TransactionOutput): TransactionOutput {
-    {
-      let minAda = this.calculateMinAda(output);
-      let coin = output.amount().coin();
-      while (coin < minAda) {
-        const amount = output.amount();
-        amount.setCoin(minAda);
-        const datum = output.datum();
-        const scriptRef = output.scriptRef();
-        output = new TransactionOutput(output.address(), amount);
-        if (datum) {
-          output.setDatum(datum);
-        }
-        if (scriptRef) {
-          output.setScriptRef(scriptRef);
-        }
-        minAda = this.calculateMinAda(output);
-        coin = output.amount().coin();
+    let minAda = this.calculateMinAda(output);
+    let coin = output.amount().coin();
+    while (coin < minAda) {
+      const amount = output.amount();
+      amount.setCoin(minAda);
+      const datum = output.datum();
+      const scriptRef = output.scriptRef();
+      output = new TransactionOutput(output.address(), amount);
+      if (datum) {
+        output.setDatum(datum);
       }
+      if (scriptRef) {
+        output.setScriptRef(scriptRef);
+      }
+      minAda = this.calculateMinAda(output);
+      coin = output.amount().coin();
     }
 
     const byteLength = BigInt(output.toCbor().length / 2);
@@ -995,7 +994,10 @@ export class TxBuilder {
     totalInputs.forEach((input) => {
       // TODO: These really just serve as a cache, we should wrap these in a utility method that falls
       // back to a lookup on the provider.
-      const outputs = [...this.utxoScope.values(), ...this.collateralUtxos.values()]
+      const outputs = [
+        ...this.utxoScope.values(),
+        ...this.collateralUtxos.values(),
+      ];
       const output = outputs
         .find((utxo) => isEqualInput(utxo.input(), input))
         ?.output();
@@ -1521,9 +1523,11 @@ export class TxBuilder {
       this.body.setCollateral(tis);
       this.body.setTotalCollateral(requiredCollateral);
       this.body.setCollateralReturn(
-        new TransactionOutput(
-          this.collateralChangeAddress ?? this.changeAddress!,
-          collateralReturn
+        this.checkAndAlterOutput(
+          new TransactionOutput(
+            this.collateralChangeAddress ?? this.changeAddress!,
+            collateralReturn
+          )
         )
       );
     } else {
@@ -1548,9 +1552,17 @@ export class TxBuilder {
       });
 
       if (providedCollateral.coin() < requiredCollateral) {
-        // TODO: filter this.utxos to exclude those already on the inputs
         const { selectedInputs } = this.coinSelector(
-          [...this.utxos.values()],
+          [...this.utxos.values()].filter((utxo) => {
+            const matchingCollateral = [...this.collateralUtxos.values()].find(
+              (cutxo) => isEqualUTxO(utxo, cutxo)
+            );
+            if (matchingCollateral) {
+              return false;
+            }
+
+            return true;
+          }),
           new Value(requiredCollateral),
           Number(this.fee)
         );
@@ -1581,9 +1593,11 @@ export class TxBuilder {
       }
 
       this.body.setCollateralReturn(
-        new TransactionOutput(
-          this.collateralChangeAddress ?? this.changeAddress!,
-          collateralReturn
+        this.checkAndAlterOutput(
+          new TransactionOutput(
+            this.collateralChangeAddress ?? this.changeAddress!,
+            collateralReturn
+          )
         )
       );
     }
