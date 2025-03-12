@@ -1003,7 +1003,9 @@ export class TxBuilder {
         ?.output();
 
       if (!output) {
-        throw new Error(`updateRequiredWitnesses: could not find a matching output for ${input.transactionId()}#${input.index()}`)
+        throw new Error(
+          `updateRequiredWitnesses: could not find a matching output for ${input.transactionId()}#${input.index()}`,
+        );
       }
 
       const key = output.address().getProps().paymentPart;
