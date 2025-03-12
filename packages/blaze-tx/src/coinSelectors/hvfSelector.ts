@@ -200,13 +200,21 @@ export const hvfSelector: CoinSelectionFunc = (
     }
   });
 
-  const cleanInputs = inputs.filter(utxo => {
-    if (utxo.output().address().getProps().paymentPart?.type === CredentialType.ScriptHash) {
+  const cleanInputs = inputs.filter((utxo) => {
+    if (
+      utxo.output().address().getProps().paymentPart?.type ===
+      CredentialType.ScriptHash
+    ) {
       return false;
     }
 
     return true;
   });
 
-  return recursive(cleanInputs, requiredAssets, nonRequiredAssets, coinsPerUtxoByte);
+  return recursive(
+    cleanInputs,
+    requiredAssets,
+    nonRequiredAssets,
+    coinsPerUtxoByte,
+  );
 };

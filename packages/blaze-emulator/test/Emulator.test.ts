@@ -157,7 +157,7 @@ describe("Emulator", () => {
     const out = emulator.getOutput(inp);
 
     isDefined(out);
-    
+
     const spendTx = await blaze
       .newTransaction()
       .addInput(new TransactionUnspentOutput(inp, out), VOID_PLUTUS_DATA)

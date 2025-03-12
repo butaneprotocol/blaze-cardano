@@ -123,8 +123,11 @@ export const micahsSelector: CoinSelectionFunc = (
   inputs,
   dearth,
 ): SelectionResult => {
-  const cleanInputs = inputs.filter(utxo => {
-    if (utxo.output().address().getProps().paymentPart?.type === CredentialType.ScriptHash) {
+  const cleanInputs = inputs.filter((utxo) => {
+    if (
+      utxo.output().address().getProps().paymentPart?.type ===
+      CredentialType.ScriptHash
+    ) {
       return false;
     }
 
@@ -144,7 +147,12 @@ export const micahsSelector: CoinSelectionFunc = (
     ...deepResult.selectedInputs,
   ];
   if (!value.empty(finalDearth)) {
-    throw new UTxOSelectionError("final", finalDearth, cleanInputs, selectedInputs);
+    throw new UTxOSelectionError(
+      "final",
+      finalDearth,
+      cleanInputs,
+      selectedInputs,
+    );
   }
   return {
     selectedInputs,
