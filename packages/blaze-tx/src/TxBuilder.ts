@@ -1571,7 +1571,7 @@ export class TxBuilder {
             const matchingCollateral = [...this.collateralUtxos.values()].find(
               (cutxo) => isEqualUTxO(utxo, cutxo),
             );
-            
+
             if (matchingCollateral) {
               return false;
             }
