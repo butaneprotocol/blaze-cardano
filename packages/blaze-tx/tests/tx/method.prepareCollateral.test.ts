@@ -59,6 +59,21 @@ const orderUtxo = new TransactionUnspentOutput(
   }),
 );
 
+const walletUtxo = new TransactionUnspentOutput(
+  TransactionInput.fromCore({
+    index: 0,
+    txId: TransactionId(
+      "1d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f",
+    ),
+  }),
+  TransactionOutput.fromCore({
+    address: PaymentAddress(
+      "addr_test1qrp8nglm8d8x9w783c5g0qa4spzaft5z5xyx0kp495p8wksjrlfzuz6h4ssxlm78v0utlgrhryvl2gvtgp53a6j9zngqtjfk6s",
+    ),
+    value: new Value(4_280_000n).toCore(),
+  }),
+);
+
 describe("prepareCollateral method", () => {
   it("should prepare the collateral correctly when only one utxo is present", async () => {
     /**
@@ -95,7 +110,7 @@ describe("prepareCollateral method", () => {
     txBuilder
       .setChangeAddress(changeAddress)
       .addReferenceInput(refUtxo)
-      .addUnspentOutputs([orderUtxo])
+      .addUnspentOutputs([orderUtxo, walletUtxo])
       .addInput(orderUtxo, voidRedeemer);
 
     // Calculate the fees beforehand since collateral depends on fee amount.
@@ -173,13 +188,13 @@ describe("prepareCollateral method", () => {
     txBuilder
       .setChangeAddress(changeAddress)
       .addReferenceInput(refUtxo)
-      .addUnspentOutputs([orderUtxo, userUtxo])
+      .addUnspentOutputs([orderUtxo, userUtxo, walletUtxo])
       .addInput(orderUtxo, voidRedeemer);
 
     txBuilder.test_prepareCollateral();
 
     expect(txBuilder.toCbor()).toEqual(
-      "84a600d90102818258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f00021a001a56ec0dd90102818258200ca317ce7d328c7d835f2bcf4ed8299ae239dd102560e99096be22549a21650e001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a00528f9e111a0027826212d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a105a182000082d87a80821a00d59f801b00000002540be400f5f6",
+      "84a600d90102818258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f00021a001a56ec0dd90102818258201d58cd9dd9339f752cd1bfa22c041fa951bc4edf7ecad37a272801c310280c4f001082583911fa6a58bbe2d0ff05534431c8e2f0ef2cbdc1602a8456e4b13c8f3077854b8e99e5d0b49817dd0f258e545100ae29e9fc515d9723123d66441a0019cc5e111a0027826212d9010281825820f5f1bdfad3eb4d67d2fc36f36f47fc2938cf6f001689184ab320735a28642cf200a105a182000082d87a80821a00d59f801b00000002540be400f5f6",
     );
   });
 

@@ -1554,11 +1554,24 @@ export class TxBuilder {
       });
 
       if (providedCollateral.coin() < requiredCollateral) {
+        const cleanInputs = [...this.utxos.values()].filter((utxo) => {
+          if (
+            utxo.output().address().getProps().paymentPart?.type ===
+            CredentialType.ScriptHash
+          ) {
+            return false;
+          }
+
+          return true;
+        });
+
         const { selectedInputs } = this.coinSelector(
-          [...this.utxos.values()].filter((utxo) => {
+          // We don't want to select collateral utxo's we've already used.
+          cleanInputs.filter((utxo) => {
             const matchingCollateral = [...this.collateralUtxos.values()].find(
               (cutxo) => isEqualUTxO(utxo, cutxo),
             );
+            
             if (matchingCollateral) {
               return false;
             }
@@ -1726,7 +1739,12 @@ export class TxBuilder {
           }
         }
 
-        if (!hasInput) {
+        // Only add non-script UTXOs for inputs.
+        if (
+          !hasInput &&
+          utxo.output().address().getProps().paymentPart?.type !==
+            CredentialType.ScriptHash
+        ) {
           spareInputs.push(utxo);
         }
       }

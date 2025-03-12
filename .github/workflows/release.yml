@@ -1,10 +1,8 @@
 name: Release
-
 on:
   push:
     branches:
       - main
-      - "**"
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -20,48 +18,22 @@ jobs:
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
-
       - name: 📦 Setup pnpm
         uses: pnpm/action-setup@v4
-
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
           cache: "pnpm"
           node-version: "latest"
-          registry-url: "https://registry.npmjs.org"
 
       - name: 🛠️ Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Split into two paths - main branch uses normal release process
-      - name: 🚀 Release (main branch)
-        if: github.ref == 'refs/heads/main'
+      - name: 🚀 Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
           publish: pnpm release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_ENV: production
-
-      # All other branches do snapshot releases
-      - name: 🚀 Snapshot Release (non-main branches)
-        if: github.ref != 'refs/heads/main'
-        run: |
-          # Setup npm authentication with scope
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
-          echo "@blaze-cardano:registry=https://registry.npmjs.org/" >> ~/.npmrc
-
-          # Get branch name and commit hash for snapshot
-          BRANCH=${GITHUB_REF#refs/heads/}
-          COMMIT=$(git rev-parse --short HEAD)
-
-          # Build and publish snapshot
-          pnpm turbo run build
-          pnpm changeset version --snapshot dev
-          pnpm changeset publish --tag dev --no-git-tag --access public
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

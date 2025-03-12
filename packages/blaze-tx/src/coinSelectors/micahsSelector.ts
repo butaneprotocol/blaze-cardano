@@ -1,5 +1,5 @@
 import type { TransactionUnspentOutput } from "@blaze-cardano/core";
-import { Value, UTxOSelectionError, CredentialType } from "@blaze-cardano/core";
+import { Value, UTxOSelectionError } from "@blaze-cardano/core";
 import * as value from "../value";
 import type { CoinSelectionFunc, SelectionResult } from "../types";
 
@@ -123,18 +123,7 @@ export const micahsSelector: CoinSelectionFunc = (
   inputs,
   dearth,
 ): SelectionResult => {
-  const cleanInputs = inputs.filter((utxo) => {
-    if (
-      utxo.output().address().getProps().paymentPart?.type ===
-      CredentialType.ScriptHash
-    ) {
-      return false;
-    }
-
-    return true;
-  });
-
-  const wideResult = wideSelection(cleanInputs, dearth);
+  const wideResult = wideSelection(inputs, dearth);
   const remainingDearth = value.positives(
     value.sub(dearth, wideResult.selectedValue),
   );
@@ -147,12 +136,7 @@ export const micahsSelector: CoinSelectionFunc = (
     ...deepResult.selectedInputs,
   ];
   if (!value.empty(finalDearth)) {
-    throw new UTxOSelectionError(
-      "final",
-      finalDearth,
-      cleanInputs,
-      selectedInputs,
-    );
+    throw new UTxOSelectionError("final", finalDearth, inputs, selectedInputs);
   }
   return {
     selectedInputs,
