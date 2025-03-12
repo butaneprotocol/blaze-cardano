@@ -722,8 +722,6 @@ export class Emulator {
 
     fee += refScriptFee;
 
-    console.log(tx.toCbor())
-
     if (fee > body.fee())
       throw new Error(
         `Insufficient transaction fee. Supplied: ${body.fee()}, Required: ${fee}`,
