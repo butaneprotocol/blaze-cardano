@@ -709,14 +709,18 @@ export class Emulator {
         ),
       );
 
+    let refScriptFee = 0n;
     if (refInputs && this.params.minFeeReferenceScripts) {
       const refScripts = [...inputs, ...refInputs]
         .map((x) => this.getOutput(x)!.scriptRef())
         .filter((x) => x !== undefined);
-      fee += BigInt(
+
+      refScriptFee += BigInt(
         Math.ceil(calculateReferenceScriptFee(refScripts, this.params)),
       );
     }
+
+    fee += refScriptFee;
 
     if (fee > body.fee())
       throw new Error(

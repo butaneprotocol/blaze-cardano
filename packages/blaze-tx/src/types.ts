@@ -1,4 +1,9 @@
-import type { TransactionUnspentOutput, Value } from "@blaze-cardano/core";
+import type {
+  Hash32ByteBase16,
+  HexBlob,
+  TransactionUnspentOutput,
+  Value,
+} from "@blaze-cardano/core";
 
 /**
  * The result of a coin selection operation.
@@ -10,6 +15,10 @@ export type SelectionResult = {
   selectedValue: Value;
 };
 
+export interface UseCoinSelectionArgs {
+  useCoinSelection: boolean;
+}
+
 /**
  * The coin selection function to choose which inputs to use for the transaction.
  */
@@ -20,3 +29,14 @@ export type CoinSelectionFunc = (
   externalAssets?: Value,
   coinsPerUtxoByte?: number,
 ) => SelectionResult;
+
+/**
+ * The type interface for script data.
+ */
+export interface IScriptData {
+  redeemersEncoded: string;
+  datumsEncoded: string | undefined;
+  costModelsEncoded: string;
+  hashedData: HexBlob;
+  scriptDataHash: Hash32ByteBase16;
+}
