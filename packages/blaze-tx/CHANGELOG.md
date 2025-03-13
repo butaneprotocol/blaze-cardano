@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.12.0
+
+### Minor Changes
+
+- 12ae921: Completely rewrites a lot of the completion logic for building transactions, including fee calculation and collateral selection. It also adds a new coin selection algorithm as an optional export, based on the HVF algorithm.
+
 ## 0.11.1
 
 ### Patch Changes
