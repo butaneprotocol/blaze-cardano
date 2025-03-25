@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`prepareCollateral method should throw an error if the selected collateral input is not large enough after required collateral is deducted 1`] = `"prepareCollateral: collateral output does not have sufficient ADA to cover minUtxo value. Output only has 9322963 ADA after required amount, but needs at least 11908530."`;

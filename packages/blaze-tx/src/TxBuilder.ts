@@ -628,6 +628,7 @@ export class TxBuilder {
   private checkAndAlterOutput(output: TransactionOutput): TransactionOutput {
     let minAda = this.calculateMinAda(output);
     let coin = output.amount().coin();
+
     while (coin < minAda) {
       const amount = output.amount();
       amount.setCoin(minAda);
@@ -1547,13 +1548,13 @@ export class TxBuilder {
         new Value(requiredCollateral),
       );
 
-      this.trace(`Preparing collateral with coin selection...`, {
-        requiredCollateral,
-        providedCollateral: providedCollateral.coin(),
-        collateralReturn: collateralReturn.coin(),
-      });
-
       if (providedCollateral.coin() < requiredCollateral) {
+        this.trace(`Preparing collateral with coin selection...`, {
+          requiredCollateral,
+          providedCollateral: providedCollateral.coin(),
+          collateralReturn: collateralReturn.coin(),
+        });
+
         const cleanInputs = [...this.utxos.values()].filter((utxo) => {
           if (
             utxo.output().address().getProps().paymentPart?.type ===
@@ -1607,14 +1608,25 @@ export class TxBuilder {
         this.body.setCollateral(collateralSet);
       }
 
-      this.body.setCollateralReturn(
-        this.checkAndAlterOutput(
-          new TransactionOutput(
-            this.collateralChangeAddress ?? this.changeAddress!,
-            collateralReturn,
-          ),
-        ),
+      const collateralOutput = new TransactionOutput(
+        this.collateralChangeAddress ?? this.changeAddress!,
+        collateralReturn,
       );
+
+      const validatedCollateralOutput = this.checkAndAlterOutput(
+        TransactionOutput.fromCbor(collateralOutput.toCbor()),
+      );
+
+      if (
+        collateralOutput.amount().coin() !==
+        validatedCollateralOutput.amount().coin()
+      ) {
+        throw new Error(
+          `prepareCollateral: collateral output does not have sufficient ADA to cover minUtxo value. Output only has ${collateralOutput.amount().coin()} ADA after required amount, but needs at least ${validatedCollateralOutput.amount().coin()}.`,
+        );
+      }
+
+      this.body.setCollateralReturn(validatedCollateralOutput);
     }
   }
 
