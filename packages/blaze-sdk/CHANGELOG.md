@@ -1,5 +1,14 @@
 # @blaze-cardano/sdk
 
+## 0.2.28
+
+### Patch Changes
+
+- Updated dependencies [4448568]
+  - @blaze-cardano/tx@0.12.1
+  - @blaze-cardano/uplc@0.2.10
+  - @blaze-cardano/wallet@0.4.2
+
 ## 0.2.27
 
 ### Patch Changes
