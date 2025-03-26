@@ -163,7 +163,7 @@ export class TxBuilder {
    */
   constructor(
     params: ProtocolParameters,
-    private tracing: boolean = false
+    private tracing: boolean = false,
   ) {
     setInConwayEra(true);
     this.params = params;
@@ -171,7 +171,7 @@ export class TxBuilder {
       CborSet.fromCore([], TransactionInput.fromCore),
       [],
       0n,
-      undefined
+      undefined,
     );
   }
 
@@ -285,8 +285,8 @@ export class TxBuilder {
   useCoinSelector(
     selector: (
       inputs: TransactionUnspentOutput[],
-      dearth: Value
-    ) => SelectionResult
+      dearth: Value,
+    ) => SelectionResult,
   ): TxBuilder {
     this.coinSelector = selector;
     return this;
@@ -372,12 +372,12 @@ export class TxBuilder {
       values.find(
         (val) =>
           val.index() == utxo.input().index() &&
-          val.transactionId() == utxo.input().transactionId()
+          val.transactionId() == utxo.input().transactionId(),
       )
     ) {
       // If a duplicate is found, throw an error to prevent adding it.
       throw new Error(
-        "Cannot add duplicate reference input to the transaction"
+        "Cannot add duplicate reference input to the transaction",
       );
     }
     // If no duplicate is found, add the input to the array of reference inputs.
@@ -412,7 +412,7 @@ export class TxBuilder {
   addInput(
     utxo: TransactionUnspentOutput,
     redeemer?: PlutusData,
-    unhashDatum?: PlutusData
+    unhashDatum?: PlutusData,
   ): TxBuilder {
     // Retrieve the current inputs from the transaction body for manipulation.
     const inputs = this.body.inputs();
@@ -422,7 +422,7 @@ export class TxBuilder {
       values.find(
         (val) =>
           val.index() == utxo.input().index() &&
-          val.transactionId() == utxo.input().transactionId()
+          val.transactionId() == utxo.input().transactionId(),
       )
     ) {
       throw new Error("Cannot add duplicate input to the transaction");
@@ -455,7 +455,7 @@ export class TxBuilder {
     if (redeemer !== undefined) {
       if (key.type == CredentialType.KeyHash) {
         throw new Error(
-          "addInput: Cannot spend with redeemer for KeyHash credential!"
+          "addInput: Cannot spend with redeemer for KeyHash credential!",
         );
       }
       this.requiredPlutusScripts.add(key.hash);
@@ -463,18 +463,18 @@ export class TxBuilder {
       if (!datum) {
         // TODO: as of chang, this is no longer true
         throw new Error(
-          "addInput: Cannot spend with redeemer when datum is missing!"
+          "addInput: Cannot spend with redeemer when datum is missing!",
         );
       }
       if (datum?.asInlineData() && unhashDatum) {
         throw new Error(
-          "addInput: Cannot have inline datum and also provided datum (3rd arg)."
+          "addInput: Cannot have inline datum and also provided datum (3rd arg).",
         );
       }
       if (datum?.asDataHash()) {
         if (!unhashDatum) {
           throw new Error(
-            "addInput: When spending datum hash, must provide datum (3rd arg)."
+            "addInput: When spending datum hash, must provide datum (3rd arg).",
           );
         }
         this.plutusData.add(unhashDatum!);
@@ -489,7 +489,7 @@ export class TxBuilder {
             memory: this.params.maxExecutionUnitsPerTransaction.memory,
             steps: this.params.maxExecutionUnitsPerTransaction.steps,
           },
-        })
+        }),
       );
       this.redeemers.setValues(redeemers);
     } else {
@@ -551,11 +551,11 @@ export class TxBuilder {
   addMint(
     policy: PolicyId,
     assets: Map<AssetName, bigint>,
-    redeemer?: PlutusData
+    redeemer?: PlutusData,
   ) {
     const insertIdx = insertSorted(
       this.consumedMintHashes,
-      PolicyIdToHash(policy)
+      PolicyIdToHash(policy),
     );
     // Retrieve the current mint map from the transaction body, or initialize a new one if none exists.
     const mint: TokenMap = this.body.mint() ?? new Map();
@@ -597,7 +597,7 @@ export class TxBuilder {
             memory: this.params.maxExecutionUnitsPerTransaction.memory, // Placeholder memory units, replace with actual estimation.
             steps: this.params.maxExecutionUnitsPerTransaction.steps, // Placeholder step units, replace with actual estimation.
           },
-        })
+        }),
       );
       // Update the transaction's redeemers with the new list.
       this.redeemers.setValues(redeemers);
@@ -649,7 +649,7 @@ export class TxBuilder {
     assertValidOutput(
       output,
       this.params.coinsPerUtxoByte,
-      this.params.maxValueSize
+      this.params.maxValueSize,
     );
 
     return output;
@@ -694,7 +694,7 @@ export class TxBuilder {
         value: { coins: lovelace },
         datum: datumData,
         datumHash,
-      })
+      }),
     );
     return this;
   }
@@ -720,7 +720,7 @@ export class TxBuilder {
         value: value.toCore(),
         datum: datumData,
         datumHash,
-      })
+      }),
     );
     return this;
   }
@@ -741,13 +741,13 @@ export class TxBuilder {
     address: Address,
     lovelace: bigint,
     datum: Datum,
-    scriptReference?: Script
+    scriptReference?: Script,
   ): TxBuilder {
     return this.lockAssets(
       address,
       new Value(lovelace),
       datum,
-      scriptReference
+      scriptReference,
     );
   }
 
@@ -767,7 +767,7 @@ export class TxBuilder {
     address: Address,
     value: Value,
     datum: Datum,
-    scriptReference?: Script
+    scriptReference?: Script,
   ): TxBuilder {
     const datumData = typeof datum == "object" ? datum.toCore() : undefined;
     const datumHash = typeof datum == "string" ? datum : undefined;
@@ -780,7 +780,7 @@ export class TxBuilder {
         datum: datumData,
         datumHash,
         scriptReference: scriptReference?.toCore(),
-      })
+      }),
     );
   }
 
@@ -833,7 +833,7 @@ export class TxBuilder {
   private async evaluate(draft_tx: Transaction): Promise<bigint> {
     // Collect all UTXOs from the transaction's scope.
     const allUtxos: TransactionUnspentOutput[] = Array.from(
-      this.utxoScope.values()
+      this.utxoScope.values(),
     );
     // todo: filter utxoscope to only include inputs, reference inputs, collateral inputs, not excess junk
 
@@ -867,7 +867,7 @@ export class TxBuilder {
    * @throws {Error} If a required script cannot be resolved by its hash.
    */
   protected buildFinalWitnessSet(
-    signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][]
+    signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][],
   ): TransactionWitnessSet {
     const tw = new TransactionWitnessSet();
     // Script lookup table to map script hashes to script objects
@@ -886,7 +886,7 @@ export class TxBuilder {
         const script = scriptLookup[requiredScriptHash];
         if (!script) {
           throw new Error(
-            `complete: Could not resolve script hash ${requiredScriptHash}`
+            `complete: Could not resolve script hash ${requiredScriptHash}`,
           );
         } else {
           if (script.asNative() != undefined) {
@@ -913,7 +913,7 @@ export class TxBuilder {
         this.usedLanguages[PlutusLanguageVersion.V3] = true;
       } else if (!lang) {
         throw new Error(
-          "buildTransactionWitnessSet: lang script lookup failed"
+          "buildTransactionWitnessSet: lang script lookup failed",
         );
       }
     }
@@ -923,14 +923,14 @@ export class TxBuilder {
         const script = scriptLookup[requiredScriptHash];
         if (!script) {
           throw new Error(
-            `complete: Could not resolve script hash ${requiredScriptHash}`
+            `complete: Could not resolve script hash ${requiredScriptHash}`,
           );
         } else {
           if (script.asNative() != undefined) {
             sn.push(script.asNative()!);
           } else {
             throw new Error(
-              `complete: Could not resolve script hash: ${script.hash()} (was not native script). Did you forget to add a redeemer, attach a reference input, or call provideScript?`
+              `complete: Could not resolve script hash: ${script.hash()} (was not native script). Did you forget to add a redeemer, attach a reference input, or call provideScript?`,
             );
           }
         }
@@ -1001,7 +1001,7 @@ export class TxBuilder {
 
       if (!output) {
         throw new Error(
-          `updateRequiredWitnesses: could not find a matching output for ${input.transactionId()}#${input.index()}`
+          `updateRequiredWitnesses: could not find a matching output for ${input.transactionId()}#${input.index()}`,
         );
       }
 
@@ -1026,52 +1026,52 @@ export class TxBuilder {
       switch (cert.kind()) {
         case 0: // Stake Registration
           this.requiredWitnesses.add(
-            HashAsPubKeyHex(cert.asStakeRegistration()!.stakeCredential().hash)
+            HashAsPubKeyHex(cert.asStakeRegistration()!.stakeCredential().hash),
           );
           break;
         case 1: // Stake Deregistration
           this.requiredWitnesses.add(
             HashAsPubKeyHex(
-              cert.asStakeDeregistration()!.stakeCredential().hash
-            )
+              cert.asStakeDeregistration()!.stakeCredential().hash,
+            ),
           );
           break;
         case 2: // Stake Delegation
           this.requiredWitnesses.add(
-            HashAsPubKeyHex(cert.asStakeDelegation()!.stakeCredential().hash)
+            HashAsPubKeyHex(cert.asStakeDelegation()!.stakeCredential().hash),
           );
           break;
         case 3: // Pool Registration
           this.requiredWitnesses.add(
             Ed25519PublicKeyHex(
-              cert.asPoolRegistration()!.poolParameters().operator()
-            )
+              cert.asPoolRegistration()!.poolParameters().operator(),
+            ),
           );
           break;
         case 4: // Pool Retirement
           this.requiredWitnesses.add(
-            Ed25519PublicKeyHex(cert.asPoolRetirement()!.poolKeyHash())
+            Ed25519PublicKeyHex(cert.asPoolRetirement()!.poolKeyHash()),
           );
           break;
         case 16: // dRep Registration
           this.requiredWitnesses.add(
             HashAsPubKeyHex(
-              cert.asRegisterDelegateRepresentativeCert()!.credential().hash
-            )
+              cert.asRegisterDelegateRepresentativeCert()!.credential().hash,
+            ),
           );
           break;
         case 17: // dRep Unregstration
           this.requiredWitnesses.add(
             HashAsPubKeyHex(
-              cert.asUnregisterDelegateRepresentativeCert()!.credential().hash
-            )
+              cert.asUnregisterDelegateRepresentativeCert()!.credential().hash,
+            ),
           );
           break;
         case 18: // dRep Update
           this.requiredWitnesses.add(
             HashAsPubKeyHex(
-              cert.asUpdateDelegateRepresentativeCert()!.credential().hash
-            )
+              cert.asUpdateDelegateRepresentativeCert()!.credential().hash,
+            ),
           );
           break;
       }
@@ -1103,7 +1103,7 @@ export class TxBuilder {
         (_, i) => [
           Ed25519PublicKeyHex(i.toString(16).padStart(64, "0")),
           Ed25519SignatureHex(i.toString(16).padStart(128, "0")),
-        ]
+        ],
       );
 
     return this.buildFinalWitnessSet(placeholderSignatures);
@@ -1129,7 +1129,7 @@ export class TxBuilder {
     // Initialize values for input, output, and minted amounts.
     let inputValue = new Value(withdrawalAmount);
     let outputValue = new Value(
-      bigintMax(this.fee, this.minimumFee) + (this.body.donation() ?? 0n)
+      bigintMax(this.fee, this.minimumFee) + (this.body.donation() ?? 0n),
     );
     const mintValue = new Value(0n, this.body.mint());
 
@@ -1160,20 +1160,20 @@ export class TxBuilder {
         case 0: // Stake Registration
           outputValue = value.merge(
             outputValue,
-            new Value(BigInt(this.params.stakeKeyDeposit))
+            new Value(BigInt(this.params.stakeKeyDeposit)),
           );
           break;
         case 1: // Stake Deregistration
           inputValue = value.merge(
             inputValue,
-            new Value(BigInt(this.params.stakeKeyDeposit))
+            new Value(BigInt(this.params.stakeKeyDeposit)),
           );
           break;
         case 3: // Pool Registration
           if (this.params.poolDeposit) {
             outputValue = value.merge(
               outputValue,
-              new Value(BigInt(this.params.poolDeposit))
+              new Value(BigInt(this.params.poolDeposit)),
             );
           }
           break;
@@ -1181,7 +1181,7 @@ export class TxBuilder {
           if (this.params.poolDeposit) {
             inputValue = value.merge(
               inputValue,
-              new Value(BigInt(this.params.poolDeposit))
+              new Value(BigInt(this.params.poolDeposit)),
             );
           }
           break;
@@ -1192,7 +1192,7 @@ export class TxBuilder {
     // Subtract a fixed fee amount (5 ADA) to ensure enough is allocated for transaction fees.
     const tilt = value.merge(
       value.merge(inputValue, value.negate(outputValue)),
-      mintValue
+      mintValue,
     );
 
     return tilt;
@@ -1216,7 +1216,7 @@ export class TxBuilder {
         // Throw an error if the cost model is missing. Note that we add one to the language version for the sake of the error message
         if (cm == undefined) {
           throw new Error(
-            `complete: Could not find cost model for Plutus Language Version ${i + 1}`
+            `complete: Could not find cost model for Plutus Language Version ${i + 1}`,
           );
         }
         // Insert the cost model into the used cost models container.
@@ -1234,7 +1234,7 @@ export class TxBuilder {
    * @returns {Hash32ByteBase16 | undefined} The script data hash if datums or redeemers are present, otherwise undefined.
    */
   private getScriptDataHash(
-    tw: TransactionWitnessSet
+    tw: TransactionWitnessSet,
   ): Hash32ByteBase16 | undefined {
     return this.getScriptData(tw)?.scriptDataHash;
   }
@@ -1252,12 +1252,12 @@ export class TxBuilder {
     const minLovelace = this.calculateMinAda(changeOutput);
     if (minLovelace > changeOutput.amount().coin()) {
       throw new Error(
-        `Unreachable! Somehow we created a change output with less than the minimum required lovelace: ${minLovelace}, ${changeOutput.amount().coin()}`
+        `Unreachable! Somehow we created a change output with less than the minimum required lovelace: ${minLovelace}, ${changeOutput.amount().coin()}`,
       );
     }
     const newCoin = bigintMax(
       minLovelace,
-      changeOutput.amount().coin() - lovelace
+      changeOutput.amount().coin() - lovelace,
     );
     const recoveredAmount = changeOutput.amount().coin() - newCoin;
     changeOutput.amount().setCoin(newCoin);
@@ -1290,13 +1290,13 @@ export class TxBuilder {
     // Add the excess value to that output
     const newChangeOutput = new TransactionOutput(
       this.changeAddress!,
-      value.merge(changeOutput.amount(), surplusValue)
+      value.merge(changeOutput.amount(), surplusValue),
     );
     // Split it, in case it's too large
     const changeOutputs = this.splitOutputIfNeeded(newChangeOutput);
     if (changeOutputs.length > 1) {
       this.trace(
-        `Change output split into ${changeOutputs.length} outputs because of size`
+        `Change output split into ${changeOutputs.length} outputs because of size`,
       );
     }
     for (const output of changeOutputs) {
@@ -1323,8 +1323,8 @@ export class TxBuilder {
       this.changeOutputIndex = this.body.outputs().length;
       this.addOutput(
         this.checkAndAlterOutput(
-          new TransactionOutput(this.changeAddress!, value.zero())
-        )
+          new TransactionOutput(this.changeAddress!, value.zero()),
+        ),
       );
     }
     const outputs = this.body.outputs();
@@ -1341,7 +1341,7 @@ export class TxBuilder {
     // throw an error if they are set
     if (output.datum() !== undefined || output.scriptRef() !== undefined) {
       throw new Error(
-        "Invariant Violated: Don't know how to split output with datums or script references"
+        "Invariant Violated: Don't know how to split output with datums or script references",
       );
     }
 
@@ -1350,15 +1350,15 @@ export class TxBuilder {
     let remainingLovelace = output.amount().coin();
 
     for (const [asset, quantity] of Array.from(
-      output.amount().multiasset()?.entries() ?? []
+      output.amount().multiasset()?.entries() ?? [],
     )) {
       const prospectiveValue = value.merge(
         nextOutput.amount(),
-        value.makeValue(0n, [asset, quantity])
+        value.makeValue(0n, [asset, quantity]),
       );
       const prospectiveOutput = new TransactionOutput(
         nextOutput.address(),
-        prospectiveValue
+        prospectiveValue,
       );
       const prospectiveSize = prospectiveOutput.toCbor().length / 2;
       // We might end up with some lovelace left over after accounting for all the minUTxO of each split UTxO
@@ -1370,7 +1370,7 @@ export class TxBuilder {
         remainingLovelace -= correctedOutput.amount().coin();
         nextOutput = new TransactionOutput(
           output.address(),
-          value.makeValue(0n, [asset, quantity])
+          value.makeValue(0n, [asset, quantity]),
         );
       } else {
         nextOutput = prospectiveOutput;
@@ -1384,7 +1384,7 @@ export class TxBuilder {
     if (remainingLovelace > 0n) {
       const lastOutput = outputs.length - 1;
       outputs[lastOutput]!.amount().setCoin(
-        outputs[lastOutput]!.amount().coin() + remainingLovelace
+        outputs[lastOutput]!.amount().coin() + remainingLovelace,
       );
     }
     return outputs;
@@ -1411,7 +1411,7 @@ export class TxBuilder {
 
     // Calculate the fee based on the transaction size and minimum fee parameters.
     let minFee = Math.ceil(
-      this.params.minFeeConstant + txSize * this.params.minFeeCoefficient
+      this.params.minFeeConstant + txSize * this.params.minFeeCoefficient,
     );
 
     let refScriptFee = 0;
@@ -1429,7 +1429,7 @@ export class TxBuilder {
           utxoScope
             .find((y) => isEqualInput(y.input(), x))!
             .output()
-            .scriptRef()
+            .scriptRef(),
         )
         .filter((x) => x !== undefined);
 
@@ -1457,7 +1457,7 @@ export class TxBuilder {
     // Warn if we're using minimumFee or feePadding, as the goal is for blaze to perfectly estimate the transaction fees
     if (this.minimumFee > 0n || this.feePadding > 0n) {
       console.warn(
-        "A transaction was built using fee padding. This is useful for working around changes to fee calculation, but ultimately is a bandaid. If you find yourself needing this, please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can fix the underlying inaccuracy!"
+        "A transaction was built using fee padding. This is useful for working around changes to fee calculation, but ultimately is a bandaid. If you find yourself needing this, please open a ticket at https://github.com/butaneprotocol/blaze-cardano so we can fix the underlying inaccuracy!",
       );
     }
 
@@ -1476,11 +1476,11 @@ export class TxBuilder {
   protected prepareCollateral(
     { useCoinSelection = true }: UseCoinSelectionArgs = {
       useCoinSelection: true,
-    }
+    },
   ) {
     if (this.redeemers.size() === 0) {
       this.trace(
-        "prepareCollateral: No redeemers, skipping collateral preparation."
+        "prepareCollateral: No redeemers, skipping collateral preparation.",
       );
       return;
     }
@@ -1489,21 +1489,21 @@ export class TxBuilder {
       // Retrieve provided collateral inputs
       const providedCollateral = [...this.collateralUtxos.values()].sort(
         (a, b) =>
-          a.output().amount().coin() < b.output().amount().coin() ? -1 : 1
+          a.output().amount().coin() < b.output().amount().coin() ? -1 : 1,
       );
 
       const totalValue = value.sum(
-        providedCollateral.map((pc) => pc.output().amount())
+        providedCollateral.map((pc) => pc.output().amount()),
       );
 
       const requiredCollateral = calculateRequiredCollateral(
         this.fee,
-        this.params.collateralPercentage
+        this.params.collateralPercentage,
       );
 
       const collateralReturn = value.merge(
         totalValue,
-        value.negate(new Value(requiredCollateral))
+        value.negate(new Value(requiredCollateral)),
       );
 
       this.trace(`Preparing collateral...`, {
@@ -1517,7 +1517,7 @@ export class TxBuilder {
         providedCollateral.map((pc) => {
           this.utxoScope.add(pc);
           return pc.input();
-        })
+        }),
       );
       this.body.setCollateral(tis);
       this.body.setTotalCollateral(requiredCollateral);
@@ -1525,23 +1525,23 @@ export class TxBuilder {
         this.checkAndAlterOutput(
           new TransactionOutput(
             this.collateralChangeAddress ?? this.changeAddress!,
-            collateralReturn
-          )
-        )
+            collateralReturn,
+          ),
+        ),
       );
     } else {
       const requiredCollateral = calculateRequiredCollateral(
         this.body.fee(),
-        this.params.collateralPercentage
+        this.params.collateralPercentage,
       );
       this.body.setTotalCollateral(requiredCollateral);
 
       let providedCollateral = value.sum(
-        [...this.collateralUtxos.values()].map((c) => c.output().amount())
+        [...this.collateralUtxos.values()].map((c) => c.output().amount()),
       );
       let collateralReturn = value.sub(
         providedCollateral,
-        new Value(requiredCollateral)
+        new Value(requiredCollateral),
       );
 
       this.trace(`Preparing collateral with coin selection...`, {
@@ -1561,7 +1561,7 @@ export class TxBuilder {
 
           // Ensure the UTxO can still satisfy requirements after collateral is removed.
           const newOutput = TransactionOutput.fromCbor(
-            HexBlob(utxo.output().toCbor())
+            HexBlob(utxo.output().toCbor()),
           );
           newOutput
             .amount()
@@ -1571,7 +1571,7 @@ export class TxBuilder {
             assertValidOutput(
               newOutput,
               this.params.coinsPerUtxoByte,
-              this.params.maxValueSize
+              this.params.maxValueSize,
             );
           } catch (_e) {
             return false;
@@ -1582,7 +1582,7 @@ export class TxBuilder {
 
         if (cleanInputs.length === 0) {
           throw new Error(
-            "prepareCollateral: no inputs are sufficient to be used as collateral, likely because none satisfy the minUtxo requirements after collateral is deducted."
+            "prepareCollateral: no inputs are sufficient to be used as collateral, likely because none satisfy the minUtxo requirements after collateral is deducted.",
           );
         }
 
@@ -1590,7 +1590,7 @@ export class TxBuilder {
           // We don't want to select collateral utxo's we've already used.
           cleanInputs.filter((utxo) => {
             const matchingCollateral = [...this.collateralUtxos.values()].find(
-              (cutxo) => isEqualUTxO(utxo, cutxo)
+              (cutxo) => isEqualUTxO(utxo, cutxo),
             );
 
             if (matchingCollateral) {
@@ -1600,14 +1600,14 @@ export class TxBuilder {
             return true;
           }),
           new Value(requiredCollateral),
-          Number(this.fee)
+          Number(this.fee),
         );
 
         if (selectedInputs.length > this.params.maxCollateralInputs) {
           // TODO: custom error type so dApps can respond to this specifically
           throw new Error(
             `prepareCollateral: In order to satisfy the collateral requirement of ${requiredCollateral.toString()} lovelace, we would need more than ${this.params.maxCollateralInputs} collateral inputs.` +
-              ` This can happen if the wallet consists of many UTxOs with a very small amount of ADA.`
+              ` This can happen if the wallet consists of many UTxOs with a very small amount of ADA.`,
           );
         }
 
@@ -1616,12 +1616,12 @@ export class TxBuilder {
         collateralSet.setValues(selectedInputs.map((si) => si.input()));
 
         providedCollateral = value.sum(
-          selectedInputs.map((si) => si.output().amount())
+          selectedInputs.map((si) => si.output().amount()),
         );
 
         collateralReturn = value.sub(
           providedCollateral,
-          new Value(requiredCollateral)
+          new Value(requiredCollateral),
         );
 
         this.collateralUtxos = new Set(selectedInputs);
@@ -1630,13 +1630,13 @@ export class TxBuilder {
 
       const collateralOutput = new TransactionOutput(
         this.collateralChangeAddress ?? this.changeAddress!,
-        collateralReturn
+        collateralReturn,
       );
 
       assertValidOutput(
         collateralOutput,
         this.params.coinsPerUtxoByte,
-        this.params.maxValueSize
+        this.params.maxValueSize,
       );
       this.body.setCollateralReturn(collateralOutput);
     }
@@ -1668,7 +1668,7 @@ export class TxBuilder {
   async complete(
     { useCoinSelection = true }: UseCoinSelectionArgs = {
       useCoinSelection: true,
-    }
+    },
   ): Promise<Transaction> {
     // Execute pre-complete hooks
     if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
@@ -1679,12 +1679,12 @@ export class TxBuilder {
     // Ensure a change address has been set before proceeding.
     if (!this.changeAddress) {
       throw new Error(
-        "Cannot complete transaction without setting change address"
+        "Cannot complete transaction without setting change address",
       );
     }
     if (this.networkId === undefined) {
       throw new Error(
-        "Cannot complete transaction without setting a network id"
+        "Cannot complete transaction without setting a network id",
       );
     }
     // TODO: Potential bug with js SDK where setting the network to testnet causes the tx body CBOR to fail
@@ -1707,13 +1707,13 @@ export class TxBuilder {
         const auxiliaryDataHash = getAuxiliaryDataHash(auxiliaryData);
         if (auxiliaryDataHash != this.body.auxiliaryDataHash()) {
           throw new Error(
-            "TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash"
+            "TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash",
           );
         }
       } else {
         if (this.body.auxiliaryDataHash() != undefined) {
           throw new Error(
-            "TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash"
+            "TxBuilder complete: auxiliary data somehow didn't match auxiliary data hash",
           );
         }
       }
@@ -1734,7 +1734,7 @@ export class TxBuilder {
         } catch (e) {
           // TODO: just throw a custom error type with the traces + txCbor
           this.trace(
-            `An error occurred when trying to evaluate the above transaction CBOR.`
+            `An error occurred when trying to evaluate the above transaction CBOR.`,
           );
 
           throw e;
@@ -1773,7 +1773,7 @@ export class TxBuilder {
         }
       }
       this.trace(
-        `Identified ${spareInputs.length} spare inputs: ${stringifyBigint(spareInputs.map((si) => si.toCore()))}`
+        `Identified ${spareInputs.length} spare inputs: ${stringifyBigint(spareInputs.map((si) => si.toCore()))}`,
       );
 
       // Compute the unspent surplus from the inputs, and the deficit spending from the outputs
@@ -1789,10 +1789,10 @@ export class TxBuilder {
       // If we have a deficit in ADA, try to pull that from the change UTxO, which may have been over-committed
       if (deficit.coin() < 0n) {
         const recoveredAmount = this.recoverLovelaceFromChangeOutput(
-          -deficit.coin()
+          -deficit.coin(),
         );
         this.trace(
-          `Recovered ${recoveredAmount} lovelace from the change output.`
+          `Recovered ${recoveredAmount} lovelace from the change output.`,
         );
         deficit.setCoin(deficit.coin() + recoveredAmount);
         surplusAndDeficits.setCoin(surplusAndDeficits.coin() + recoveredAmount);
@@ -1813,11 +1813,11 @@ export class TxBuilder {
           // Perform coin selection to cover any negative excess value.
           const selectionResult = this.coinSelector(
             spareInputs,
-            value.negate(deficit)
+            value.negate(deficit),
           );
           this.trace(
             `Selected ${selectionResult.selectedInputs.length} inputs`,
-            selectionResult.selectedInputs.map((si) => si.input().toCore())
+            selectionResult.selectedInputs.map((si) => si.input().toCore()),
           );
           spareInputs = selectionResult.leftoverInputs;
           // Add selected inputs to the transaction.
@@ -1831,14 +1831,14 @@ export class TxBuilder {
               // rather than trying to do something smart
               if (!spareInputs[0]) {
                 throw new Error(
-                  "No spare inputs available to add to the transaction"
+                  "No spare inputs available to add to the transaction",
                 );
               }
               // Select the input with the least number of different multiassets from spareInputs
               const [inputWithLeastMultiAssets] = spareInputs.reduce(
                 ([minInput, minMultiAssetCount], currentInput) => {
                   const currentMultiAssetCount = value.assetTypes(
-                    currentInput.output().amount()
+                    currentInput.output().amount(),
                   );
                   return currentMultiAssetCount < minMultiAssetCount
                     ? [currentInput, minMultiAssetCount]
@@ -1847,18 +1847,18 @@ export class TxBuilder {
                 [
                   spareInputs[0],
                   value.assetTypes(spareInputs[0].output().amount()),
-                ]
+                ],
               );
               this.addInput(inputWithLeastMultiAssets);
               // Remove the selected input from spareInputs
               spareInputs = spareInputs.filter(
-                (input) => input !== inputWithLeastMultiAssets
+                (input) => input !== inputWithLeastMultiAssets,
               );
             }
           }
           if (this.body.inputs().values().length == 0) {
             throw new Error(
-              "TxBuilder: resolved empty input set, cannot construct transaction!"
+              "TxBuilder: resolved empty input set, cannot construct transaction!",
             );
           }
           // excessValue is the unspent surplus from the inputs (or negative for the deficits)
@@ -1867,12 +1867,12 @@ export class TxBuilder {
           // these inputs
           surplusAndDeficits = value.merge(
             surplusAndDeficits,
-            selectionResult.selectedValue
+            selectionResult.selectedValue,
           );
           // Ensure the coin selection has eliminated all negative values.
           if (!value.empty(value.negatives(surplusAndDeficits))) {
             throw new Error(
-              "Unreachable! CoinSelection is expected to throw an error if it can't reach the goal, but it returned a selection result that didn't satisfy the goal."
+              "Unreachable! CoinSelection is expected to throw an error if it can't reach the goal, but it returned a selection result that didn't satisfy the goal.",
             );
           }
         }
@@ -1888,7 +1888,7 @@ export class TxBuilder {
         // So, we must add at least one input, and then do another round of balancing
         if (spareInputs.length === 0) {
           throw new Error(
-            "A transaction must have at least one input, but there are no available spare inputs to add."
+            "A transaction must have at least one input, but there are no available spare inputs to add.",
           );
         }
         this.addInput(spareInputs[0]!);
@@ -1918,7 +1918,7 @@ export class TxBuilder {
   addDelegation(
     delegator: Credential,
     poolId: PoolId,
-    redeemer?: PlutusData
+    redeemer?: PlutusData,
   ): TxBuilder {
     const stakeDelegation: StakeDelegationCertificate = {
       __typename: CertificateType.StakeDelegation,
@@ -1926,7 +1926,7 @@ export class TxBuilder {
       poolId: poolId,
     };
     const delegationCertificate: Certificate = Certificate.newStakeDelegation(
-      StakeDelegation.fromCore(stakeDelegation)
+      StakeDelegation.fromCore(stakeDelegation),
     );
     const certs =
       this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
@@ -1936,7 +1936,7 @@ export class TxBuilder {
     const credentialHash = delegator.toCore().hash;
     const insertIdx = insertSorted(
       this.consumedDelegationHashes,
-      credentialHash
+      credentialHash,
     );
     const delegatorCredential = delegator.toCore();
     if (delegatorCredential.type == CredentialType.ScriptHash) {
@@ -1960,7 +1960,7 @@ export class TxBuilder {
               memory: this.params.maxExecutionUnitsPerTransaction.memory,
               steps: this.params.maxExecutionUnitsPerTransaction.steps,
             },
-          })
+          }),
         );
         this.redeemers.setValues(redeemers);
       } else {
@@ -1968,7 +1968,7 @@ export class TxBuilder {
       }
     } else if (redeemer) {
       throw new Error(
-        "TxBuilder addDelegation: failing to attach redeemer to a non-script delegation!"
+        "TxBuilder addDelegation: failing to attach redeemer to a non-script delegation!",
       );
     } else {
       this.requiredWitnesses.add(HashAsPubKeyHex(delegatorCredential.hash));
@@ -1991,7 +1991,7 @@ export class TxBuilder {
     const credential = this.rewardAddress!.getProps().delegationPart;
     if (!credential) {
       throw new Error(
-        "TxBuilder delegate: Somehow the reward address had no stake component"
+        "TxBuilder delegate: Somehow the reward address had no stake component",
       );
     }
     this.addDelegation(Credential.fromCore(credential), poolId, redeemer);
@@ -2005,7 +2005,7 @@ export class TxBuilder {
    */
   addRegisterStake(credential: Credential) {
     const stakeRegistration: StakeRegistration = new StakeRegistration(
-      credential.toCore()
+      credential.toCore(),
     );
     const registrationCertificate: Certificate =
       Certificate.newStakeRegistration(stakeRegistration);
@@ -2025,7 +2025,7 @@ export class TxBuilder {
    */
   addDeregisterStake(credential: Credential, redeemer?: PlutusData): TxBuilder {
     const stakeDeregistration: StakeDeregistration = new StakeDeregistration(
-      credential.toCore()
+      credential.toCore(),
     );
     const deregistrationCertificate: Certificate =
       Certificate.newStakeDeregistration(stakeDeregistration);
@@ -2038,7 +2038,7 @@ export class TxBuilder {
     // TODO: is this insertSorted mechanism a lurking bug, since the order might change?
     const insertIdx = insertSorted(
       this.consumedDeregisterHashes,
-      credentialHash
+      credentialHash,
     );
     // TODO: this should probably be based on whether the credential is a script credential
     if (redeemer) {
@@ -2062,7 +2062,7 @@ export class TxBuilder {
             memory: this.params.maxExecutionUnitsPerTransaction.memory,
             steps: this.params.maxExecutionUnitsPerTransaction.steps,
           },
-        })
+        }),
       );
       // Update the transaction with the new list of redeemers.
       this.redeemers.setValues(redeemers);
@@ -2096,7 +2096,7 @@ export class TxBuilder {
   setValidFrom(validFrom: Slot): TxBuilder {
     if (this.body.validityStartInterval() !== undefined) {
       throw new Error(
-        "TxBuilder setValidFrom: Validity start interval is already set"
+        "TxBuilder setValidFrom: Validity start interval is already set",
       );
     }
     this.body.setValidityStartInterval(validFrom);
@@ -2131,18 +2131,18 @@ export class TxBuilder {
   addWithdrawal(
     address: RewardAccount,
     amount: bigint,
-    redeemer?: PlutusData
+    redeemer?: PlutusData,
   ): TxBuilder {
     const withdrawalHash =
       Address.fromBech32(address).getProps().paymentPart?.hash;
     if (!withdrawalHash) {
       throw new Error(
-        "addWithdrawal: The RewardAccount provided does not have an associated stake credential."
+        "addWithdrawal: The RewardAccount provided does not have an associated stake credential.",
       );
     }
     const insertIdx = insertSorted(
       this.consumedWithdrawalHashes,
-      withdrawalHash
+      withdrawalHash,
     );
     // Retrieve existing withdrawals or initialize a new map if none exist.
     const withdrawals: Map<RewardAccount, bigint> =
@@ -2150,7 +2150,7 @@ export class TxBuilder {
     // Sanity check duplicates
     if (withdrawals.has(address)) {
       throw new Error(
-        "addWithdrawal: Withdrawal for this address already exists."
+        "addWithdrawal: Withdrawal for this address already exists.",
       );
     }
     // Set the withdrawal amount for the specified address.
@@ -2179,7 +2179,7 @@ export class TxBuilder {
             memory: this.params.maxExecutionUnitsPerTransaction.memory,
             steps: this.params.maxExecutionUnitsPerTransaction.steps,
           },
-        })
+        }),
       );
       // Update the transaction with the new list of redeemers.
       this.redeemers.setValues(redeemers);
@@ -2188,7 +2188,7 @@ export class TxBuilder {
       const key = Address.fromBech32(address).getProps().paymentPart;
       if (!key) {
         throw new Error(
-          "addWithdrawal: The RewardAccount provided does not have an associated stake credential."
+          "addWithdrawal: The RewardAccount provided does not have an associated stake credential.",
         );
       }
       // Add the required scripts or witnesses based on the type of the stake credential.
@@ -2214,7 +2214,7 @@ export class TxBuilder {
       Hash<Ed25519KeyHashHex>
     > = this.body.requiredSigners() ?? CborSet.fromCore([], Hash.fromCore);
     this.requiredWitnesses.add(
-      HashAsPubKeyHex(Hash28ByteBase16.fromEd25519KeyHashHex(signer))
+      HashAsPubKeyHex(Hash28ByteBase16.fromEd25519KeyHashHex(signer)),
     );
     // Convert the signer to a hash and add it to the set of required signers.
     const values = [...signers.values()];
