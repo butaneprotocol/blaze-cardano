@@ -288,3 +288,29 @@ export const assertLockAddress = (address: Address): never | void => {
 export const bigintMax = (a: bigint, b: bigint): bigint => {
   return a > b ? a : b;
 };
+
+/**
+ * Utility function to test the validity of a TransactionOutput.
+ *
+ * @param {TransactionOutput} output The TransactionOutput to test.
+ * @param {number} coinsPerUtxoByte From the environment's protocol params.
+ * @param {number} maxValueSize From the environment's protocl params.
+ * @throws If the output does not satisfy the minAda required, or the output is larger than the maxValueSize, it will throw an error.
+ */
+export const assertValidOutput = (
+  output: TransactionOutput,
+  coinsPerUtxoByte: number,
+  maxValueSize: number,
+): void | never => {
+  const byteLength = BigInt(output.toCbor().length / 2);
+  const requiredAmount = BigInt(coinsPerUtxoByte) * (byteLength + 160n);
+  if (output.amount().coin() < requiredAmount) {
+    throw new Error(
+      `checkOutputMinAda: collateral output does not have sufficient ADA to cover minUtxo value. Output only has ${output.amount().coin()} ADA after required amount, but needs at least ${requiredAmount}`,
+    );
+  }
+  const valueByteLength = output.amount().toCbor().length / 2;
+  if (valueByteLength > maxValueSize) {
+    throw new Error("checkOutputMinAda: Failed due to max value size!");
+  }
+};

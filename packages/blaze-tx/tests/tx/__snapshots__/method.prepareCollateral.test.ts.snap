@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`prepareCollateral method should throw an error if the selected collateral input is not large enough after required collateral is deducted 1`] = `"prepareCollateral: no inputs are sufficient to be used as collateral, likely because none satisfy the minUtxo requirements after collateral is deducted."`;

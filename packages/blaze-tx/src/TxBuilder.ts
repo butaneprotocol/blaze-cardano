@@ -18,7 +18,7 @@ import type {
   NetworkId,
   AuxiliaryData,
 } from "@blaze-cardano/core";
-import { Hash28ByteBase16 } from "@blaze-cardano/core";
+import { Hash28ByteBase16, HexBlob } from "@blaze-cardano/core";
 import {
   CborSet,
   TransactionInput,
@@ -79,6 +79,7 @@ import {
   assertLockAddress,
   bigintMax,
   isEqualUTxO,
+  assertValidOutput,
 } from "./utils";
 
 /*
@@ -628,6 +629,7 @@ export class TxBuilder {
   private checkAndAlterOutput(output: TransactionOutput): TransactionOutput {
     let minAda = this.calculateMinAda(output);
     let coin = output.amount().coin();
+
     while (coin < minAda) {
       const amount = output.amount();
       amount.setCoin(minAda);
@@ -644,17 +646,12 @@ export class TxBuilder {
       coin = output.amount().coin();
     }
 
-    const byteLength = BigInt(output.toCbor().length / 2);
-    if (
-      output.amount().coin() <
-      BigInt(this.params.coinsPerUtxoByte) * (byteLength + 160n)
-    ) {
-      throw new Error("addOutput: Failed due to min ada!");
-    }
-    const valueByteLength = output.amount().toCbor().length / 2;
-    if (valueByteLength > this.params.maxValueSize) {
-      throw new Error("addOutput: Failed due to max value size!");
-    }
+    assertValidOutput(
+      output,
+      this.params.coinsPerUtxoByte,
+      this.params.maxValueSize,
+    );
+
     return output;
   }
 
@@ -1562,8 +1559,32 @@ export class TxBuilder {
             return false;
           }
 
+          // Ensure the UTxO can still satisfy requirements after collateral is removed.
+          const newOutput = TransactionOutput.fromCbor(
+            HexBlob(utxo.output().toCbor()),
+          );
+          newOutput
+            .amount()
+            .setCoin(newOutput.amount().coin() - requiredCollateral);
+
+          try {
+            assertValidOutput(
+              newOutput,
+              this.params.coinsPerUtxoByte,
+              this.params.maxValueSize,
+            );
+          } catch (_e) {
+            return false;
+          }
+
           return true;
         });
+
+        if (cleanInputs.length === 0) {
+          throw new Error(
+            "prepareCollateral: no inputs are sufficient to be used as collateral, likely because none satisfy the minUtxo requirements after collateral is deducted.",
+          );
+        }
 
         const { selectedInputs } = this.coinSelector(
           // We don't want to select collateral utxo's we've already used.
@@ -1607,14 +1628,17 @@ export class TxBuilder {
         this.body.setCollateral(collateralSet);
       }
 
-      this.body.setCollateralReturn(
-        this.checkAndAlterOutput(
-          new TransactionOutput(
-            this.collateralChangeAddress ?? this.changeAddress!,
-            collateralReturn,
-          ),
-        ),
+      const collateralOutput = new TransactionOutput(
+        this.collateralChangeAddress ?? this.changeAddress!,
+        collateralReturn,
       );
+
+      assertValidOutput(
+        collateralOutput,
+        this.params.coinsPerUtxoByte,
+        this.params.maxValueSize,
+      );
+      this.body.setCollateralReturn(collateralOutput);
     }
   }
 
