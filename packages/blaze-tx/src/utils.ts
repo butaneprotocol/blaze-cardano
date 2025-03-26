@@ -42,11 +42,11 @@ export function getScriptSize(script: Script): number {
  */
 export function calculateReferenceScriptFee(
   refScripts: Script[],
-  params: ProtocolParameters,
+  params: ProtocolParameters
 ): number {
   let referenceScriptSize = refScripts.reduce(
     (acc, refScript) => acc + getScriptSize(refScript),
-    0,
+    0
   );
 
   const { base, multiplier, range } = params.minFeeReferenceScripts!;
@@ -70,7 +70,7 @@ export function calculateReferenceScriptFee(
  */
 export function calculateMinAda(
   output: TransactionOutput,
-  coinsPerUtxoByte: number,
+  coinsPerUtxoByte: number
 ): bigint {
   const byteLength = BigInt(output.toCbor().length / 2);
   return BigInt(coinsPerUtxoByte) * (byteLength + 160n);
@@ -86,7 +86,7 @@ export function calculateMinAda(
  */
 export function calculateRequiredCollateral(
   fee: bigint,
-  collateralPercentage: number,
+  collateralPercentage: number
 ): bigint {
   return BigInt(Math.ceil(Number(fee) * (collateralPercentage / 100)));
 }
@@ -98,7 +98,7 @@ export function calculateRequiredCollateral(
  */
 export const stringifyBigint: typeof JSON.stringify = (value) =>
   JSON.stringify(value, (_k, v) =>
-    typeof v === "bigint" ? v.toString() + "n" : v,
+    typeof v === "bigint" ? v.toString() + "n" : v
   );
 
 /**
@@ -107,7 +107,7 @@ export const stringifyBigint: typeof JSON.stringify = (value) =>
  * @returns {TransactionUnspentOutput[]}
  */
 export function sortLargestFirst(
-  inputs: TransactionUnspentOutput[],
+  inputs: TransactionUnspentOutput[]
 ): TransactionUnspentOutput[] {
   return [...inputs].sort((a, b) => {
     const lovelaceA = Number(a.output().amount().coin());
@@ -134,7 +134,7 @@ export function sortLargestFirst(
  */
 export const isEqualUTxO = (
   self: TransactionUnspentOutput,
-  that: TransactionUnspentOutput,
+  that: TransactionUnspentOutput
 ) =>
   isEqualInput(self.input(), that.input()) &&
   isEqualOutput(self.output(), that.output());
@@ -147,7 +147,7 @@ export const isEqualUTxO = (
  */
 export const isEqualInput = (
   self: TransactionInput,
-  that: TransactionInput,
+  that: TransactionInput
 ): boolean => self.toCbor() === that.toCbor();
 
 /**
@@ -158,7 +158,7 @@ export const isEqualInput = (
  */
 export const isEqualOutput = (
   self: TransactionOutput,
-  that: TransactionOutput,
+  that: TransactionOutput
 ): boolean => self.toCbor() === that.toCbor();
 
 /**
@@ -175,7 +175,7 @@ export const isEqualOutput = (
 export function computeScriptData(
   redeemers: Redeemers,
   datums: ReturnType<TransactionWitnessSet["plutusData"]>, // TODO: weird import shenanigans
-  usedCostModels: Costmdls,
+  usedCostModels: Costmdls
 ): IScriptData | undefined {
   const writeDatums = datums && (datums?.size() ?? 0) > 0;
   // If there are no redeemers *or* datums in the witness set, we don't need a script data hash at all
@@ -190,7 +190,7 @@ export function computeScriptData(
     : undefined;
   const costModelsEncoded = Buffer.from(
     usedCostModels.languageViewsEncoding(),
-    "hex",
+    "hex"
   );
 
   // Write out the script data hash to the cbor writer
@@ -256,7 +256,7 @@ export const assertPaymentsAddress = (address: Address): never | void => {
   }
   if (props.paymentPart.type == CredentialType.ScriptHash) {
     throw new Error(
-      "assertPaymentsAddress: address payment credential cannot be a script hash!",
+      "assertPaymentsAddress: address payment credential cannot be a script hash!"
     );
   }
 };
@@ -274,7 +274,7 @@ export const assertLockAddress = (address: Address): never | void => {
   }
   if (props.paymentPart.type != CredentialType.ScriptHash) {
     throw new Error(
-      "assertLockAddress: address payment credential must be a script hash!",
+      "assertLockAddress: address payment credential must be a script hash!"
     );
   }
 };
@@ -287,4 +287,30 @@ export const assertLockAddress = (address: Address): never | void => {
  */
 export const bigintMax = (a: bigint, b: bigint): bigint => {
   return a > b ? a : b;
+};
+
+/**
+ * Utility function to test the validity of a TransactionOutput.
+ *
+ * @param {TransactionOutput} output The TransactionOutput to test.
+ * @param {number} coinsPerUtxoByte From the environment's protocol params.
+ * @param {number} maxValueSize From the environment's protocl params.
+ * @throws If the output does not satisfy the minAda required, or the output is larger than the maxValueSize, it will throw an error.
+ */
+export const assertValidOutput = (
+  output: TransactionOutput,
+  coinsPerUtxoByte: number,
+  maxValueSize: number
+): void | never => {
+  const byteLength = BigInt(output.toCbor().length / 2);
+  const requiredAmount = BigInt(coinsPerUtxoByte) * (byteLength + 160n);
+  if (output.amount().coin() < requiredAmount) {
+    throw new Error(
+      `checkOutputMinAda: collateral output does not have sufficient ADA to cover minUtxo value. Output only has ${output.amount().coin()} ADA after required amount, but needs at least ${requiredAmount}`
+    );
+  }
+  const valueByteLength = output.amount().toCbor().length / 2;
+  if (valueByteLength > maxValueSize) {
+    throw new Error("checkOutputMinAda: Failed due to max value size!");
+  }
 };
