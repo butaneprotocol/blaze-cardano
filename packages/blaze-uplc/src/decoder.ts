@@ -257,13 +257,21 @@ export class UPLCDecoder extends FlatDecoder {
         term: this.#decodeTerm(lamDepth),
       };
     } else if (term == "Constr") {
-      throw new Error(
-        `UPLCDecoder: decoder is not implemented for tag ${termTag} or term (${term})`,
-      );
+      const tag = this.#decodeNatural();
+      const terms = this.#decodeList(() => this.#decodeTerm(lamDepth));
+      return {
+        type: "Constr",
+        tag,
+        terms,
+      };
     } else if (term == "Case") {
-      throw new Error(
-        `UPLCDecoder: decoder is not implemented for tag ${termTag} or term (${term})`,
-      );
+      const terms = this.#decodeTerm(lamDepth);
+      const cases = this.#decodeList(() => this.#decodeTerm(lamDepth));
+      return {
+        type: "Case",
+        term: terms,
+        cases,
+      };
     } else if (term == "Error") {
       return {
         type: "Error",
