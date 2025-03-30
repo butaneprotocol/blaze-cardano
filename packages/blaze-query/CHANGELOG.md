@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.4.2
+
+### Patch Changes
+
+- 509dbba: Support resolving plutus v3 reference scripts in blockfrost provider
+
 ## 0.4.1
 
 ### Patch Changes
