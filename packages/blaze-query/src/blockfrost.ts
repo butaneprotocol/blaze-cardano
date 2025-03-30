@@ -23,6 +23,7 @@ import {
   PlutusData,
   PlutusV1Script,
   PlutusV2Script,
+  PlutusV3Script,
   Redeemers,
   Script,
   TransactionId,
@@ -610,7 +611,7 @@ export class Blockfrost extends Provider {
     }
 
     const typeResponse = typeJson as BlockfrostResponse<{
-      type: "timelock" | "plutusV1" | "plutusV2";
+      type: "timelock" | "plutusV1" | "plutusV2" | "plutusV3";
     }>;
 
     if ("message" in typeResponse) {
@@ -650,6 +651,12 @@ export class Blockfrost extends Provider {
         return Script.newPlutusV1Script(new PlutusV1Script(cbor));
       case "plutusV2":
         return Script.newPlutusV2Script(new PlutusV2Script(cbor));
+      case "plutusV3":
+        return Script.newPlutusV3Script(new PlutusV3Script(cbor));
+      default:
+        throw new Error(
+          `Unsupported script type ${type} for script hash ${scriptHash}`,
+        );
     }
   }
 
