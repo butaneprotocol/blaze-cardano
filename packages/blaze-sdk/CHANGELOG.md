@@ -1,5 +1,13 @@
 # @blaze-cardano/sdk
 
+## 0.2.29
+
+### Patch Changes
+
+- Updated dependencies [509dbba]
+  - @blaze-cardano/query@0.4.2
+  - @blaze-cardano/wallet@0.4.3
+
 ## 0.2.28
 
 ### Patch Changes
