@@ -1,5 +1,18 @@
 # @blaze-cardano/tx
 
+## 0.12.1
+
+### Patch Changes
+
+- a1db33f: Adds decode/encode support for Constr and Case, and increases coverage case for preparing collateral in the TxBuilder.
+- 4448568: Fixes an edge case where selected collateral UTxO is not large enough to cover native assets after required collateral is deducted.
+
+## 0.12.0
+
+### Minor Changes
+
+- 12ae921: Completely rewrites a lot of the completion logic for building transactions, including fee calculation and collateral selection. It also adds a new coin selection algorithm as an optional export, based on the HVF algorithm.
+
 ## 0.11.1
 
 ### Patch Changes

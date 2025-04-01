@@ -1,5 +1,24 @@
 # @blaze-cardano/uplc
 
+## 0.3.0
+
+### Minor Changes
+
+- a1db33f: Adds decode/encode support for Constr and Case, and increases coverage case for preparing collateral in the TxBuilder.
+
+### Patch Changes
+
+- Updated dependencies [a1db33f]
+- Updated dependencies [4448568]
+  - @blaze-cardano/tx@0.12.1
+
+## 0.2.9
+
+### Patch Changes
+
+- Updated dependencies [12ae921]
+  - @blaze-cardano/tx@0.12.0
+
 ## 0.2.8
 
 ### Patch Changes

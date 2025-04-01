@@ -29,6 +29,14 @@ export class UPLCEncoder extends FlatEncoder {
     this.pushByte(patch);
   }
 
+  encodeList<T>(items: T[], encode: (t: T) => void): void {
+    for (let i = 0; i < items.length; i += 1) {
+      this.pushBit(1);
+      encode(items[i]!);
+    }
+    this.pushBit(0);
+  }
+
   /**
    * Encodes a natural number (non-negative integer).
    * @param n - The natural number to encode.
@@ -177,11 +185,7 @@ export class UPLCEncoder extends FlatEncoder {
    */
   encodeConst(type: DataTypeType, value: Data): void {
     const type_numbers = this.encodeType(type);
-    for (let i = 0; i < type_numbers.length; i += 1) {
-      this.pushBit(1);
-      this.pushBits(type_numbers[i]!, 4);
-    }
-    this.pushBit(0);
+    this.encodeList(type_numbers, (t) => this.pushBits(t, 4));
     this.encodeData(type, value);
   }
 
@@ -210,10 +214,17 @@ export class UPLCEncoder extends FlatEncoder {
       this.encodeTerm(term.term);
     } else if (term.type === TermNames.force) {
       this.encodeTerm(term.term);
+    } else if (term.type === TermNames.constr) {
+      this.encodeNatural(term.tag);
+      this.encodeList(term.terms, (t) => this.encodeTerm(t));
+    } else if (term.type === TermNames.case) {
+      this.encodeTerm(term.term);
+      this.encodeList(term.cases, (c) => this.encodeTerm(c));
     } else if (term.type === TermNames.error) {
       // No additional data to encode for error
     } else {
-      throw new Error(`Unsupported term type: ${term.type}`);
+      // Should be unreachable
+      throw new Error(`Unsupported term type: ${(term as any).type}`);
     }
   }
 

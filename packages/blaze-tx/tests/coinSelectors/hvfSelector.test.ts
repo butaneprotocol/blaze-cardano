@@ -31,6 +31,7 @@ const createDummyUTxO = (
   index: number,
   lovelaceAmount: bigint,
   numAssets: number,
+  address: string = "addr_test1qrp8nglm8d8x9w783c5g0qa4spzaft5z5xyx0kp495p8wksjrlfzuz6h4ssxlm78v0utlgrhryvl2gvtgp53a6j9zngqtjfk6s",
 ): TransactionUnspentOutput =>
   TransactionUnspentOutput.fromCore([
     {
@@ -42,9 +43,7 @@ const createDummyUTxO = (
        * @todo Generate a unique dummy address
        */
       // address: PaymentAddress(`addr_test${sha256(index.toString())}`),
-      address: PaymentAddress(
-        "addr_test1qrp8nglm8d8x9w783c5g0qa4spzaft5z5xyx0kp495p8wksjrlfzuz6h4ssxlm78v0utlgrhryvl2gvtgp53a6j9zngqtjfk6s",
-      ),
+      address: PaymentAddress(address),
       value: createDummyAssets(lovelaceAmount, numAssets).toCore(),
       scriptReference: undefined,
     },

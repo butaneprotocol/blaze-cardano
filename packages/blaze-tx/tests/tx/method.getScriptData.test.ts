@@ -26,7 +26,7 @@ class TestTxBuilder extends TxBuilder {
   }
 
   test__getScriptData(tw?: TransactionWitnessSet) {
-    tw ??= super.buildTransactionWitnessSet();
+    tw ??= super.buildPlaceholderWitnessSet();
     return super.getScriptData(tw);
   }
 }

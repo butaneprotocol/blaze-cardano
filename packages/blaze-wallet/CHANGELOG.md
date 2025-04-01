@@ -1,5 +1,33 @@
 # @blaze-cardano/wallet
 
+## 0.4.3
+
+### Patch Changes
+
+- Updated dependencies [509dbba]
+  - @blaze-cardano/query@0.4.2
+
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies [a1db33f]
+- Updated dependencies [4448568]
+  - @blaze-cardano/tx@0.12.1
+
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [12ae921]
+  - @blaze-cardano/tx@0.12.0
+
+## 0.4.0
+
+### Minor Changes
+
+- d5bc041: Add the ability to sign with the stake key
+
 ## 0.3.14
 
 ### Patch Changes

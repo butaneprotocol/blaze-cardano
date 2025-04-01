@@ -29,11 +29,16 @@ import {
   TransactionUnspentOutput,
   Value,
   blake2b_256,
+  Bip32PrivateKey,
 } from "@blaze-cardano/core";
+import { Blaze, HotWallet, Provider, Wallet } from "@blaze-cardano/sdk";
 import { calculateReferenceScriptFee, Value as V } from "@blaze-cardano/tx";
 import { makeUplcEvaluator } from "@blaze-cardano/vm";
+import { randomBytes } from "crypto";
+import { EmulatorProvider } from "./provider";
 
 export class LedgerTimer {
+  zeroTime: number;
   block: number;
   slot: number;
   time: number;
@@ -44,6 +49,7 @@ export class LedgerTimer {
   ) {
     this.block = 0;
     this.slot = slotConfig.zeroSlot;
+    this.zeroTime = slotConfig.zeroTime;
     this.time = slotConfig.zeroTime;
     this.slotLength = slotConfig.slotLength;
   }
@@ -90,6 +96,11 @@ export class Emulator {
    * The map of reward accounts and their balances.
    */
   accounts: Map<RewardAccount, bigint> = new Map();
+
+  /**
+   * A map from label to blaze instance for that wallet
+   */
+  mockedWallets: Map<String, Wallet> = new Map();
 
   /**
    * The protocol parameters of the ledger.
@@ -153,11 +164,38 @@ export class Emulator {
     this.removeUtxo = this.removeUtxo.bind(this);
   }
 
-  stepForwardBlock(): void {
-    this.clock.block++;
-    const blockMs = 20 * this.clock.slotLength;
-    this.clock.time += blockMs;
-    this.clock.slot += 20;
+  private async getOrAddWallet(label: string): Promise<Wallet> {
+    if (!this.mockedWallets.has(label)) {
+      const provider = new EmulatorProvider(this);
+      const entropy = randomBytes(96);
+      const masterkey = Bip32PrivateKey.fromBytes(entropy);
+      const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
+      this.mockedWallets.set(label, wallet);
+    }
+    return this.mockedWallets.get(label)!;
+  }
+
+  public async addressOf(label: string): Promise<Address> {
+    const wallet = await this.getOrAddWallet(label);
+    return wallet.getChangeAddress();
+  }
+
+  public async as(
+    label: string,
+    callback: (blaze: Blaze<Provider, Wallet>) => Promise<void>,
+  ) {
+    const provider = new EmulatorProvider(this);
+    const blaze = await Blaze.from(provider, await this.getOrAddWallet(label));
+    await callback(blaze);
+  }
+
+  stepForwardToSlot(slot: number) {
+    if (slot <= this.clock.slot) {
+      throw new Error("Time travel is unsafe");
+    }
+    this.clock.slot = slot;
+    this.clock.block = Math.round(slot / 20);
+    this.clock.time = slot * this.clock.slotLength + this.clock.zeroTime;
 
     Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
       inputs.forEach(this.removeUtxo);
@@ -165,6 +203,16 @@ export class Emulator {
     });
 
     this.#mempool = {};
+  }
+
+  stepForwardToUnix(unix: number) {
+    this.stepForwardToSlot(
+      Math.round((unix - this.clock.zeroTime) / this.clock.slotLength),
+    );
+  }
+
+  stepForwardBlock(): void {
+    this.stepForwardToSlot(this.clock.slot + 20);
   }
 
   awaitTransactionConfirmation(txId: TransactionId) {
@@ -728,14 +776,18 @@ export class Emulator {
         ),
       );
 
+    let refScriptFee = 0n;
     if (refInputs && this.params.minFeeReferenceScripts) {
       const refScripts = [...inputs, ...refInputs]
         .map((x) => this.getOutput(x)!.scriptRef())
         .filter((x) => x !== undefined);
-      fee += BigInt(
+
+      refScriptFee += BigInt(
         Math.ceil(calculateReferenceScriptFee(refScripts, this.params)),
       );
     }
+
+    fee += refScriptFee;
 
     if (fee > body.fee())
       throw new Error(
