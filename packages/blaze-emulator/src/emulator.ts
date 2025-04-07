@@ -1,4 +1,4 @@
-import type {
+import {
   ProtocolParameters,
   TransactionOutput,
   Transaction,
@@ -9,6 +9,8 @@ import type {
   PlutusData,
   CredentialCore,
   SlotConfig,
+  getBurnAddress,
+  Script,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -32,7 +34,12 @@ import {
   Bip32PrivateKey,
 } from "@blaze-cardano/core";
 import { Blaze, HotWallet, Provider, Wallet } from "@blaze-cardano/sdk";
-import { calculateReferenceScriptFee, Value as V } from "@blaze-cardano/tx";
+import {
+  calculateReferenceScriptFee,
+  makeValue,
+  TxBuilder,
+  Value as V,
+} from "@blaze-cardano/tx";
 import { makeUplcEvaluator } from "@blaze-cardano/vm";
 import { randomBytes } from "crypto";
 import { EmulatorProvider } from "./provider";
@@ -92,6 +99,8 @@ export class Emulator {
     }
   > = {};
 
+  #nextGenesisUtxo: number;
+
   /**
    * The map of reward accounts and their balances.
    */
@@ -139,11 +148,13 @@ export class Emulator {
     params: ProtocolParameters = hardCodedProtocolParams,
     { evaluator, slotConfig }: EmulatorOptions = {},
   ) {
+    this.#nextGenesisUtxo = 0;
     for (let i = 0; i < genesisOutputs.length; i++) {
       const txIn = new TransactionInput(
         TransactionId("00".repeat(32)),
-        BigInt(i),
+        BigInt(this.#nextGenesisUtxo),
       );
+      this.#nextGenesisUtxo += 1;
       this.#ledger[serialiseInput(txIn)] = genesisOutputs[i]!;
     }
     this.clock = new LedgerTimer(slotConfig);
@@ -175,27 +186,114 @@ export class Emulator {
     return this.mockedWallets.get(label)!;
   }
 
+  public async register(label: string, value?: Value): Promise<Address> {
+    await this.fund(label, value);
+    const wallet = await this.getOrAddWallet(label);
+    return wallet.getChangeAddress();
+  }
+
   public async addressOf(label: string): Promise<Address> {
     const wallet = await this.getOrAddWallet(label);
     return wallet.getChangeAddress();
   }
 
-  public async as(
-    label: string,
-    callback: (blaze: Blaze<Provider, Wallet>) => Promise<void>,
-  ) {
-    const provider = new EmulatorProvider(this);
-    const blaze = await Blaze.from(provider, await this.getOrAddWallet(label));
-    await callback(blaze);
+  public async fund(label: string, value?: Value) {
+    const wallet = await this.getOrAddWallet(label);
+    this.addUtxo(
+      new TransactionUnspentOutput(
+        new TransactionInput(
+          TransactionId("00".repeat(32)),
+          BigInt(this.#nextGenesisUtxo),
+        ),
+        new TransactionOutput(
+          await wallet.getChangeAddress(),
+          value ?? makeValue(100_000_000n),
+        ),
+      ),
+    );
+    this.#nextGenesisUtxo += 1;
   }
 
-  stepForwardToSlot(slot: number) {
-    if (slot <= this.clock.slot) {
+  public async as(
+    label: string,
+    callback: (
+      blaze: Blaze<Provider, Wallet>,
+      address: Address,
+    ) => Promise<void>,
+  ) {
+    const provider = new EmulatorProvider(this);
+    const wallet = await this.getOrAddWallet(label);
+    const blaze = await Blaze.from(provider, wallet);
+    await callback(blaze, await wallet.getChangeAddress());
+  }
+
+  public async publishScript(script: Script) {
+    const utxo = new TransactionOutput(
+      getBurnAddress(NetworkId.Testnet),
+      makeValue(5_000_001n),
+    );
+    utxo.setScriptRef(script);
+    this.addUtxo(
+      new TransactionUnspentOutput(
+        new TransactionInput(
+          TransactionId("00".repeat(32)),
+          BigInt(this.#nextGenesisUtxo),
+        ),
+        utxo,
+      ),
+    );
+    this.#nextGenesisUtxo += 1;
+  }
+
+  public lookupScript(script: Script): TransactionUnspentOutput {
+    for (const utxo of this.utxos()) {
+      if (utxo.output().scriptRef()?.hash() === script.hash()) {
+        return utxo;
+      }
+    }
+    throw new Error("Script not published");
+  }
+
+  public async expectValidTransaction(
+    blaze: Blaze<Provider, Wallet>,
+    tx: TxBuilder,
+  ) {
+    const scriptBytes = tx.toCbor();
+    try {
+      const completedTx = await tx.complete();
+      const signedTx = await blaze.signTransaction(completedTx);
+      const txId = await this.submitTransaction(signedTx);
+      this.awaitTransactionConfirmation(txId);
+      if (txId === undefined) {
+        throw new Error("Transaction ID undefined");
+      }
+    } catch (error) {
+      console.error("Script Bytes: ", scriptBytes);
+      throw error;
+    }
+  }
+
+  public async expectScriptFailure(tx: TxBuilder, pattern?: RegExp) {
+    try {
+      const complete = await tx.complete();
+      console.error(`Script Bytes: ${complete.toCbor()}`);
+    } catch (error: any) {
+      if (!!pattern && !pattern.exec(error.toString())) {
+        throw new Error("Script Failed, but didn't match pattern: " + error);
+      }
+      return;
+    }
+    throw new Error("Transaction was valid!");
+  }
+
+  stepForwardToSlot(slot: number | BigInt) {
+    if (Number(slot) <= this.clock.slot) {
       throw new Error("Time travel is unsafe");
     }
-    this.clock.slot = slot;
-    this.clock.block = Math.round(slot / 20);
-    this.clock.time = slot * this.clock.slotLength + this.clock.zeroTime;
+    this.clock.slot = Number(slot);
+    this.clock.block = Math.ceil(Number(slot) / 20);
+    this.clock.time =
+      Number(slot) * this.clock.slotLength + this.clock.zeroTime;
 
     Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
       inputs.forEach(this.removeUtxo);
@@ -205,9 +303,9 @@ export class Emulator {
     this.#mempool = {};
   }
 
-  stepForwardToUnix(unix: number) {
+  stepForwardToUnix(unix: number | BigInt) {
     this.stepForwardToSlot(
-      Math.round((unix - this.clock.zeroTime) / this.clock.slotLength),
+      Math.ceil((Number(unix) - this.clock.zeroTime) / this.clock.slotLength),
     );
   }
 

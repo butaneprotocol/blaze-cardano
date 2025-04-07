@@ -146,7 +146,6 @@ export abstract class Provider {
     script: Script | Hash28ByteBase16,
     address: Address = getBurnAddress(this.network),
   ): Promise<TransactionUnspentOutput | undefined> {
-    console.log("test");
     const utxos = await this.getUnspentOutputs(address);
     if (script instanceof Script) {
       script = script.hash();
