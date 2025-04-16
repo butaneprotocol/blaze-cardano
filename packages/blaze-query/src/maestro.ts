@@ -172,8 +172,6 @@ export class Maestro extends Provider {
     // to pull out PolicyId and AssetName from it and concatenate them
     const asset = unit;
 
-    console.log("asset", asset);
-
     return fetch(
       `${this.url}${query}utxos?with_cbor=true&count=100&asset=${asset}`,
       {

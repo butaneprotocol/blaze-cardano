@@ -109,7 +109,6 @@ class Generator {
   }
 
   public isStandardType(name: string): boolean {
-    console.log(name);
     return (
       name === "Void" ||
       name === "ByteArray" ||
@@ -512,7 +511,6 @@ export async function generateBlueprint({
   const definitions = plutusJson.definitions;
 
   const generator = new Generator();
-  console.log(plutusVersion, JSON.stringify(plutusJson, null, 2), definitions);
 
   generator.writeImports(useSdk, true);
   generator.writeLine();
