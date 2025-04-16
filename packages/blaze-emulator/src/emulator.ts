@@ -11,6 +11,7 @@ import {
   SlotConfig,
   getBurnAddress,
   Script,
+  Datum,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -186,8 +187,12 @@ export class Emulator {
     return this.mockedWallets.get(label)!;
   }
 
-  public async register(label: string, value?: Value): Promise<Address> {
-    await this.fund(label, value);
+  public async register(
+    label: string,
+    value?: Value,
+    datum?: PlutusData,
+  ): Promise<Address> {
+    await this.fund(label, value, datum);
     const wallet = await this.getOrAddWallet(label);
     return wallet.getChangeAddress();
   }
@@ -197,18 +202,22 @@ export class Emulator {
     return wallet.getChangeAddress();
   }
 
-  public async fund(label: string, value?: Value) {
+  public async fund(label: string, value?: Value, datum?: PlutusData) {
     const wallet = await this.getOrAddWallet(label);
+    const output = new TransactionOutput(
+      await wallet.getChangeAddress(),
+      value ?? makeValue(100_000_000n),
+    );
+    if (!!datum) {
+      output.setDatum(Datum.newInlineData(datum));
+    }
     this.addUtxo(
       new TransactionUnspentOutput(
         new TransactionInput(
           TransactionId("00".repeat(32)),
           BigInt(this.#nextGenesisUtxo),
         ),
-        new TransactionOutput(
-          await wallet.getChangeAddress(),
-          value ?? makeValue(100_000_000n),
-        ),
+        output,
       ),
     );
     this.#nextGenesisUtxo += 1;

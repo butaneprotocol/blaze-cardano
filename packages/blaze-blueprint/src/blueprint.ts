@@ -109,12 +109,17 @@ class Generator {
   }
 
   public isStandardType(name: string): boolean {
+    console.log(name);
     return (
+      name === "Void" ||
       name === "ByteArray" ||
       name === "Int" ||
       name === "Data" ||
+      name.startsWith("cardano/") ||
+      name.startsWith("aiken/") ||
       name.startsWith("List") ||
-      name.startsWith("Option")
+      name.startsWith("Option") ||
+      name.startsWith("Pairs")
     );
   }
 
@@ -395,10 +400,10 @@ class Generator {
             this.finishLine(",");
           }
           this.outdent();
-          this.finishLine("])");
+          this.finishLine(`], { ctor: ${idx}n })`);
         }
         this.outdent();
-        this.buildLine("}),");
+        this.buildLine(`}),`);
       }
       this.outdent();
       this.buildLine(`])`);

@@ -5,6 +5,7 @@ import {
   HexBlob,
   PlutusData,
   PlutusList,
+  PlutusMap,
 } from "@blaze-cardano/core";
 export { Type, type TSchema, type TArray } from "@sinclair/typebox";
 
@@ -86,26 +87,87 @@ export function _serialize<T extends TSchema>(
         break;
       case "array":
         {
-          const items = new PlutusList();
-          const array = data as Array<any>;
-          for (let idx = 0; idx < array.length; idx++) {
-            let itemType: any = undefined;
-            if (Array.isArray(type["items"])) {
-              // A tuple will be a schema with an array of item types
-              itemType = type["items"][idx];
-            } else {
-              // Otherwise it's just a homogeneous array, reusing the same type each time
-              itemType = type["items"];
+          // Handle tuple-enums
+          if ("ctor" in type) {
+            if (
+              typeof type["ctor"] !== "bigint" &&
+              typeof type["ctor"] !== "number"
+            ) {
+              throw new Error(
+                `Invalid object at ${path.join(".")}: Enum variant constructor index must be a number`,
+              );
             }
-            items.add(
-              _serialize(itemType, array[idx], [...path, idx.toString()], defs),
+
+            const constructor = BigInt(type["ctor"]);
+            const fieldData = new PlutusList();
+
+            const array = data as Array<any>;
+            for (let idx = 0; idx < array.length; idx++) {
+              let fieldType: any = undefined;
+              if (Array.isArray(type["items"])) {
+                // A tuple will be a schema with an array of item types
+                fieldType = type["items"][idx];
+              } else {
+                // Otherwise it's just a homogeneous array, reusing the same type each time
+                fieldType = type["items"];
+              }
+              fieldData.add(
+                _serialize(
+                  fieldType,
+                  array[idx],
+                  [...path, idx.toString()],
+                  defs,
+                ),
+              );
+            }
+
+            return PlutusData.newConstrPlutusData(
+              new ConstrPlutusData(constructor, fieldData),
             );
+          } else {
+            const items = new PlutusList();
+            const array = data as Array<any>;
+            for (let idx = 0; idx < array.length; idx++) {
+              let itemType: any = undefined;
+              if (Array.isArray(type["items"])) {
+                // A tuple will be a schema with an array of item types
+                itemType = type["items"][idx];
+              } else {
+                // Otherwise it's just a homogeneous array, reusing the same type each time
+                itemType = type["items"];
+              }
+              items.add(
+                _serialize(
+                  itemType,
+                  array[idx],
+                  [...path, idx.toString()],
+                  defs,
+                ),
+              );
+            }
+            return PlutusData.newList(items);
           }
-          return PlutusData.newList(items);
         }
         break;
       case "object":
         {
+          // Deal with maps
+          if ("patternProperties" in type) {
+            const valueType = type["patternProperties"]["^(.*)$"];
+            const dataMap = new PlutusMap();
+            const object = data as Record<string, any>;
+            for (const key in object) {
+              const plutusKey = PlutusData.newBytes(fromHex(key));
+              const plutusValue = _serialize(
+                valueType,
+                object[key],
+                [...path, key],
+                defs,
+              );
+              dataMap.insert(plutusKey, plutusValue);
+            }
+            return PlutusData.newMap(dataMap);
+          }
           if (typeof type["ctor"] === undefined) {
             throw new Error(
               `Invalid object at ${path.join(".")}: Enum variant must have a constructor index`,
