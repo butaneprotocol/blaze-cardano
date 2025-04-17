@@ -18,7 +18,9 @@
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
     "dev:cli": "tsup src/index.ts src/cli.ts --format esm,cjs --watch --dts",
     "lint": "eslint .",
-    "test:simple": "cd tests/simple && tsx blueprint_generate.ts && jest",
+    "test": "pnpm test:simple && pnpm test:complex",
+    "test:simple": "cd tests/simple && tsx blueprint_generate.ts && jest simple.test.ts",
+    "test:complex": "cd tests/complex && tsx blueprint_generate.ts && jest complext.test.ts",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
     "cli": "node dist/cli.js"
   },
@@ -29,6 +31,7 @@
     "@blaze-cardano/tsconfig": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
     "@blaze-cardano/uplc": "workspace:*",
+    "@blaze-cardano/data": "workspace:*",
     "@commander-js/extra-typings": "^12.1.0",
     "@sinclair/typebox": "^0.32.35",
     "@types/jest": "^29.5.12",

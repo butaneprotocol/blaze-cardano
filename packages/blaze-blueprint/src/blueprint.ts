@@ -133,10 +133,17 @@ class Generator {
     const name = this.definitionName(declaration);
     const parts = name.split("/");
     const type = parts[parts.length - 1]!;
-    if (type == "Data") {
-      return "PlutusData";
+
+    switch (type) {
+      case "Data":
+        return "PlutusData";
+      case "Int":
+        return "bigint";
+      case "ByteArray":
+        return "string";
+      default:
+        return type;
     }
-    return type;
   }
 
   public writeModule(definitions: Record<string, Annotated<Schema>>) {
