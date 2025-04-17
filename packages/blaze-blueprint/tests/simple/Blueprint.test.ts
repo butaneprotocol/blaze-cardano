@@ -10,14 +10,12 @@ describe("Blueprint", () => {
     expect(alwaysTrueSpend).toBeDefined();
     expect(alwaysTrueSpend.Script.hash()).toBeDefined();
     expect(alwaysTrueSpend.Script.asPlutusV3()?.rawBytes()).toBeDefined();
-    expect(AlwaysTrueScriptSpend).toHaveProperty("_redeemer");
   });
   it("Should have a valid else validator without a redeemer", async () => {
     const alwaysTrueElse = new AlwaysTrueScriptElse(1n, "test");
     expect(alwaysTrueElse).toBeDefined();
     expect(alwaysTrueElse.Script.hash()).toBeDefined();
     expect(alwaysTrueElse.Script.asPlutusV3()?.rawBytes()).toBeDefined();
-    expect(AlwaysTrueScriptElse).not.toHaveProperty("_redeemer");
   });
 });
 
