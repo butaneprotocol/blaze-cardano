@@ -4,6 +4,9 @@ import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";
 import { type Script } from "@blaze-cardano/core";
 import { Type, Exact, TPlutusData } from "@blaze-cardano/data";
 import { type PlutusData } from "@blaze-cardano/core";
+type Data = PlutusData
+type Int = bigint
+type ByteArray = string
 
 const Contracts = Type.Module({
 });
@@ -12,8 +15,8 @@ const Contracts = Type.Module({
 export class AlwaysTrueScriptSpend {
   public Script: Script
   constructor(
-    _param1: bigint,
-    _param2: string,
+    _param1: Int,
+    _param2: ByteArray,
   ) {
     this.Script = cborToScript(
       applyParamsToScript(
@@ -34,8 +37,8 @@ export class AlwaysTrueScriptSpend {
 export class AlwaysTrueScriptElse {
   public Script: Script
   constructor(
-    _param1: bigint,
-    _param2: string,
+    _param1: Int,
+    _param2: ByteArray,
   ) {
     this.Script = cborToScript(
       applyParamsToScript(
@@ -56,7 +59,7 @@ export class AlwaysTrueScriptElse {
 export class NestedSometimesTrueScriptSpend {
   public Script: Script
   constructor(
-    param: bigint,
+    param: Int,
   ) {
     this.Script = cborToScript(
       applyParamsToScript(
@@ -75,7 +78,7 @@ export class NestedSometimesTrueScriptSpend {
 export class NestedSometimesTrueScriptElse {
   public Script: Script
   constructor(
-    param: bigint,
+    param: Int,
   ) {
     this.Script = cborToScript(
       applyParamsToScript(

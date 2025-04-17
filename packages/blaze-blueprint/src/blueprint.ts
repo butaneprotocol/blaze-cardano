@@ -103,6 +103,11 @@ class Generator {
         );
       }
     }
+
+    // Map Plutus types to TS types.
+    this.writeLine(`type Data = PlutusData`);
+    this.writeLine(`type Int = bigint`);
+    this.writeLine(`type ByteArray = string`);
   }
 
   public isStandardType(name: string): boolean {
@@ -133,17 +138,7 @@ class Generator {
     const name = this.definitionName(declaration);
     const parts = name.split("/");
     const type = parts[parts.length - 1]!;
-
-    switch (type) {
-      case "Data":
-        return "PlutusData";
-      case "Int":
-        return "bigint";
-      case "ByteArray":
-        return "string";
-      default:
-        return type;
-    }
+    return type;
   }
 
   public writeModule(definitions: Record<string, Annotated<Schema>>) {
@@ -248,7 +243,12 @@ class Generator {
       this.indent();
       for (const param of params) {
         if ("$ref" in param.schema) {
-          this.writeTypeboxType(param.schema, blueprint.definitions);
+          const typeName = this.typeName(param.schema);
+          if (this.isStandardType(typeName)) {
+            this.writeTypeboxType(param.schema, blueprint.definitions);
+          } else {
+            this.buildLine(typeName);
+          }
         } else {
           console.log("???", param);
         }
