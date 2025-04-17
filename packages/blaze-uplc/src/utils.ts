@@ -13,7 +13,7 @@ import { HexBlob } from "@blaze-cardano/core";
 import { UPLCDecoder } from "./decoder";
 import { type ParsedProgram, TermNames } from "./types";
 import { UPLCEncoder } from "./encoder";
-import { Exact, TArray, serialize } from "@blaze-cardano/data";
+import { type Exact, type TArray, serialize } from "@blaze-cardano/data";
 
 // TODO: Use the c-js-sdk enums for this if possible
 export type ScriptType = "Native" | "PlutusV1" | "PlutusV2" | "PlutusV3";

@@ -1,16 +1,16 @@
 import {
-  ProtocolParameters,
+  type ProtocolParameters,
   TransactionOutput,
-  Transaction,
-  ScriptHash,
-  Evaluator,
-  Hash32ByteBase16,
-  DatumHash,
-  PlutusData,
-  CredentialCore,
-  SlotConfig,
+  type Transaction,
+  type ScriptHash,
+  type Evaluator,
+  type Hash32ByteBase16,
+  type DatumHash,
+  type PlutusData,
+  type CredentialCore,
+  type SlotConfig,
   getBurnAddress,
-  Script,
+  type Script,
   Datum,
 } from "@blaze-cardano/core";
 import {
@@ -34,11 +34,16 @@ import {
   blake2b_256,
   Bip32PrivateKey,
 } from "@blaze-cardano/core";
-import { Blaze, HotWallet, Provider, Wallet } from "@blaze-cardano/sdk";
+import {
+  Blaze,
+  HotWallet,
+  type Provider,
+  type Wallet,
+} from "@blaze-cardano/sdk";
 import {
   calculateReferenceScriptFee,
   makeValue,
-  TxBuilder,
+  type TxBuilder,
   Value as V,
 } from "@blaze-cardano/tx";
 import { makeUplcEvaluator } from "@blaze-cardano/vm";
@@ -110,7 +115,7 @@ export class Emulator {
   /**
    * A map from label to blaze instance for that wallet
    */
-  mockedWallets: Map<String, Wallet> = new Map();
+  mockedWallets: Map<string, Wallet> = new Map();
 
   /**
    * The protocol parameters of the ledger.
@@ -208,7 +213,7 @@ export class Emulator {
       await wallet.getChangeAddress(),
       value ?? makeValue(100_000_000n),
     );
-    if (!!datum) {
+    if (datum) {
       output.setDatum(Datum.newInlineData(datum));
     }
     this.addUtxo(
@@ -295,7 +300,7 @@ export class Emulator {
     throw new Error("Transaction was valid!");
   }
 
-  stepForwardToSlot(slot: number | BigInt) {
+  stepForwardToSlot(slot: number | bigint) {
     if (Number(slot) <= this.clock.slot) {
       throw new Error("Time travel is unsafe");
     }
@@ -312,7 +317,7 @@ export class Emulator {
     this.#mempool = {};
   }
 
-  stepForwardToUnix(unix: number | BigInt) {
+  stepForwardToUnix(unix: number | bigint) {
     this.stepForwardToSlot(
       Math.ceil((Number(unix) - this.clock.zeroTime) / this.clock.slotLength),
     );

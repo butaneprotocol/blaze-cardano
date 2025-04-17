@@ -20,7 +20,7 @@ export function serialize<T extends TSchema>(
   type: T,
   data: Exact<T>,
 ): PlutusData {
-  let result = _serialize(type, data, ["root"]);
+  const result = _serialize(type, data, ["root"]);
   return result;
 }
 
@@ -168,7 +168,7 @@ export function _serialize<T extends TSchema>(
             }
             return PlutusData.newMap(dataMap);
           }
-          if (typeof type["ctor"] === undefined) {
+          if (typeof type["ctor"] === "undefined") {
             throw new Error(
               `Invalid object at ${path.join(".")}: Enum variant must have a constructor index`,
             );
@@ -224,7 +224,7 @@ export function _serialize<T extends TSchema>(
             `Invalid enum variant at ${path.join(".")}: Enum variant not found`,
           );
         }
-        if (typeof variant["ctor"] === undefined) {
+        if (typeof variant["ctor"] === "undefined") {
           throw new Error(
             `Invalid enum variant at ${path.join(".")}: Enum variant constructor index must be defined`,
           );

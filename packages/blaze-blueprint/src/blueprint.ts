@@ -1,8 +1,7 @@
 import * as fs from "fs/promises";
 import type { Schema, Unit } from "./schema";
 import type { Annotated, Declaration } from "./shared";
-import { Constructor, Data } from "./data";
-// import type { Constructor, Data } from "./data";
+import type { Constructor, Data } from "./data";
 
 type Blueprint = {
   preamble: {
@@ -78,13 +77,11 @@ class Generator {
   }
 
   public writeImports(useSdk: boolean, plutusData: boolean) {
-    this.writeLine(
-      `// eslint-disable-next-line @typescript-eslint/ban-ts-comment`
-    );
+    this.writeLine(`/* eslint-disable */`);
     this.writeLine(`// @ts-nocheck`);
     if (useSdk) {
       this.writeLine(
-        `import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk`
+        `import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk`,
       );
       this.writeLine(`type Script = Core.Script;`);
       this.writeLine(`const Script = Core.Script;`);
@@ -94,15 +91,15 @@ class Generator {
       }
     } else {
       this.writeLine(
-        `import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`
+        `import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`,
       );
       this.writeLine(`import { type Script } from "@blaze-cardano/core";`);
       this.writeLine(
-        `import { Type, Exact, TPlutusData } from "@blaze-cardano/data";`
+        `import { Type, Exact, TPlutusData } from "@blaze-cardano/data";`,
       );
       if (plutusData) {
         this.writeLine(
-          `import { type PlutusData } from "@blaze-cardano/core";`
+          `import { type PlutusData } from "@blaze-cardano/core";`,
         );
       }
     }
@@ -125,7 +122,7 @@ class Generator {
   public definitionName(declaration: { $ref: string }): string {
     if (!("$ref" in declaration)) {
       throw new Error(
-        "Unexpected declaration format: " + JSON.stringify(declaration)
+        "Unexpected declaration format: " + JSON.stringify(declaration),
       );
     }
     const fullName = declaration.$ref.replaceAll("~1", "/");
@@ -153,7 +150,7 @@ class Generator {
       if (name.startsWith("List$")) {
         continue;
       }
-      let parts = name.split("/");
+      const parts = name.split("/");
       const normalizedName = parts[parts.length - 1];
       types.push(normalizedName);
       this.buildLine(`${normalizedName}: `);
@@ -194,13 +191,13 @@ class Generator {
           Generator.upperFirst(Generator.snakeToCamel(purpose))!
         );
       })();
-      const datum = validator.datum;
-      const datumTitle = Generator.snakeToCamel(datum?.title);
-      const datumSchema = datum?.schema;
+      // const datum = validator.datum;
+      // const datumTitle = Generator.snakeToCamel(datum?.title);
+      // const datumSchema = datum?.schema;
 
-      const redeemer = validator.redeemer;
-      const redeemerTitle = Generator.snakeToCamel(redeemer?.title);
-      const redeemerSchema = redeemer?.schema;
+      // const redeemer = validator.redeemer;
+      // const redeemerTitle = Generator.snakeToCamel(redeemer?.title);
+      // const redeemerSchema = redeemer?.schema;
 
       const params = validator.parameters || [];
 
@@ -210,7 +207,7 @@ class Generator {
       //   return `${name}: ${paramType}`;
       // });
 
-      const script = validator.compiledCode;
+      // const script = validator.compiledCode;
       // const constructorArgsString = `${paramsArgs.join(",\n  ")}`;
       // const parts = [];
 
@@ -224,7 +221,7 @@ class Generator {
         for (const param of params) {
           this.buildLine(`${Generator.snakeToCamel(param.title)}: `);
           if ("$ref" in param.schema) {
-            let typeName = this.typeName(param.schema);
+            const typeName = this.typeName(param.schema);
             this.buildLine(typeName);
           } else {
             console.log("???", param);
@@ -282,7 +279,7 @@ class Generator {
       | Annotated<Data>
       | Annotated<Constructor>,
     definitions: Record<string, Annotated<Schema>>,
-    stack: string[] = []
+    stack: string[] = [],
   ) {
     if ("dataType" in schema) {
       switch (schema.dataType) {
@@ -372,7 +369,7 @@ class Generator {
       this.finishLine(`Type.Union([`);
       this.indent();
       for (let idx = 0; idx < schema.anyOf.length; idx++) {
-        let item = schema.anyOf[idx]!;
+        const item = schema.anyOf[idx]!;
         if (item.fields.length == 0) {
           this.writeLine(`Type.Literal("${item.title!}", { ctor: ${idx}n }),`);
           continue;
@@ -467,7 +464,7 @@ class Generator {
       (withUnderscore ? s.slice(1) : s)
         .toLowerCase()
         .replace(/([-_][a-z])/g, (group) =>
-          group.toUpperCase().replace("-", "").replace("_", "")
+          group.toUpperCase().replace("-", "").replace("_", ""),
         )
     );
   }
@@ -495,17 +492,6 @@ export async function generateBlueprint({
   useSdk = false,
 }: BlueprintArgs) {
   const plutusJson: Blueprint = JSON.parse(await fs.readFile(infile, "utf8"));
-
-  const plutusVersion = (() => {
-    switch (plutusJson.preamble.plutusVersion) {
-      case "v3":
-        return '"PlutusV3"';
-      case "v2":
-        return '"PlutusV2"';
-      default:
-        return '"PlutusV1"';
-    }
-  })();
 
   const definitions = plutusJson.definitions;
 

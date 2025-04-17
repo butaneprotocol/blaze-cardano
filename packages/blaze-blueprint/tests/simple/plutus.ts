@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+/* eslint-disable */
 // @ts-nocheck
 import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";
 import { type Script } from "@blaze-cardano/core";
