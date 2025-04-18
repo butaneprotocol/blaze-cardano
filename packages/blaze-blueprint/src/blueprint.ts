@@ -81,7 +81,7 @@ class Generator {
     this.writeLine(`// @ts-nocheck`);
     if (useSdk) {
       this.writeLine(
-        `import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk`,
+        `import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk`
       );
       this.writeLine(`type Script = Core.Script;`);
       this.writeLine(`const Script = Core.Script;`);
@@ -91,23 +91,31 @@ class Generator {
       }
     } else {
       this.writeLine(
-        `import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`,
+        `import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`
       );
       this.writeLine(`import { type Script } from "@blaze-cardano/core";`);
       this.writeLine(
-        `import { Type, Exact, TPlutusData } from "@blaze-cardano/data";`,
+        `import { Type, Exact, TPlutusData } from "@blaze-cardano/data";`
       );
       if (plutusData) {
         this.writeLine(
-          `import { type PlutusData } from "@blaze-cardano/core";`,
+          `import { type PlutusData } from "@blaze-cardano/core";`
         );
       }
     }
 
     // Map Plutus types to TS types.
-    this.writeLine(`type Data = PlutusData`);
-    this.writeLine(`type Int = bigint`);
-    this.writeLine(`type ByteArray = string`);
+    this.writeLine(`type Data = PlutusData;`);
+    this.writeLine(`type Int = bigint;`);
+    this.writeLine(`type ByteArray = string;`);
+
+    if (useSdk) {
+      this.writeLine(`type OutputReference = Core.TransactionInput;`);
+    } else {
+      this.writeLine(
+        `type OutputReference = { output_index: bigint; transaction_id: string };`
+      );
+    }
   }
 
   public isStandardType(name: string): boolean {
@@ -116,6 +124,7 @@ class Generator {
       name === "ByteArray" ||
       name === "Int" ||
       name === "Data" ||
+      name === "OutputReference" ||
       name.startsWith("cardano/") ||
       name.startsWith("aiken/") ||
       name.startsWith("List") ||
@@ -127,7 +136,7 @@ class Generator {
   public definitionName(declaration: { $ref: string }): string {
     if (!("$ref" in declaration)) {
       throw new Error(
-        "Unexpected declaration format: " + JSON.stringify(declaration),
+        "Unexpected declaration format: " + JSON.stringify(declaration)
       );
     }
     const fullName = declaration.$ref.replaceAll("~1", "/");
@@ -286,7 +295,7 @@ class Generator {
       | Annotated<Data>
       | Annotated<Constructor>,
     definitions: Record<string, Annotated<Schema>>,
-    stack: string[] = [],
+    stack: string[] = []
   ) {
     if ("dataType" in schema) {
       switch (schema.dataType) {
@@ -471,7 +480,7 @@ class Generator {
       (withUnderscore ? s.slice(1) : s)
         .toLowerCase()
         .replace(/([-_][a-z])/g, (group) =>
-          group.toUpperCase().replace("-", "").replace("_", ""),
+          group.toUpperCase().replace("-", "").replace("_", "")
         )
     );
   }

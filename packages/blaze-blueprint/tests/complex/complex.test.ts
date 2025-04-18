@@ -1,4 +1,5 @@
 import {
+  OneshotOneshotSpend,
   TreasuryTreasuryPublish,
   TreasuryTreasurySpend,
   TreasuryTreasuryVote,
@@ -85,7 +86,7 @@ describe("Blueprint", () => {
       expect(publish2.Script.asPlutusV3()?.rawBytes()).toBeDefined();
 
       expect(publish2.Script.asPlutusV3()?.toCbor()).toContain(
-        "12345678910123456789",
+        "12345678910123456789"
       );
     });
   });
@@ -125,6 +126,18 @@ describe("Blueprint", () => {
         payout_upperbound: 100n,
         permissions: mockPermissions,
         registry_token: "",
+      });
+      expect(spend).toBeDefined();
+      expect(spend.Script.hash()).toBeDefined();
+      expect(spend.Script.asPlutusV3()?.rawBytes()).toBeDefined();
+    });
+  });
+
+  describe("OneshotOneshotSpend", () => {
+    it("should be able to construct a oneshot spend script", () => {
+      const spend = new OneshotOneshotSpend({
+        output_index: 0n,
+        transaction_id: "00".repeat(32),
       });
       expect(spend).toBeDefined();
       expect(spend.Script.hash()).toBeDefined();
