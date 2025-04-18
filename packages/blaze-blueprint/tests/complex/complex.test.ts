@@ -86,7 +86,7 @@ describe("Blueprint", () => {
       expect(publish2.Script.asPlutusV3()?.rawBytes()).toBeDefined();
 
       expect(publish2.Script.asPlutusV3()?.toCbor()).toContain(
-        "12345678910123456789"
+        "12345678910123456789",
       );
     });
   });
