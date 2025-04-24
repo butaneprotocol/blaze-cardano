@@ -17,7 +17,8 @@ import {
   type TBoolean,
   type TRef,
   type TThis,
-  TImport,
+  type TImport,
+  type TTuple,
 } from "@sinclair/typebox";
 import {
   ConstrPlutusData,
@@ -48,6 +49,7 @@ const isRecord = (t: TSchema): t is TRecord => t[Kind] === "Record";
 const isRef = (t: TSchema): t is TRef => t[Kind] === "Ref";
 const isString = (t: TSchema): t is TString => t[Kind] === "String";
 const isThis = (t: TSchema): t is TThis => t[Kind] === "This";
+const isTuple = (t: TSchema): t is TTuple => t[Kind] === "Tuple";
 const isUnion = (t: TSchema): t is TUnion => t[Kind] === "Union";
 
 export function serialize<T extends TSchema>(
@@ -467,6 +469,32 @@ export function _parse<T extends TSchema>(
     }
     return result as Exact<T>;
   }
+  if (isTuple(type)) {
+    const value = data.asList() ?? data.asConstrPlutusData()?.getData();
+    if (!value) {
+      throw new Error(
+        `Invalid type at ${path.join(".")}: Expected list, got ${data.getKind()}.`,
+      );
+    }
+    if (value.getLength() < type.minItems) {
+      throw new Error(
+        `Invalid tuple at ${path.join(".")}: Expected at least ${type.minItems} item(s), got ${value.getLength()}.`,
+      );
+    }
+    if (value.getLength() > type.maxItems) {
+      throw new Error(
+        `Invalid tuple at ${path.join(".")}: Expected at most ${type.maxItems} item(s), got ${value.getLength()}.`,
+      );
+    }
+    const result = [];
+    for (let i = 0; i < value.getLength(); ++i) {
+      const itemType = type.items![i]!;
+      result.push(
+        _parse(itemType, value.get(i), [...path, i.toString()], defs),
+      );
+    }
+    return result as Exact<T>;
+  }
   if (isObject(type)) {
     const value = data.asConstrPlutusData();
     if (!value) {
@@ -537,7 +565,12 @@ export function _parse<T extends TSchema>(
         `Invalid union at ${path.join(".")}: Unrecognized variant ${actualCtor}.`,
       );
     }
-    return _parse(variant, data, [...path, variantName!], defs) as Exact<T>;
+    const nestedValue = _parse(variant, data, [...path, variantName!], defs);
+    if (isLiteral(variant)) {
+      return nestedValue as Exact<T>;
+    } else {
+      return { [variantName!]: nestedValue } as Exact<T>;
+    }
   }
   throw new Error(
     `Invalid type at ${path.join(".")}: Unrecognized type "${type[Kind]}".`,

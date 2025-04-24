@@ -71,6 +71,17 @@ describe("parse", () => {
     expect(out).toEqual([BigInt(1337), BigInt(9001)]);
   });
 
+  it("Should be able to parse a list into a tuple", () => {
+    const schema = Type.Tuple([Type.BigInt(), Type.String()]);
+    const list = new PlutusList();
+    list.add(PlutusData.newInteger(1337n));
+    list.add(PlutusData.newBytes(fromHex("cafe")));
+    const inp = PlutusData.newList(list);
+
+    const out = parse(schema, inp);
+    expect(out).toEqual([1337n, "cafe"]);
+  });
+
   it("Should be able to parse a map with numeric keys into a record", () => {
     const schema = Type.Record(Type.Number(), Type.BigInt());
 
@@ -137,42 +148,44 @@ describe("parse", () => {
     expect(out2).toEqual("Bar");
   });
 
-  it("Should be able to parse recursive types", () => {
-    const schema = Type.Recursive((me) =>
-      Type.Union([
-        Type.Literal("None", { ctor: 0 }),
-        Type.Object(
+  it("Should be able to parse a union with object/tuple variants", () => {
+    const schema = Type.Union([
+      Type.Literal("Foo", { ctor: 0 }),
+      Type.Object({
+        Bar: Type.Object(
           {
-            car: Type.Number(),
-            cdr: me,
+            field: Type.Number(),
           },
           { ctor: 1 },
         ),
-      ]),
-    );
+      }),
+      Type.Object({
+        Baz: Type.Tuple([Type.Number(), Type.String()], { ctor: 2 }),
+      }),
+    ]);
 
-    let inp = PlutusData.newConstrPlutusData(
+    const inp1 = PlutusData.newConstrPlutusData(
       new ConstrPlutusData(BigInt(0), new PlutusList()),
     );
+    const out1 = parse(schema, inp1);
+    expect(out1).toEqual("Foo");
 
-    let list = new PlutusList();
-    list.add(PlutusData.newInteger(BigInt(9001)));
-    list.add(inp);
-    inp = PlutusData.newConstrPlutusData(new ConstrPlutusData(BigInt(1), list));
+    let fields = new PlutusList();
+    fields.add(PlutusData.newInteger(1337n));
+    const inp2 = PlutusData.newConstrPlutusData(
+      new ConstrPlutusData(BigInt(1), fields),
+    );
+    const out2 = parse(schema, inp2);
+    expect(out2).toEqual({ Bar: { field: 1337 } });
 
-    list = new PlutusList();
-    list.add(PlutusData.newInteger(BigInt(1337)));
-    list.add(inp);
-    inp = PlutusData.newConstrPlutusData(new ConstrPlutusData(BigInt(1), list));
-
-    const out = parse(schema, inp);
-    expect(out).toEqual({
-      car: 1337,
-      cdr: {
-        car: 9001,
-        cdr: "None",
-      },
-    });
+    fields = new PlutusList();
+    fields.add(PlutusData.newInteger(9001n));
+    fields.add(PlutusData.newBytes(fromHex("1337")));
+    const inp3 = PlutusData.newConstrPlutusData(
+      new ConstrPlutusData(BigInt(2), fields),
+    );
+    const out3 = parse(schema, inp3);
+    expect(out3).toEqual({ Baz: [9001, "1337"] });
   });
 
   it("should be able to parse type references", () => {
