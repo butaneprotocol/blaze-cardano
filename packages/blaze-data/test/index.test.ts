@@ -34,6 +34,38 @@ describe("parse", () => {
     });
   });
 
+  it("Should be able to parse a constr into an object with optional fields", () => {
+    const schema = Type.Object(
+      {
+        required: Type.BigInt(),
+        optional: Type.Optional(Type.String()),
+      },
+      { ctor: 0 },
+    );
+
+    let fields = new PlutusList();
+    fields.add(PlutusData.newInteger(1337n));
+    fields.add(PlutusData.newBytes(fromHex("4242")));
+    const inp1 = PlutusData.newConstrPlutusData(
+      new ConstrPlutusData(0n, fields),
+    );
+    const out1 = parse(schema, inp1);
+    expect(out1).toEqual({
+      required: 1337n,
+      optional: "4242",
+    });
+
+    fields = new PlutusList();
+    fields.add(PlutusData.newInteger(1337n));
+    const inp2 = PlutusData.newConstrPlutusData(
+      new ConstrPlutusData(0n, fields),
+    );
+    const out2 = parse(schema, inp2);
+    expect(out2).toEqual({
+      required: 1337n,
+    });
+  });
+
   it("Should be able to parse a constr into a literal", () => {
     const schema = Type.Literal("Foo", { ctor: 0 });
 
