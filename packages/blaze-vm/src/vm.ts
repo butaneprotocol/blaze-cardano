@@ -61,7 +61,8 @@ export function makeUplcEvaluator(
     const redeemerValues: Redeemer[] = []; // Initialize an array to hold the updated redeemers.
 
     // Iterate over the results from the UPLC evaluator.
-    for (const redeemerBytes of uplcResults) {
+    for (const result of uplcResults) {
+      const redeemerBytes = result.redeemer;
       const redeemer = Redeemer.fromCbor(HexBlob(toHex(redeemerBytes))); // Convert each result back from CBOR to a Redeemer object.
       const exUnits = redeemer.exUnits(); // Extract the execution units from the redeemer.
 
