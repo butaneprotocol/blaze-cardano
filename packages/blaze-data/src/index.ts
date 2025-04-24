@@ -17,6 +17,7 @@ import {
   type TBoolean,
   type TRef,
   type TThis,
+  TImport,
 } from "@sinclair/typebox";
 import {
   ConstrPlutusData,
@@ -36,6 +37,7 @@ export const TPlutusData: TSchema = Type.Unsafe<PlutusData>(Type.Any());
 
 export type Exact<T> = T extends TSchema ? Static<T> : T;
 
+const isImport = (t: TSchema): t is TImport => t[Kind] === "Import";
 const isArray = (t: TSchema): t is TArray => t[Kind] === "Array";
 const isBigInt = (t: TSchema): t is TBigInt => t[Kind] === "BigInt";
 const isBoolean = (t: TSchema): t is TBoolean => t[Kind] === "Boolean";
@@ -52,8 +54,12 @@ export function serialize<T extends TSchema>(
   type: T,
   data: Exact<T>,
 ): PlutusData {
-  const result = _serialize(type, data, ["root"]);
-  return result;
+  try {
+    const result = _serialize(type, data, ["root"]);
+    return result;
+  } catch (e) {
+    throw new Error(`Failed to serialize: ${e}`);
+  }
 }
 
 export function _serialize<T extends TSchema>(
@@ -243,7 +249,7 @@ export function _serialize<T extends TSchema>(
       case "string": {
         if (!/[A-Z]/.test(data[0]!)) {
           throw new Error(
-            `Invalid enum variant at ${path.join(".")}: Enum variants must start with an uppercase letter`,
+            `Invalid enum variant at ${path.join(".")}: Enum variants must start with an uppercase letter, but got ${data[0]!}`,
           );
         }
 
@@ -287,8 +293,10 @@ export function _serialize<T extends TSchema>(
           );
         }
         if (!/^[A-Z]/.test(variantTitle)) {
+          console.log(data);
+          console.log(type["anyOf"][0]);
           throw new Error(
-            `Invalid object at ${path.join(".")}: Enum variants must start with an uppercase letter`,
+            `Invalid object at ${path.join(".")}: Enum variants must start with an uppercase letter, but got ${variantTitle}`,
           );
         }
         // Find which variant this is
@@ -331,8 +339,10 @@ export function _parse<T extends TSchema>(
   if (type.$id) {
     defs[type.$id] = type;
   }
+  defs = { ...defs, ...(type as any).$defs };
   type = resolveType<T>(type, path, defs);
-  if (isRef(type) || isThis(type)) {
+  if (isRef(type) || isThis(type) || isImport(type)) {
+    defs = { ...defs, ...type.$defs };
     const realType = defs[type.$ref];
     if (!realType) {
       throw new Error(
@@ -505,21 +515,29 @@ export function _parse<T extends TSchema>(
       );
     }
     const actualCtor = value.getAlternative();
-    const variantIndex = type.anyOf.findIndex((s) => {
-      const resolved = resolveType(s, path, defs);
-      return "ctor" in resolved && BigInt(resolved["ctor"]) === actualCtor;
-    });
-    if (variantIndex < 0) {
+
+    let variant: TSchema | undefined;
+    let variantName: string | undefined;
+    for (let idx = 0; idx < type.anyOf.length; idx++) {
+      const v = type.anyOf[idx]!;
+      let resolved = resolveType(v, path, defs);
+      let key = idx.toString();
+      if ("properties" in resolved) {
+        const properties = resolved["properties"];
+        key = Object.keys(properties)[0]!;
+        resolved = properties[key];
+      }
+      if ("ctor" in resolved && BigInt(resolved["ctor"]) === actualCtor) {
+        variant = resolved;
+        variantName = key;
+      }
+    }
+    if (!variant) {
       throw new Error(
         `Invalid union at ${path.join(".")}: Unrecognized variant ${actualCtor}.`,
       );
     }
-    return _parse(
-      type.anyOf[variantIndex]!,
-      data,
-      [...path, variantIndex.toString()],
-      defs,
-    ) as Exact<T>;
+    return _parse(variant, data, [...path, variantName!], defs) as Exact<T>;
   }
   throw new Error(
     `Invalid type at ${path.join(".")}: Unrecognized type "${type[Kind]}".`,
@@ -531,7 +549,8 @@ function resolveType<T extends TSchema>(
   path: string[],
   defs: Record<string, TSchema>,
 ): T {
-  if (isRef(type) || isThis(type)) {
+  if (isRef(type) || isThis(type) || isImport(type)) {
+    defs = { ...defs, ...type.$defs };
     const realType = defs[type.$ref];
     if (!realType) {
       throw new Error(
