@@ -295,8 +295,6 @@ export function _serialize<T extends TSchema>(
           );
         }
         if (!/^[A-Z]/.test(variantTitle)) {
-          console.log(data);
-          console.log(type["anyOf"][0]);
           throw new Error(
             `Invalid object at ${path.join(".")}: Enum variants must start with an uppercase letter, but got ${variantTitle}`,
           );
@@ -313,10 +311,12 @@ export function _serialize<T extends TSchema>(
           );
         }
         const schema = variant["properties"][variantTitle];
-        return _serialize(schema, (data as any)[variantTitle], [
-          ...path,
-          variantTitle,
-        ]);
+        return _serialize(
+          schema,
+          (data as any)[variantTitle],
+          [...path, variantTitle],
+          defs,
+        );
       }
     }
   }
