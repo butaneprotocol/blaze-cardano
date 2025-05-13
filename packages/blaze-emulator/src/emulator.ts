@@ -228,17 +228,14 @@ export class Emulator {
     this.#nextGenesisUtxo += 1;
   }
 
-  public async as(
+  public async as<T = void>(
     label: string,
-    callback: (
-      blaze: Blaze<Provider, Wallet>,
-      address: Address,
-    ) => Promise<void>,
-  ) {
+    callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>,
+  ): Promise<T> {
     const provider = new EmulatorProvider(this);
     const wallet = await this.getOrAddWallet(label);
     const blaze = await Blaze.from(provider, wallet);
-    await callback(blaze, await wallet.getChangeAddress());
+    return callback(blaze, await wallet.getChangeAddress());
   }
 
   public async publishScript(script: Script) {
