@@ -22,7 +22,7 @@ describe("serialize", () => {
       bigint: 1337n,
       lilint: 42,
       hex: "cafebabe",
-    }
+    };
     const out = serialize(schema, inp);
     const expected = newConstr(0n, [
       newInteger(1337n),
@@ -43,22 +43,23 @@ describe("serialize", () => {
 
     const inp1 = {
       required: 1337n,
-      optional: "4242"
+      optional: "4242",
     };
     const out1 = serialize(schema, inp1);
-    expect(out1.toCbor()).toEqual(newConstr(0n, [
-      newInteger(1337n),
-      newConstr(0n, [newBytes("4242")]),
-    ]).toCbor());
+    expect(out1.toCbor()).toEqual(
+      newConstr(0n, [
+        newInteger(1337n),
+        newConstr(0n, [newBytes("4242")]),
+      ]).toCbor(),
+    );
 
     const inp2 = {
       required: 1337n,
     };
     const out2 = serialize(schema, inp2);
-    expect(out2.toCbor()).toEqual(newConstr(0n, [
-      newInteger(1337n),
-      newConstr(1n, []),
-    ]).toCbor());
+    expect(out2.toCbor()).toEqual(
+      newConstr(0n, [newInteger(1337n), newConstr(1n, [])]).toCbor(),
+    );
   });
 
   it("Should be able to serialize a literal into a constr", () => {
@@ -72,7 +73,7 @@ describe("serialize", () => {
   it("Should be able to serialize a boolean into a constr", () => {
     const schema = Type.Boolean();
 
-    const inp1 = false
+    const inp1 = false;
     const out1 = serialize(schema, inp1);
     expect(out1.toCbor()).toEqual(newConstr(0n, []).toCbor());
 
@@ -93,7 +94,9 @@ describe("serialize", () => {
 
     const inp = [1337n, 9001n];
     const out = serialize(schema, inp);
-    expect(out.toCbor()).toEqual(newList([newInteger(1337n), newInteger(9001n)]).toCbor());
+    expect(out.toCbor()).toEqual(
+      newList([newInteger(1337n), newInteger(9001n)]).toCbor(),
+    );
   });
 
   it("Should be able to serialize a tuple into a list", () => {
@@ -101,7 +104,9 @@ describe("serialize", () => {
     const inp: [bigint, string] = [1337n, "cafe"];
 
     const out = serialize(schema, inp);
-    expect(out.toCbor()).toEqual(newList([newInteger(1337n), newBytes("cafe")]).toCbor());
+    expect(out.toCbor()).toEqual(
+      newList([newInteger(1337n), newBytes("cafe")]).toCbor(),
+    );
   });
 
   it("Should be able to serialize a record into a map with numeric keys", () => {
@@ -113,11 +118,13 @@ describe("serialize", () => {
       23: 42n,
     };
     const out = serialize(schema, inp);
-    expect(out.toCbor()).toEqual(newMap([
-      [newInteger(4n), newInteger(8n)],
-      [newInteger(15n), newInteger(16n)],
-      [newInteger(23n), newInteger(42n)],
-    ]).toCbor());
+    expect(out.toCbor()).toEqual(
+      newMap([
+        [newInteger(4n), newInteger(8n)],
+        [newInteger(15n), newInteger(16n)],
+        [newInteger(23n), newInteger(42n)],
+      ]).toCbor(),
+    );
   });
 
   it("Should be able to serialize a record into a map with string keys", () => {
@@ -125,13 +132,15 @@ describe("serialize", () => {
 
     const inp = {
       cafe: 8n,
-      d00d: 16n
+      d00d: 16n,
     };
     const out = serialize(schema, inp);
-    expect(out.toCbor()).toEqual(newMap([
-      [newBytes("cafe"), newInteger(8n)],
-      [newBytes("d00d"), newInteger(16n)],
-    ]).toCbor());
+    expect(out.toCbor()).toEqual(
+      newMap([
+        [newBytes("cafe"), newInteger(8n)],
+        [newBytes("d00d"), newInteger(16n)],
+      ]).toCbor(),
+    );
   });
 
   it("Should be able to serialize a union", () => {
@@ -140,7 +149,7 @@ describe("serialize", () => {
       Type.Literal("Bar", { ctor: 1 }),
     ]);
 
-    const inp1 = "Foo"
+    const inp1 = "Foo";
     const out1 = serialize(schema, inp1);
     expect(out1.toCbor()).toEqual(newConstr(0n, []).toCbor());
 
@@ -165,17 +174,19 @@ describe("serialize", () => {
       }),
     ]);
 
-    const inp1 = "Foo"
+    const inp1 = "Foo";
     const out1 = serialize(schema, inp1);
     expect(out1.toCbor()).toEqual(newConstr(0n, []).toCbor());
 
-    const inp2 = { Bar: { field: 1337 }};
+    const inp2 = { Bar: { field: 1337 } };
     const out2 = serialize(schema, inp2);
     expect(out2.toCbor()).toEqual(newConstr(1n, [newInteger(1337n)]).toCbor());
 
-    const inp3 = { Baz: [9001, "1337"] as [number, string] }
+    const inp3 = { Baz: [9001, "1337"] as [number, string] };
     const out3 = serialize(schema, inp3);
-    expect(out3.toCbor()).toEqual(newConstr(2n, [newInteger(9001n), newBytes("1337")]).toCbor());
+    expect(out3.toCbor()).toEqual(
+      newConstr(2n, [newInteger(9001n), newBytes("1337")]).toCbor(),
+    );
   });
 
   it("should be able to serialize with type references", () => {
@@ -211,7 +222,7 @@ describe("parse", () => {
       newInteger(1337n),
       newInteger(9001n),
       newBytes("cafebabe"),
-    ])
+    ]);
 
     const out = parse(schema, inp);
     expect(out).toEqual({
@@ -240,10 +251,7 @@ describe("parse", () => {
       optional: "4242",
     });
 
-    const inp2 = newConstr(0n, [
-      newInteger(1337n),
-      newConstr(1n, []),
-    ]);
+    const inp2 = newConstr(0n, [newInteger(1337n), newConstr(1n, [])]);
     const out2 = parse(schema, inp2);
     expect(out2).toEqual({
       required: 1337n,

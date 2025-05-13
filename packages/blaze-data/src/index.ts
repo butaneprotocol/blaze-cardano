@@ -60,12 +60,12 @@ export function serialize<T extends TSchema>(
   data: Exact<T>,
   defs?: Record<string, TSchema>,
 ): PlutusData {
-//  try {
+  try {
     const result = _serialize(type, data, ["root"], defs ?? {});
     return result;
-//  } catch (e) {
-//    throw new Error(`Failed to serialize: ${e}`);
-//  }
+  } catch (e) {
+    throw new Error(`Failed to serialize: ${e}`);
+  }
 }
 
 export function _serialize<T extends TSchema>(
@@ -74,7 +74,6 @@ export function _serialize<T extends TSchema>(
   path: string[],
   defs: Record<string, TSchema>,
 ): PlutusData {
-  console.log({ type, data });
   if (!type) {
     throw new Error(
       `Cannot serialize ${data} without a type. Found at ${path.join(".")}`,
@@ -109,7 +108,9 @@ export function _serialize<T extends TSchema>(
       fields.add(_serialize(innerType, data as any, path, defs));
       return PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, fields));
     } else {
-      return PlutusData.newConstrPlutusData(new ConstrPlutusData(1n, new PlutusList()));
+      return PlutusData.newConstrPlutusData(
+        new ConstrPlutusData(1n, new PlutusList()),
+      );
     }
   }
 
@@ -118,13 +119,25 @@ export function _serialize<T extends TSchema>(
       const resolved = resolveType(variant, path, defs);
       if ("const" in resolved && resolved["const"] === data) {
         const ctor = extractCtor(resolved, path);
-        return PlutusData.newConstrPlutusData(new ConstrPlutusData(ctor, new PlutusList()));
+        return PlutusData.newConstrPlutusData(
+          new ConstrPlutusData(ctor, new PlutusList()),
+        );
       }
       if (isObject(resolved)) {
         const variantName = Object.keys(resolved.properties)[0]!;
-        if (variantName && data && typeof data === 'object' && variantName in data) {
+        if (
+          variantName &&
+          data &&
+          typeof data === "object" &&
+          variantName in data
+        ) {
           const variantType = resolved.properties[variantName]!;
-          return _serialize(variantType, (data as any)[variantName], [...path, variantName], defs);
+          return _serialize(
+            variantType,
+            (data as any)[variantName],
+            [...path, variantName],
+            defs,
+          );
         }
       }
     }
@@ -133,7 +146,9 @@ export function _serialize<T extends TSchema>(
   if ("const" in type) {
     if (type["const"] === data) {
       const constructor = extractCtor(type, path);
-      return PlutusData.newConstrPlutusData(new ConstrPlutusData(constructor, new PlutusList()))
+      return PlutusData.newConstrPlutusData(
+        new ConstrPlutusData(constructor, new PlutusList()),
+      );
     }
   }
 
@@ -228,7 +243,9 @@ export function _serialize<T extends TSchema>(
             const dataMap = new PlutusMap();
             const object = data as Record<string, any>;
             for (const key in object) {
-              const plutusKey = numericType ? PlutusData.newInteger(BigInt(key)) : PlutusData.newBytes(fromHex(key));
+              const plutusKey = numericType
+                ? PlutusData.newInteger(BigInt(key))
+                : PlutusData.newBytes(fromHex(key));
               const plutusValue = _serialize(
                 numericType ?? valueType,
                 object[key],
@@ -368,16 +385,12 @@ function extractCtor(type: TSchema, path: string[]): bigint {
       `Invalid object at ${path.join(".")}: Enum variant must have a constructor index`,
     );
   }
-  if (
-    typeof type["ctor"] !== "bigint" &&
-    typeof type["ctor"] !== "number"
-  ) {
+  if (typeof type["ctor"] !== "bigint" && typeof type["ctor"] !== "number") {
     throw new Error(
       `Invalid object at ${path.join(".")}: Enum variant constructor index must be a number`,
     );
   }
   return BigInt(type["ctor"]);
-
 }
 
 export function parse<T extends TSchema>(
@@ -403,7 +416,6 @@ export function _parse<T extends TSchema>(
   if (isOptional(type)) {
     const opt = data.asConstrPlutusData();
     if (!opt) {
-      console.log(data.toCbor());
       throw new Error(
         `Invalid optional at ${path.join(".")}: data is undefined`,
       );
