@@ -250,6 +250,26 @@ export function _serialize<T extends TSchema>(
       return _serialize(type["anyOf"][0], data, path, defs);
     }
     // Otherwise, it could be either boolean or optional
+    if (isBoolean(type)) {
+      return PlutusData.newConstrPlutusData(
+        new ConstrPlutusData(data ? 1n : 0n, new PlutusList()),
+      );
+    }
+    if (type[OptionalKind] === "Optional") {
+      if (data === undefined) {
+        return PlutusData.newConstrPlutusData(
+          new ConstrPlutusData(1n, new PlutusList()),
+        );
+      } else {
+        const optional = new PlutusList();
+        const strictType = type;
+        delete strictType[OptionalKind];
+        optional.add(_serialize(strictType, data, path, defs));
+        return PlutusData.newConstrPlutusData(
+          new ConstrPlutusData(0n, optional),
+        );
+      }
+    }
     // Finally, we should try to identify which variant this is:
     switch (typeof data) {
       case "string": {

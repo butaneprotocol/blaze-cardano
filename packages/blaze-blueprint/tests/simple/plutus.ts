@@ -4,9 +4,10 @@ import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";
 import { type Script } from "@blaze-cardano/core";
 import { Type, Exact, TPlutusData } from "@blaze-cardano/data";
 import { type PlutusData } from "@blaze-cardano/core";
-type Data = PlutusData
-type Int = bigint
-type ByteArray = string
+type Data = PlutusData;
+type Int = bigint;
+type ByteArray = string;
+type OutputReference = { output_index: bigint; transaction_id: string };
 
 const Contracts = Type.Module({
 });
