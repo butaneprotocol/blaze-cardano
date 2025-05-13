@@ -45,7 +45,11 @@ describe("parse", () => {
 
     let fields = new PlutusList();
     fields.add(PlutusData.newInteger(1337n));
-    fields.add(PlutusData.newBytes(fromHex("4242")));
+    const optional = new PlutusList();
+    optional.add(PlutusData.newBytes(fromHex("4242")));
+    fields.add(
+      PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, optional)),
+    );
     const inp1 = PlutusData.newConstrPlutusData(
       new ConstrPlutusData(0n, fields),
     );
@@ -90,6 +94,17 @@ describe("parse", () => {
     );
     const out2 = parse(schema, inp2);
     expect(out2).toEqual(true);
+  });
+
+  it("Should be able to parse an Option into a nullable field", () => {
+    const schema = Type.Optional(Type.BigInt());
+    const fields = new PlutusList();
+    fields.add(PlutusData.newInteger(1337n));
+    const inp1 = PlutusData.newConstrPlutusData(
+      new ConstrPlutusData(0n, fields),
+    );
+    const out = parse(schema, inp1);
+    expect(out).toEqual(1337n);
   });
 
   it("Should be able to parse a list into an array", () => {

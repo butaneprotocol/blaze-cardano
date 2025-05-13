@@ -19,6 +19,8 @@ import {
   type TThis,
   type TImport,
   type TTuple,
+  TOptional,
+  OptionalKind,
 } from "@sinclair/typebox";
 import {
   ConstrPlutusData,
@@ -38,6 +40,8 @@ export const TPlutusData: TSchema = Type.Unsafe<PlutusData>(Type.Any());
 
 export type Exact<T> = T extends TSchema ? Static<T> : T;
 
+const isOptional = (t: TSchema): t is TOptional<any> =>
+  t[OptionalKind] === "Optional";
 const isImport = (t: TSchema): t is TImport => t[Kind] === "Import";
 const isArray = (t: TSchema): t is TArray => t[Kind] === "Array";
 const isBigInt = (t: TSchema): t is TBigInt => t[Kind] === "BigInt";
@@ -343,6 +347,23 @@ export function _parse<T extends TSchema>(
   }
   defs = { ...defs, ...(type as any).$defs };
   type = resolveType<T>(type, path, defs);
+
+  if (isOptional(type)) {
+    const opt = data.asConstrPlutusData();
+    if (!opt) {
+      console.log(data.toCbor());
+      throw new Error(
+        `Invalid optional at ${path.join(".")}: data is undefined`,
+      );
+    }
+    const tag = opt?.getAlternative();
+    if (tag === 1n) {
+      return undefined as Exact<T>;
+    }
+    // Otherwise, strip away the optional layer and let us fall through
+    data = opt.getData().get(0)!;
+  }
+
   if (isRef(type) || isThis(type) || isImport(type)) {
     defs = { ...defs, ...type.$defs };
     const realType = defs[type.$ref];
