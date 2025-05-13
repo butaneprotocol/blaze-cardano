@@ -4,7 +4,6 @@ import {
   PatternStringExact,
   PatternNumberExact,
   type Static,
-  type TEnum,
   type TSchema,
   type TObject,
   type TNumber,
@@ -19,7 +18,7 @@ import {
   type TThis,
   type TImport,
   type TTuple,
-  TOptional,
+  type TOptional,
   OptionalKind,
 } from "@sinclair/typebox";
 import {
@@ -40,7 +39,7 @@ export const TPlutusData: TSchema = Type.Unsafe<PlutusData>(Type.Any());
 
 export type Exact<T> = T extends TSchema ? Static<T> : T;
 
-const isOptional = (t: TSchema): t is TOptional<any> =>
+const isOptional = <T extends TSchema>(t: T): t is TOptional<T> =>
   t[OptionalKind] === "Optional";
 const isImport = (t: TSchema): t is TImport => t[Kind] === "Import";
 const isArray = (t: TSchema): t is TArray => t[Kind] === "Array";
@@ -59,21 +58,23 @@ const isUnion = (t: TSchema): t is TUnion => t[Kind] === "Union";
 export function serialize<T extends TSchema>(
   type: T,
   data: Exact<T>,
+  defs?: Record<string, TSchema>,
 ): PlutusData {
-  try {
-    const result = _serialize(type, data, ["root"]);
+//  try {
+    const result = _serialize(type, data, ["root"], defs ?? {});
     return result;
-  } catch (e) {
-    throw new Error(`Failed to serialize: ${e}`);
-  }
+//  } catch (e) {
+//    throw new Error(`Failed to serialize: ${e}`);
+//  }
 }
 
 export function _serialize<T extends TSchema>(
   type: T,
   data: Exact<T>,
   path: string[],
-  defs?: Record<string, TSchema>,
+  defs: Record<string, TSchema>,
 ): PlutusData {
+  console.log({ type, data });
   if (!type) {
     throw new Error(
       `Cannot serialize ${data} without a type. Found at ${path.join(".")}`,
@@ -101,16 +102,45 @@ export function _serialize<T extends TSchema>(
     return _serialize(resolvedType, data, path, defs);
   }
 
-  if ("anyOf" in type) {
-    const enumType = type as unknown as TEnum;
-    if (enumType.anyOf.length === 1) {
-      return _serialize(type["anyOf"][0]! as T, data, path, defs);
+  if (isOptional(type)) {
+    if (data !== null && data !== undefined) {
+      const innerType = Type.Optional(type, false);
+      const fields = new PlutusList();
+      fields.add(_serialize(innerType, data as any, path, defs));
+      return PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, fields));
+    } else {
+      return PlutusData.newConstrPlutusData(new ConstrPlutusData(1n, new PlutusList()));
+    }
+  }
+
+  if (isUnion(type)) {
+    for (const variant of type.anyOf) {
+      const resolved = resolveType(variant, path, defs);
+      if ("const" in resolved && resolved["const"] === data) {
+        const ctor = extractCtor(resolved, path);
+        return PlutusData.newConstrPlutusData(new ConstrPlutusData(ctor, new PlutusList()));
+      }
+      if (isObject(resolved)) {
+        const variantName = Object.keys(resolved.properties)[0]!;
+        if (variantName && data && typeof data === 'object' && variantName in data) {
+          const variantType = resolved.properties[variantName]!;
+          return _serialize(variantType, (data as any)[variantName], [...path, variantName], defs);
+        }
+      }
+    }
+  }
+
+  if ("const" in type) {
+    if (type["const"] === data) {
+      const constructor = extractCtor(type, path);
+      return PlutusData.newConstrPlutusData(new ConstrPlutusData(constructor, new PlutusList()))
     }
   }
 
   if ("type" in type) {
     switch (type["type"]) {
       case "bigint":
+      case "number":
         {
           if (data instanceof BigInt || typeof data === "bigint") {
             return PlutusData.newInteger(data as bigint);
@@ -129,20 +159,16 @@ export function _serialize<T extends TSchema>(
           return PlutusData.newBytes(fromHex(data as string));
         }
         break;
+      case "boolean":
+        {
+          return _serialize(BOOLEAN_ENUM_SCHEMA, data as boolean, path, defs);
+        }
+        break;
       case "array":
         {
           // Handle tuple-enums
           if ("ctor" in type) {
-            if (
-              typeof type["ctor"] !== "bigint" &&
-              typeof type["ctor"] !== "number"
-            ) {
-              throw new Error(
-                `Invalid object at ${path.join(".")}: Enum variant constructor index must be a number`,
-              );
-            }
-
-            const constructor = BigInt(type["ctor"]);
+            const constructor = extractCtor(type, path);
             const fieldData = new PlutusList();
 
             const array = data as Array<any>;
@@ -197,13 +223,14 @@ export function _serialize<T extends TSchema>(
         {
           // Deal with maps
           if ("patternProperties" in type) {
-            const valueType = type["patternProperties"]["^(.*)$"];
+            const numericType = type["patternProperties"][PatternNumberExact];
+            const valueType = type["patternProperties"][PatternStringExact];
             const dataMap = new PlutusMap();
             const object = data as Record<string, any>;
             for (const key in object) {
-              const plutusKey = PlutusData.newBytes(fromHex(key));
+              const plutusKey = numericType ? PlutusData.newInteger(BigInt(key)) : PlutusData.newBytes(fromHex(key));
               const plutusValue = _serialize(
-                valueType,
+                numericType ?? valueType,
                 object[key],
                 [...path, key],
                 defs,
@@ -212,20 +239,7 @@ export function _serialize<T extends TSchema>(
             }
             return PlutusData.newMap(dataMap);
           }
-          if (typeof type["ctor"] === "undefined") {
-            throw new Error(
-              `Invalid object at ${path.join(".")}: Enum variant must have a constructor index`,
-            );
-          }
-          if (
-            typeof type["ctor"] !== "bigint" &&
-            typeof type["ctor"] !== "number"
-          ) {
-            throw new Error(
-              `Invalid object at ${path.join(".")}: Enum variant constructor index must be a number`,
-            );
-          }
-          const constructor = BigInt(type["ctor"]);
+          const constructor = extractCtor(type, path);
           const object = data as Record<string, any>;
           const fields = type["properties"] as Record<string, T>;
           const fieldData = new PlutusList();
@@ -346,6 +360,24 @@ export function _serialize<T extends TSchema>(
   }
 
   return PlutusData.fromCbor(HexBlob("01"));
+}
+
+function extractCtor(type: TSchema, path: string[]): bigint {
+  if (typeof type["ctor"] === "undefined") {
+    throw new Error(
+      `Invalid object at ${path.join(".")}: Enum variant must have a constructor index`,
+    );
+  }
+  if (
+    typeof type["ctor"] !== "bigint" &&
+    typeof type["ctor"] !== "number"
+  ) {
+    throw new Error(
+      `Invalid object at ${path.join(".")}: Enum variant constructor index must be a number`,
+    );
+  }
+  return BigInt(type["ctor"]);
+
 }
 
 export function parse<T extends TSchema>(
