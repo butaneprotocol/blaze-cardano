@@ -93,7 +93,7 @@ importers:
   packages/blaze-core:
     dependencies:
       '@cardano-sdk/core':
-        specifier: ^0.45.0
+        specifier: 0.45.0
         version: 0.45.0(rxjs@7.8.1)
       '@cardano-sdk/crypto':
         specifier: ^0.1.32
@@ -370,13 +370,13 @@ importers:
       '@blaze-cardano/core':
         specifier: workspace:*
         version: link:../blaze-core
-      '@blaze-cardano/data':
-        specifier: workspace:*
-        version: link:../blaze-data
       '@blaze-cardano/vm':
         specifier: workspace:*
         version: link:../blaze-vm
     devDependencies:
+      '@blaze-cardano/data':
+        specifier: workspace:*
+        version: link:../blaze-data
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
         version: link:../blaze-eslint-config
@@ -4992,7 +4992,7 @@ snapshots:
 
   '@types/dns-packet@5.6.5':
     dependencies:
-      '@types/node': 22.10.7
+      '@types/node': 20.16.5
 
   '@types/estree@1.0.5': {}
 
