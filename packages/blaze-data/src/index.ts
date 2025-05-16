@@ -85,7 +85,7 @@ export function _serialize<T extends TSchema>(
   }
 
   if ("$ref" in type) {
-    defs = { ...defs, ...type["$defs"]};
+    defs = { ...defs, ...type["$defs"] };
     if (!defs) {
       throw new Error(
         `Could not resolve type ${type["$ref"]} at ${path.join(".")} because we don't have a definitions dictionary`,

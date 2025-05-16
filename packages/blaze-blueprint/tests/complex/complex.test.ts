@@ -10,22 +10,26 @@ import {
 const mockPermissions: TreasuryConfiguration["permissions"] = {
   disburse: {
     Signature: {
-      key_hash: "",
+      key_hash:
+        "78b0eff557a5468f74ca5cc03a55ad3f9310568a037f9b295360b9e9316c953d",
     },
   },
   fund: {
     Signature: {
-      key_hash: "",
+      key_hash:
+        "78b0eff557a5468f74ca5cc03a55ad3f9310568a037f9b295360b9e9316c953d",
     },
   },
   reorganize: {
     Signature: {
-      key_hash: "",
+      key_hash:
+        "78b0eff557a5468f74ca5cc03a55ad3f9310568a037f9b295360b9e9316c953d",
     },
   },
   sweep: {
     Signature: {
-      key_hash: "",
+      key_hash:
+        "78b0eff557a5468f74ca5cc03a55ad3f9310568a037f9b295360b9e9316c953d",
     },
   },
 };
