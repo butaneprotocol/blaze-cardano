@@ -10,4 +10,4 @@
 "@blaze-cardano/vm": patch
 ---
 
-Adds serialization and parsing capabilities via a new @blaze-cardano/data package, and updates the @blaze-cardano/blueprint package with new code generation logic. In particular, generated code now supports recursively defined types!
+Adds serialization and parsing capabilities via a new @blaze-cardano/data package, and updates the @blaze-cardano/blueprint package with new code generation logic. In particular, generated code now supports recursively defined types! Note that this is a breaking change, and the library is still pre-1.0. Apologies for the neccesity!
