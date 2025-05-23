@@ -1,7 +1,7 @@
 {
-  "name": "@blaze-cardano/blueprint",
+  "name": "@blaze-cardano/data",
   "version": "0.5.1",
-  "description": "CIP-57 implementation and generator",
+  "description": "Plutus Data parsing and serialization",
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -9,31 +9,24 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "bin": "./dist/cli.js",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/cli.ts --format esm,cjs --dts",
+    "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
-    "dev:cli": "tsup src/index.ts src/cli.ts --format esm,cjs --watch --dts",
     "lint": "eslint .",
-    "test": "pnpm test:simple && pnpm test:complex",
-    "test:simple": "cd tests/simple && tsx blueprint_generate.ts && jest simple.test.ts",
-    "test:complex": "cd tests/complex && tsx blueprint_generate.ts && jest complex.test.ts",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "cli": "node dist/cli.js"
+    "test": "jest"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.28",
+    "@blaze-cardano/core": "workspace:*"
   },
   "devDependencies": {
-    "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/jest-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
-    "@blaze-cardano/tx": "workspace:*",
-    "@blaze-cardano/uplc": "workspace:*",
-    "@blaze-cardano/data": "workspace:*",
-    "@commander-js/extra-typings": "^12.1.0",
-    "@sinclair/typebox": "^0.32.35",
     "@types/jest": "^29.5.12",
     "commander": "^12.1.0",
     "eslint": "^8.57.0",

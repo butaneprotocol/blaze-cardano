@@ -30,7 +30,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@cardano-sdk/core": "^0.45.0",
+    "@cardano-sdk/core": "0.45.0",
     "@cardano-sdk/crypto": "^0.1.32",
     "@cardano-sdk/util": "^0.15.5",
     "@noble/curves": "^1.8.1",

@@ -24,9 +24,9 @@ import {
   CredentialType,
 } from "@blaze-cardano/core";
 import { makeUplcEvaluator } from "@blaze-cardano/vm";
+import { Void } from "@blaze-cardano/data";
 import * as value from "../../src/value";
 import { TxBuilder } from "../../src/TxBuilder";
-import { Data } from "../../src";
 
 function flatten<U>(iterator: IterableIterator<U> | undefined): U[] {
   if (!iterator) {
@@ -727,7 +727,7 @@ describe("Transaction Building", () => {
         ),
       ])
       .provideScript(alwaysTrueScript)
-      .addDeregisterStake(credential, Data.void())
+      .addDeregisterStake(credential, Void())
       .complete();
 
     expect(tx.toCbor()).toEqual(

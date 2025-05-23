@@ -13,8 +13,7 @@ import { HexBlob } from "@blaze-cardano/core";
 import { UPLCDecoder } from "./decoder";
 import { type ParsedProgram, TermNames } from "./types";
 import { UPLCEncoder } from "./encoder";
-import { type Exact, Data } from "@blaze-cardano/tx";
-import type { TArray } from "@sinclair/typebox";
+import { type Exact, type TArray, serialize } from "@blaze-cardano/data";
 
 // TODO: Use the c-js-sdk enums for this if possible
 export type ScriptType = "Native" | "PlutusV1" | "PlutusV2" | "PlutusV3";
@@ -88,10 +87,10 @@ function stripCbor(cbor: string) {
  */
 export function applyParamsToScript<T extends TArray>(
   plutusScript: string,
-  params: Exact<T>,
   type: T,
+  params: Exact<T>,
 ): HexBlob {
-  const p = Data.castTo(params, type).asList()!;
+  const p = serialize(type, params).asList()!;
   const paramsList: PlutusData[] = [];
   for (let i = 0; i < p.getLength(); i++) {
     paramsList.push(p.get(i));

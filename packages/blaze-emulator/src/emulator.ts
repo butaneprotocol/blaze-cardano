@@ -1,14 +1,17 @@
-import type {
-  ProtocolParameters,
+import {
+  type ProtocolParameters,
   TransactionOutput,
-  Transaction,
-  ScriptHash,
-  Evaluator,
-  Hash32ByteBase16,
-  DatumHash,
-  PlutusData,
-  CredentialCore,
-  SlotConfig,
+  type Transaction,
+  type ScriptHash,
+  type Evaluator,
+  type Hash32ByteBase16,
+  type DatumHash,
+  type PlutusData,
+  type CredentialCore,
+  type SlotConfig,
+  getBurnAddress,
+  type Script,
+  Datum,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -29,11 +32,26 @@ import {
   TransactionUnspentOutput,
   Value,
   blake2b_256,
+  Bip32PrivateKey,
 } from "@blaze-cardano/core";
-import { calculateReferenceScriptFee, Value as V } from "@blaze-cardano/tx";
+import {
+  Blaze,
+  HotWallet,
+  type Provider,
+  type Wallet,
+} from "@blaze-cardano/sdk";
+import {
+  calculateReferenceScriptFee,
+  makeValue,
+  type TxBuilder,
+  Value as V,
+} from "@blaze-cardano/tx";
 import { makeUplcEvaluator } from "@blaze-cardano/vm";
+import { randomBytes } from "crypto";
+import { EmulatorProvider } from "./provider";
 
 export class LedgerTimer {
+  zeroTime: number;
   block: number;
   slot: number;
   time: number;
@@ -44,6 +62,7 @@ export class LedgerTimer {
   ) {
     this.block = 0;
     this.slot = slotConfig.zeroSlot;
+    this.zeroTime = slotConfig.zeroTime;
     this.time = slotConfig.zeroTime;
     this.slotLength = slotConfig.slotLength;
   }
@@ -86,10 +105,17 @@ export class Emulator {
     }
   > = {};
 
+  #nextGenesisUtxo: number;
+
   /**
    * The map of reward accounts and their balances.
    */
   accounts: Map<RewardAccount, bigint> = new Map();
+
+  /**
+   * A map from label to blaze instance for that wallet
+   */
+  mockedWallets: Map<string, Wallet> = new Map();
 
   /**
    * The protocol parameters of the ledger.
@@ -128,11 +154,13 @@ export class Emulator {
     params: ProtocolParameters = hardCodedProtocolParams,
     { evaluator, slotConfig }: EmulatorOptions = {},
   ) {
+    this.#nextGenesisUtxo = 0;
     for (let i = 0; i < genesisOutputs.length; i++) {
       const txIn = new TransactionInput(
         TransactionId("00".repeat(32)),
-        BigInt(i),
+        BigInt(this.#nextGenesisUtxo),
       );
+      this.#nextGenesisUtxo += 1;
       this.#ledger[serialiseInput(txIn)] = genesisOutputs[i]!;
     }
     this.clock = new LedgerTimer(slotConfig);
@@ -153,11 +181,130 @@ export class Emulator {
     this.removeUtxo = this.removeUtxo.bind(this);
   }
 
-  stepForwardBlock(): void {
-    this.clock.block++;
-    const blockMs = 20 * this.clock.slotLength;
-    this.clock.time += blockMs;
-    this.clock.slot += 20;
+  private async getOrAddWallet(label: string): Promise<Wallet> {
+    if (!this.mockedWallets.has(label)) {
+      const provider = new EmulatorProvider(this);
+      const entropy = randomBytes(96);
+      const masterkey = Bip32PrivateKey.fromBytes(entropy);
+      const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
+      this.mockedWallets.set(label, wallet);
+    }
+    return this.mockedWallets.get(label)!;
+  }
+
+  public async register(
+    label: string,
+    value?: Value,
+    datum?: PlutusData,
+  ): Promise<Address> {
+    await this.fund(label, value, datum);
+    const wallet = await this.getOrAddWallet(label);
+    return wallet.getChangeAddress();
+  }
+
+  public async addressOf(label: string): Promise<Address> {
+    const wallet = await this.getOrAddWallet(label);
+    return wallet.getChangeAddress();
+  }
+
+  public async fund(label: string, value?: Value, datum?: PlutusData) {
+    const wallet = await this.getOrAddWallet(label);
+    const output = new TransactionOutput(
+      await wallet.getChangeAddress(),
+      value ?? makeValue(100_000_000n),
+    );
+    if (datum) {
+      output.setDatum(Datum.newInlineData(datum));
+    }
+    this.addUtxo(
+      new TransactionUnspentOutput(
+        new TransactionInput(
+          TransactionId("00".repeat(32)),
+          BigInt(this.#nextGenesisUtxo),
+        ),
+        output,
+      ),
+    );
+    this.#nextGenesisUtxo += 1;
+  }
+
+  public async as<T = void>(
+    label: string,
+    callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>,
+  ): Promise<T> {
+    const provider = new EmulatorProvider(this);
+    const wallet = await this.getOrAddWallet(label);
+    const blaze = await Blaze.from(provider, wallet);
+    return callback(blaze, await wallet.getChangeAddress());
+  }
+
+  public async publishScript(script: Script) {
+    const utxo = new TransactionOutput(
+      getBurnAddress(NetworkId.Testnet),
+      makeValue(5_000_001n),
+    );
+    utxo.setScriptRef(script);
+    this.addUtxo(
+      new TransactionUnspentOutput(
+        new TransactionInput(
+          TransactionId("00".repeat(32)),
+          BigInt(this.#nextGenesisUtxo),
+        ),
+        utxo,
+      ),
+    );
+    this.#nextGenesisUtxo += 1;
+  }
+
+  public lookupScript(script: Script): TransactionUnspentOutput {
+    for (const utxo of this.utxos()) {
+      if (utxo.output().scriptRef()?.hash() === script.hash()) {
+        return utxo;
+      }
+    }
+    throw new Error("Script not published");
+  }
+
+  public async expectValidTransaction(
+    blaze: Blaze<Provider, Wallet>,
+    tx: TxBuilder,
+  ) {
+    const scriptBytes = tx.toCbor();
+    try {
+      const completedTx = await tx.complete();
+      const signedTx = await blaze.signTransaction(completedTx);
+      const txId = await this.submitTransaction(signedTx);
+      this.awaitTransactionConfirmation(txId);
+      if (txId === undefined) {
+        throw new Error("Transaction ID undefined");
+      }
+    } catch (error) {
+      console.error("Script Bytes: ", scriptBytes);
+      throw error;
+    }
+  }
+
+  public async expectScriptFailure(tx: TxBuilder, pattern?: RegExp) {
+    try {
+      const complete = await tx.complete();
+      console.error(`Script Bytes: ${complete.toCbor()}`);
+    } catch (error: any) {
+      if (!!pattern && !pattern.exec(error.toString())) {
+        throw new Error("Script Failed, but didn't match pattern: " + error);
+      }
+      return;
+    }
+    throw new Error("Transaction was valid!");
+  }
+
+  stepForwardToSlot(slot: number | bigint) {
+    if (Number(slot) <= this.clock.slot) {
+      throw new Error("Time travel is unsafe");
+    }
+    this.clock.slot = Number(slot);
+    this.clock.block = Math.ceil(Number(slot) / 20);
+    this.clock.time =
+      Number(slot) * this.clock.slotLength + this.clock.zeroTime;
 
     Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
       inputs.forEach(this.removeUtxo);
@@ -165,6 +312,16 @@ export class Emulator {
     });
 
     this.#mempool = {};
+  }
+
+  stepForwardToUnix(unix: number | bigint) {
+    this.stepForwardToSlot(
+      Math.ceil((Number(unix) - this.clock.zeroTime) / this.clock.slotLength),
+    );
+  }
+
+  stepForwardBlock(): void {
+    this.stepForwardToSlot(this.clock.slot + 20);
   }
 
   awaitTransactionConfirmation(txId: TransactionId) {
@@ -654,7 +811,26 @@ export class Emulator {
       ...datumHashes,
     ].forEach((hash) => {
       if (!consumed.has(hash)) {
-        throw new Error(`Extraneous witness. ${hash} has not been consumed.`);
+        let witnessType;
+        switch (true) {
+          case vkeyHashes.has(hash as any):
+            witnessType = "VKey";
+            break;
+          case attachedNativeHashes.has(hash as any):
+            witnessType = "Native";
+            break;
+          case attachedPlutusHashes.has(hash as any):
+            witnessType = "Plutus";
+            break;
+          case datumHashes.includes(hash as any):
+            witnessType = "Datum";
+            break;
+          default:
+            witnessType = "Unknown";
+        }
+        throw new Error(
+          `Extraneous ${witnessType} witness. ${hash} has not been consumed.`,
+        );
       }
     });
 

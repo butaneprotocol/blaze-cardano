@@ -460,24 +460,20 @@ export class TxBuilder {
       }
       this.requiredPlutusScripts.add(key.hash);
       const datum = utxo.output().datum();
-      if (!datum) {
-        // TODO: as of chang, this is no longer true
-        throw new Error(
-          "addInput: Cannot spend with redeemer when datum is missing!",
-        );
-      }
-      if (datum?.asInlineData() && unhashDatum) {
-        throw new Error(
-          "addInput: Cannot have inline datum and also provided datum (3rd arg).",
-        );
-      }
-      if (datum?.asDataHash()) {
-        if (!unhashDatum) {
+      if (datum) {
+        if (datum?.asInlineData() && unhashDatum) {
           throw new Error(
-            "addInput: When spending datum hash, must provide datum (3rd arg).",
+            "addInput: Cannot have inline datum and also provided datum (3rd arg).",
           );
         }
-        this.plutusData.add(unhashDatum!);
+        if (datum?.asDataHash()) {
+          if (!unhashDatum) {
+            throw new Error(
+              "addInput: When spending datum hash, must provide datum (3rd arg).",
+            );
+          }
+          this.plutusData.add(unhashDatum!);
+        }
       }
       // Prepare and add the redeemer to the transaction, including execution units estimation.
       redeemers.push(
