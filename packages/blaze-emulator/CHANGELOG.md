@@ -1,5 +1,17 @@
 # @blaze-cardano/emulator
 
+## 0.3.24
+
+### Patch Changes
+
+- b2690c0: Adds serialization and parsing capabilities via a new @blaze-cardano/data package, and updates the @blaze-cardano/blueprint package with new code generation logic. In particular, generated code now supports recursively defined types! Note that this is a breaking change, and the library is still pre-1.0. Apologies for the necessity!
+- Updated dependencies [b2690c0]
+  - @blaze-cardano/query@0.4.3
+  - @blaze-cardano/core@0.6.4
+  - @blaze-cardano/tx@0.12.2
+  - @blaze-cardano/vm@0.1.10
+  - @blaze-cardano/wallet@0.4.4
+
 ## 0.3.23
 
 ### Patch Changes
