@@ -284,6 +284,29 @@ export class Emulator {
     }
   }
 
+  public async expectValidMultisignedTransaction(
+    signers: string[],
+    tx: TxBuilder,
+  ) {
+    const scriptBytes = tx.toCbor();
+    try {
+      let signedTx = await tx.complete();
+      for (const signer of signers) {
+        await this.as(signer, async (blaze) => {
+          signedTx = await blaze.signTransaction(signedTx);
+        });
+      }
+      const txId = await this.submitTransaction(signedTx);
+      this.awaitTransactionConfirmation(txId);
+      if (txId === undefined) {
+        throw new Error("Transaction ID undefined");
+      }
+    } catch (error) {
+      console.error("Script Bytes: ", scriptBytes);
+      throw error;
+    }
+  }
+
   public async expectScriptFailure(tx: TxBuilder, pattern?: RegExp) {
     try {
       const complete = await tx.complete();
