@@ -1,5 +1,11 @@
 # @blaze-cardano/emulator
 
+## 0.3.25
+
+### Patch Changes
+
+- c87d77c: Add a new helper to the emulator for testing multi-signed transactions
+
 ## 0.3.24
 
 ### Patch Changes
