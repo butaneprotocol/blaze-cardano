@@ -39,7 +39,7 @@ export class HydraProvider extends Provider {
     },
     hydraMessageHandler?: HydraMessageHandler,
   ) {
-    super(networkId);
+    super(networkId, "unknown"); // TODO: implement slot translation
 
     this.url = new URL(url);
     this.url.protocol = this.url.protocol.replace("ws", "http");
@@ -119,12 +119,13 @@ export class HydraProvider extends Provider {
   }
 
   async getUnspentOutputsWithAsset(
-    address: Address,
+    _address: Address,
     unit: AssetId,
   ): Promise<TransactionUnspentOutput[]> {
     const utxos = await this.fetchUTxOs();
 
     const ret: TransactionUnspentOutput[] = [];
+    // TODO: filter by address
     for (const key in utxos) {
       const utxo = utxos[key]!;
       if (utxo.output().amount().multiasset()?.has(unit)) {
