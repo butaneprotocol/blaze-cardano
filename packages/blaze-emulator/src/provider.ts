@@ -6,7 +6,6 @@ import type {
   Transaction,
   Redeemers,
   DatumHash,
-  Slot,
   SlotConfig,
 } from "@blaze-cardano/core";
 import {
@@ -127,12 +126,5 @@ export class EmulatorProvider extends Provider {
     additionalUtxos: TransactionUnspentOutput[],
   ): Promise<Redeemers> {
     return this.emulator.evaluator(tx, additionalUtxos);
-  }
-
-  unix_to_slot(unix_millis: bigint | number): Slot {
-    return this.emulator.unix_to_slot(unix_millis);
-  }
-  slot_to_unix(slot: Slot | number | bigint): number {
-    return this.emulator.slot_to_unix(slot);
   }
 }

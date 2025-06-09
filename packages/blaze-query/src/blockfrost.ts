@@ -33,7 +33,7 @@ import {
   Value,
 } from "@blaze-cardano/core";
 import { PlutusLanguageVersion } from "@blaze-cardano/core";
-import { purposeToTag, Provider, NetworkName } from "./provider";
+import { purposeToTag, Provider, type NetworkName } from "./provider";
 
 export class Blockfrost extends Provider {
   url: string;

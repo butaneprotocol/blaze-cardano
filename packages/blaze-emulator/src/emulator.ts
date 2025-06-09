@@ -321,14 +321,14 @@ export class Emulator {
     throw new Error("Transaction was valid!");
   }
 
-  unix_to_slot(unix_millis: bigint | number): Slot {
+  unixToSlot(unix_millis: bigint | number): Slot {
     return Slot(
       Math.ceil(
         (Number(unix_millis) - this.clock.zeroTime) / this.clock.slotLength,
       ),
     );
   }
-  slot_to_unix(slot: Slot | number | bigint): number {
+  slotToUnix(slot: Slot | number | bigint): number {
     return Number(slot.valueOf()) * this.clock.slotLength + this.clock.zeroTime;
   }
 
@@ -338,7 +338,7 @@ export class Emulator {
     }
     this.clock.slot = Number(slot);
     this.clock.block = Math.ceil(Number(slot) / 20);
-    this.clock.time = this.slot_to_unix(slot);
+    this.clock.time = this.slotToUnix(slot);
 
     Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
       inputs.forEach(this.removeUtxo);
@@ -349,7 +349,7 @@ export class Emulator {
   }
 
   stepForwardToUnix(unix: number | bigint) {
-    this.stepForwardToSlot(this.unix_to_slot(unix));
+    this.stepForwardToSlot(this.unixToSlot(unix));
   }
 
   stepForwardBlock(): void {
