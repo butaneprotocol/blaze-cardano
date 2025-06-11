@@ -6,6 +6,7 @@ import type {
   Transaction,
   Redeemers,
   DatumHash,
+  SlotConfig,
 } from "@blaze-cardano/core";
 import {
   TransactionInput,
@@ -28,11 +29,20 @@ export class EmulatorProvider extends Provider {
   private emulator: Emulator;
 
   constructor(emulator: Emulator) {
-    super(NetworkId.Testnet);
+    // TODO: dedicated emulator environment?
+    super(NetworkId.Testnet, "unknown");
     this.emulator = emulator;
   }
   getParameters(): Promise<ProtocolParameters> {
     return Promise.resolve(this.emulator.params);
+  }
+
+  override getSlotConfig(): SlotConfig {
+    return {
+      slotLength: this.emulator.clock.slotLength,
+      zeroSlot: 0,
+      zeroTime: this.emulator.clock.zeroTime,
+    };
   }
 
   getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {

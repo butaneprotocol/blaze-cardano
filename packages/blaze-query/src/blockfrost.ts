@@ -33,7 +33,7 @@ import {
   Value,
 } from "@blaze-cardano/core";
 import { PlutusLanguageVersion } from "@blaze-cardano/core";
-import { purposeToTag, Provider } from "./provider";
+import { purposeToTag, Provider, type NetworkName } from "./provider";
 
 export class Blockfrost extends Provider {
   url: string;
@@ -43,14 +43,13 @@ export class Blockfrost extends Provider {
     network,
     projectId,
   }: {
-    network:
-      | "cardano-preview"
-      | "cardano-preprod"
-      | "cardano-mainnet"
-      | "cardano-sanchonet";
+    network: NetworkName;
     projectId: string;
   }) {
-    super(network == "cardano-mainnet" ? NetworkId.Mainnet : NetworkId.Testnet);
+    super(
+      network == "cardano-mainnet" ? NetworkId.Mainnet : NetworkId.Testnet,
+      network,
+    );
     this.url = `https://${network}.blockfrost.io/api/v0/`;
     this.projectId = projectId;
   }

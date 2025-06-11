@@ -34,7 +34,16 @@ export class Maestro extends Provider {
     network: "mainnet" | "preview" | "preprod";
     apiKey: string;
   }) {
-    super(network == "mainnet" ? NetworkId.Mainnet : NetworkId.Testnet);
+    super(
+      network == "mainnet" ? NetworkId.Mainnet : NetworkId.Testnet,
+      network === "mainnet"
+        ? "cardano-mainnet"
+        : network === "preview"
+          ? "cardano-preview"
+          : network === "preprod"
+            ? "cardano-preprod"
+            : "unknown",
+    );
     this.url = `https://${network}.gomaestro-api.org/v1`;
     this.apiKey = apiKey;
   }

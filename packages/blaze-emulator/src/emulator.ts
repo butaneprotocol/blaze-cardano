@@ -12,6 +12,7 @@ import {
   getBurnAddress,
   type Script,
   Datum,
+  Slot,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -320,14 +321,24 @@ export class Emulator {
     throw new Error("Transaction was valid!");
   }
 
+  unixToSlot(unix_millis: bigint | number): Slot {
+    return Slot(
+      Math.ceil(
+        (Number(unix_millis) - this.clock.zeroTime) / this.clock.slotLength,
+      ),
+    );
+  }
+  slotToUnix(slot: Slot | number | bigint): number {
+    return Number(slot.valueOf()) * this.clock.slotLength + this.clock.zeroTime;
+  }
+
   stepForwardToSlot(slot: number | bigint) {
     if (Number(slot) <= this.clock.slot) {
       throw new Error("Time travel is unsafe");
     }
     this.clock.slot = Number(slot);
     this.clock.block = Math.ceil(Number(slot) / 20);
-    this.clock.time =
-      Number(slot) * this.clock.slotLength + this.clock.zeroTime;
+    this.clock.time = this.slotToUnix(slot);
 
     Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
       inputs.forEach(this.removeUtxo);
@@ -338,9 +349,7 @@ export class Emulator {
   }
 
   stepForwardToUnix(unix: number | bigint) {
-    this.stepForwardToSlot(
-      Math.ceil((Number(unix) - this.clock.zeroTime) / this.clock.slotLength),
-    );
+    this.stepForwardToSlot(this.unixToSlot(unix));
   }
 
   stepForwardBlock(): void {

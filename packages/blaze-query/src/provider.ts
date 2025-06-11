@@ -11,11 +11,21 @@ import {
   type Redeemers,
   type NetworkId,
   type Hash28ByteBase16,
+  type SlotConfig,
+  Slot,
   RedeemerPurpose,
   RedeemerTag,
   Script,
   getBurnAddress,
+  SLOT_CONFIG_NETWORK,
 } from "@blaze-cardano/core";
+
+export type NetworkName =
+  | "cardano-mainnet"
+  | "cardano-preprod"
+  | "cardano-preview"
+  | "cardano-sanchonet"
+  | "unknown";
 
 /**
  * Abstract class for the Provider.
@@ -23,9 +33,11 @@ import {
  */
 export abstract class Provider {
   network: NetworkId;
+  networkName: NetworkName;
 
-  constructor(network: NetworkId) {
+  constructor(network: NetworkId, networkName: NetworkName) {
     this.network = network;
+    this.networkName = networkName;
   }
 
   /**
@@ -151,6 +163,49 @@ export abstract class Provider {
       script = script.hash();
     }
     return utxos.find((utxo) => utxo.output().scriptRef()?.hash() === script);
+  }
+
+  /**
+   * Get the slot config, which describes how to translate between slots and unix timestamps
+   * TODO: this is brittle; in theory this should work with the era histories; also, networkName is awkward
+   */
+  getSlotConfig(): SlotConfig {
+    switch (this.networkName) {
+      case "cardano-mainnet":
+        return SLOT_CONFIG_NETWORK.Mainnet;
+      case "cardano-preprod":
+        return SLOT_CONFIG_NETWORK.Preprod;
+      case "cardano-preview":
+        return SLOT_CONFIG_NETWORK.Preview;
+      default:
+        throw new Error("unsupported network");
+    }
+  }
+  /**
+   * Translate a unix millisecond timestamp to slot, according to the providers network
+   * @param unix_millis Milliseconds since midnight, Jan 1 1970
+   * @returns The slot in the relevant network
+   */
+  unixToSlot(unix_millis: bigint | number): Slot {
+    const slotConfig = this.getSlotConfig();
+
+    return Slot(
+      (Number(unix_millis) - slotConfig.zeroTime) / slotConfig.slotLength +
+        slotConfig.zeroSlot,
+    );
+  }
+  /**
+   * Translate a slot to a unix millisecond timestamp
+   * @param slot The network slot
+   * @returns The milliseconds since midnight, Jan 1 1970
+   */
+  slotToUnix(slot: Slot | number | bigint): number {
+    const slotConfig = this.getSlotConfig();
+
+    return Number(
+      slotConfig.zeroTime +
+        (Number(slot.valueOf()) - slotConfig.zeroSlot) * slotConfig.slotLength,
+    );
   }
 }
 

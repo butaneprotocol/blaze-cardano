@@ -51,6 +51,14 @@ export class Kupmios extends Provider {
   constructor(kupoUrl: string, ogmios: Unwrapped.Ogmios) {
     super(
       ogmios.url.includes("mainnet-v6") ? NetworkId.Mainnet : NetworkId.Testnet,
+      // TODO: this is pretty ugly; how else could we do this?
+      ogmios.url.includes("mainnet-v6")
+        ? "cardano-mainnet"
+        : ogmios.url.includes("preprod-v6")
+          ? "cardano-preprod"
+          : ogmios.url.includes("preview-v6")
+            ? "cardano-preview"
+            : "unknown",
     );
     this.kupoUrl = kupoUrl;
     this.ogmios = ogmios;
