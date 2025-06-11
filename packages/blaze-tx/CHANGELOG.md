@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.12.3
+
+### Patch Changes
+
+- ed3daa5: Add a set metadata function to the transaction builder
+
 ## 0.12.2
 
 ### Patch Changes

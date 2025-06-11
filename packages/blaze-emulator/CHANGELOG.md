@@ -1,5 +1,16 @@
 # @blaze-cardano/emulator
 
+## 0.3.26
+
+### Patch Changes
+
+- 1136f1e: Adds simple unix to slot conversion functions. The interface here might change in the future, and not all providers are supported yet, so use at your own risk!
+- Updated dependencies [ed3daa5]
+- Updated dependencies [1136f1e]
+  - @blaze-cardano/tx@0.12.3
+  - @blaze-cardano/query@0.4.4
+  - @blaze-cardano/wallet@0.4.5
+
 ## 0.3.25
 
 ### Patch Changes

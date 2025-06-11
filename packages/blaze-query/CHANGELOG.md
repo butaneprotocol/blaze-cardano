@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.4.4
+
+### Patch Changes
+
+- 1136f1e: Adds simple unix to slot conversion functions. The interface here might change in the future, and not all providers are supported yet, so use at your own risk!
+
 ## 0.4.3
 
 ### Patch Changes
