@@ -16,8 +16,9 @@ import type {
   PoolId,
   StakeDelegationCertificate,
   NetworkId,
-  AuxiliaryData,
+  Metadata,
 } from "@blaze-cardano/core";
+import { AuxiliaryData } from "@blaze-cardano/core";
 import { Hash28ByteBase16, HexBlob } from "@blaze-cardano/core";
 import {
   CborSet,
@@ -2231,6 +2232,21 @@ export class TxBuilder {
     const auxiliaryDataHash = getAuxiliaryDataHash(auxiliaryData);
     this.body.setAuxiliaryDataHash(auxiliaryDataHash);
     this.auxiliaryData = auxiliaryData;
+    return this;
+  }
+
+  /**
+   * Sets the transaction metadata and updates the transaction's auxiliary data hash.
+   * @param {Metadata} metadata the metadata to set
+   * @returns {TxBuilder} The same transaction builder
+   */
+  setMetadata(metadata: Metadata): TxBuilder {
+    if (!this.auxiliaryData) {
+      this.auxiliaryData = new AuxiliaryData();
+    }
+    this.auxiliaryData?.setMetadata(metadata);
+    const auxiliaryDataHash = getAuxiliaryDataHash(this.auxiliaryData);
+    this.body.setAuxiliaryDataHash(auxiliaryDataHash);
     return this;
   }
 
