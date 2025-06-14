@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.4.5
+
+### Patch Changes
+
+- 30f23cd: Optimize blockfrost script ref resolution.
+
 ## 0.4.4
 
 ### Patch Changes
