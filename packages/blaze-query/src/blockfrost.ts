@@ -16,6 +16,7 @@ import {
   DatumHash,
   ExUnits,
   fromHex,
+  getBurnAddress,
   hardCodedProtocolParams,
   Hash28ByteBase16,
   HexBlob,
@@ -38,6 +39,7 @@ import { purposeToTag, Provider, type NetworkName } from "./provider";
 export class Blockfrost extends Provider {
   url: string;
   private projectId: string;
+  private scriptCache: Map<string, Script>;
 
   constructor({
     network,
@@ -52,6 +54,7 @@ export class Blockfrost extends Provider {
     );
     this.url = `https://${network}.blockfrost.io/api/v0/`;
     this.projectId = projectId;
+    this.scriptCache = new Map<string, Script>();
   }
 
   headers() {
@@ -144,6 +147,7 @@ export class Blockfrost extends Provider {
    */
   async getUnspentOutputs(
     address: Address | Credential,
+    filter?: (utxo: BlockfrostUTxO) => boolean,
   ): Promise<TransactionUnspentOutput[]> {
     // 100 per page is max allowed by Blockfrost
     const maxPageCount = 100;
@@ -183,7 +187,9 @@ export class Blockfrost extends Provider {
       }
 
       for (const blockfrostUTxO of response) {
-        results.add(await buildTxUnspentOutput(blockfrostUTxO));
+        if (!filter || filter(blockfrostUTxO)) {
+          results.add(await buildTxUnspentOutput(blockfrostUTxO));
+        }
       }
 
       if (response.length < maxPageCount) {
@@ -600,6 +606,11 @@ export class Blockfrost extends Provider {
   }
 
   private async getScriptRef(scriptHash: ScriptHash): Promise<Script> {
+    const cachedScript = this.scriptCache.get(scriptHash);
+    if (cachedScript) {
+      return cachedScript;
+    }
+
     const typeQuery = `/scripts/${scriptHash}`;
     const typeJson = await fetch(`${this.url}${typeQuery}`, {
       headers: this.headers(),
@@ -647,16 +658,44 @@ export class Blockfrost extends Provider {
 
     switch (type) {
       case "plutusV1":
-        return Script.newPlutusV1Script(new PlutusV1Script(cbor));
+        this.scriptCache.set(
+          scriptHash,
+          Script.newPlutusV1Script(new PlutusV1Script(cbor)),
+        );
+        break;
       case "plutusV2":
-        return Script.newPlutusV2Script(new PlutusV2Script(cbor));
+        this.scriptCache.set(
+          scriptHash,
+          Script.newPlutusV2Script(new PlutusV2Script(cbor)),
+        );
+        break;
       case "plutusV3":
-        return Script.newPlutusV3Script(new PlutusV3Script(cbor));
+        this.scriptCache.set(
+          scriptHash,
+          Script.newPlutusV3Script(new PlutusV3Script(cbor)),
+        );
+        break;
       default:
         throw new Error(
           `Unsupported script type ${type} for script hash ${scriptHash}`,
         );
     }
+
+    return this.scriptCache.get(scriptHash)!;
+  }
+
+  override async resolveScriptRef(
+    script: Script | Hash28ByteBase16,
+    address: Address = getBurnAddress(this.network),
+  ): Promise<TransactionUnspentOutput | undefined> {
+    if ("hash" in script) {
+      script = script.hash();
+    }
+    const utxos = await this.getUnspentOutputs(
+      address,
+      (u) => u.reference_script_hash === script,
+    );
+    return utxos[0];
   }
 
   // Partially applies address in order to avoid sending it
