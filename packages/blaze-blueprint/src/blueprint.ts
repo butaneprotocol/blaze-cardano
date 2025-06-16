@@ -177,7 +177,7 @@ class Generator {
     }
   }
 
-  public writeValidators(blueprint: Blueprint) {
+  public writeValidators(blueprint: Blueprint, blueprintWithTrace?: Blueprint) {
     const plutusVersion = (() => {
       switch (blueprint.preamble.plutusVersion) {
         case "v3":
@@ -189,6 +189,9 @@ class Generator {
       }
     })();
     for (const validator of blueprint.validators) {
+      const validatorWithTrace = blueprintWithTrace?.validators.find(
+        (v) => v.title === validator.title,
+      );
       const title = validator.title;
       const name = (() => {
         // Validators can reside under sub-directories and without replacing `/`
@@ -241,13 +244,32 @@ class Generator {
         }
         this.outdent();
       }
+      if (validatorWithTrace) {
+        if (params.length === 0) {
+          this.finishLine();
+        }
+        this.indent();
+        this.buildLine(`trace?: boolean = false`);
+        this.finishLine(`,`);
+        this.outdent();
+      }
       this.finishLine(") {");
       this.indent();
       this.writeLine(`this.Script = cborToScript(`);
       this.indent();
       this.writeLine(`applyParamsToScript(`);
       this.indent();
+      if (validatorWithTrace) {
+        this.writeLine(`this.trace`);
+        this.indent();
+        this.writeLine(`?`);
+        this.writeLine(`"${validatorWithTrace.compiledCode}"`);
+        this.finishLine(`:`);
+      }
       this.writeLine(`"${validator.compiledCode}",`);
+      if (validatorWithTrace) {
+        this.outdent();
+      }
       this.writeLine(`Type.Tuple([`);
       this.indent();
       for (const param of params) {
@@ -498,16 +520,27 @@ class Generator {
 
 export type BlueprintArgs = {
   infile?: string;
+  infileWithTrace?: string;
   outfile?: string;
   useSdk?: boolean;
   recursiveType?: string;
 };
 export async function generateBlueprint({
   infile = "plutus.json",
+  infileWithTrace = undefined,
   outfile = "plutus.ts",
   useSdk = false,
 }: BlueprintArgs) {
   const plutusJson: Blueprint = JSON.parse(await fs.readFile(infile, "utf8"));
+
+  let plutusJsonWithTrace: Blueprint | undefined;
+  if (infileWithTrace) {
+    plutusJsonWithTrace = JSON.parse(
+      await fs.readFile(infileWithTrace, "utf8"),
+    );
+  } else {
+    plutusJsonWithTrace = undefined;
+  }
 
   const definitions = plutusJson.definitions;
 
@@ -517,7 +550,7 @@ export async function generateBlueprint({
   generator.writeLine();
   generator.writeModule(definitions);
   generator.writeLine();
-  generator.writeValidators(plutusJson);
+  generator.writeValidators(plutusJson, plutusJsonWithTrace);
 
   const plutus = generator.buffer.join("\n");
   await fs.writeFile(outfile, plutus);
