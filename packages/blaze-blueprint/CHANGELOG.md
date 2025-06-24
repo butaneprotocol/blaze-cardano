@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.6.1
+
+### Patch Changes
+
+- e6a682d: fix: syntax errors in blueprint codegen
+
 ## 0.6.0
 
 ### Minor Changes
