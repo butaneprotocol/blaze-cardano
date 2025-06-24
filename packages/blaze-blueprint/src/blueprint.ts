@@ -81,7 +81,7 @@ class Generator {
     this.writeLine(`// @ts-nocheck`);
     if (useSdk) {
       this.writeLine(
-        `import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk`,
+        `import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk"`,
       );
       this.writeLine(`type Script = Core.Script;`);
       this.writeLine(`const Script = Core.Script;`);
@@ -327,15 +327,12 @@ class Generator {
           if (schema.items instanceof Array) {
             this.finishLine(`Type.Tuple([`);
             this.indent();
-            let first = true;
             for (const item of schema.items) {
-              if (!first) {
-                this.writeLine(`, `);
-              }
               this.writeTypeboxType(item, definitions);
-              first = false;
+              this.finishLine(",");
             }
             this.outdent();
+            this.buildLine(`])`);
           } else {
             this.finishLine(`Type.Array(`);
             this.indent();
