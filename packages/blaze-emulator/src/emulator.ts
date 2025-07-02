@@ -59,7 +59,7 @@ export class LedgerTimer {
   slotLength: number;
 
   constructor(
-    slotConfig: SlotConfig = { zeroTime: 0, zeroSlot: 0, slotLength: 1000 }
+    slotConfig: SlotConfig = { zeroTime: 0, zeroSlot: 0, slotLength: 1000 },
   ) {
     this.block = 0;
     this.slot = slotConfig.zeroSlot;
@@ -153,13 +153,13 @@ export class Emulator {
   constructor(
     genesisOutputs: TransactionOutput[],
     params: ProtocolParameters = hardCodedProtocolParams,
-    { evaluator, slotConfig }: EmulatorOptions = {}
+    { evaluator, slotConfig }: EmulatorOptions = {},
   ) {
     this.#nextGenesisUtxo = 0;
     for (let i = 0; i < genesisOutputs.length; i++) {
       const txIn = new TransactionInput(
         TransactionId("00".repeat(32)),
-        BigInt(this.#nextGenesisUtxo)
+        BigInt(this.#nextGenesisUtxo),
       );
       this.#nextGenesisUtxo += 1;
       this.#ledger[serialiseInput(txIn)] = genesisOutputs[i]!;
@@ -176,7 +176,7 @@ export class Emulator {
           zeroSlot: this.clock.slot,
           zeroTime: this.clock.time,
           slotLength: this.clock.slotLength,
-        }
+        },
       );
     this.addUtxo = this.addUtxo.bind(this);
     this.removeUtxo = this.removeUtxo.bind(this);
@@ -196,7 +196,7 @@ export class Emulator {
   public async register(
     label: string,
     value?: Value,
-    datum?: PlutusData
+    datum?: PlutusData,
   ): Promise<Address> {
     await this.fund(label, value, datum);
     const wallet = await this.getOrAddWallet(label);
@@ -212,7 +212,7 @@ export class Emulator {
     const wallet = await this.getOrAddWallet(label);
     const output = new TransactionOutput(
       await wallet.getChangeAddress(),
-      value ?? makeValue(100_000_000n)
+      value ?? makeValue(100_000_000n),
     );
     if (datum) {
       output.setDatum(Datum.newInlineData(datum));
@@ -221,17 +221,17 @@ export class Emulator {
       new TransactionUnspentOutput(
         new TransactionInput(
           TransactionId("00".repeat(32)),
-          BigInt(this.#nextGenesisUtxo)
+          BigInt(this.#nextGenesisUtxo),
         ),
-        output
-      )
+        output,
+      ),
     );
     this.#nextGenesisUtxo += 1;
   }
 
   public async as<T = void>(
     label: string,
-    callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>
+    callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>,
   ): Promise<T> {
     const provider = new EmulatorProvider(this);
     const wallet = await this.getOrAddWallet(label);
@@ -242,17 +242,17 @@ export class Emulator {
   public async publishScript(script: Script) {
     const utxo = new TransactionOutput(
       getBurnAddress(NetworkId.Testnet),
-      makeValue(5_000_001n)
+      makeValue(5_000_001n),
     );
     utxo.setScriptRef(script);
     this.addUtxo(
       new TransactionUnspentOutput(
         new TransactionInput(
           TransactionId("00".repeat(32)),
-          BigInt(this.#nextGenesisUtxo)
+          BigInt(this.#nextGenesisUtxo),
         ),
-        utxo
-      )
+        utxo,
+      ),
     );
     this.#nextGenesisUtxo += 1;
   }
@@ -268,7 +268,7 @@ export class Emulator {
 
   public async expectValidTransaction(
     blaze: Blaze<Provider, Wallet>,
-    tx: TxBuilder
+    tx: TxBuilder,
   ) {
     const scriptBytes = tx.toCbor();
     try {
@@ -287,7 +287,7 @@ export class Emulator {
 
   public async expectValidMultisignedTransaction(
     signers: string[],
-    tx: TxBuilder
+    tx: TxBuilder,
   ) {
     const scriptBytes = tx.toCbor();
     try {
@@ -324,8 +324,8 @@ export class Emulator {
   unixToSlot(unix_millis: bigint | number): Slot {
     return Slot(
       Math.ceil(
-        (Number(unix_millis) - this.clock.zeroTime) / this.clock.slotLength
-      )
+        (Number(unix_millis) - this.clock.zeroTime) / this.clock.slotLength,
+      ),
     );
   }
   slotToUnix(slot: Slot | number | bigint): number {
@@ -525,12 +525,12 @@ export class Emulator {
             const sig = Ed25519Signature.fromHex(vkey.signature());
             if (!key.verify(sig, HexBlob(txId))) {
               throw new Error(
-                `Invalid vkey in witness set with hash ${keyHash}`
+                `Invalid vkey in witness set with hash ${keyHash}`,
               );
             }
             return Hash28ByteBase16.fromEd25519KeyHashHex(keyHash.hex());
-          })
-      )
+          }),
+      ),
     );
 
     // TODO: bootstrap addresses validation
@@ -540,7 +540,7 @@ export class Emulator {
         ...(witnessSet.plutusV1Scripts()?.values() ?? []),
         ...(witnessSet.plutusV2Scripts()?.values() ?? []),
         ...(witnessSet.plutusV3Scripts()?.values() ?? []),
-      ].map((script) => script.hash())
+      ].map((script) => script.hash()),
     );
 
     // Total set of plutus hashes including referenced scripts
@@ -553,7 +553,7 @@ export class Emulator {
         .map((script) => {
           // TODO: Validate native scripts with validity interval
           return script.hash();
-        })
+        }),
     );
 
     const nativeHashes = new Set(attachedNativeHashes);
@@ -576,13 +576,13 @@ export class Emulator {
     const consumeScript = (
       hash: ScriptHash,
       redeemerTag?: RedeemerTag,
-      redeemerIndex?: bigint
+      redeemerIndex?: bigint,
     ) => {
       if (
         nativeHashes.has(hash) ||
         (plutusHashes.has(hash) &&
           redeemers.some(
-            (r) => r.tag() === redeemerTag && r.index() === redeemerIndex
+            (r) => r.tag() === redeemerTag && r.index() === redeemerIndex,
           ))
       ) {
         consumed.add(hash);
@@ -594,7 +594,7 @@ export class Emulator {
     const consumeCred = (
       cred: CredentialCore,
       redeemerTag?: RedeemerTag,
-      redeemerIndex?: bigint
+      redeemerIndex?: bigint,
     ) => {
       if (cred.type === CredentialType.KeyHash) {
         consumeVkey(cred.hash);
@@ -611,13 +611,13 @@ export class Emulator {
         const out = this.getOutput(input);
         if (!out) {
           throw new Error(
-            `Collateral input ${input.toCore()} not found in the ledger.`
+            `Collateral input ${input.toCore()} not found in the ledger.`,
           );
         }
         const paymentCred = out.address().getProps().paymentPart!;
         if (paymentCred.type !== CredentialType.KeyHash) {
           throw new Error(
-            `Collateral input ${input.toCore()} must contain a vkey.`
+            `Collateral input ${input.toCore()} must contain a vkey.`,
           );
         }
         consumeVkey(paymentCred.hash);
@@ -629,7 +629,7 @@ export class Emulator {
       collateral.length > this.params.maxCollateralInputs
     )
       throw new Error(
-        `Collateral inputs exceed the maximum allowed. Provided: ${collateral?.length}, Maximum: ${this.params.maxCollateralInputs}`
+        `Collateral inputs exceed the maximum allowed. Provided: ${collateral?.length}, Maximum: ${this.params.maxCollateralInputs}`,
       );
 
     const usedInputs: TransactionUnspentOutput[] = [];
@@ -643,7 +643,7 @@ export class Emulator {
 
       if (!out) {
         throw new Error(
-          `Input ${JSON.stringify(input.toCore())} not found in the ledger.`
+          `Input ${JSON.stringify(input.toCore())} not found in the ledger.`,
         );
       }
 
@@ -668,7 +668,7 @@ export class Emulator {
       .sort(
         (a, b) =>
           a.transactionId().localeCompare(b.transactionId()) ||
-          Number(a.index() - b.index())
+          Number(a.index() - b.index()),
       )
       .forEach((input, index) => {
         const out = this.getOutput(input)!;
@@ -687,8 +687,8 @@ export class Emulator {
         refInputs?.some(
           (ref) =>
             ref.transactionId() === input.transactionId() &&
-            ref.index() === input.index()
-        )
+            ref.index() === input.index(),
+        ),
       )
     ) {
       throw new Error("Inputs and reference inputs must be disjoint.");
@@ -696,7 +696,7 @@ export class Emulator {
 
     // Minimum collateral amount included
     const minCollateral = BigInt(
-      Math.ceil((this.params.collateralPercentage / 100) * Number(body.fee()))
+      Math.ceil((this.params.collateralPercentage / 100) * Number(body.fee())),
     );
 
     // If any scripts have been invoked, minimum collateral must be included
@@ -725,15 +725,15 @@ export class Emulator {
             const stakeRegistration = cert.asStakeRegistration()!;
             const rewardAddr = RewardAccount.fromCredential(
               stakeRegistration.stakeCredential(),
-              NetworkId.Testnet
+              NetworkId.Testnet,
             );
             if (this.accounts.has(rewardAddr))
               throw new Error(
-                `Stake key with reward address ${rewardAddr} is already registered.`
+                `Stake key with reward address ${rewardAddr} is already registered.`,
               );
             netValue = V.sub(
               netValue,
-              new Value(BigInt(this.params.stakeKeyDeposit))
+              new Value(BigInt(this.params.stakeKeyDeposit)),
             );
             break;
           }
@@ -743,16 +743,16 @@ export class Emulator {
             const stakeCred = stakeDeregistration.stakeCredential();
             const rewardAddr = RewardAccount.fromCredential(
               stakeCred,
-              NetworkId.Testnet
+              NetworkId.Testnet,
             );
             if (!this.accounts.has(rewardAddr))
               throw new Error(
-                `Stake key with reward address ${rewardAddr} is not registered.`
+                `Stake key with reward address ${rewardAddr} is not registered.`,
               );
             consumeCred(stakeCred, RedeemerTag.Cert, BigInt(index));
             netValue = V.merge(
               netValue,
-              new Value(BigInt(this.params.stakeKeyDeposit))
+              new Value(BigInt(this.params.stakeKeyDeposit)),
             );
             break;
           }
@@ -766,14 +766,14 @@ export class Emulator {
         const balance = this.accounts.get(rewardAddr);
         if (balance !== amount)
           throw new Error(
-            `Withdrawal amount for ${rewardAddr} does not match the actual reward balance (Withdrawing: ${amount} Balance: ${balance}).`
+            `Withdrawal amount for ${rewardAddr} does not match the actual reward balance (Withdrawing: ${amount} Balance: ${balance}).`,
           );
 
         const stakeCred =
           Address.fromBech32(rewardAddr).getProps().paymentPart!;
         consumeCred(stakeCred, RedeemerTag.Reward, BigInt(index));
         netValue = V.merge(netValue, new Value(amount));
-      }
+      },
     );
 
     // -- Mints
@@ -806,7 +806,7 @@ export class Emulator {
     // Validity interval contains the current slot range and is formed correctly
     if (this.clock.slot < validFrom || this.clock.slot >= validUntil)
       throw new Error(
-        `Validity interval (${validFrom} to ${validUntil}) is outside the slot range (${this.clock.slot}).`
+        `Validity interval (${validFrom} to ${validUntil}) is outside the slot range (${this.clock.slot}).`,
       );
 
     if (validFrom >= validUntil)
@@ -826,13 +826,13 @@ export class Emulator {
         throw new Error(
           `Output ${index} does not meet the minADA requirement. Output: ${output
             .amount()
-            .coin()}, MinADA: ${minAda}`
+            .coin()}, MinADA: ${minAda}`,
         );
 
       const length = output.amount().toCbor().length / 2;
       if (length > this.params.maxValueSize)
         throw new Error(
-          `Output ${index}'s value exceeds the maximum allowed size. Output: ${length} bytes, Maximum: ${this.params.maxValueSize} bytes`
+          `Output ${index}'s value exceeds the maximum allowed size. Output: ${length} bytes, Maximum: ${this.params.maxValueSize} bytes`,
         );
 
       netValue = V.sub(netValue, output.amount());
@@ -864,7 +864,7 @@ export class Emulator {
             witnessType = "Unknown";
         }
         throw new Error(
-          `Extraneous ${witnessType} witness. ${hash} has not been consumed.`
+          `Extraneous ${witnessType} witness. ${hash} has not been consumed.`,
         );
       }
     });
@@ -872,7 +872,7 @@ export class Emulator {
     const txSize = tx.toCbor().length / 2;
     if (txSize > this.params.maxTxSize) {
       throw new Error(
-        `Transaction size exceeds the maximum allowed. Supplied: ${txSize}, Maximum: ${this.params.maxTxSize}`
+        `Transaction size exceeds the maximum allowed. Supplied: ${txSize}, Maximum: ${this.params.maxTxSize}`,
       );
     }
 
@@ -883,13 +883,13 @@ export class Emulator {
         evaluatedRedeemers.values().reduce((acc, redeemer) => {
           // Unsure if redeemer lists would be in the same order so we find it explicitly
           const providedRedeemer = redeemers.find(
-            (r) => r.tag() === redeemer.tag() && r.index() === redeemer.index()
+            (r) => r.tag() === redeemer.tag() && r.index() === redeemer.index(),
           );
           if (!providedRedeemer) {
             throw new Error(
               `Missing redeemer: Purpose ${
                 redeemer.toCore().purpose
-              }, Index ${redeemer.index()})`
+              }, Index ${redeemer.index()})`,
             );
           }
           const { memory, steps } = redeemer.exUnits().toCore();
@@ -901,23 +901,23 @@ export class Emulator {
                 redeemer.toCore().purpose
               } ${redeemer.index()}): ${providedMemory - memory} Memory, ${
                 providedSteps - steps
-              } Steps`
+              } Steps`,
             );
           return (
             acc +
             this.params.prices.memory * memory +
             this.params.prices.steps * steps
           );
-        }, 0)
-      )
+        }, 0),
+      ),
     );
 
     let fee =
       evalFee +
       BigInt(
         Math.ceil(
-          this.params.minFeeConstant + txSize * this.params.minFeeCoefficient
-        )
+          this.params.minFeeConstant + txSize * this.params.minFeeCoefficient,
+        ),
       );
 
     let refScriptFee = 0n;
@@ -927,7 +927,7 @@ export class Emulator {
         .filter((x) => x !== undefined);
 
       refScriptFee += BigInt(
-        Math.ceil(calculateReferenceScriptFee(refScripts, this.params))
+        Math.ceil(calculateReferenceScriptFee(refScripts, this.params)),
       );
     }
 
@@ -935,15 +935,15 @@ export class Emulator {
 
     if (fee > body.fee())
       throw new Error(
-        `Insufficient transaction fee. Supplied: ${body.fee()}, Required: ${fee}`
+        `Insufficient transaction fee. Supplied: ${body.fee()}, Required: ${fee}`,
       );
 
     netValue = V.sub(netValue, new Value(body.fee() + (body.donation() ?? 0n)));
     if (!V.empty(netValue))
       throw new Error(
         `Value not conserved. Leftover Value: ${netValue.coin()}, ${Array.from(
-          netValue.multiasset()?.entries() ?? []
-        )}`
+          netValue.multiasset()?.entries() ?? [],
+        )}`,
       );
 
     this.acceptTransaction(tx);
@@ -973,9 +973,9 @@ export class Emulator {
           (output, i) =>
             new TransactionUnspentOutput(
               new TransactionInput(txId, BigInt(i)),
-              output!
-            )
-        )
+              output!,
+            ),
+        ),
       ),
     };
 
@@ -987,7 +987,7 @@ export class Emulator {
         const cred = stakeRegistration.stakeCredential();
         const rewardAccount = RewardAccount.fromCredential(
           cred,
-          NetworkId.Testnet
+          NetworkId.Testnet,
         );
         this.accounts.set(rewardAccount, 0n);
       }
@@ -996,7 +996,7 @@ export class Emulator {
         const cred = stakeDeregistration.stakeCredential();
         const rewardAccount = RewardAccount.fromCredential(
           cred,
-          NetworkId.Testnet
+          NetworkId.Testnet,
         );
         this.accounts.delete(rewardAccount);
       }
