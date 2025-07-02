@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Emulator Should not be able to spend if inputs/outputs are not balanced 1`] = `"Value not conserved. Leftover Value: -1342617, "`;

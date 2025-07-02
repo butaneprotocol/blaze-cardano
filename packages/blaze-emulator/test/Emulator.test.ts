@@ -22,7 +22,7 @@ import {
   generateGenesisOutputs,
   signAndSubmit,
 } from "./util";
-import { Blaze, makeValue } from "@blaze-cardano/sdk";
+import { Blaze, Core, makeValue } from "@blaze-cardano/sdk";
 
 function isDefined<T>(value: T | undefined): asserts value is T {
   expect(value).toBeDefined();
@@ -263,5 +263,51 @@ describe("Emulator", () => {
     const out = emulator.getOutput(new TransactionInput(txHash, 0n));
     isDefined(out);
     expect(out.address()).toEqual(wallet1.address);
+  });
+
+  test("Should not be able to spend if inputs/outputs are not balanced", async () => {
+    const { address, masterkeyHex } = await generateAccount();
+    const mockWallet = await HotWallet.fromMasterkey(masterkeyHex, provider);
+
+    const mockUtxo = Core.TransactionUnspentOutput.fromCore([
+      Core.TransactionInput.fromCore({
+        index: 0,
+        txId: Core.TransactionId("1".repeat(64)),
+      }).toCore(),
+      Core.TransactionOutput.fromCore({
+        address: Core.PaymentAddress(address.toBech32()),
+        value: makeValue(4_000_000n).toCore(),
+      }).toCore(),
+    ]);
+
+    emulator.addUtxo(mockUtxo);
+
+    blaze = await Blaze.from(provider, mockWallet);
+
+    const tx = await blaze
+      .newTransaction()
+      .provideScript(alwaysTrueScript)
+      .addInput(mockUtxo)
+      .addMint(
+        Core.PolicyId(alwaysTrueScript.hash()),
+        new Map([[Core.AssetName("545450726576696577"), 1n]]),
+        VOID_PLUTUS_DATA,
+      )
+      .provideCollateral([mockUtxo])
+      .payAssets(
+        Core.Address.fromBech32(
+          "addr_test1qq82re4ttqrnpnuyqp03fazf8psgckvwlj6482g8pcaeqgr5rr4au7zr2g79y6ggwm7l4hv6jqtzcy758gpu8ez69kwsc40mlq",
+        ),
+        makeValue(2_000_000n),
+      )
+      .payAssets(
+        Core.Address.fromBech32(
+          "addr_test1qq82re4ttqrnpnuyqp03fazf8psgckvwlj6482g8pcaeqgr5rr4au7zr2g79y6ggwm7l4hv6jqtzcy758gpu8ez69kwsc40mlq",
+        ),
+        makeValue(2_000_000n),
+      )
+      .complete({ useCoinSelection: false });
+
+    expect(signAndSubmit(tx, blaze)).rejects.toThrowErrorMatchingSnapshot();
   });
 });

@@ -451,6 +451,7 @@ export class Emulator {
    *
    * @remarks
    * This function performs the following checks and validations:
+   *   - Balance Inputs/Outputs: Ensure that inputs/outputs are accurately balanced.
    *   - Verify Witnesses: Ensure that all witnesses in the transaction are valid.
    *   - Correct Count of Scripts and Vkeys: Check that the transaction has the correct number of scripts and vkeys.
    *   - Stake Key Registration: If the transaction involves a stake key registration, ensure that the stake key is not already registered.
@@ -641,7 +642,9 @@ export class Emulator {
       const out = this.getOutput(input);
 
       if (!out) {
-        throw new Error(`Input ${input.toCore()} not found in the ledger.`);
+        throw new Error(
+          `Input ${JSON.stringify(input.toCore())} not found in the ledger.`,
+        );
       }
 
       usedInputs.push(new TransactionUnspentOutput(input, out));
