@@ -688,7 +688,7 @@ export class Blockfrost extends Provider {
     script: Script | Hash28ByteBase16,
     address: Address = getBurnAddress(this.network),
   ): Promise<TransactionUnspentOutput | undefined> {
-    if ("hash" in script) {
+    if (script instanceof Script) {
       script = script.hash();
     }
     const utxos = await this.getUnspentOutputs(
