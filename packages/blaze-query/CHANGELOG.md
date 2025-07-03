@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.5.0
+
+### Minor Changes
+
+- 6c4d07c: Fixed an issue where a string would cause Blockfrost.resolveScriptRef to throw a fatal error.
+
 ## 0.4.5
 
 ### Patch Changes
