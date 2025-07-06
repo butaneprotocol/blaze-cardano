@@ -80,6 +80,19 @@ export function _serialize<T extends TSchema>(
     );
   }
 
+  if (isOptional(type)) {
+    if (data !== null && data !== undefined) {
+      const innerType = Type.Optional(type, false);
+      const fields = new PlutusList();
+      fields.add(_serialize(innerType, data as any, path, defs));
+      return PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, fields));
+    } else {
+      return PlutusData.newConstrPlutusData(
+        new ConstrPlutusData(1n, new PlutusList()),
+      );
+    }
+  }
+
   if (data instanceof PlutusData) {
     return data;
   }
@@ -99,19 +112,6 @@ export function _serialize<T extends TSchema>(
       );
     }
     return _serialize(resolvedType, data, path, defs);
-  }
-
-  if (isOptional(type)) {
-    if (data !== null && data !== undefined) {
-      const innerType = Type.Optional(type, false);
-      const fields = new PlutusList();
-      fields.add(_serialize(innerType, data as any, path, defs));
-      return PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, fields));
-    } else {
-      return PlutusData.newConstrPlutusData(
-        new ConstrPlutusData(1n, new PlutusList()),
-      );
-    }
   }
 
   if (isUnion(type)) {
