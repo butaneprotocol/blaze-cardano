@@ -207,17 +207,22 @@ describe("serialize", () => {
     expect(out2.toCbor()).toEqual(newConstr(1n, []).toCbor());
   });
 
-it("should be able to serialize with optional type references", () => {
+  it("should be able to serialize with optional type references", () => {
     const defs = {
       T0: Type.Literal("Something", { ctor: 0 }),
     };
-    const schema = Type.Object({
-      MyOption: Type.Optional(Type.Ref("T0"))
-    }, { ctor: 0 });
+    const schema = Type.Object(
+      {
+        MyOption: Type.Optional(Type.Ref("T0")),
+      },
+      { ctor: 0 },
+    );
 
     const inp1 = { MyOption: "Something" };
     const out1 = serialize(schema, inp1, defs);
-    expect(out1.toCbor()).toEqual(newConstr(0n, [newConstr(0n, [newConstr(0n, [])])]).toCbor());
+    expect(out1.toCbor()).toEqual(
+      newConstr(0n, [newConstr(0n, [newConstr(0n, [])])]).toCbor(),
+    );
 
     const inp2 = { MyOption: undefined };
     const out2 = serialize(schema, inp2, defs);
