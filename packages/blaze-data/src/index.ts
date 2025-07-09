@@ -19,6 +19,7 @@ import {
   type TImport,
   type TTuple,
   type TOptional,
+  type TAny,
   OptionalKind,
 } from "@sinclair/typebox";
 import {
@@ -54,6 +55,7 @@ const isString = (t: TSchema): t is TString => t[Kind] === "String";
 const isThis = (t: TSchema): t is TThis => t[Kind] === "This";
 const isTuple = (t: TSchema): t is TTuple => t[Kind] === "Tuple";
 const isUnion = (t: TSchema): t is TUnion => t[Kind] === "Union";
+const isAny = (t: TSchema): t is TAny => t[Kind] === "Any";
 
 export function serialize<T extends TSchema>(
   type: T,
@@ -80,6 +82,19 @@ export function _serialize<T extends TSchema>(
     );
   }
 
+  if (isOptional(type)) {
+    if (data !== null && data !== undefined) {
+      const innerType = Type.Optional(type, false);
+      const fields = new PlutusList();
+      fields.add(_serialize(innerType, data as any, path, defs));
+      return PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, fields));
+    } else {
+      return PlutusData.newConstrPlutusData(
+        new ConstrPlutusData(1n, new PlutusList()),
+      );
+    }
+  }
+
   if (data instanceof PlutusData) {
     return data;
   }
@@ -99,19 +114,6 @@ export function _serialize<T extends TSchema>(
       );
     }
     return _serialize(resolvedType, data, path, defs);
-  }
-
-  if (isOptional(type)) {
-    if (data !== null && data !== undefined) {
-      const innerType = Type.Optional(type, false);
-      const fields = new PlutusList();
-      fields.add(_serialize(innerType, data as any, path, defs));
-      return PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, fields));
-    } else {
-      return PlutusData.newConstrPlutusData(
-        new ConstrPlutusData(1n, new PlutusList()),
-      );
-    }
   }
 
   if (isUnion(type)) {
@@ -556,6 +558,9 @@ export function _parse<T extends TSchema>(
     } else {
       return { [variantName!]: nestedValue } as Exact<T>;
     }
+  }
+  if (isAny(type)) {
+    return data as Exact<T>;
   }
   throw new Error(
     `Invalid type at ${path.join(".")}: Unrecognized type "${type[Kind]}".`,
