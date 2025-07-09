@@ -1,5 +1,11 @@
 # @blaze-cardano/data
 
+## 0.6.1
+
+### Patch Changes
+
+- aeecdcc: fixed serialization of optional wrapped ref types
+
 ## 0.6.0
 
 ### Minor Changes
