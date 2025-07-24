@@ -49,11 +49,11 @@ export class Blockfrost extends Provider {
   }: {
     network: NetworkName;
     projectId: string;
-    withScriptRefCaching: boolean;
+    withScriptRefCaching?: boolean;
   }) {
     super(
       network == "cardano-mainnet" ? NetworkId.Mainnet : NetworkId.Testnet,
-      network,
+      network
     );
     this.url = `https://${network}.blockfrost.io/api/v0/`;
     this.projectId = projectId;
@@ -93,7 +93,7 @@ export class Blockfrost extends Provider {
     for (const [key, value] of Object.entries(response.cost_models_raw)) {
       costModels.set(
         fromBlockfrostLanguageVersion(key as BlockfrostLanguageVersions),
-        value,
+        value
       );
     }
 
@@ -151,7 +151,7 @@ export class Blockfrost extends Provider {
    */
   async getUnspentOutputs(
     address: Address | Credential,
-    filter?: (utxo: BlockfrostUTxO) => boolean,
+    filter?: (utxo: BlockfrostUTxO) => boolean
   ): Promise<TransactionUnspentOutput[]> {
     // 100 per page is max allowed by Blockfrost
     const maxPageCount = 100;
@@ -166,7 +166,7 @@ export class Blockfrost extends Provider {
           }).toBech32();
 
     const buildTxUnspentOutput = this.buildTransactionUnspentOutput(
-      Address.fromBech32(bech32),
+      Address.fromBech32(bech32)
     );
 
     const results: Set<TransactionUnspentOutput> = new Set();
@@ -186,7 +186,7 @@ export class Blockfrost extends Provider {
 
       if ("message" in response) {
         throw new Error(
-          `getUnspentOutputs: Blockfrost threw "${response.message}"`,
+          `getUnspentOutputs: Blockfrost threw "${response.message}"`
         );
       }
 
@@ -218,7 +218,7 @@ export class Blockfrost extends Provider {
    */
   async getUnspentOutputsWithAsset(
     address: Address | Credential,
-    unit: AssetIdType,
+    unit: AssetIdType
   ): Promise<TransactionUnspentOutput[]> {
     // 100 per page is max allowed by Blockfrost
     const maxPageCount = 100;
@@ -233,7 +233,7 @@ export class Blockfrost extends Provider {
           }).toBech32();
 
     const buildTxUnspentOutput = this.buildTransactionUnspentOutput(
-      Address.fromBech32(bech32),
+      Address.fromBech32(bech32)
     );
 
     const asset = AssetId.getPolicyId(unit) + AssetId.getAssetName(unit);
@@ -249,7 +249,7 @@ export class Blockfrost extends Provider {
 
       if (!json) {
         throw new Error(
-          "getUnspentOutputsWithAsset: Could not parse response json",
+          "getUnspentOutputsWithAsset: Could not parse response json"
         );
       }
 
@@ -257,7 +257,7 @@ export class Blockfrost extends Provider {
 
       if ("message" in response) {
         throw new Error(
-          `getUnspentOutputsWithAsset: Blockfrost threw "${response.message}"`,
+          `getUnspentOutputsWithAsset: Blockfrost threw "${response.message}"`
         );
       }
 
@@ -301,18 +301,18 @@ export class Blockfrost extends Provider {
 
     if ("message" in response) {
       throw new Error(
-        `getUnspentOutputByNFT: Blockfrost threw "${response.message}"`,
+        `getUnspentOutputByNFT: Blockfrost threw "${response.message}"`
       );
     }
     // Ensures a single asset address is returned
     if (response.length === 0) {
       throw new Error(
-        "getUnspentOutputByNFT: No addresses found holding the asset.",
+        "getUnspentOutputByNFT: No addresses found holding the asset."
       );
     }
     if (response.length > 1) {
       throw new Error(
-        "getUnspentOutputByNFT: Asset must be held by only one address. Multiple found.",
+        "getUnspentOutputByNFT: Asset must be held by only one address. Multiple found."
       );
     }
 
@@ -323,7 +323,7 @@ export class Blockfrost extends Provider {
     // Ensures a single UTxO holds the asset
     if (utxos.length !== 1) {
       throw new Error(
-        "getUnspentOutputByNFT: Asset must be present in only one UTxO. Multiple found.",
+        "getUnspentOutputByNFT: Asset must be present in only one UTxO. Multiple found."
       );
     }
 
@@ -340,7 +340,7 @@ export class Blockfrost extends Provider {
    * @returns A Promise that resolves to TransactionUnspentOutput[].
    */
   async resolveUnspentOutputs(
-    txIns: TransactionInput[],
+    txIns: TransactionInput[]
   ): Promise<TransactionUnspentOutput[]> {
     const results: Set<TransactionUnspentOutput> = new Set();
 
@@ -359,7 +359,7 @@ export class Blockfrost extends Provider {
 
       if ("message" in response) {
         throw new Error(
-          `resolveUnspentOutputs: Blockfrost threw "${response.message}"`,
+          `resolveUnspentOutputs: Blockfrost threw "${response.message}"`
         );
       }
 
@@ -375,7 +375,7 @@ export class Blockfrost extends Provider {
         blockfrostUTxO.tx_hash = txIn.transactionId();
 
         const buildTxUnspentOutput = this.buildTransactionUnspentOutput(
-          Address.fromBech32(blockfrostUTxO.address),
+          Address.fromBech32(blockfrostUTxO.address)
         );
 
         results.add(await buildTxUnspentOutput(blockfrostUTxO));
@@ -426,7 +426,7 @@ export class Blockfrost extends Provider {
    */
   async awaitTransactionConfirmation(
     txId: TransactionId,
-    timeout?: number,
+    timeout?: number
   ): Promise<boolean> {
     const averageBlockTime = 20_000;
 
@@ -484,7 +484,7 @@ export class Blockfrost extends Provider {
     if (!response.ok) {
       const error = await response.text();
       throw new Error(
-        `postTransactionToChain: failed to submit transaction to Blockfrost endpoint.\nError ${error}`,
+        `postTransactionToChain: failed to submit transaction to Blockfrost endpoint.\nError ${error}`
       );
     }
 
@@ -504,12 +504,12 @@ export class Blockfrost extends Provider {
    */
   async evaluateTransaction(
     tx: Transaction,
-    additionalUtxos?: TransactionUnspentOutput[],
+    additionalUtxos?: TransactionUnspentOutput[]
   ): Promise<Redeemers> {
     const currentRedeemers = tx.witnessSet().redeemers()?.values();
     if (!currentRedeemers || currentRedeemers.length === 0) {
       throw new Error(
-        `evaluateTransaction: No Redeemers found in transaction"`,
+        `evaluateTransaction: No Redeemers found in transaction"`
       );
     }
 
@@ -551,14 +551,14 @@ export class Blockfrost extends Provider {
         ...this.headers(),
       },
       body: JSON.stringify(payload, (_, value) =>
-        typeof value === "bigint" ? value.toString() : value,
+        typeof value === "bigint" ? value.toString() : value
       ),
     });
 
     if (!response.ok) {
       const error = await response.text();
       throw new Error(
-        `evaluateTransaction: failed to evaluate transaction with additional UTxO set in Blockfrost endpoint.\nError ${error}`,
+        `evaluateTransaction: failed to evaluate transaction with additional UTxO set in Blockfrost endpoint.\nError ${error}`
       );
     }
 
@@ -566,7 +566,7 @@ export class Blockfrost extends Provider {
       (await response.json()) as BlockfrostResponse<BlockfrostRedeemer>;
     if ("message" in json) {
       throw new Error(
-        `evaluateTransaction: Blockfrost threw "${json.message}"`,
+        `evaluateTransaction: Blockfrost threw "${json.message}"`
       );
     }
 
@@ -574,7 +574,7 @@ export class Blockfrost extends Provider {
 
     if (!("EvaluationResult" in json.result)) {
       throw new Error(
-        `evaluateTransaction: Blockfrost endpoint returned evaluation failure.`,
+        `evaluateTransaction: Blockfrost endpoint returned evaluation failure.`
       );
     }
     const result = json.result.EvaluationResult;
@@ -589,12 +589,12 @@ export class Blockfrost extends Provider {
       });
 
       const redeemer = currentRedeemers!.find(
-        (x: Redeemer) => x.tag() == purpose && x.index() == index,
+        (x: Redeemer) => x.tag() == purpose && x.index() == index
       );
 
       if (!redeemer) {
         throw new Error(
-          "evaluateTransaction: Blockfrost endpoint had extraneous redeemer data",
+          "evaluateTransaction: Blockfrost endpoint had extraneous redeemer data"
         );
       }
       // Manually set exUnits for redeemer
@@ -605,7 +605,7 @@ export class Blockfrost extends Provider {
 
     // Build return value from evaluated result set
     return Redeemers.fromCore(
-      Array.from(evaledRedeemers).map((x) => x.toCore()),
+      Array.from(evaledRedeemers).map((x) => x.toCore())
     );
   }
 
@@ -630,7 +630,7 @@ export class Blockfrost extends Provider {
 
     if ("message" in typeResponse) {
       throw new Error(
-        `getScriptRef: Blockfrost threw "${typeResponse.message}"`,
+        `getScriptRef: Blockfrost threw "${typeResponse.message}"`
       );
     }
 
@@ -654,7 +654,7 @@ export class Blockfrost extends Provider {
 
     if ("message" in cborResponse) {
       throw new Error(
-        `getScriptRef: Blockfrost threw "${cborResponse.message}"`,
+        `getScriptRef: Blockfrost threw "${cborResponse.message}"`
       );
     }
 
@@ -664,24 +664,24 @@ export class Blockfrost extends Provider {
       case "plutusV1":
         this.scriptCache.set(
           scriptHash,
-          Script.newPlutusV1Script(new PlutusV1Script(cbor)),
+          Script.newPlutusV1Script(new PlutusV1Script(cbor))
         );
         break;
       case "plutusV2":
         this.scriptCache.set(
           scriptHash,
-          Script.newPlutusV2Script(new PlutusV2Script(cbor)),
+          Script.newPlutusV2Script(new PlutusV2Script(cbor))
         );
         break;
       case "plutusV3":
         this.scriptCache.set(
           scriptHash,
-          Script.newPlutusV3Script(new PlutusV3Script(cbor)),
+          Script.newPlutusV3Script(new PlutusV3Script(cbor))
         );
         break;
       default:
         throw new Error(
-          `Unsupported script type ${type} for script hash ${scriptHash}`,
+          `Unsupported script type ${type} for script hash ${scriptHash}`
         );
     }
 
@@ -690,14 +690,14 @@ export class Blockfrost extends Provider {
 
   override async resolveScriptRef(
     script: Script | Hash28ByteBase16,
-    address: Address = getBurnAddress(this.network),
+    address: Address = getBurnAddress(this.network)
   ): Promise<TransactionUnspentOutput | undefined> {
     if (script instanceof Script) {
       script = script.hash();
     }
     const utxos = await this.getUnspentOutputs(
       address,
-      (u) => u.reference_script_hash === script,
+      (u) => u.reference_script_hash === script
     );
     return utxos[0];
   }
@@ -705,12 +705,12 @@ export class Blockfrost extends Provider {
   // Partially applies address in order to avoid sending it
   // as argument repeatedly when building TransactionUnspentOutput
   private buildTransactionUnspentOutput(
-    address: Address,
+    address: Address
   ): (blockfrostUTxO: BlockfrostUTxO) => Promise<TransactionUnspentOutput> {
     return async (blockfrostUTxO) => {
       const txIn = new TransactionInput(
         TransactionId(blockfrostUTxO.tx_hash),
-        BigInt(blockfrostUTxO.output_index),
+        BigInt(blockfrostUTxO.output_index)
       );
       // No tx output CBOR available from Blockfrost,
       // so TransactionOutput must be manually constructed.
@@ -725,11 +725,11 @@ export class Blockfrost extends Provider {
       }
       const txOut = new TransactionOutput(
         address,
-        new Value(lovelace, tokenMap),
+        new Value(lovelace, tokenMap)
       );
       const datum = blockfrostUTxO.inline_datum
         ? Datum.newInlineData(
-            PlutusData.fromCbor(HexBlob(blockfrostUTxO.inline_datum)),
+            PlutusData.fromCbor(HexBlob(blockfrostUTxO.inline_datum))
           )
         : blockfrostUTxO.data_hash
           ? Datum.newDataHash(DatumHash(blockfrostUTxO.data_hash))
@@ -738,8 +738,8 @@ export class Blockfrost extends Provider {
       if (blockfrostUTxO.reference_script_hash)
         txOut.setScriptRef(
           await this.getScriptRef(
-            Hash28ByteBase16(blockfrostUTxO.reference_script_hash),
-          ),
+            Hash28ByteBase16(blockfrostUTxO.reference_script_hash)
+          )
         );
       return new TransactionUnspentOutput(txIn, txOut);
     };
@@ -748,7 +748,7 @@ export class Blockfrost extends Provider {
 
 type BlockfrostLanguageVersions = "PlutusV1" | "PlutusV2" | "PlutusV3";
 export const fromBlockfrostLanguageVersion = (
-  x: BlockfrostLanguageVersions,
+  x: BlockfrostLanguageVersions
 ): PlutusLanguageVersion => {
   if (x == "PlutusV1") {
     return PlutusLanguageVersion.V1;
