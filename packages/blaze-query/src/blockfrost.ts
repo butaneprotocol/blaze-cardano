@@ -22,6 +22,7 @@ import {
   HexBlob,
   NetworkId,
   PlutusData,
+  PlutusLanguageVersion,
   PlutusV1Script,
   PlutusV2Script,
   PlutusV3Script,
@@ -33,20 +34,22 @@ import {
   TransactionUnspentOutput,
   Value,
 } from "@blaze-cardano/core";
-import { PlutusLanguageVersion } from "@blaze-cardano/core";
 import { purposeToTag, Provider, type NetworkName } from "./provider";
 
 export class Blockfrost extends Provider {
   url: string;
   private projectId: string;
   private scriptCache: Map<string, Script>;
+  public withScriptRefCaching: boolean;
 
   constructor({
     network,
     projectId,
+    withScriptRefCaching = true,
   }: {
     network: NetworkName;
     projectId: string;
+    withScriptRefCaching?: boolean;
   }) {
     super(
       network == "cardano-mainnet" ? NetworkId.Mainnet : NetworkId.Testnet,
@@ -55,6 +58,7 @@ export class Blockfrost extends Provider {
     this.url = `https://${network}.blockfrost.io/api/v0/`;
     this.projectId = projectId;
     this.scriptCache = new Map<string, Script>();
+    this.withScriptRefCaching = withScriptRefCaching;
   }
 
   headers() {
@@ -607,7 +611,7 @@ export class Blockfrost extends Provider {
 
   private async getScriptRef(scriptHash: ScriptHash): Promise<Script> {
     const cachedScript = this.scriptCache.get(scriptHash);
-    if (cachedScript) {
+    if (cachedScript && this.withScriptRefCaching) {
       return cachedScript;
     }
 
