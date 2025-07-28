@@ -138,7 +138,11 @@ export class TxBuilder {
   private requiredWitnesses: Set<Ed25519PublicKeyHex> = new Set(); // A set of public keys required for witnessing the transaction.
   private requiredNativeScripts: Set<Hash28ByteBase16> = new Set(); // A set of native script hashes required by the transaction.
   private requiredPlutusScripts: Set<Hash28ByteBase16> = new Set(); // A set of Plutus script hashes required by the transaction.
-  private usedLanguages: Record<PlutusLanguageVersion, boolean> = {
+  private usedLanguages: {
+    [PlutusLanguageVersion.V1]: boolean;
+    [PlutusLanguageVersion.V2]: boolean;
+    [PlutusLanguageVersion.V3]: boolean;
+  } = {
     [PlutusLanguageVersion.V1]: false, // Indicates whether Plutus V1 is used.
     [PlutusLanguageVersion.V2]: false, // Indicates whether Plutus V2 is used.
     [PlutusLanguageVersion.V3]: false, // Indicates whether Plutus V3 is used.
