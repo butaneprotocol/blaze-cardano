@@ -31,7 +31,7 @@ import {
   PlutusMap,
   toHex,
 } from "@blaze-cardano/core";
-export { Type, type TSchema, type TArray } from "@sinclair/typebox";
+export * from "@sinclair/typebox";
 
 export const Void = (): PlutusData =>
   PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, new PlutusList()));
