@@ -1,5 +1,11 @@
 # @blaze-cardano/data
 
+## 0.6.2
+
+### Patch Changes
+
+- 3396834: fix: export typebox types
+
 ## 0.6.1
 
 ### Patch Changes
