@@ -139,9 +139,9 @@ export class TxBuilder {
   private requiredNativeScripts: Set<Hash28ByteBase16> = new Set(); // A set of native script hashes required by the transaction.
   private requiredPlutusScripts: Set<Hash28ByteBase16> = new Set(); // A set of Plutus script hashes required by the transaction.
   private usedLanguages: Record<PlutusLanguageVersion, boolean> = {
-    [0]: false, // Indicates whether Plutus V1 is used.
-    [1]: false, // Indicates whether Plutus V2 is used.
-    [2]: false, // Indicates whether Plutus V3 is used.
+    [PlutusLanguageVersion.V1]: false, // Indicates whether Plutus V1 is used.
+    [PlutusLanguageVersion.V2]: false, // Indicates whether Plutus V2 is used.
+    [PlutusLanguageVersion.V3]: false, // Indicates whether Plutus V3 is used.
   };
   private extraneousDatums: Set<PlutusData> = new Set(); // A set of extraneous Plutus data not directly used in the transaction.
   private fee: bigint = 0n; // The fee for the transaction.
