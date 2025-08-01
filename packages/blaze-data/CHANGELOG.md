@@ -1,5 +1,12 @@
 # @blaze-cardano/data
 
+## 0.6.3
+
+### Patch Changes
+
+- Updated dependencies [52c1956]
+  - @blaze-cardano/core@0.7.0
+
 ## 0.6.2
 
 ### Patch Changes
