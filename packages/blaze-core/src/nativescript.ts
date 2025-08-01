@@ -2,8 +2,6 @@ import {
   NativeScript,
   ScriptAll,
   ScriptPubkey,
-  addressFromBech32,
-  addressFromValidator,
   CredentialType,
   Ed25519KeyHashHex,
   NetworkId,
@@ -13,7 +11,8 @@ import {
   type Slot,
   TimelockStart,
   TimelockExpiry,
-} from "@blaze-cardano/core";
+} from "./types";
+import { addressFromBech32, addressFromValidator } from "./util";
 
 function keyhashFromAddress(address: string, networkId: NetworkId) {
   const props = addressFromBech32(address).getProps();
