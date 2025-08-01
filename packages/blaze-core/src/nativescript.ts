@@ -4,7 +4,7 @@ import {
   ScriptPubkey,
   CredentialType,
   Ed25519KeyHashHex,
-  NetworkId,
+  type NetworkId,
   ScriptAny,
   Script,
   ScriptNOfK,
@@ -39,7 +39,7 @@ export function anyOf(...addresses: NativeScript[]) {
   return NativeScript.newScriptAny(new ScriptAny(addresses));
 }
 
-export function atLeastNOfK(n, ...addresses: NativeScript[]) {
+export function atLeastNOfK(n: number, ...addresses: NativeScript[]) {
   return NativeScript.newScriptNOfK(new ScriptNOfK(addresses, n));
 }
 
