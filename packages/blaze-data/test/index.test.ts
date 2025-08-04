@@ -427,6 +427,41 @@ describe("parse", () => {
     const out2 = parse(schema, inp2, defs);
     expect(out2).toEqual("Other");
   });
+
+  it("should be able to parse optional type references", () => {
+    const defs = {
+      T0: Type.String(),
+    };
+    const schema = Type.Object(
+      {
+        required: Type.BigInt(),
+        optional: Type.Optional(Type.Ref("T0")),
+      },
+      { ctor: 0 },
+    );
+
+    const inp1 = newConstr(0n, [
+      newInteger(1337n),
+      newConstr(0n, [newBytes("4242")]),
+    ]);
+    const out1 = parse(schema, inp1, defs);
+    expect(out1).toEqual({
+      required: 1337n,
+      optional: "4242",
+    });
+
+    const inp2 = newConstr(0n, [newInteger(1337n), newConstr(1n, [])]);
+    const out2 = parse(schema, inp2, defs);
+    expect(out2).toEqual({
+      required: 1337n,
+    });
+
+    const inp3 = newConstr(0n, [newInteger(1337n)]);
+    const out3 = parse(schema, inp3, defs);
+    expect(out3).toEqual({
+      required: 1337n,
+    });
+  });
 });
 
 // factories to make tests less obnoxious
