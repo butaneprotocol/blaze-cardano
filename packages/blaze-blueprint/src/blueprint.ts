@@ -2,6 +2,8 @@ import * as fs from "fs/promises";
 import type { Schema, Unit } from "./schema";
 import type { Annotated, Declaration } from "./shared";
 import type { Constructor, Data } from "./data";
+import { Script } from "@blaze-cardano/core";
+import { TSchema } from "@blaze-cardano/data";
 
 type Blueprint = {
   preamble: {
@@ -11,11 +13,11 @@ type Blueprint = {
     plutusVersion: "v3" | "v2" | "v1";
     license: string;
   };
-  validators: Validator[];
+  validators: ValidatorJson[];
   definitions: Record<string, Annotated<Schema>>;
 };
 
-type Validator = {
+type ValidatorJson = {
   title: string;
   datum?: Parameter;
   redeemer: Parameter;
@@ -23,6 +25,12 @@ type Validator = {
   compiledCode: string;
   hash: string;
 };
+
+export abstract class Validator {
+  public abstract script: Script;
+  public abstract datum: TSchema;
+  public abstract redeemer: TSchema;
+}
 
 type Parameter = {
   title: string;
@@ -77,11 +85,10 @@ class Generator {
   }
 
   public writeImports(useSdk: boolean, plutusData: boolean) {
-    this.writeLine(`/* eslint-disable */`);
     this.writeLine(`// @ts-nocheck`);
     if (useSdk) {
       this.writeLine(
-        `import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk"`,
+        `import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk"`
       );
       this.writeLine(`type Script = Core.Script;`);
       this.writeLine(`const Script = Core.Script;`);
@@ -91,30 +98,15 @@ class Generator {
       }
     } else {
       this.writeLine(
-        `import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`,
+        `import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`
       );
       this.writeLine(`import { type Script } from "@blaze-cardano/core";`);
-      this.writeLine(
-        `import { Type, Exact, TPlutusData } from "@blaze-cardano/data";`,
-      );
+      this.writeLine(`import { Type, Exact } from "@blaze-cardano/data";`);
+      // TODO: Refactor blaze-cardano/core so we don't have to do this. Every type gives TS2742 error if imported from core right now.
       if (plutusData) {
-        this.writeLine(
-          `import { type PlutusData } from "@blaze-cardano/core";`,
-        );
+        this.writeLine(`import { Serialization } from "@cardano-sdk/core";`);
+        this.writeLine(`type PlutusData = Serialization.PlutusData;`);
       }
-    }
-
-    // Map Plutus types to TS types.
-    this.writeLine(`type Data = PlutusData;`);
-    this.writeLine(`type Int = bigint;`);
-    this.writeLine(`type ByteArray = string;`);
-
-    if (useSdk) {
-      this.writeLine(`type OutputReference = Core.TransactionInput;`);
-    } else {
-      this.writeLine(
-        `type OutputReference = { output_index: bigint; transaction_id: string };`,
-      );
     }
   }
 
@@ -124,9 +116,9 @@ class Generator {
       name === "ByteArray" ||
       name === "Int" ||
       name === "Data" ||
-      name === "OutputReference" ||
-      name.startsWith("cardano/") ||
-      name.startsWith("aiken/") ||
+      // name === "OutputReference" ||
+      // name.startsWith("cardano/") ||
+      // name.startsWith("aiken/") ||
       name.startsWith("List") ||
       name.startsWith("Option") ||
       name.startsWith("Pairs")
@@ -136,7 +128,7 @@ class Generator {
   public definitionName(declaration: { $ref: string }): string {
     if (!("$ref" in declaration)) {
       throw new Error(
-        "Unexpected declaration format: " + JSON.stringify(declaration),
+        "Unexpected declaration format: " + JSON.stringify(declaration)
       );
     }
     const fullName = declaration.$ref.replaceAll("~1", "/");
@@ -145,8 +137,8 @@ class Generator {
 
   public typeName(declaration: { $ref: string }): string {
     const name = this.definitionName(declaration);
-    const parts = name.split("/");
-    const type = parts[parts.length - 1]!;
+    const parts = name.split("$").map((x) => x.split("/"));
+    const type = parts.map((x) => x[x.length - 1]!).join("$");
     return type;
   }
 
@@ -158,11 +150,11 @@ class Generator {
       if (this.isStandardType(name)) {
         continue;
       }
-      if (name.startsWith("List$")) {
+      if (name.startsWith("List$") || name.startsWith("Tuple$")) {
         continue;
       }
-      const parts = name.split("/");
-      const normalizedName = parts[parts.length - 1];
+      const parts = name.split("$").map((x) => x.split("/"));
+      const normalizedName = parts.map((x) => x[x.length - 1]!).join("$");
       types.push(normalizedName);
       this.buildLine(`${normalizedName}: `);
       this.writeTypeboxType(definition, definitions);
@@ -232,7 +224,19 @@ class Generator {
         for (const param of params) {
           this.buildLine(`${Generator.snakeToCamel(param.title)}: `);
           if ("$ref" in param.schema) {
-            const typeName = this.typeName(param.schema);
+            const rawTypeName = this.typeName(param.schema);
+            const typeName = (() => {
+              switch (rawTypeName) {
+                case "ByteArray":
+                  return "string";
+                case "Int":
+                  return "bigint";
+                case "Data":
+                  return "PlutusData";
+                default:
+                  return rawTypeName;
+              }
+            })();
             this.buildLine(typeName);
           } else {
             console.log("???", param);
@@ -295,7 +299,7 @@ class Generator {
       | Annotated<Data>
       | Annotated<Constructor>,
     definitions: Record<string, Annotated<Schema>>,
-    stack: string[] = [],
+    stack: string[] = []
   ) {
     if ("dataType" in schema) {
       switch (schema.dataType) {
@@ -421,13 +425,15 @@ class Generator {
       if (!definition) {
         throw new Error(`Definition not found for ${resolvedName}`);
       }
-      if (this.isStandardType(resolvedName)) {
+      if (this.isStandardType(resolvedName) || definition.title === "Tuple") {
         this.writeTypeboxType(definition, definitions, [
           resolvedName,
           ...stack,
         ]);
       } else {
-        this.buildLine(`Type.Ref("${definition.title}")`);
+        this.buildLine(
+          `Type.Ref("${Generator.getTitle(definition, resolvedName)}")`
+        );
       }
     } else {
       this.buildLine("Type.Unsafe<PlutusData>(Type.Any())");
@@ -477,7 +483,7 @@ class Generator {
       (withUnderscore ? s.slice(1) : s)
         .toLowerCase()
         .replace(/([-_][a-z])/g, (group) =>
-          group.toUpperCase().replace("-", "").replace("_", ""),
+          group.toUpperCase().replace("-", "").replace("_", "")
         )
     );
   }
@@ -490,6 +496,25 @@ class Generator {
       s.charAt(withUnderscore ? 1 : 0).toUpperCase() +
       s.slice((withUnderscore ? 1 : 0) + 1)
     );
+  }
+
+  static getTitle(
+    schema: Annotated<Schema>,
+    definition: string
+  ): string | undefined {
+    const rawTitle = schema.title;
+    if (!rawTitle) return undefined;
+    // Generic
+    if (definition.includes("$")) {
+      const parts = definition.split("$");
+      return parts
+        .map((x) => {
+          const split = x.split("/");
+          return split[split.length - 1];
+        })
+        .join("$");
+    }
+    return rawTitle;
   }
 }
 
