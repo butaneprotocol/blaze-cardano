@@ -1,5 +1,12 @@
 # @blaze-cardano/sdk
 
+## 0.2.38
+
+### Patch Changes
+
+- @blaze-cardano/tx@0.13.0
+- @blaze-cardano/uplc@0.3.6
+
 ## 0.2.37
 
 ### Patch Changes

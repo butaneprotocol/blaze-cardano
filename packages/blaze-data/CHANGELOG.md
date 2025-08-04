@@ -1,5 +1,11 @@
 # @blaze-cardano/data
 
+## 0.6.4
+
+### Patch Changes
+
+- 1efe3b1: fix: Optional type references parsed correctly
+
 ## 0.6.3
 
 ### Patch Changes
