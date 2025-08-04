@@ -574,11 +574,14 @@ function resolveType<T extends TSchema>(
 ): T {
   if (isRef(type) || isThis(type) || isImport(type)) {
     defs = { ...defs, ...type.$defs };
-    const realType = defs[type.$ref];
+    let realType = defs[type.$ref];
     if (!realType) {
       throw new Error(
         `Invalid type at ${path.join(".")}: Unrecognized reference ${type.$ref}`,
       );
+    }
+    if (isOptional(type)) {
+      realType = Type.Optional(realType, true);
     }
     return resolveType(realType, path, defs) as T;
   }
