@@ -58,7 +58,11 @@ import {
   StakeDeregistration,
   getBurnAddress,
   setInConwayEra,
+  RegisterDelegateRepresentative,
+  UnregisterDelegateRepresentative,
+  UpdateDelegateRepresentative,
 } from "@blaze-cardano/core";
+import type { Anchor, VotingProcedures } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelectors/micahsSelector";
 import type {
@@ -2089,6 +2093,65 @@ export class TxBuilder {
       // Update the transaction with the new list of redeemers.
       this.redeemers.setValues(redeemers);
     }
+    return this;
+  }
+
+  /**
+   * Registers a dRep (delegate representative).
+   * Requires an on-chain deposit amount.
+   */
+  addRegisterDRep(
+    drep: Credential,
+    deposit: bigint,
+    anchor?: Anchor,
+  ): TxBuilder {
+    const cert = Certificate.newRegisterDelegateRepresentativeCert(
+      new RegisterDelegateRepresentative(drep.toCore(), deposit, anchor),
+    );
+    const certs =
+      this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const vals = [...certs.values(), cert];
+    certs.setValues(vals);
+    this.body.setCerts(certs);
+    return this;
+  }
+
+  /**
+   * Unregisters a dRep (delegate representative).
+   * Requires a refund amount.
+   */
+  addUnregisterDRep(drep: Credential, refund: bigint): TxBuilder {
+    const cert = Certificate.newUnregisterDelegateRepresentativeCert(
+      new UnregisterDelegateRepresentative(drep.toCore(), refund),
+    );
+    const certs =
+      this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const vals = [...certs.values(), cert];
+    certs.setValues(vals);
+    this.body.setCerts(certs);
+    return this;
+  }
+
+  /**
+   * Updates a dRep (delegate representative) with an optional new Anchor.
+   */
+  addUpdateDRep(drep: Credential, anchor?: Anchor): TxBuilder {
+    const cert = Certificate.newUpdateDelegateRepresentativeCert(
+      new UpdateDelegateRepresentative(drep.toCore(), anchor),
+    );
+    const certs =
+      this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const vals = [...certs.values(), cert];
+    certs.setValues(vals);
+    this.body.setCerts(certs);
+    return this;
+  }
+
+  /**
+   * Sets voting procedures for this transaction.
+   */
+  setVotingProcedures(votingProcedures: VotingProcedures): TxBuilder {
+    this.body.setVotingProcedures(votingProcedures);
     return this;
   }
 

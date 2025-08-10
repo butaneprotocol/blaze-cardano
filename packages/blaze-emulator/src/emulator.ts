@@ -131,7 +131,7 @@ export class Emulator {
   /**
    * The event loop for the ledger.
    */
-  eventLoop?: NodeJS.Timeout;
+  eventLoop?: NodeJS.Timer;
 
   /**
    * A lookup table of hashes to datums.
@@ -1015,7 +1015,8 @@ export class Emulator {
       this.accounts.set(account, balance - withdrawn);
     }
 
-    tx.witnessSet()
+    tx
+      .witnessSet()
       .plutusData()
       ?.values()
       .forEach((datum) => {
