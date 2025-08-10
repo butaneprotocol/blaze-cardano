@@ -159,6 +159,34 @@ export type CertificateType = C.Cardano.CertificateType;
 export const VkeyWitness = C.Serialization.VkeyWitness;
 export type VkeyWitness = C.Serialization.VkeyWitness;
 
+// Conway governance-related serialization types
+export const RegisterDelegateRepresentative =
+  C.Serialization.RegisterDelegateRepresentative;
+export type RegisterDelegateRepresentative =
+  C.Serialization.RegisterDelegateRepresentative;
+
+export const UnregisterDelegateRepresentative =
+  C.Serialization.UnregisterDelegateRepresentative;
+export type UnregisterDelegateRepresentative =
+  C.Serialization.UnregisterDelegateRepresentative;
+
+export const UpdateDelegateRepresentative =
+  C.Serialization.UpdateDelegateRepresentative;
+export type UpdateDelegateRepresentative =
+  C.Serialization.UpdateDelegateRepresentative;
+
+export const Anchor = C.Serialization.Anchor;
+export type Anchor = C.Serialization.Anchor;
+
+export const VotingProcedures = C.Serialization.VotingProcedures;
+export type VotingProcedures = C.Serialization.VotingProcedures;
+
+export const VotingProcedure = C.Serialization.VotingProcedure;
+export type VotingProcedure = C.Serialization.VotingProcedure;
+
+export const Voter = C.Serialization.Voter;
+export type Voter = C.Serialization.Voter;
+
 export const Ed25519SignatureHex = Crypto.Ed25519SignatureHex;
 export type Ed25519SignatureHex = Crypto.Ed25519SignatureHex;
 
