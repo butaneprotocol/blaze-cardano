@@ -13,6 +13,10 @@
       "dependsOn": ["build:wasm"]
     },
     "@blaze-cardano/uplc#build:wasm": {},
+    "test:e2e": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
     "dev": {
       "cache": false,
       "persistent": true
