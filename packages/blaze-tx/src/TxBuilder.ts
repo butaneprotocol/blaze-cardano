@@ -2351,6 +2351,11 @@ export class TxBuilder {
         "TxBuilder setValidFrom: Validity start interval is already set",
       );
     }
+    if (validFrom < 0) {
+      throw new Error(
+        "TxBuilder setValidFrom: Validity time cannot be negative.",
+      );
+    }
     this.body.setValidityStartInterval(validFrom);
     return this;
   }
@@ -2365,6 +2370,11 @@ export class TxBuilder {
   setValidUntil(validUntil: Slot): TxBuilder {
     if (this.body.ttl() !== undefined) {
       throw new Error("TxBuilder setValidUntil: Time to live is already set");
+    }
+    if (validUntil < 0) {
+      throw new Error(
+        "TxBuilder setValidUntil: Validity time cannot be negative.",
+      );
     }
     this.body.setTtl(validUntil);
     return this;

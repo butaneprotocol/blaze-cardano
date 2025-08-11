@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/query",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Blaze cardano emulator library",
   "exports": {
     ".": {
