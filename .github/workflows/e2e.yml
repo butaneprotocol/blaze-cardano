@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 30
     env:
       CI: true
-      SEED_MNEMONIC: ${{ secrets.MNEMONIC }}
+      SEED_MNEMONIC: ${{ secrets.SEED_MNEMONIC }}
       OGMIOS_URL: ${{ secrets.OGMIOS_URL }}
       KUPO_URL: ${{ secrets.KUPO_URL }}
       BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
