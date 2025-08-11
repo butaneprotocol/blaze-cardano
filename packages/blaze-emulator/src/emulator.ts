@@ -131,7 +131,7 @@ export class Emulator {
   /**
    * The event loop for the ledger.
    */
-  eventLoop?: NodeJS.Timer;
+  eventLoop?: ReturnType<typeof setInterval>;
 
   /**
    * A lookup table of hashes to datums.
