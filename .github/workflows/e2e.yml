@@ -21,6 +21,8 @@ jobs:
       CI: true
       OGMIOS_URL: ${{ secrets.OGMIOS_URL }}
       KUPO_URL: ${{ secrets.KUPO_URL }}
+      SEED_MNEMONIC: ${{ secrets.SEED_MNEMONIC }}
+      BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,9 +45,12 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: ✅ Verify required secrets
+        run: |
+          if [ -z "${SEED_MNEMONIC}" ]; then echo "SEED_MNEMONIC secret is not set"; exit 1; fi
+          if [ -z "${BLOCKFROST_KEY}" ]; then echo "BLOCKFROST_KEY secret is not set"; exit 1; fi
+
       - name: Run e2e tests
         run: pnpm -w --filter @blaze-cardano/e2e test
         env:
           NODE_ENV: production
-          SEED_MNEMONIC: ${{ secrets.SEED_MNEMONIC }}
-          BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
