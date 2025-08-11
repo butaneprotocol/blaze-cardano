@@ -62,7 +62,21 @@ import {
   UnregisterDelegateRepresentative,
   UpdateDelegateRepresentative,
 } from "@blaze-cardano/core";
-import type { Anchor, VotingProcedures } from "@blaze-cardano/core";
+import type {
+  Anchor,
+  VotingProcedures,
+  DelegateRepresentative,
+  PoolParameters,
+  EpochNo,
+  GovernanceAction,
+  AnchorCore,
+} from "@blaze-cardano/core";
+import {
+  DRep,
+  ProposalProcedure,
+  PoolRegistration,
+  PoolRetirement,
+} from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelectors/micahsSelector";
 import type {
@@ -71,6 +85,7 @@ import type {
   CoinSelectionFunc,
   UseCoinSelectionArgs,
 } from "./types";
+import { VoteDelegation } from "@blaze-cardano/core";
 import {
   calculateMinAda,
   calculateReferenceScriptFee,
@@ -2098,7 +2113,14 @@ export class TxBuilder {
 
   /**
    * Registers a dRep (delegate representative).
-   * Requires an on-chain deposit amount.
+   *
+   * Creates a `RegisterDelegateRepresentative` certificate with the provided
+   * dRep credential, deposit, and optional anchor.
+   *
+   * @param {Credential} drep - The dRep credential to register.
+   * @param {bigint} deposit - The registration deposit (lovelace).
+   * @param {Anchor} [anchor] - Optional registration anchor.
+   * @returns {TxBuilder} The updated transaction builder.
    */
   addRegisterDRep(
     drep: Credential,
@@ -2118,7 +2140,13 @@ export class TxBuilder {
 
   /**
    * Unregisters a dRep (delegate representative).
-   * Requires a refund amount.
+   *
+   * Creates an `UnregisterDelegateRepresentative` certificate with the provided
+   * dRep credential and refund amount.
+   *
+   * @param {Credential} drep - The dRep credential to unregister.
+   * @param {bigint} refund - The refund amount (lovelace).
+   * @returns {TxBuilder} The updated transaction builder.
    */
   addUnregisterDRep(drep: Credential, refund: bigint): TxBuilder {
     const cert = Certificate.newUnregisterDelegateRepresentativeCert(
@@ -2133,7 +2161,14 @@ export class TxBuilder {
   }
 
   /**
-   * Updates a dRep (delegate representative) with an optional new Anchor.
+   * Updates a dRep (delegate representative).
+   *
+   * Creates an `UpdateDelegateRepresentative` certificate to optionally
+   * set or replace the dRep anchor.
+   *
+   * @param {Credential} drep - The dRep credential to update.
+   * @param {Anchor} [anchor] - Optional new anchor.
+   * @returns {TxBuilder} The updated transaction builder.
    */
   addUpdateDRep(drep: Credential, anchor?: Anchor): TxBuilder {
     const cert = Certificate.newUpdateDelegateRepresentativeCert(
@@ -2149,6 +2184,11 @@ export class TxBuilder {
 
   /**
    * Sets voting procedures for this transaction.
+   *
+   * Adds governance voting procedures to the transaction body.
+   *
+   * @param {VotingProcedures} votingProcedures - The set of voting procedures to attach.
+   * @returns {TxBuilder} The updated transaction builder.
    */
   setVotingProcedures(votingProcedures: VotingProcedures): TxBuilder {
     this.body.setVotingProcedures(votingProcedures);
@@ -2156,19 +2196,167 @@ export class TxBuilder {
   }
 
   /**
-   * Adds a certificate to register a pool.
-   * @throws {Error} Method not implemented.
+   * Adds a vote delegation certificate (delegate voting power to a dRep).
+   *
+   * @param {Credential} delegator - The stake credential delegating its voting power.
+   * @param {Credential | "alwaysAbstain" | "alwaysNoConfidence"} drep - The target dRep credential or a built-in representative.
+   * @param {PlutusData} [redeemer] - Optional redeemer when the delegator is a script credential.
+   * @returns {TxBuilder} The updated transaction builder.
    */
-  addRegisterPool() {
-    throw new Error("Method not implemented.");
+  addVoteDelegation(
+    delegator: Credential,
+    drep: Credential | "alwaysAbstain" | "alwaysNoConfidence",
+    redeemer?: PlutusData,
+  ): TxBuilder {
+    const delegatorCredential = delegator.toCore();
+    const drepCore: DelegateRepresentative =
+      typeof drep === "string"
+        ? drep === "alwaysAbstain"
+          ? { __typename: "AlwaysAbstain" }
+          : { __typename: "AlwaysNoConfidence" }
+        : drep.toCore();
+    const voteDelegation: VoteDelegation = new VoteDelegation(
+      delegatorCredential,
+      DRep.fromCore(drepCore),
+    );
+    const delegationCertificate: Certificate =
+      Certificate.newVoteDelegationCert(voteDelegation);
+    const certs =
+      this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const vals = [...certs.values(), delegationCertificate];
+    certs.setValues(vals);
+    this.body.setCerts(certs);
+
+    if (delegatorCredential.type == CredentialType.ScriptHash) {
+      if (redeemer) {
+        this.requiredPlutusScripts.add(delegatorCredential.hash);
+        const redeemers = [...this.redeemers.values()];
+        redeemers.push(
+          Redeemer.fromCore({
+            index: 256, // TODO: set correct index ordering
+            purpose: RedeemerPurpose["certificate"],
+            data: redeemer.toCore(),
+            executionUnits: {
+              memory: this.params.maxExecutionUnitsPerTransaction.memory,
+              steps: this.params.maxExecutionUnitsPerTransaction.steps,
+            },
+          }),
+        );
+        this.redeemers.setValues(redeemers);
+      } else {
+        this.requiredNativeScripts.add(delegatorCredential.hash);
+      }
+    } else if (redeemer) {
+      throw new Error(
+        "TxBuilder addDelegation: failing to attach redeemer to a non-script delegation!",
+      );
+    } else {
+      this.requiredWitnesses.add(HashAsPubKeyHex(delegatorCredential.hash));
+    }
+    return this;
   }
 
   /**
-   * Adds a certificate to retire a pool.
-   * @throws {Error} Method not implemented.
+   * Adds a governance proposal to this transaction.
+   * Accepts either an existing ProposalProcedure, or raw fields to construct one.
    */
-  addRetirePool() {
-    throw new Error("Method not implemented.");
+  // Overloads for strong typing
+  addProposal(proposal: ProposalProcedure): TxBuilder;
+  addProposal(params: {
+    deposit: bigint;
+    rewardAccount: RewardAccount;
+    governanceAction: GovernanceAction;
+    anchor: Anchor | AnchorCore;
+  }): TxBuilder;
+  addProposal(
+    proposalOrParams:
+      | ProposalProcedure
+      | {
+          deposit: bigint;
+          rewardAccount: RewardAccount;
+          governanceAction: GovernanceAction;
+          anchor: Anchor | AnchorCore;
+        },
+  ): TxBuilder {
+    let pp: ProposalProcedure;
+    if ("toCbor" in (proposalOrParams as ProposalProcedure)) {
+      pp = proposalOrParams as ProposalProcedure;
+    } else {
+      const { deposit, rewardAccount, governanceAction, anchor } =
+        proposalOrParams as {
+          deposit: bigint;
+          rewardAccount: RewardAccount;
+          governanceAction: GovernanceAction;
+          anchor: Anchor | AnchorCore;
+        };
+      const coreAnchor: AnchorCore =
+        (anchor as Anchor).toCore !== undefined
+          ? (anchor as Anchor).toCore()
+          : (anchor as AnchorCore);
+      pp = ProposalProcedure.fromCore({
+        deposit,
+        rewardAccount,
+        governanceAction,
+        anchor: coreAnchor,
+      });
+    }
+
+    const existingSet =
+      this.body.proposalProcedures() ??
+      CborSet.fromCore([], ProposalProcedure.fromCore);
+    const vals = [...existingSet.values(), pp];
+    existingSet.setValues(vals);
+    this.body.setProposalProcedures(existingSet);
+    return this;
+  }
+
+  /**
+   * Adds a Pool Registration certificate.
+   *
+   * Register a stake pool or update pool parameters by issuing a new
+   * PoolRegistration certificate with the desired `poolParameters`.
+   *
+   * @param {PoolParameters} poolParameters - The pool parameters to register/update.
+   * @returns {TxBuilder} The updated transaction builder.
+   */
+  addRegisterPool(poolParameters: PoolParameters): TxBuilder {
+    const cert = Certificate.newPoolRegistration(
+      PoolRegistration.fromCore({
+        __typename: CertificateType.PoolRegistration,
+        poolParameters,
+      }),
+    );
+    const certs =
+      this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const vals = [...certs.values(), cert];
+    certs.setValues(vals);
+    this.body.setCerts(certs);
+    return this;
+  }
+
+  /**
+   * Adds a Pool Retirement certificate.
+   *
+   * Retires a stake pool at the provided `epoch`.
+   *
+   * @param {PoolId} poolId - The pool identifier.
+   * @param {EpochNo} epoch - The epoch in which the pool retires.
+   * @returns {TxBuilder} The updated transaction builder.
+   */
+  addRetirePool(poolId: PoolId, epoch: EpochNo): TxBuilder {
+    const cert = Certificate.newPoolRetirement(
+      PoolRetirement.fromCore({
+        __typename: CertificateType.PoolRetirement,
+        poolId,
+        epoch,
+      }),
+    );
+    const certs =
+      this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const vals = [...certs.values(), cert];
+    certs.setValues(vals);
+    this.body.setCerts(certs);
+    return this;
   }
 
   /**
