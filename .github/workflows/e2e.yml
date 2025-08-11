@@ -2,8 +2,9 @@ name: e2e
 
 on:
   push:
-    branches: ["**"]
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
 
 concurrency:
   group: e2e-${{ github.event.pull_request.number || github.ref }}
@@ -15,6 +16,7 @@ permissions:
 jobs:
   e2e:
     name: E2E Tests
+    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -44,6 +46,7 @@ jobs:
           NODE_ENV: production
 
       - name: Run e2e tests
+        if: ${{ secrets.SEED_MNEMONIC != '' && secrets.BLOCKFROST_KEY != '' }}
         run: pnpm -w --filter @blaze-cardano/e2e test
         env:
           NODE_ENV: production
