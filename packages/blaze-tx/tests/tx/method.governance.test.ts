@@ -78,4 +78,30 @@ describe("TxBuilder governance certificates", () => {
       cert.asUpdateDelegateRepresentativeCert()!.credential().hash,
     ).toEqual(drepCredential.toCore().hash);
   });
+
+  it("adds a vote delegation to a dRep", async () => {
+    const tx = await new TxBuilder(hardCodedProtocolParams)
+      .addUnspentOutputs(baseUtxos)
+      .setNetworkId(NetworkId.Testnet)
+      .setChangeAddress(testAddress)
+      .addVoteDelegation(
+        Credential.fromCore({
+          hash: testAddress.getProps().paymentPart!.hash,
+          type: CredentialType.KeyHash,
+        }),
+        drepCredential,
+      )
+      .complete();
+
+    const certs = tx.body().certs()?.values() ?? [];
+    expect(certs.length).toBe(1);
+    const cert = certs[0]!;
+    expect(cert.asVoteDelegationCert()).toBeTruthy();
+    const vd = cert.asVoteDelegationCert()!;
+    expect(vd.stakeCredential().hash).toEqual(
+      testAddress.getProps().paymentPart!.hash,
+    );
+    // dRep can be key/script hash or special values; compare to toCore output where applicable
+    expect(vd.dRep().toCbor().length).toBeGreaterThan(0);
+  });
 });
