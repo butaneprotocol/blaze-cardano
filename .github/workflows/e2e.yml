@@ -2,11 +2,13 @@ name: e2e
 
 on:
   push:
-    branches: ["**"]
+    branches:
+      - main
   pull_request:
 
+# cancel in-progress runs on new commits to same PR (gitub.event.number)
 concurrency:
-  group: e2e-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
   cancel-in-progress: true
 
 permissions:
