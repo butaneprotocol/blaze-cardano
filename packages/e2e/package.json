@@ -7,7 +7,9 @@
   },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/sdk": "workspace:*",
     "@blaze-cardano/query": "workspace:*",
+    "@blaze-cardano/ogmios": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
     "@blaze-cardano/wallet": "workspace:*"
   },

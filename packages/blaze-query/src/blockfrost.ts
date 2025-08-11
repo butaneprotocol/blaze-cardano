@@ -185,7 +185,7 @@ export class Blockfrost extends Provider {
 
       if ("message" in response) {
         throw new Error(
-          `getUnspentOutputs: Blockfrost threw "${response.message}"`,
+          `getUnspentOutputs: Blockfrost threw "${response.message}" for query: ${query}`,
         );
       }
 
