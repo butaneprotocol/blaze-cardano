@@ -17,6 +17,7 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    if: ${{ secrets.SEED_MNEMONIC != '' && secrets.BLOCKFROST_KEY != '' }}
     env:
       CI: true
       OGMIOS_URL: ${{ secrets.OGMIOS_URL }}
@@ -44,7 +45,6 @@ jobs:
           NODE_ENV: production
 
       - name: Run e2e tests
-        if: ${{ secrets.SEED_MNEMONIC != '' && secrets.BLOCKFROST_KEY != '' }}
         run: pnpm -w --filter @blaze-cardano/e2e test
         env:
           NODE_ENV: production
