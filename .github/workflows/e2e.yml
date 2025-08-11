@@ -6,7 +6,7 @@ on:
   pull_request:
 
 concurrency:
-  group: e2e-${{ github.head_ref || github.ref }}
+  group: e2e-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -19,10 +19,8 @@ jobs:
     timeout-minutes: 30
     env:
       CI: true
-      SEED_MNEMONIC: ${{ secrets.SEED_MNEMONIC }}
       OGMIOS_URL: ${{ secrets.OGMIOS_URL }}
       KUPO_URL: ${{ secrets.KUPO_URL }}
-      BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,3 +47,5 @@ jobs:
         run: pnpm -w --filter @blaze-cardano/e2e test
         env:
           NODE_ENV: production
+          SEED_MNEMONIC: ${{ secrets.SEED_MNEMONIC }}
+          BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
