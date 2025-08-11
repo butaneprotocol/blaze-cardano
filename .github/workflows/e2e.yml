@@ -6,7 +6,7 @@ on:
   pull_request:
 
 concurrency:
-  group: e2e-${{ github.ref }}
+  group: e2e-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 permissions:
