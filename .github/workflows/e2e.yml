@@ -17,7 +17,6 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: ${{ secrets.SEED_MNEMONIC != '' && secrets.BLOCKFROST_KEY != '' }}
     env:
       CI: true
       OGMIOS_URL: ${{ secrets.OGMIOS_URL }}
