@@ -3,6 +3,7 @@
     "packages/*"
   ],
   "scripts": {
+    "test:e2e": "pnpm -w --filter @blaze-cardano/e2e test",
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
@@ -16,11 +17,15 @@
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
+    "@blaze-cardano/jest-config": "^0.0.1",
     "@changesets/cli": "^2.27.7",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.14.12",
+    "dotenv": "^16.4.5",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
     "prettier": "^3.3.3",
+    "ts-jest": "^29.4.1",
     "turbo": "^2.4.4",
     "typedoc": "^0.26.6",
     "typescript": "^5.5.4"
