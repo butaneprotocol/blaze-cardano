@@ -1,0 +1,22 @@
+{
+  "name": "@blaze-cardano/e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "jest --runInBand --detectOpenHandles --passWithNoTests"
+  },
+  "dependencies": {
+    "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/query": "workspace:*",
+    "@blaze-cardano/tx": "workspace:*",
+    "@blaze-cardano/wallet": "workspace:*"
+  },
+  "devDependencies": {
+    "@blaze-cardano/jest-config": "workspace:*",
+    "@types/jest": "^30.0.0",
+    "dotenv": "^16.6.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.3"
+  }
+}

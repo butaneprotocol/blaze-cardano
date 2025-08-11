@@ -1,0 +1,10 @@
+{
+  "extends": "../../packages/blaze-tsconfig/base.json",
+  "compilerOptions": {
+    "types": ["jest", "node", "ts-jest", "@types/jest"],
+    "noEmit": true
+  },
+  "include": ["tests/**/*"]
+}
+
+
