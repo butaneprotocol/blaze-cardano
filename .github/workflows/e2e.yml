@@ -54,3 +54,8 @@ jobs:
 
       - name: Run e2e tests
         run: pnpm -w --filter @blaze-cardano/e2e test
+        env:
+          OGMIOS_URL: ${{ secrets.OGMIOS_URL }}
+          KUPO_URL: ${{ secrets.KUPO_URL }}
+          SEED_MNEMONIC: ${{ secrets.SEED_MNEMONIC }}
+          BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
