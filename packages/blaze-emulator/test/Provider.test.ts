@@ -18,10 +18,10 @@ import {
 import { Blaze, makeValue } from "@blaze-cardano/sdk";
 
 const assetIdFungible = AssetId(
-  `${"0".repeat(54)}.${Buffer.from("test").toString("hex")}`
+  `${"0".repeat(54)}.${Buffer.from("test").toString("hex")}`,
 );
 const assetIdNft = AssetId(
-  `${"0".repeat(54)}.${Buffer.from("id").toString("hex")}`
+  `${"0".repeat(54)}.${Buffer.from("id").toString("hex")}`,
 );
 
 describe("Provider", () => {
@@ -46,8 +46,8 @@ describe("Provider", () => {
       makeValue(
         1_000_000_000n,
         [assetIdFungible, 100_000_000n],
-        [assetIdNft, 1n]
-      )
+        [assetIdNft, 1n],
+      ),
     );
 
     datumUtxo = new TransactionOutput(address1, makeValue(5_000_000n));
@@ -103,7 +103,7 @@ describe("Provider", () => {
       fail("Expected error to be thrown, but code executed successfully");
     } catch (e) {
       expect(e).toEqual(
-        "getUnspentOutputByNFT: emulated ledger had no UTxO with NFT"
+        "getUnspentOutputByNFT: emulated ledger had no UTxO with NFT",
       );
     }
   });
@@ -121,7 +121,7 @@ describe("Provider", () => {
 
   test("resolveDatum", async () => {
     const providerDatumResult = await provider.resolveDatum(
-      VOID_PLUTUS_DATA.hash()
+      VOID_PLUTUS_DATA.hash(),
     );
     expect(providerDatumResult).toBeDefined();
     expect(providerDatumResult!.toCbor()).toEqual(VOID_PLUTUS_DATA.toCbor());
