@@ -87,10 +87,10 @@ describe("Emulator", () => {
           Credential.fromCore({
             type: CredentialType.ScriptHash,
             hash: alwaysTrueScript.hash(),
-          }),
+          })
         ),
         makeValue(1_000_000_000n),
-        ONE_PLUTUS_DATA,
+        ONE_PLUTUS_DATA
       )
       .complete();
     const txHash = await signAndSubmit(tx, blaze);
@@ -108,10 +108,10 @@ describe("Emulator", () => {
           Credential.fromCore({
             type: CredentialType.ScriptHash,
             hash: alwaysTrueScript.hash(),
-          }),
+          })
         ),
         makeValue(1_000_000_000n),
-        ONE_PLUTUS_DATA,
+        ONE_PLUTUS_DATA
       )
       .provideScript(alwaysTrueScript)
       .complete();
@@ -144,10 +144,10 @@ describe("Emulator", () => {
           Credential.fromCore({
             type: CredentialType.ScriptHash,
             hash: alwaysTrueScript.hash(),
-          }),
+          })
         ),
         makeValue(1_000_000_000n),
-        ONE_PLUTUS_DATA,
+        ONE_PLUTUS_DATA
       )
       .complete();
 
@@ -176,7 +176,7 @@ describe("Emulator", () => {
       Credential.fromCore({
         type: CredentialType.ScriptHash,
         hash: alwaysTrueScript.hash(),
-      }),
+      })
     );
 
     const tx = await blaze
@@ -185,7 +185,7 @@ describe("Emulator", () => {
         addr,
         makeValue(1_000_000_000n),
         ONE_PLUTUS_DATA,
-        alwaysTrueScript,
+        alwaysTrueScript
       )
       .complete();
 
@@ -221,7 +221,7 @@ describe("Emulator", () => {
     expect(out.amount().multiasset()?.get(AssetId(policy))).toEqual(1n);
   });
 
-  test("Should be able to register stake for a script", async () => {
+  test("Should be able to register and deregister stake for a script", async () => {
     const cred = {
       hash: alwaysTrueScript.hash(),
       type: CredentialType.ScriptHash,
@@ -238,6 +238,15 @@ describe("Emulator", () => {
     emulator.awaitTransactionConfirmation(txHash);
 
     expect(emulator.accounts.get(rewardAccount)).toEqual(0n);
+
+    const deregister = await blaze
+      .newTransaction()
+      .provideScript(alwaysTrueScript)
+      .addDeregisterStake(Credential.fromCore(cred), VOID_PLUTUS_DATA)
+      .complete();
+
+    const deregisterTxHash = await signAndSubmit(deregister, blaze);
+    emulator.awaitTransactionConfirmation(deregisterTxHash);
   });
 
   test("Should be able to withdraw from a script", async () => {
@@ -246,7 +255,7 @@ describe("Emulator", () => {
         hash: alwaysTrueScript.hash(),
         type: CredentialType.ScriptHash,
       },
-      NetworkId.Testnet,
+      NetworkId.Testnet
     );
 
     emulator.accounts.set(rewardAccount, 10_000_000n);
@@ -291,20 +300,20 @@ describe("Emulator", () => {
       .addMint(
         Core.PolicyId(alwaysTrueScript.hash()),
         new Map([[Core.AssetName("545450726576696577"), 1n]]),
-        VOID_PLUTUS_DATA,
+        VOID_PLUTUS_DATA
       )
       .provideCollateral([mockUtxo])
       .payAssets(
         Core.Address.fromBech32(
-          "addr_test1qq82re4ttqrnpnuyqp03fazf8psgckvwlj6482g8pcaeqgr5rr4au7zr2g79y6ggwm7l4hv6jqtzcy758gpu8ez69kwsc40mlq",
+          "addr_test1qq82re4ttqrnpnuyqp03fazf8psgckvwlj6482g8pcaeqgr5rr4au7zr2g79y6ggwm7l4hv6jqtzcy758gpu8ez69kwsc40mlq"
         ),
-        makeValue(2_000_000n),
+        makeValue(2_000_000n)
       )
       .payAssets(
         Core.Address.fromBech32(
-          "addr_test1qq82re4ttqrnpnuyqp03fazf8psgckvwlj6482g8pcaeqgr5rr4au7zr2g79y6ggwm7l4hv6jqtzcy758gpu8ez69kwsc40mlq",
+          "addr_test1qq82re4ttqrnpnuyqp03fazf8psgckvwlj6482g8pcaeqgr5rr4au7zr2g79y6ggwm7l4hv6jqtzcy758gpu8ez69kwsc40mlq"
         ),
-        makeValue(2_000_000n),
+        makeValue(2_000_000n)
       )
       .complete({ useCoinSelection: false });
 
