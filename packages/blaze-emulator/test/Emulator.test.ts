@@ -57,6 +57,39 @@ describe("Emulator", () => {
     blaze = await Blaze.from(provider, wallet1);
   });
 
+  test("register", async () => {
+    expect(emulator.mockedWallets.size).toEqual(0);
+    await emulator.register("0", makeValue(100_000_000n));
+    expect(emulator.mockedWallets.size).toEqual(1);
+    expect(emulator.mockedWallets.get("0")).toBeDefined();
+  });
+
+  test("as", async () => {
+    await emulator.as("1", async (blaze, address) => {
+      expect(await blaze.wallet?.getChangeAddress()).toEqual(address);
+    });
+  });
+
+  test("should be able to publish and lookup a script", async () => {
+    expect(() => emulator.lookupScript(alwaysTrueScript)).toThrow();
+    await emulator.publishScript(alwaysTrueScript);
+    expect(() => emulator.lookupScript(alwaysTrueScript)).not.toThrow();
+  });
+
+  test("a valid transaction", async () => {
+    await emulator.register("2", makeValue(100_000_000n));
+    await emulator.as("2", async (blaze, address) => {
+      const tx = blaze.newTransaction().addRegisterStake(
+        Credential.fromCore({
+          hash: address.getProps().delegationPart!.hash,
+          type: CredentialType.KeyHash,
+        }),
+      );
+
+      expect(emulator.expectValidTransaction(blaze, tx)).resolves.not.toThrow();
+    });
+  });
+
   test("Should be able to get a genesis UTxO", async () => {
     const inp = new TransactionInput(TransactionId("00".repeat(32)), 0n);
     const out = emulator.getOutput(inp);
