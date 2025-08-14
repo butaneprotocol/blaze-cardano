@@ -11,6 +11,7 @@ import {
   CredentialType,
   TransactionUnspentOutput,
   RewardAccount,
+  Ed25519KeyHashHex,
 } from "@blaze-cardano/core";
 import { HotWallet } from "@blaze-cardano/wallet";
 import { Emulator, EmulatorProvider } from "../src";
@@ -83,11 +84,38 @@ describe("Emulator", () => {
         Credential.fromCore({
           hash: address.getProps().delegationPart!.hash,
           type: CredentialType.KeyHash,
-        }),
+        })
       );
 
       expect(emulator.expectValidTransaction(blaze, tx)).resolves.not.toThrow();
     });
+  });
+
+  test("a valid multisig transaction", async () => {
+    const wallet3 = await emulator.register("3", makeValue(100_000_000n));
+    const wallet4 = await emulator.register("4", makeValue(10_000_000n));
+    await emulator.as("3", async (blaze) => {
+      const tx = blaze
+        .newTransaction()
+        .payLovelace(wallet4, 10_000_000n)
+        .addRequiredSigner(
+          Ed25519KeyHashHex(wallet3.getProps().paymentPart!.hash)
+        )
+        .addRequiredSigner(
+          Ed25519KeyHashHex(wallet4.getProps().paymentPart!.hash)
+        );
+      expect(
+        emulator.expectValidMultisignedTransaction(["3", "4"], tx)
+      ).resolves.not.toThrow();
+    });
+  });
+
+  test("stop and start event loop", () => {
+    expect(emulator.eventLoop).toBeUndefined();
+    emulator.startEventLoop();
+    expect(emulator.eventLoop).toBeDefined();
+    emulator.stopEventLoop();
+    expect(emulator.eventLoop).toBeUndefined();
   });
 
   test("Should be able to get a genesis UTxO", async () => {
@@ -120,10 +148,10 @@ describe("Emulator", () => {
           Credential.fromCore({
             type: CredentialType.ScriptHash,
             hash: alwaysTrueScript.hash(),
-          }),
+          })
         ),
         makeValue(1_000_000_000n),
-        ONE_PLUTUS_DATA,
+        ONE_PLUTUS_DATA
       )
       .complete();
     const txHash = await signAndSubmit(tx, blaze);
@@ -141,10 +169,10 @@ describe("Emulator", () => {
           Credential.fromCore({
             type: CredentialType.ScriptHash,
             hash: alwaysTrueScript.hash(),
-          }),
+          })
         ),
         makeValue(1_000_000_000n),
-        ONE_PLUTUS_DATA,
+        ONE_PLUTUS_DATA
       )
       .provideScript(alwaysTrueScript)
       .complete();
@@ -177,10 +205,10 @@ describe("Emulator", () => {
           Credential.fromCore({
             type: CredentialType.ScriptHash,
             hash: alwaysTrueScript.hash(),
-          }),
+          })
         ),
         makeValue(1_000_000_000n),
-        ONE_PLUTUS_DATA,
+        ONE_PLUTUS_DATA
       )
       .complete();
 
@@ -209,7 +237,7 @@ describe("Emulator", () => {
       Credential.fromCore({
         type: CredentialType.ScriptHash,
         hash: alwaysTrueScript.hash(),
-      }),
+      })
     );
 
     const tx = await blaze
@@ -218,7 +246,7 @@ describe("Emulator", () => {
         addr,
         makeValue(1_000_000_000n),
         ONE_PLUTUS_DATA,
-        alwaysTrueScript,
+        alwaysTrueScript
       )
       .complete();
 
@@ -288,7 +316,7 @@ describe("Emulator", () => {
         hash: alwaysTrueScript.hash(),
         type: CredentialType.ScriptHash,
       },
-      NetworkId.Testnet,
+      NetworkId.Testnet
     );
 
     emulator.accounts.set(rewardAccount, 10_000_000n);
@@ -333,20 +361,20 @@ describe("Emulator", () => {
       .addMint(
         Core.PolicyId(alwaysTrueScript.hash()),
         new Map([[Core.AssetName("545450726576696577"), 1n]]),
-        VOID_PLUTUS_DATA,
+        VOID_PLUTUS_DATA
       )
       .provideCollateral([mockUtxo])
       .payAssets(
         Core.Address.fromBech32(
-          "addr_test1qq82re4ttqrnpnuyqp03fazf8psgckvwlj6482g8pcaeqgr5rr4au7zr2g79y6ggwm7l4hv6jqtzcy758gpu8ez69kwsc40mlq",
+          "addr_test1qq82re4ttqrnpnuyqp03fazf8psgckvwlj6482g8pcaeqgr5rr4au7zr2g79y6ggwm7l4hv6jqtzcy758gpu8ez69kwsc40mlq"
         ),
-        makeValue(2_000_000n),
+        makeValue(2_000_000n)
       )
       .payAssets(
         Core.Address.fromBech32(
-          "addr_test1qq82re4ttqrnpnuyqp03fazf8psgckvwlj6482g8pcaeqgr5rr4au7zr2g79y6ggwm7l4hv6jqtzcy758gpu8ez69kwsc40mlq",
+          "addr_test1qq82re4ttqrnpnuyqp03fazf8psgckvwlj6482g8pcaeqgr5rr4au7zr2g79y6ggwm7l4hv6jqtzcy758gpu8ez69kwsc40mlq"
         ),
-        makeValue(2_000_000n),
+        makeValue(2_000_000n)
       )
       .complete({ useCoinSelection: false });
 
