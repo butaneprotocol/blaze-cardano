@@ -51,6 +51,6 @@ jobs:
           NODE_ENV: production
 
       - name: Run e2e tests
-        run: pnpm -w --filter @blaze-cardano/e2e test
+        run: cd packages/e2e && pnpm test
         # env:
         #   NODE_ENV: production
