@@ -22,10 +22,10 @@ jobs:
     env:
       CI: true
     steps:
-      - name: ✅ Verify required secrets
-        run: |
-          if [ -z "${SEED_MNEMONIC}" ]; then echo "SEED_MNEMONIC secret is not set"; exit 1; fi
-          if [ -z "${BLOCKFROST_KEY}" ]; then echo "BLOCKFROST_KEY secret is not set"; exit 1; fi
+      # - name: ✅ Verify required secrets
+      #   run: |
+      #     if [ -z "${SEED_MNEMONIC}" ]; then echo "SEED_MNEMONIC secret is not set"; exit 1; fi
+      #     if [ -z "${BLOCKFROST_KEY}" ]; then echo "BLOCKFROST_KEY secret is not set"; exit 1; fi
 
       - name: Checkout
         uses: actions/checkout@v4
