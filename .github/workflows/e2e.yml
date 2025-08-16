@@ -15,16 +15,19 @@ permissions:
 
 jobs:
   e2e:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     name: E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       CI: true
+      SEED_MNEMONIC: ${{ secrets.SEED_MNEMONIC }}
+      BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
     steps:
-      # - name: ✅ Verify required secrets
-      #   run: |
-      #     if [ -z "${SEED_MNEMONIC}" ]; then echo "SEED_MNEMONIC secret is not set"; exit 1; fi
-      #     if [ -z "${BLOCKFROST_KEY}" ]; then echo "BLOCKFROST_KEY secret is not set"; exit 1; fi
+      - name: ✅ Verify required secrets
+        run: |
+          if [ -z "${SEED_MNEMONIC}" ]; then echo "SEED_MNEMONIC secret is not set"; exit 1; fi
+          if [ -z "${BLOCKFROST_KEY}" ]; then echo "BLOCKFROST_KEY secret is not set"; exit 1; fi
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,5 +52,5 @@ jobs:
 
       - name: Run e2e tests
         run: pnpm -w --filter @blaze-cardano/e2e test
-        env:
-          NODE_ENV: production
+        # env:
+        #   NODE_ENV: production
