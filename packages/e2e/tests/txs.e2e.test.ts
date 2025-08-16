@@ -23,6 +23,7 @@ describe("sequential e2e txs", () => {
       console.error(`E2E wallet has no funds. Please fund: ${addr.toBech32()}`);
       throw new Error("E2E wallet has no funds");
     }
+    console.log("E2E tests beginning with wallet: ", wallet.address.toBech32());
   });
 
   it("sends minimal lovelace to self", async () => {
