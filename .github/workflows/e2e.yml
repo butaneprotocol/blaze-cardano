@@ -21,10 +21,6 @@ jobs:
     timeout-minutes: 30
     env:
       CI: true
-      OGMIOS_URL: ${{ secrets.OGMIOS_URL }}
-      KUPO_URL: ${{ secrets.KUPO_URL }}
-      SEED_MNEMONIC: ${{ secrets.SEED_MNEMONIC }}
-      BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
     steps:
       - name: ✅ Verify required secrets
         run: |
