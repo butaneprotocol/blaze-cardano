@@ -1,10 +1,10 @@
 {
   "scripts": {
-    "test:e2e": "pnpm -w --filter @blaze-cardano/e2e test",
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
-    "test": "turbo run test",
+    "test": "turbo run test --filter=\"!@blaze-cardano/e2e\"",
+    "test:e2e": "turbo run test --filter=\"@blaze-cardano/e2e\"",
     "clean": "turbo run clean && rm -rf .turbo && rm -rf node_modules",
     "docs": "typedoc --skipErrorChecking && mkdir docs/logo && cp logo/BLAZE_LOGO2.svg docs/logo/BLAZE_LOGO2.svg",
     "fmt": "prettier -w .",
