@@ -2,8 +2,7 @@ name: e2e
 
 on:
   push:
-    branches:
-      - main
+    branches: ["**"]
   pull_request:
 
 # cancel in-progress runs on new commits to same PR (gitub.event.number)
@@ -51,7 +50,4 @@ jobs:
       - name: Run e2e tests
         run: pnpm -w --filter @blaze-cardano/e2e test
         env:
-          OGMIOS_URL: ${{ secrets.OGMIOS_URL }}
-          KUPO_URL: ${{ secrets.KUPO_URL }}
-          SEED_MNEMONIC: ${{ secrets.SEED_MNEMONIC }}
-          BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
+          NODE_ENV: production
