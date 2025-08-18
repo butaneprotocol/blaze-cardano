@@ -19,7 +19,7 @@ function keyhashFromAddress(address: string, networkId: NetworkId) {
   const props = addressFromBech32(address).getProps();
   if (props.networkId != networkId) {
     throw new Error(
-      `Address ${address} is on network ${props.networkId} not on network ${networkId}`
+      `Address ${address} is on network ${props.networkId} not on network ${networkId}`,
     );
   }
   if (
@@ -49,10 +49,10 @@ export function atLeastNOfK(
 
 export function justAddress(
   address: string,
-  networkId: NetworkId
+  networkId: NetworkId,
 ): NativeScript {
   return NativeScript.newScriptPubkey(
-    new ScriptPubkey(keyhashFromAddress(address, networkId))
+    new ScriptPubkey(keyhashFromAddress(address, networkId)),
   );
 }
 

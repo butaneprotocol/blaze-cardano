@@ -26,7 +26,7 @@ function getReleases() {
     return Object.keys(PKG_ID).map((name) => {
       const dir = `blaze-${name.split("/")[1]}`;
       const pkg = JSON.parse(
-        readFileSync(join("packages", dir, "package.json"), "utf8")
+        readFileSync(join("packages", dir, "package.json"), "utf8"),
       );
       return { name, version: pkg.version };
     });
@@ -63,7 +63,7 @@ function main() {
 
     if (hasVersion(id, version)) {
       console.log(
-        `↷ Skipping ${name}@${version} (id=${id}) — version already exists.`
+        `↷ Skipping ${name}@${version} (id=${id}) — version already exists.`,
       );
       continue;
     }
