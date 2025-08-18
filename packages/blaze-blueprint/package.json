@@ -22,7 +22,10 @@
     "test:simple": "cd tests/simple && tsx blueprint_generate.ts && jest simple.test.ts",
     "test:complex": "cd tests/complex && tsx blueprint_generate.ts && jest complex.test.ts",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "cli": "node dist/cli.js"
+    "cli": "node dist/cli.js",
+    "build:types": "tsc -p tsconfig.docs.json",
+    "api:extract": "api-extractor run --local --verbose",
+    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api"
   },
   "devDependencies": {
     "@blaze-cardano/core": "workspace:*",

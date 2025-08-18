@@ -12,7 +12,14 @@
     "fmt": "prettier -w .",
     "changeset": "changeset",
     "release": "turbo run build && changeset publish",
-    "release-dev": "turbo run build && changeset version --snapshot && changeset publish --tag dev"
+    "release-dev": "turbo run build && changeset version --snapshot && changeset publish --tag dev",
+    "build:types": "pnpm -r --filter './packages/**' run build:types",
+    "api:extract": "pnpm -r --filter './packages/**' run api:extract",
+    "api:md": "pnpm -r --filter './packages/**' run api:md",
+    "docs:version": "node scripts/version-docs.mjs",
+    "docs:build": "pnpm --filter docs docusaurus build",
+    "docs:dev": "pnpm --filter docs docusaurus start",
+    "docs:all": "pnpm build:types && pnpm api:extract && pnpm api:md && pnpm docs:version && pnpm docs:build"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
@@ -23,7 +30,10 @@
     "prettier": "^3.3.3",
     "turbo": "^2.4.4",
     "typedoc": "^0.26.6",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "@microsoft/api-documenter": "^7",
+    "@microsoft/api-extractor": "^7",
+    "rimraf": "^6.0.1"
   },
   "packageManager": "pnpm@9.9.0+sha512.60c18acd138bff695d339be6ad13f7e936eea6745660d4cc4a776d5247c540d0edee1a563695c183a66eb917ef88f2b4feb1fc25f32a7adcadc7aaf3438e99c1",
   "name": "blaze-cardano"
