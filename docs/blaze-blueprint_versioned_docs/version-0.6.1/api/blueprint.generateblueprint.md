@@ -9,7 +9,11 @@ Example documentation for this function.
 **Signature:**
 
 ```typescript
-export declare function generateBlueprint({ infile, outfile, useSdk, }: BlueprintArgs): Promise<void>;
+export declare function generateBlueprint({
+  infile,
+  outfile,
+  useSdk,
+}: BlueprintArgs): Promise<void>;
 ```
 
 ## Parameters
@@ -18,30 +22,24 @@ export declare function generateBlueprint({ infile, outfile, useSdk, }: Blueprin
 
 Parameter
 
-
 </th><th>
 
 Type
 
-
 </th><th>
 
 Description
-
 
 </th></tr></thead>
 <tbody><tr><td>
 
 { infile, outfile, useSdk, }
 
-
 </td><td>
 
 BlueprintArgs
 
-
 </td><td>
-
 
 </td></tr>
 </tbody></table>
@@ -49,4 +47,3 @@ BlueprintArgs
 **Returns:**
 
 Promise&lt;void&gt;
-

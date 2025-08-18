@@ -5,7 +5,7 @@
  * Usage: pnpm docs:version
  */
 import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const PKG_ID = {
@@ -33,6 +33,25 @@ function getReleases() {
   }
 }
 
+function versionsFileFor(id) {
+  // default instance uses versions.json; non-default uses <id>_versions.json
+  return id === "default"
+    ? join("docs", "versions.json")
+    : join("docs", `${id}_versions.json`);
+}
+
+function hasVersion(id, version) {
+  const file = versionsFileFor(id);
+  if (!existsSync(file)) return false; // no versions yet
+  try {
+    const list = JSON.parse(readFileSync(file, "utf8"));
+    // Docusaurus stores a simple array of version names (newest first)
+    return list.includes(version);
+  } catch {
+    return false;
+  }
+}
+
 function main() {
   const releases = getReleases();
   if (!releases.length) {
@@ -41,6 +60,14 @@ function main() {
   }
   for (const { name, version } of releases) {
     const id = PKG_ID[name];
+
+    if (hasVersion(id, version)) {
+      console.log(
+        `↷ Skipping ${name}@${version} (id=${id}) — version already exists.`
+      );
+      continue;
+    }
+
     console.log(`Versioning docs for ${name}@${version} (id=${id})`);
     // This copies the *entire* docs folder for that plugin (guides, examples, generated api)
     execSync(`pnpm --filter docs docusaurus docs:version:${id} ${version}`, {
