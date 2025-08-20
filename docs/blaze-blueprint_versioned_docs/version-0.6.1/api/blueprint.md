@@ -10,18 +10,23 @@
 
 Function
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [generateBlueprint({ infile, outfile, useSdk, })](./blueprint.generateblueprint.md)
 
+
 </td><td>
 
 Example documentation for this function.
 
+
 </td></tr>
 </tbody></table>
+

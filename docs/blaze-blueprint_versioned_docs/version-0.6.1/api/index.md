@@ -10,16 +10,21 @@
 
 Package
 
+
 </th><th>
 
 Description
+
 
 </th></tr></thead>
 <tbody><tr><td>
 
 [@blaze-cardano/blueprint](./blueprint.md)
 
+
 </td><td>
+
 
 </td></tr>
 </tbody></table>
+
