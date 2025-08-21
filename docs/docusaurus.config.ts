@@ -1,5 +1,7 @@
 import type { Config } from "@docusaurus/types";
 
+const plugins = ["blueprint", "core", "data", "emulator"];
+
 const config: Config = {
   title: "Blaze Cardano",
   url: "https://docs.butane.dev",
@@ -14,7 +16,27 @@ const config: Config = {
         {
           type: "docsVersionDropdown",
           position: "right",
-          docPluginId: "blaze-core", // must match the plugin id
+          docPluginId: "blaze-blueprint",
+          versions: ["current"],
+          dropdownItemsAfter: [{ to: "/versions", label: "All versions" }],
+        },
+        {
+          type: "docsVersionDropdown",
+          position: "right",
+          docPluginId: "blaze-core",
+          versions: ["current"],
+        },
+        {
+          type: "docsVersionDropdown",
+          position: "right",
+          docPluginId: "blaze-data",
+          versions: ["current"],
+        },
+        {
+          type: "docsVersionDropdown",
+          position: "right",
+          docPluginId: "blaze-emulator",
+          versions: ["current"],
         },
         {
           label: "Blueprint",
@@ -61,67 +83,19 @@ const config: Config = {
       },
     ],
   ],
-  plugins: [
-    // One docs instance per package
-    [
-      "@docusaurus/plugin-content-docs",
-      {
-        id: "blaze-blueprint",
-        path: "../packages/blaze-blueprint/docs",
-        routeBasePath: "blueprint",
-        sidebarPath: require.resolve("./sidebars/blueprint.sidebar.mjs"),
-        lastVersion: "current",
-        includeCurrentVersion: true,
-        versions: {
-          current: {
-            label: "Current",
-            path: "current",
-          },
-        },
-        editUrl: "https://github.com/you/repo/edit/main/packages/ui/docs",
-        include: ["**/*.md", "**/*.mdx"],
-      },
-    ],
-    [
-      "@docusaurus/plugin-content-docs",
-      {
-        id: "blaze-core",
-        path: "../packages/blaze-core/docs",
-        routeBasePath: "core",
-        sidebarPath: require.resolve("./sidebars/core.sidebar.mjs"),
-        lastVersion: "current",
-        onlyIncludeVersions: ["current"],
-        editUrl: "https://github.com/you/repo/edit/main/packages/ui/docs",
-        include: ["**/*.md", "**/*.mdx"],
-      },
-    ],
-    [
-      "@docusaurus/plugin-content-docs",
-      {
-        id: "blaze-data",
-        path: "../packages/blaze-data/docs",
-        routeBasePath: "data",
-        sidebarPath: require.resolve("./sidebars/data.sidebar.mjs"),
-        lastVersion: "current",
-        onlyIncludeVersions: ["current"],
-        editUrl: "https://github.com/you/repo/edit/main/packages/ui/docs",
-        include: ["**/*.md", "**/*.mdx"],
-      },
-    ],
-    [
-      "@docusaurus/plugin-content-docs",
-      {
-        id: "blaze-emulator",
-        path: "../packages/blaze-emulator/docs",
-        routeBasePath: "emulator",
-        sidebarPath: require.resolve("./sidebars/data.sidebar.mjs"),
-        lastVersion: "current",
-        onlyIncludeVersions: ["current"],
-        editUrl: "https://github.com/you/repo/edit/main/packages/ui/docs",
-        include: ["**/*.md", "**/*.mdx"],
-      },
-    ],
-  ],
+  plugins: plugins.map((plugin) => [
+    "@docusaurus/plugin-content-docs",
+    {
+      id: `blaze-${plugin}`,
+      path: `../packages/blaze-${plugin}/docs`,
+      routeBasePath: plugin,
+      sidebarPath: require.resolve(`./sidebars/${plugin}.sidebar.mjs`),
+      lastVersion: "current",
+      includeCurrentVersion: true,
+      editUrl: "https://github.com/you/repo/edit/main/packages/ui/docs",
+      include: ["**/*.md", "**/*.mdx"],
+    },
+  ]),
 };
 
 export default config;

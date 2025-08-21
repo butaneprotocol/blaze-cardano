@@ -1,6 +1,11 @@
 {
   "docs": [
     {
+      "type": "doc",
+      "id": "index",
+      "label": "Overview"
+    },
+    {
       "type": "category",
       "label": "Guides",
       "items": [

@@ -19,7 +19,7 @@
     "docs:version": "node scripts/version-docs.mjs",
     "docs:build": "pnpm --filter docs docusaurus build",
     "docs:dev": "pnpm --filter docs docusaurus start",
-    "docs:all": "pnpm build:types && pnpm api:extract && pnpm api:md && pnpm docs:version && pnpm docs:build"
+    "docs:all": "pnpm build:types && pnpm api:extract && pnpm api:md && pnpm docs:build"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
