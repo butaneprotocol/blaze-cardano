@@ -16,26 +16,26 @@ const config: Config = {
         {
           type: "docsVersionDropdown",
           position: "right",
-          docPluginId: "blaze-blueprint",
-          versions: ["current"],
-          dropdownItemsAfter: [{ to: "/versions", label: "All versions" }],
-        },
-        {
-          type: "docsVersionDropdown",
-          position: "right",
-          docPluginId: "blaze-core",
+          docsPluginId: "blaze-blueprint",
           versions: ["current"],
         },
         {
           type: "docsVersionDropdown",
           position: "right",
-          docPluginId: "blaze-data",
+          docsPluginId: "blaze-core",
+          versions: ["current"],
+          routePrefix: "/core",
+        },
+        {
+          type: "docsVersionDropdown",
+          position: "right",
+          docsPluginId: "blaze-data",
           versions: ["current"],
         },
         {
           type: "docsVersionDropdown",
           position: "right",
-          docPluginId: "blaze-emulator",
+          docsPluginId: "blaze-emulator",
           versions: ["current"],
         },
         {
