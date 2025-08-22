@@ -107,4 +107,4 @@ A list of projects, apps, websites, repositories, which depend on this library i
 
 ### Contributing
 
-Please see [contributing.md](./CONTRIBUTING.md)
+Please see link.
