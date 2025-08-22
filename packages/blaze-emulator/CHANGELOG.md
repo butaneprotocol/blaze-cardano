@@ -1,5 +1,14 @@
 # @blaze-cardano/emulator
 
+## 0.3.31
+
+### Patch Changes
+
+- 39a9999: Increases code coverage to >= 80%
+- Updated dependencies [66859b6]
+  - @blaze-cardano/tx@0.13.1
+  - @blaze-cardano/wallet@0.4.10
+
 ## 0.3.30
 
 ### Patch Changes

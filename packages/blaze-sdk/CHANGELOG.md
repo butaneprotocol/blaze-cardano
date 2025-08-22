@@ -1,5 +1,15 @@
 # @blaze-cardano/sdk
 
+## 0.2.39
+
+### Patch Changes
+
+- 66859b6: Fix an error with setting the collateral manually
+- Updated dependencies [66859b6]
+  - @blaze-cardano/tx@0.13.1
+  - @blaze-cardano/uplc@0.3.7
+  - @blaze-cardano/wallet@0.4.10
+
 ## 0.2.38
 
 ### Patch Changes
