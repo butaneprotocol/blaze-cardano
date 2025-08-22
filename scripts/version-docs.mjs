@@ -73,7 +73,7 @@ function main() {
 
     console.log(`Versioning docs for ${name}@${version} (id=${id})`);
     // This copies the *entire* docs folder for that plugin (guides, examples, generated api)
-    execSync(`pnpm --filter docs docusaurus docs:version:${id} ${version}`, {
+    execSync(`cd docs && bun run docusaurus docs:version:${id} ${version}`, {
       stdio: "inherit",
     });
   }
