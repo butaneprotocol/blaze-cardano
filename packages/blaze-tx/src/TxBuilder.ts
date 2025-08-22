@@ -1623,6 +1623,12 @@ export class TxBuilder {
 
         this.collateralUtxos = new Set(selectedInputs);
         this.body.setCollateral(collateralSet);
+      } else {
+        const collateralSet = CborSet.fromCore([], TransactionInput.fromCore);
+        collateralSet.setValues(
+          [...this.collateralUtxos.values()].map((c) => c.input()),
+        );
+        this.body.setCollateral(collateralSet);
       }
 
       const collateralOutput = new TransactionOutput(
