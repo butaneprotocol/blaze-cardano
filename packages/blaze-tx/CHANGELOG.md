@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.13.1
+
+### Patch Changes
+
+- 66859b6: Fix an error with setting the collateral manually
+
 ## 0.13.0
 
 ### Minor Changes

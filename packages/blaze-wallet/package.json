@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/wallet",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "Blaze cardano wallet library",
   "exports": {
     ".": {
