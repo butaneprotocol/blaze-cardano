@@ -30,7 +30,7 @@ export class EmulatorProvider extends Provider {
 
   constructor(emulator: Emulator) {
     // TODO: dedicated emulator environment?
-    super(NetworkId.Testnet);
+    super(NetworkId.Testnet, "unknown");
     this.emulator = emulator;
   }
   getParameters(): Promise<ProtocolParameters> {
