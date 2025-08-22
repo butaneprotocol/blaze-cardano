@@ -159,6 +159,61 @@ export type CertificateType = C.Cardano.CertificateType;
 export const VkeyWitness = C.Serialization.VkeyWitness;
 export type VkeyWitness = C.Serialization.VkeyWitness;
 
+// Conway governance-related serialization types
+export const RegisterDelegateRepresentative =
+  C.Serialization.RegisterDelegateRepresentative;
+export type RegisterDelegateRepresentative =
+  C.Serialization.RegisterDelegateRepresentative;
+
+export const UnregisterDelegateRepresentative =
+  C.Serialization.UnregisterDelegateRepresentative;
+export type UnregisterDelegateRepresentative =
+  C.Serialization.UnregisterDelegateRepresentative;
+
+export const UpdateDelegateRepresentative =
+  C.Serialization.UpdateDelegateRepresentative;
+export type UpdateDelegateRepresentative =
+  C.Serialization.UpdateDelegateRepresentative;
+
+export const Anchor = C.Serialization.Anchor;
+export type Anchor = C.Serialization.Anchor;
+
+// Governance and DRep related
+export const DRep = C.Serialization.DRep;
+export type DRep = C.Serialization.DRep;
+export type GovernanceAction = C.Cardano.GovernanceAction;
+export type DelegateRepresentative = C.Cardano.DelegateRepresentative;
+
+export const VotingProcedures = C.Serialization.VotingProcedures;
+export type VotingProcedures = C.Serialization.VotingProcedures;
+
+export const VotingProcedure = C.Serialization.VotingProcedure;
+export type VotingProcedure = C.Serialization.VotingProcedure;
+
+export const Voter = C.Serialization.Voter;
+export type Voter = C.Serialization.Voter;
+
+// Additional governance-related types
+export const VoteDelegation = C.Serialization.VoteDelegation;
+export type VoteDelegation = C.Serialization.VoteDelegation;
+
+export const ProposalProcedure = C.Serialization.ProposalProcedure;
+export type ProposalProcedure = C.Serialization.ProposalProcedure;
+
+export const GovernanceActionId = C.Serialization.GovernanceActionId;
+export type GovernanceActionId = C.Serialization.GovernanceActionId;
+
+// Stake Pool
+export type PoolParameters = C.Cardano.PoolParameters;
+export type EpochNo = C.Cardano.EpochNo;
+export const PoolRegistration = C.Serialization.PoolRegistration;
+export type PoolRegistration = C.Serialization.PoolRegistration;
+export const PoolRetirement = C.Serialization.PoolRetirement;
+export type PoolRetirement = C.Serialization.PoolRetirement;
+
+// Anchor core type
+export type AnchorCore = C.Cardano.Anchor;
+
 export const Ed25519SignatureHex = Crypto.Ed25519SignatureHex;
 export type Ed25519SignatureHex = Crypto.Ed25519SignatureHex;
 

@@ -1,0 +1,57 @@
+name: e2e
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# cancel in-progress runs on new commits to same PR (gitub.event.number)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+      SEED_MNEMONIC: ${{ secrets.SEED_MNEMONIC }}
+      BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
+    steps:
+      - name: ✅ Verify required secrets
+        run: |
+          if [ -z "${SEED_MNEMONIC}" ]; then echo "SEED_MNEMONIC secret is not set"; exit 1; fi
+          if [ -z "${BLOCKFROST_KEY}" ]; then echo "BLOCKFROST_KEY secret is not set"; exit 1; fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: "pnpm"
+          # 22.5.0 is bugged, will make "latest" again after fixed
+          node-version: "22.4.1"
+
+      - name: 🛠️ Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🎁 Run build
+        run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Run e2e tests
+        run: cd packages/e2e && pnpm test
+        # env:
+        #   NODE_ENV: production

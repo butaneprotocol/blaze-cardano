@@ -1,1 +1,1 @@
-export { Cardano } from "@cardano-sdk/core";
+export { Cardano, Serialization } from "@cardano-sdk/core";

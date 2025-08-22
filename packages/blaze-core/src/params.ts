@@ -52,6 +52,26 @@ export interface ProtocolParameters {
   // Conway params are optional while not on mainnet
   // TODO: all of the new params
   minFeeReferenceScripts?: MinFeeReferenceScripts;
+  /** Raw cost-per-byte parameter for reference scripts (Conway) */
+  minFeeRefScriptCostPerByte?: string;
+  /** Maximum reference scripts size (bytes) */
+  maxReferenceScriptsSize?: number;
+  /** Stake pool voting thresholds (Conway/Chang) */
+  stakePoolVotingThresholds?: Cardano.PoolVotingThresholds;
+  /** dRep voting thresholds (Conway/Chang) */
+  delegateRepresentativeVotingThresholds?: Cardano.DelegateRepresentativeThresholds;
+  /** Minimum constitutional committee size */
+  constitutionalCommitteeMinSize?: number;
+  /** Maximum constitutional committee term length (epochs) */
+  constitutionalCommitteeMaxTermLength?: number;
+  /** Governance action lifetime (epochs) */
+  governanceActionLifetime?: number;
+  /** Governance action deposit (lovelace) */
+  governanceActionDeposit?: number;
+  /** dRep registration deposit (lovelace) */
+  delegateRepresentativeDeposit?: number;
+  /** dRep maximum idle time (epochs) */
+  delegateRepresentativeMaxIdleTime?: number;
 }
 /**
  * Hard coded protocol parameters for the Cardano ledger.
@@ -146,6 +166,17 @@ export const hardCodedProtocolParams: ProtocolParameters = {
   prices: { memory: 577 / 10000, steps: 0.0000721 }, // The prices.
   maxExecutionUnitsPerTransaction: { memory: 14000000, steps: 10000000000 }, // The maximum execution units per transaction.
   maxExecutionUnitsPerBlock: { memory: 62000000, steps: 20000000000 }, // The maximum execution units per block.
+  // Conway/Chang governance-related defaults (may be overridden by provider on Chang networks)
+  maxReferenceScriptsSize: 204800,
+  stakePoolVotingThresholds: undefined,
+  delegateRepresentativeVotingThresholds: undefined,
+  constitutionalCommitteeMinSize: undefined,
+  constitutionalCommitteeMaxTermLength: undefined,
+  governanceActionLifetime: undefined,
+  governanceActionDeposit: 0,
+  delegateRepresentativeDeposit: 0,
+  delegateRepresentativeMaxIdleTime: undefined,
+  minFeeRefScriptCostPerByte: undefined,
 };
 
 export interface MinFeeReferenceScripts {
