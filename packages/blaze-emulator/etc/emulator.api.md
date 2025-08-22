@@ -94,8 +94,6 @@ export class EmulatorProvider extends Provider_2 {
     // (undocumented)
     getParameters(): Promise<ProtocolParameters>;
     // (undocumented)
-    getSlotConfig(): SlotConfig;
-    // (undocumented)
     getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
     // (undocumented)
     getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>;

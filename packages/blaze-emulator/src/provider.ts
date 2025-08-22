@@ -30,19 +30,11 @@ export class EmulatorProvider extends Provider {
 
   constructor(emulator: Emulator) {
     // TODO: dedicated emulator environment?
-    super(NetworkId.Testnet, "unknown");
+    super(NetworkId.Testnet);
     this.emulator = emulator;
   }
   getParameters(): Promise<ProtocolParameters> {
     return Promise.resolve(this.emulator.params);
-  }
-
-  override getSlotConfig(): SlotConfig {
-    return {
-      slotLength: this.emulator.clock.slotLength,
-      zeroSlot: 0,
-      zeroTime: this.emulator.clock.zeroTime,
-    };
   }
 
   getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {
@@ -58,7 +50,7 @@ export class EmulatorProvider extends Provider {
 
   getUnspentOutputsWithAsset(
     address: Address,
-    unit: AssetId,
+    unit: AssetId
   ): Promise<TransactionUnspentOutput[]> {
     const utxos: TransactionUnspentOutput[] = [];
     const addressBytes = address.toBytes();
@@ -77,17 +69,17 @@ export class EmulatorProvider extends Provider {
     for (const utxo of this.emulator.utxos()) {
       if (utxo.output().amount().multiasset()?.get(unit) != undefined) {
         return Promise.resolve(
-          TransactionUnspentOutput.fromCore(utxo.toCore()),
+          TransactionUnspentOutput.fromCore(utxo.toCore())
         );
       }
     }
     return Promise.reject(
-      "getUnspentOutputByNFT: emulated ledger had no UTxO with NFT",
+      "getUnspentOutputByNFT: emulated ledger had no UTxO with NFT"
     );
   }
 
   resolveUnspentOutputs(
-    txIns: TransactionInput[],
+    txIns: TransactionInput[]
   ): Promise<TransactionUnspentOutput[]> {
     const utxos = [];
     for (const txIn of txIns) {
@@ -96,8 +88,8 @@ export class EmulatorProvider extends Provider {
         utxos.push(
           new TransactionUnspentOutput(
             TransactionInput.fromCore(txIn.toCore()),
-            TransactionOutput.fromCore(out.toCore()),
-          ),
+            TransactionOutput.fromCore(out.toCore())
+          )
         );
     }
     return Promise.resolve(utxos);
@@ -105,13 +97,13 @@ export class EmulatorProvider extends Provider {
 
   resolveDatum(datumHash: DatumHash): Promise<PlutusData> {
     return Promise.resolve(
-      PlutusData.fromCore(this.emulator.datumHashes[datumHash]!.toCore()),
+      PlutusData.fromCore(this.emulator.datumHashes[datumHash]!.toCore())
     );
   }
 
   awaitTransactionConfirmation(
     txId: TransactionId,
-    _timeout?: number | undefined,
+    _timeout?: number | undefined
   ): Promise<boolean> {
     this.emulator.awaitTransactionConfirmation(txId);
     return Promise.resolve(true);
@@ -123,7 +115,7 @@ export class EmulatorProvider extends Provider {
 
   evaluateTransaction(
     tx: Transaction,
-    additionalUtxos: TransactionUnspentOutput[],
+    additionalUtxos: TransactionUnspentOutput[]
   ): Promise<Redeemers> {
     return this.emulator.evaluator(tx, additionalUtxos);
   }
