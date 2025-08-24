@@ -13,8 +13,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --external rxjs",
-    "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
+    "build": "tsdown src/index.ts --format esm,cjs --dts --external rxjs",
+    "dev": "tsdown src/index.ts --format esm,cjs --watch --dts --external rxjs",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
@@ -23,7 +23,7 @@
     "@blaze-cardano/tsconfig": "workspace:*",
     "eslint": "^8.57.0",
     "ts-node": "^10.9.2",
-    "tsup": "^8.0.2",
+    "tsdown": "^0.14.1",
     "typescript": "^5.3.3"
   },
   "publishConfig": {
