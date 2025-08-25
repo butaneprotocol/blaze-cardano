@@ -1,4 +1,5 @@
 import {
+  type Address,
   NativeScript,
   ScriptAll,
   ScriptPubkey,
@@ -31,32 +32,38 @@ function keyhashFromAddress(address: string, networkId: NetworkId) {
   }
 }
 
-export function allOf(...addresses: NativeScript[]) {
+export function allOf(...addresses: NativeScript[]): NativeScript {
   return NativeScript.newScriptAll(new ScriptAll(addresses));
 }
 
-export function anyOf(...addresses: NativeScript[]) {
+export function anyOf(...addresses: NativeScript[]): NativeScript {
   return NativeScript.newScriptAny(new ScriptAny(addresses));
 }
 
-export function atLeastNOfK(n: number, ...addresses: NativeScript[]) {
+export function atLeastNOfK(
+  n: number,
+  ...addresses: NativeScript[]
+): NativeScript {
   return NativeScript.newScriptNOfK(new ScriptNOfK(addresses, n));
 }
 
-export function justAddress(address: string, networkId: NetworkId) {
+export function justAddress(
+  address: string,
+  networkId: NetworkId,
+): NativeScript {
   return NativeScript.newScriptPubkey(
     new ScriptPubkey(keyhashFromAddress(address, networkId)),
   );
 }
 
-export function before(slot: Slot) {
+export function before(slot: Slot): NativeScript {
   return NativeScript.newTimelockExpiry(new TimelockExpiry(slot));
 }
 
-export function after(slot: Slot) {
+export function after(slot: Slot): NativeScript {
   return NativeScript.newTimelockStart(new TimelockStart(slot));
 }
 
-export function address(ns: NativeScript, networkId: NetworkId) {
+export function address(ns: NativeScript, networkId: NetworkId): Address {
   return addressFromValidator(networkId, Script.newNativeScript(ns));
 }
