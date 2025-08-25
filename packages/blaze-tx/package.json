@@ -23,7 +23,10 @@
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "build:types": "tsc -p tsconfig.docs.json",
+    "api:extract": "api-extractor run --local --verbose",
+    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",

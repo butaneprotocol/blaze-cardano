@@ -4,7 +4,7 @@
   "apiReport": { "enabled": true, "reportFolder": "./etc" },
   "docModel": {
     "enabled": true,
-    "apiJsonFilePath": "./etc/core.api.json"
+    "apiJsonFilePath": "./etc/emulator.api.json"
   },
   "dtsRollup": {
     "enabled": true,

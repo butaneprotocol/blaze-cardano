@@ -1,1 +1,2 @@
-export * from "@cardano-ogmios/schema";
+import * as Schema from "@cardano-ogmios/schema";
+export { Schema };

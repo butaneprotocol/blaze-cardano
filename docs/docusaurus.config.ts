@@ -1,6 +1,18 @@
 import type { Config } from "@docusaurus/types";
 
-const plugins = ["blueprint", "core", "data", "emulator"];
+const plugins = [
+  "blueprint",
+  "core",
+  "data",
+  "emulator",
+  "ogmios",
+  "query",
+  "sdk",
+  "tx",
+  "uplc",
+  "vm",
+  "wallet",
+];
 
 const config: Config = {
   title: "Blaze Cardano",
@@ -14,49 +26,12 @@ const config: Config = {
       },
       items: [
         {
-          type: "docsVersionDropdown",
-          position: "right",
-          docsPluginId: "blaze-blueprint",
-          versions: ["current"],
-        },
-        {
-          type: "docsVersionDropdown",
-          position: "right",
-          docsPluginId: "blaze-core",
-          versions: ["current"],
-          routePrefix: "/core",
-        },
-        {
-          type: "docsVersionDropdown",
-          position: "right",
-          docsPluginId: "blaze-data",
-          versions: ["current"],
-        },
-        {
-          type: "docsVersionDropdown",
-          position: "right",
-          docsPluginId: "blaze-emulator",
-          versions: ["current"],
-        },
-        {
-          label: "Blueprint",
-          to: "/blueprint", // matches `routeBasePath`
-          position: "left",
-        },
-        {
-          label: "Core",
-          to: "/core",
-          position: "left",
-        },
-        {
-          label: "Data",
-          to: "/data",
-          position: "left",
-        },
-        {
-          label: "Emulator",
-          to: "/emulator",
-          position: "left",
+          type: "dropdown",
+          label: "Packages",
+          items: plugins.map((slug) => ({
+            label: `@blaze-cardano/${slug}`,
+            to: `/${slug}`,
+          })),
         },
         {
           href: "https://github.com/your-org/your-repo",

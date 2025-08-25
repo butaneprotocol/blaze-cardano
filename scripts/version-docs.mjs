@@ -13,6 +13,13 @@ const PKG_ID = {
   "@blaze-cardano/core": "blaze-core",
   "@blaze-cardano/data": "blaze-data",
   "@blaze-cardano/emulator": "blaze-emulator",
+  "@blaze-cardano/ogmios": "blaze-ogmios",
+  "@blaze-cardano/query": "blaze-query",
+  "@blaze-cardano/sdk": "blaze-sdk",
+  "@blaze-cardano/tx": "blaze-tx",
+  "@blaze-cardano/uplc": "blaze-uplc",
+  "@blaze-cardano/vm": "blaze-vm",
+  "@blaze-cardano/wallet": "blaze-wallet",
 };
 
 function getReleases() {
