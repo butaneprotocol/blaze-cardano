@@ -25,7 +25,8 @@
     "cli": "node dist/cli.js",
     "build:types": "tsc -p tsconfig.docs.json",
     "api:extract": "api-extractor run --local --verbose",
-    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api"
+    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
+    "api:prepare": "pnpm build:types && pnpm api:extract && pnpm api:md"
   },
   "devDependencies": {
     "@blaze-cardano/core": "workspace:*",

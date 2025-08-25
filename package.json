@@ -16,8 +16,8 @@
     "build:types": "pnpm -r --filter './packages/**' run build:types",
     "api:extract": "pnpm -r --filter './packages/**' run api:extract",
     "api:md": "pnpm -r --filter './packages/**' run api:md",
-    "docs:version": "node scripts/version-docs.mjs",
-    "docs:prepare": "pnpm build:types && pnpm api:extract && pnpm api:md && pnpm docs:version"
+    "docs:prepare": "pnpm -r --filter './packages/**' run api:prepare",
+    "docs:version": "node scripts/version-docs.mjs"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",

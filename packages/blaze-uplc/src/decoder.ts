@@ -23,7 +23,7 @@ export class UPLCDecoder extends FlatDecoder {
 
   /**
    * Decodes a list of items from the binary stream.
-   * @template Item The type of items in the list.
+   * @typeParam Item The type of items in the list.
    * @param {() => Item} decodeItem A function to decode a single item.
    * @returns {Item[]} The decoded list of items.
    */
@@ -39,7 +39,7 @@ export class UPLCDecoder extends FlatDecoder {
 
   /**
    * Decodes a list of items where the list is expected to have at least one item.
-   * @template Item The type of items in the list.
+   * @typeParam Item The type of items in the list.
    * @param {() => Item} decodeItem A function to decode a single item.
    * @returns {Item[]} The decoded list of items.
    */

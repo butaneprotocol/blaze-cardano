@@ -95,7 +95,8 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
    * @param {Transaction} tx - The transaction to submit.
    * @returns {Promise<TransactionId>} - The transaction ID.
    * @throws {Error} If the transaction submission fails.
-   * @description This method sends the provided transaction to the blockchain network
+   * @remarks
+   * This method sends the provided transaction to the blockchain network
    * using the configured wallet, or the configured provider if set.
    */
   async submitTransaction(

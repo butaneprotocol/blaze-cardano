@@ -18,6 +18,7 @@
   ],
   "scripts": {
     "build": "tsdown src/index.ts src/value.ts --format esm,cjs --dts --external rxjs",
+    "watch": "tsdown src/index.ts src/value.ts --format esm,cjs --dts --external rxjs --watch",
     "dev": "tsdown src/index.ts --format esm,cjs --watch --dts --external rxjs",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
@@ -26,7 +27,8 @@
     "test:coverage": "jest --coverage",
     "build:types": "tsc -p tsconfig.docs.json",
     "api:extract": "api-extractor run --local --verbose",
-    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api"
+    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
+    "api:prepare": "pnpm build:types && pnpm api:extract && pnpm api:md"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",

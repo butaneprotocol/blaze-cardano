@@ -340,9 +340,9 @@ export class Kupmios extends Provider {
    * Resolves the scripts for a given script hash.
    * @param scriptHash - Hash of the script to resolve.
    * @returns A promise that resolves to the JSON represenation of the scrip.
-   * Note: we should reconsider creating a class for this as it could be expensive operation
    */
   private async resolveScript(scriptHash: ScriptHash): Promise<Script> {
+    // Note: we should reconsider creating a class for this as it could be expensive operation
     const url = `${this.kupoUrl}/scripts/${scriptHash}`;
     const result: any = await fetch(url).then((res) => res.json());
     if (!result || !result.language || !result.script) {

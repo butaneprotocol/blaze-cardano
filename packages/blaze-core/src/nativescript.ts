@@ -12,7 +12,6 @@ import {
   type Slot,
   TimelockStart,
   TimelockExpiry,
-  type Address,
 } from "./types";
 import { addressFromBech32, addressFromValidator } from "./util";
 

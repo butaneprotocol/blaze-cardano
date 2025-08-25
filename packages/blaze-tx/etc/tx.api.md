@@ -154,7 +154,7 @@ export class TxBuilder {
     protected buildPlaceholderWitnessSet(): TransactionWitnessSet;
     get burnAddress(): Address;
     protected calculateFees(): void;
-    complete({ useCoinSelection }?: UseCoinSelectionArgs): Promise<Transaction>;
+    complete(params?: UseCoinSelectionArgs): Promise<Transaction>;
     delegate(poolId: PoolId, redeemer?: PlutusData): this;
     deployScript(script: Script, address?: Address): TxBuilder;
     enableTracing(enabled: boolean): TxBuilder;
@@ -167,7 +167,7 @@ export class TxBuilder {
     payAssets(address: Address, value: Value_2, datum?: Datum): TxBuilder;
     payLovelace(address: Address, lovelace: bigint, datum?: Datum): TxBuilder;
     // Warning: (ae-forgotten-export) The symbol "UseCoinSelectionArgs" needs to be exported by the entry point index.d.ts
-    protected prepareCollateral({ useCoinSelection }?: UseCoinSelectionArgs): void;
+    protected prepareCollateral(params?: UseCoinSelectionArgs): void;
     provideCollateral(utxos: TransactionUnspentOutput[]): TxBuilder;
     provideDatum(datum: PlutusData): TxBuilder;
     provideScript(script: Script): TxBuilder;

@@ -26,7 +26,7 @@ import type { Unwrapped } from '@blaze-cardano/ogmios';
 
 // @public (undocumented)
 export class Blockfrost extends Provider {
-    constructor({ network, projectId, withScriptRefCaching, }: {
+    constructor(params: {
         network: NetworkName;
         projectId: string;
         withScriptRefCaching?: boolean;
@@ -151,31 +151,6 @@ export class Kupmios extends Provider {
     resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
     resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
     static serializeUtxos(unspentOutputs: TransactionUnspentOutput[]): Schema.Utxo;
-}
-
-// @public (undocumented)
-export class Maestro extends Provider {
-    constructor({ network, apiKey, }: {
-        network: "mainnet" | "preview" | "preprod";
-        apiKey: string;
-    });
-    // (undocumented)
-    awaitTransactionConfirmation(txId: TransactionId, timeout?: number): Promise<boolean>;
-    // (undocumented)
-    evaluateTransaction(tx: Transaction, additionalUtxos: TransactionUnspentOutput[]): Promise<Redeemers>;
-    getParameters(): Promise<ProtocolParameters>;
-    // (undocumented)
-    getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
-    // (undocumented)
-    getUnspentOutputs(address: Address | Credential): Promise<TransactionUnspentOutput[]>;
-    // (undocumented)
-    getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]>;
-    // (undocumented)
-    postTransactionToChain(tx: Transaction): Promise<TransactionId>;
-    // (undocumented)
-    resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
-    // (undocumented)
-    resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
 }
 
 // @public (undocumented)

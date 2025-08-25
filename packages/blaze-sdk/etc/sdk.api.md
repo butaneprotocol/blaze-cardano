@@ -7,7 +7,7 @@
 import * as bip39 from '@scure/bip39';
 import * as C from '@cardano-sdk/core';
 import { Cardano } from '@cardano-sdk/core';
-import * as _cardano_sdk_util from '@cardano-sdk/util';
+import * as _cardano_sdk_util0 from '@cardano-sdk/util';
 import * as Crypto from '@cardano-sdk/crypto';
 import { Exact } from '@blaze-cardano/data';
 import { HexBlob } from '@cardano-sdk/util';
@@ -127,7 +127,7 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
 
 // @public (undocumented)
 export class Blockfrost extends Provider {
-    constructor({ network, projectId, withScriptRefCaching, }: {
+    constructor(params: {
         network: NetworkName;
         projectId: string;
         withScriptRefCaching?: boolean;
@@ -310,7 +310,7 @@ export interface CIP30Interface {
 
 // @public (undocumented)
 export namespace CoinSelector {
-        { index_hvfSelector as hvfSelector, index_micahsSelector as micahsSelector };
+        { hvfSelector, micahsSelector };
 }
 
 // @public
@@ -336,7 +336,8 @@ export class ColdWallet implements Wallet {
 // Warning: (ae-forgotten-export) The symbol "IScriptData" needs to be exported by the entry point index.d.ts
 //
 // @public
-export function computeScriptData(redeemers: Redeemers, datums: ReturnType<TransactionWitnessSet["plutusData"]>, // TODO: weird import shenanigans
+export function computeScriptData(redeemers: Redeemers, datums: ReturnType<TransactionWitnessSet["plutusData"]>,
+// TODO: weird import shenanigans
 usedCostModels: Costmdls): IScriptData | undefined;
 
 // @public (undocumented)
@@ -347,10 +348,6 @@ type ConstrPlutusData = C.Serialization.ConstrPlutusData;
 
 declare namespace Core {
     export {
-        HexBlob,
-        OpaqueString,
-        typedHex,
-        wordlist,
         Address,
         AddressType,
         AssetId,
@@ -389,14 +386,16 @@ declare namespace Core {
         Hash28ByteBase16,
         Hash32ByteBase16,
         HashAsPubKeyHex,
+        HexBlob,
         Metadata,
         Metadatum,
         MetadatumList,
         MetadatumMap,
         MinFeeReferenceScripts,
         NativeScript,
-        nativescript as NativeScripts,
+        nativescript_d_exports as NativeScripts,
         NetworkId,
+        OpaqueString,
         PaymentAddress,
         PlutusData,
         PlutusDataKind,
@@ -467,7 +466,9 @@ declare namespace Core {
         sha2_256,
         sha3_256,
         signMessage,
-        toHex
+        toHex,
+        typedHex,
+        wordlist
     }
 }
 
@@ -510,7 +511,7 @@ type Datum = PlutusData | DatumHash;
 // @public (undocumented)
 const DatumHash: {
     (value: string): Crypto.Hash32ByteBase16;
-    fromHexBlob<T>(value: _cardano_sdk_util.HexBlob): T;
+    fromHexBlob<T>(value: _cardano_sdk_util0.HexBlob): T;
 };
 
 // @public (undocumented)
@@ -624,7 +625,7 @@ type Hash28ByteBase16 = Crypto.Hash28ByteBase16;
 // @public (undocumented)
 const Hash32ByteBase16: {
     (value: string): Crypto.Hash32ByteBase16;
-    fromHexBlob<T>(value: _cardano_sdk_util.HexBlob): T;
+    fromHexBlob<T>(value: _cardano_sdk_util0.HexBlob): T;
 };
 
 // @public (undocumented)
@@ -718,31 +719,6 @@ export class Kupmios extends Provider {
     static serializeUtxos(unspentOutputs: TransactionUnspentOutput[]): Schema.Utxo;
 }
 
-// @public (undocumented)
-export class Maestro extends Provider {
-    constructor({ network, apiKey, }: {
-        network: "mainnet" | "preview" | "preprod";
-        apiKey: string;
-    });
-    // (undocumented)
-    awaitTransactionConfirmation(txId: TransactionId, timeout?: number): Promise<boolean>;
-    // (undocumented)
-    evaluateTransaction(tx: Transaction, additionalUtxos: TransactionUnspentOutput[]): Promise<Redeemers>;
-    getParameters(): Promise<ProtocolParameters>;
-    // (undocumented)
-    getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
-    // (undocumented)
-    getUnspentOutputs(address: Address | Credential): Promise<TransactionUnspentOutput[]>;
-    // (undocumented)
-    getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]>;
-    // (undocumented)
-    postTransactionToChain(tx: Transaction): Promise<TransactionId>;
-    // (undocumented)
-    resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
-    // (undocumented)
-    resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
-}
-
 // @public
 export function makeValue(lovelace: bigint, ...assets: [string, bigint][]): Value_2;
 
@@ -793,8 +769,8 @@ const NativeScript: typeof C.Serialization.NativeScript;
 type NativeScript = C.Serialization.NativeScript;
 
 // @public (undocumented)
-namespace nativescript {
-        { nativescript_address as address, nativescript_after as after, nativescript_allOf as allOf, nativescript_anyOf as anyOf, nativescript_atLeastNOfK as atLeastNOfK, nativescript_before as before, nativescript_justAddress as justAddress };
+namespace nativescript_d_exports {
+        { address, after, allOf, anyOf, atLeastNOfK, before, justAddress };
 }
 
 // @public (undocumented)
@@ -1126,7 +1102,7 @@ type TransactionBody = C.Serialization.TransactionBody;
 // @public (undocumented)
 const TransactionId: {
     (value: string): C.Cardano.TransactionId;
-    fromHexBlob(value: _cardano_sdk_util.HexBlob): C.Cardano.TransactionId;
+    fromHexBlob(value: _cardano_sdk_util0.HexBlob): C.Cardano.TransactionId;
 };
 
 // @public (undocumented)
@@ -1189,7 +1165,7 @@ export class TxBuilder {
     protected buildPlaceholderWitnessSet(): TransactionWitnessSet;
     get burnAddress(): Address;
     protected calculateFees(): void;
-    complete({ useCoinSelection }?: UseCoinSelectionArgs): Promise<Transaction>;
+    complete(params?: UseCoinSelectionArgs): Promise<Transaction>;
     delegate(poolId: PoolId, redeemer?: PlutusData): this;
     deployScript(script: Script, address?: Address): TxBuilder;
     enableTracing(enabled: boolean): TxBuilder;
@@ -1202,7 +1178,7 @@ export class TxBuilder {
     payAssets(address: Address, value: Value_2, datum?: Datum): TxBuilder;
     payLovelace(address: Address, lovelace: bigint, datum?: Datum): TxBuilder;
     // Warning: (ae-forgotten-export) The symbol "UseCoinSelectionArgs" needs to be exported by the entry point index.d.ts
-    protected prepareCollateral({ useCoinSelection }?: UseCoinSelectionArgs): void;
+    protected prepareCollateral(params?: UseCoinSelectionArgs): void;
     provideCollateral(utxos: TransactionUnspentOutput[]): TxBuilder;
     provideDatum(datum: PlutusData): TxBuilder;
     provideScript(script: Script): TxBuilder;
@@ -1282,7 +1258,7 @@ class UTxOSelectionError extends Error {
 
 // @public (undocumented)
 export namespace Value {
-        { value_assetTypes as assetTypes, value_assets as assets, value_empty as empty, value_intersect as intersect, value_makeValue as makeValue, value_merge as merge, value_negate as negate, value_negatives as negatives, value_positives as positives, value_sub as sub, value_sum as sum, value_zero as zero };
+        { assetTypes, assets, empty, intersect, makeValue, merge, negate, negatives, positives, sub, sum, zero };
 }
 
 // @public (undocumented)
@@ -1312,10 +1288,10 @@ export abstract class Wallet {
     abstract signTransaction(tx: Transaction, partialSign: boolean): Promise<TransactionWitnessSet>;
 }
 
-// Warning: (ae-forgotten-export) The symbol "Wallet_2" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Wallet$1" needs to be exported by the entry point index.d.ts
 //
 // @public
-export const WalletDetails: Wallet_2[];
+export const WalletDetails: Wallet$1[];
 
 // @public
 export class WebWallet implements Wallet {

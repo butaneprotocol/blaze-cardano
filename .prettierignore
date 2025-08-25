@@ -7,4 +7,5 @@ dist/
 out/
 plutus.ts
 docs/
+!docs/src/theme/**
 etc/
