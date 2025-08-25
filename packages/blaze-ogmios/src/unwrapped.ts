@@ -55,7 +55,7 @@ export class Ogmios {
   public static async fromDemeter(
     network: `mainnet` | `preview`,
     apiKey: `dmtr_ogmios${string}`,
-    region: `ogmios-m1`
+    region: `ogmios-m1`,
   ): Promise<Ogmios> {
     const url = `wss://${apiKey}.${network}-v6.${region}.demeter.run`;
     return Ogmios.new(url);
@@ -82,8 +82,8 @@ export class Ogmios {
               return Number(value);
             }
             return value;
-          }
-        )
+          },
+        ),
       );
       this.requests[id] = { resolve, reject };
     });
@@ -110,7 +110,7 @@ export class Ogmios {
   }
 
   async findIntersection(
-    points?: schema.PointOrOrigin[]
+    points?: schema.PointOrOrigin[],
   ): Promise<schema.IntersectionFound["result"]> {
     return this.request<
       schema.FindIntersection,
@@ -121,7 +121,7 @@ export class Ogmios {
   async nextBlock(): Promise<schema.NextBlockResponse["result"]> {
     return this.request<any, schema.Ogmios["NextBlockResponse"]>(
       "nextBlock",
-      {}
+      {},
     );
   }
 
@@ -138,7 +138,7 @@ export class Ogmios {
   // Transaction Evaluation API
   async evaluateTransaction(
     transaction: { cbor: string },
-    additionalUtxos?: schema.Utxo
+    additionalUtxos?: schema.Utxo,
   ): Promise<schema.EvaluateTransactionSuccess["result"]> {
     return this.request<
       schema.EvaluateTransaction,
@@ -148,7 +148,7 @@ export class Ogmios {
 
   // State Query API
   async acquireLedgerState(
-    point: schema.PointOrOrigin
+    point: schema.PointOrOrigin,
   ): Promise<schema.AcquireLedgerStateSuccess["result"]> {
     return this.request<
       schema.AcquireLedgerState,
@@ -161,7 +161,7 @@ export class Ogmios {
   > {
     return this.request<any, schema.Ogmios["ReleaseLedgerStateResponse"]>(
       "releaseLedgerState",
-      {}
+      {},
     );
   }
 
@@ -188,7 +188,7 @@ export class Ogmios {
   > {
     return this.request<any, schema.Ogmios["QueryLedgerStateEpochResponse"]>(
       "queryLedgerState/epoch",
-      {}
+      {},
     );
   }
 
@@ -197,7 +197,7 @@ export class Ogmios {
   > {
     return this.request<any, schema.Ogmios["QueryLedgerStateEraStartResponse"]>(
       "queryLedgerState/eraStart",
-      {}
+      {},
     );
   }
 
@@ -281,7 +281,7 @@ export class Ogmios {
   > {
     return this.request<any, schema.Ogmios["QueryLedgerStateTipResponse"]>(
       "queryLedgerState/tip",
-      {}
+      {},
     );
   }
 
@@ -298,11 +298,11 @@ export class Ogmios {
     params?:
       | schema.UtxoByOutputReferences
       | schema.UtxoByAddresses
-      | schema.WholeUtxo
+      | schema.WholeUtxo,
   ): Promise<schema.QueryLedgerStateUtxoResponse["result"]> {
     return this.request<any, schema.Ogmios["QueryLedgerStateUtxoResponse"]>(
       "queryLedgerState/utxo",
-      params
+      params,
     );
   }
 
@@ -312,7 +312,7 @@ export class Ogmios {
   > {
     return this.request<any, schema.Ogmios["QueryNetworkBlockHeightResponse"]>(
       "queryNetwork/blockHeight",
-      {}
+      {},
     );
   }
 
@@ -330,14 +330,14 @@ export class Ogmios {
   > {
     return this.request<any, schema.Ogmios["QueryNetworkStartTimeResponse"]>(
       "queryNetwork/startTime",
-      {}
+      {},
     );
   }
 
   async queryNetworkTip(): Promise<schema.QueryNetworkTipResponse["result"]> {
     return this.request<any, schema.Ogmios["QueryNetworkTipResponse"]>(
       "queryNetwork/tip",
-      {}
+      {},
     );
   }
 
@@ -345,7 +345,7 @@ export class Ogmios {
   async acquireMempool(): Promise<schema.AcquireMempoolResponse["result"]> {
     return this.request<any, schema.Ogmios["AcquireMempoolResponse"]>(
       "acquireMempool",
-      {}
+      {},
     );
   }
 
@@ -354,7 +354,7 @@ export class Ogmios {
   }): Promise<schema.NextTransactionResponse["result"]> {
     return this.request<any, schema.Ogmios["NextTransactionResponse"]>(
       "nextTransaction",
-      params
+      params,
     );
   }
 
@@ -377,7 +377,7 @@ export class Ogmios {
   async releaseMempool(): Promise<schema.ReleaseMempoolResponse["result"]> {
     return this.request<any, schema.Ogmios["ReleaseMempoolResponse"]>(
       "releaseMempool",
-      {}
+      {},
     );
   }
 }

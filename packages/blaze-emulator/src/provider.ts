@@ -6,7 +6,6 @@ import type {
   Transaction,
   Redeemers,
   DatumHash,
-  SlotConfig,
 } from "@blaze-cardano/core";
 import {
   TransactionInput,
