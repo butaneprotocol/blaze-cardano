@@ -14,9 +14,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/cli.ts --format esm,cjs --dts",
-    "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
-    "dev:cli": "tsup src/index.ts src/cli.ts --format esm,cjs --watch --dts",
+    "build": "tsdown src/index.ts src/cli.ts --format esm,cjs --dts",
+    "dev": "tsdown src/index.ts --format esm,cjs --watch --dts",
+    "dev:cli": "tsdown src/index.ts src/cli.ts --format esm,cjs --watch --dts",
     "lint": "eslint .",
     "test": "pnpm test:simple && pnpm test:complex",
     "test:simple": "cd tests/simple && tsx blueprint_generate.ts && jest simple.test.ts",
@@ -42,7 +42,7 @@
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.3",
-    "tsup": "^8.2.3",
+    "tsdown": "^0.14.1",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4"
   },

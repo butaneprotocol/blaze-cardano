@@ -1,4 +1,5 @@
 import {
+  type Address,
   NativeScript,
   ScriptAll,
   ScriptPubkey,

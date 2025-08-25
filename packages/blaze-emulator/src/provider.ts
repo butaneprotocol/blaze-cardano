@@ -40,8 +40,8 @@ export class EmulatorProvider extends Provider {
     const utxos: TransactionUnspentOutput[] = [];
     const addressBytes = address.toBytes();
     for (const utxo of this.emulator.utxos()) {
-      if (utxo.output().address().toBytes() == addressBytes) {
-        utxos.push(TransactionUnspentOutput.fromCore(utxo.toCore()));
+      if (utxo.output().address().toBytes() === addressBytes) {
+        utxos.push(TransactionUnspentOutput.fromCbor(utxo.toCbor()));
       }
     }
     return Promise.resolve(utxos);
@@ -58,7 +58,7 @@ export class EmulatorProvider extends Provider {
         utxo.output().address().toBytes() == addressBytes &&
         utxo.output().amount().multiasset()?.get(unit) !== undefined
       ) {
-        utxos.push(TransactionUnspentOutput.fromCore(utxo.toCore()));
+        utxos.push(TransactionUnspentOutput.fromCbor(utxo.toCbor()));
       }
     }
     return Promise.resolve(utxos);
@@ -68,7 +68,7 @@ export class EmulatorProvider extends Provider {
     for (const utxo of this.emulator.utxos()) {
       if (utxo.output().amount().multiasset()?.get(unit) != undefined) {
         return Promise.resolve(
-          TransactionUnspentOutput.fromCore(utxo.toCore())
+          TransactionUnspentOutput.fromCbor(utxo.toCbor())
         );
       }
     }
@@ -86,8 +86,8 @@ export class EmulatorProvider extends Provider {
       if (out)
         utxos.push(
           new TransactionUnspentOutput(
-            TransactionInput.fromCore(txIn.toCore()),
-            TransactionOutput.fromCore(out.toCore())
+            TransactionInput.fromCbor(txIn.toCbor()),
+            TransactionOutput.fromCbor(out.toCbor())
           )
         );
     }
@@ -96,7 +96,7 @@ export class EmulatorProvider extends Provider {
 
   resolveDatum(datumHash: DatumHash): Promise<PlutusData> {
     return Promise.resolve(
-      PlutusData.fromCore(this.emulator.datumHashes[datumHash]!.toCore())
+      PlutusData.fromCbor(this.emulator.datumHashes[datumHash]!.toCbor())
     );
   }
 
