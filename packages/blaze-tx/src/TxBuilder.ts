@@ -1757,6 +1757,18 @@ export class TxBuilder {
 
       // Classify inputs as either part of the transaction, or "spare" for UTxO selection
       let spareInputs: TransactionUnspentOutput[] = [];
+
+      // In the case where inputs come from native script
+      // we do might not have any native key inputs
+      let allScriptInputs = true;
+      for (const utxo of this.utxos.values()) {
+        allScriptInputs =
+          utxo.output().address().getProps().paymentPart?.type !==
+          CredentialType.KeyHash;
+        if (!allScriptInputs) {
+          break;
+        }
+      }
       for (const utxo of this.utxos.values()) {
         let hasInput = false;
         for (const input of inputs) {
@@ -1769,8 +1781,9 @@ export class TxBuilder {
         // Only add non-script UTXOs for inputs.
         if (
           !hasInput &&
-          utxo.output().address().getProps().paymentPart?.type !==
-            CredentialType.ScriptHash
+          (utxo.output().address().getProps().paymentPart?.type !==
+            CredentialType.ScriptHash ||
+            allScriptInputs)
         ) {
           spareInputs.push(utxo);
         }
