@@ -1,5 +1,11 @@
 # @blaze-cardano/uplc
 
+## 0.3.9
+
+### Patch Changes
+
+- 3859529: Add latest builtins and add check if builtin function not found
+
 ## 0.3.8
 
 ### Patch Changes
