@@ -210,7 +210,7 @@ export class UPLCEncoder extends FlatEncoder {
     } else if (term.type === TermNames.builtin) {
       const builtinIndex = BuiltinFunctions.indexOf(term.function);
       if (builtinIndex === -1) {
-        throw new Error("Bultin Not Found");
+        throw new Error("Bulitin Not Found");
       }
 
       this.pushBits(builtinIndex, 7);
