@@ -11,15 +11,16 @@ const command = new Command();
 command
   .version(packageJson.version)
   .argument("<blueprint>", "plutus.json file")
+  .argument("[blueprint_with_trace]", "plutus.json file with trace enabled")
   .requiredOption("-o, --outfile <file>", "output file")
   .option(
     "-s, --use-sdk",
     "use @blaze-cardano/sdk instead of @blaze-cardano/core & @blaze-cardano/uplc",
   )
-  .action(async (infile, { outfile, useSdk }) => {
-    validateFilePaths(infile, outfile);
+  .action(async (infile, infileWithTrace, { outfile, useSdk }) => {
+    validateFilePaths(infile, infileWithTrace, outfile);
 
-    await generateBlueprint({ infile, outfile, useSdk });
+    await generateBlueprint({ infile, infileWithTrace, outfile, useSdk });
 
     console.log(`Blueprint generated at ${outfile}`);
   });
@@ -37,10 +38,16 @@ function isValidFilePath(filePath: string | undefined): boolean {
 
 function validateFilePaths(
   infile: string | undefined,
+  infileWithTrace: string | undefined,
   outfile: string | undefined,
 ): void {
   if (!isValidFilePath(infile)) {
     console.error("Error: Invalid input file path");
+    process.exit(1);
+  }
+
+  if (infileWithTrace && !isValidFilePath(infileWithTrace)) {
+    console.error("Error: Invalid input file (with trace) path");
     process.exit(1);
   }
 
