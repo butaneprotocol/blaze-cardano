@@ -16,7 +16,11 @@
     "build": "tsdown src/index.ts --format esm,cjs --dts --external rxjs",
     "dev": "tsdown src/index.ts --format esm,cjs --watch --dts --external rxjs",
     "lint": "eslint \"src/**/*.ts*\"",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "build:types": "tsc -p tsconfig.docs.json",
+    "api:extract": "api-extractor run --local --verbose",
+    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
+    "api:prepare": "pnpm build:types && pnpm api:extract && pnpm api:md"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",

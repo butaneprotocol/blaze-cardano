@@ -1471,10 +1471,9 @@ export class TxBuilder {
    * Throws an error if suitable collateral cannot be found or if some inputs cannot be resolved.{boolean}
    */
   protected prepareCollateral(
-    { useCoinSelection = true }: UseCoinSelectionArgs = {
-      useCoinSelection: true,
-    },
+    params: UseCoinSelectionArgs = { useCoinSelection: true },
   ) {
+    const { useCoinSelection = true } = params;
     if (this.redeemers.size() === 0) {
       this.trace(
         "prepareCollateral: No redeemers, skipping collateral preparation.",
@@ -1669,10 +1668,9 @@ export class TxBuilder {
    * @returns {Promise<Transaction>} A new Transaction object with all components set and ready for submission.
    */
   async complete(
-    { useCoinSelection = true }: UseCoinSelectionArgs = {
-      useCoinSelection: true,
-    },
+    params: UseCoinSelectionArgs = { useCoinSelection: true },
   ): Promise<Transaction> {
+    const { useCoinSelection = true } = params;
     // Execute pre-complete hooks
     if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
       for (const hook of this.preCompleteHooks) {

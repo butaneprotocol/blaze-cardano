@@ -137,7 +137,8 @@ export class HydraProvider extends Provider {
   }
 
   /**
-   * This method fetches the UTxO that holds a particular NFT given as an argument
+   * This method fetches the UTxO that holds a particular NFT given as an argument.
+   * @remarks
    * It does **NOT** gaurantee the uniqueness of the NFT.
    * It is just like `getUnspentOutputsWithAsset`, except it short circuits and returns the first UTxO containing the unit
    * @param unit - the AssetId of the NFT
@@ -181,6 +182,7 @@ export class HydraProvider extends Provider {
 
   /**
    * This method takes a datum hash and tries to find the assosciated inline datum in the current snapshot utxo set.
+   * @remarks
    * If the output containing the datum has been spent, this method will error
    * @param datumHash
    * @returns Promise<PlutusData>

@@ -33,9 +33,6 @@ export class EmulatorProvider extends Provider {
     super(NetworkId.Testnet, "unknown");
     this.emulator = emulator;
   }
-  getParameters(): Promise<ProtocolParameters> {
-    return Promise.resolve(this.emulator.params);
-  }
 
   override getSlotConfig(): SlotConfig {
     return {
@@ -43,6 +40,10 @@ export class EmulatorProvider extends Provider {
       zeroSlot: 0,
       zeroTime: this.emulator.clock.zeroTime,
     };
+  }
+
+  getParameters(): Promise<ProtocolParameters> {
+    return Promise.resolve(this.emulator.params);
   }
 
   getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {

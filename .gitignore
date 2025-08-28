@@ -4,3 +4,11 @@ node_modules
 .turbo
 dist/
 build
+
+# Docs
+packages/*/docs/api
+packages/*/docs/types
+packages/*/etc/*.api.json
+packages/*/temp
+docs/types
+docs/.docusaurus

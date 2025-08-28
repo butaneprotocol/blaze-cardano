@@ -1,0 +1,20 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
+  "mainEntryPointFilePath": "./docs/types/index.d.ts",
+  "apiReport": { "enabled": true, "reportFolder": "./etc" },
+  "docModel": {
+    "enabled": true,
+    "apiJsonFilePath": "./etc/sdk.api.json"
+  },
+  "dtsRollup": {
+    "enabled": true,
+    "untrimmedFilePath": "./docs/types/index.d.ts"
+  },
+  "bundledPackages": [
+    "@blaze-cardano/query",
+    "@blaze-cardano/tx",
+    "@blaze-cardano/wallet",
+    "@blaze-cardano/uplc",
+    "@blaze-cardano/core"
+  ]
+}

@@ -499,6 +499,10 @@ export type BlueprintArgs = {
   useSdk?: boolean;
   recursiveType?: string;
 };
+
+/**
+ * Example documentation for this function.
+ */
 export async function generateBlueprint({
   infile = "plutus.json",
   outfile = "plutus.ts",

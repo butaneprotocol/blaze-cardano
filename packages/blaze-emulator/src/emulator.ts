@@ -186,7 +186,7 @@ export class Emulator {
     if (!this.mockedWallets.has(label)) {
       const provider = new EmulatorProvider(this);
       const entropy = randomBytes(96);
-      const masterkey = Bip32PrivateKey.fromBytes(entropy);
+      const masterkey = Bip32PrivateKey.fromBytes(new Uint8Array(entropy));
       const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
       this.mockedWallets.set(label, wallet);
     }
