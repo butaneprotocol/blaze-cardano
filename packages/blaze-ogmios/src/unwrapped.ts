@@ -10,7 +10,6 @@ export class Ogmios {
   > = {};
 
   private constructor(url: string) {
-    console.log("url", url);
     this.url = url;
     this.ws = new WebSocket(this.url);
   }
