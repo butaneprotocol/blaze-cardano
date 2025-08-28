@@ -1,5 +1,13 @@
 # @blaze-cardano/tx
 
+## 0.13.2
+
+### Patch Changes
+
+- 5f0893b: Support native script coin selection
+- Updated dependencies [e835407]
+  - @blaze-cardano/vm@0.1.12
+
 ## 0.13.1
 
 ### Patch Changes

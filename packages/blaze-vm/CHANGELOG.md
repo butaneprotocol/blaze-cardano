@@ -1,5 +1,11 @@
 # @blaze-cardano/vm
 
+## 0.1.12
+
+### Patch Changes
+
+- e835407: Update uplc vm
+
 ## 0.1.11
 
 ### Patch Changes
