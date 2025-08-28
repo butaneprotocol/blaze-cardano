@@ -209,6 +209,10 @@ export class UPLCEncoder extends FlatEncoder {
       this.encodeConst(term.valueType, term.value);
     } else if (term.type === TermNames.builtin) {
       const builtinIndex = BuiltinFunctions.indexOf(term.function);
+      if (builtinIndex === -1) {
+        throw new Error("Bultin Not Found");
+      }
+
       this.pushBits(builtinIndex, 7);
     } else if (term.type === TermNames.delay) {
       this.encodeTerm(term.term);

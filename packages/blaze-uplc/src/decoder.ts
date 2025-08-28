@@ -242,9 +242,14 @@ export class UPLCDecoder extends FlatDecoder {
         value: result[1],
       };
     } else if (term == "Builtin") {
+      const func = this.popBits(7);
+      if (func > BuiltinFunctions.length) {
+        throw new Error("Bultin Not Found");
+      }
+
       return {
         type: "Builtin",
-        function: BuiltinFunctions[this.popBits(7)]!,
+        function: BuiltinFunctions[func]!,
       };
     } else if (term == "Delay") {
       return {
