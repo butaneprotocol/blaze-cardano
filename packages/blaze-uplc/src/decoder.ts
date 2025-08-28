@@ -244,7 +244,7 @@ export class UPLCDecoder extends FlatDecoder {
     } else if (term == "Builtin") {
       const func = this.popBits(7);
       if (func > BuiltinFunctions.length) {
-        throw new Error("Bultin Not Found");
+        throw new Error("Builtin Not Found");
       }
 
       return {
