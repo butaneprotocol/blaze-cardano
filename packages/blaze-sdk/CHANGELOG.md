@@ -1,5 +1,12 @@
 # @blaze-cardano/sdk
 
+## 0.2.41
+
+### Patch Changes
+
+- Updated dependencies [3859529]
+  - @blaze-cardano/uplc@0.3.9
+
 ## 0.2.40
 
 ### Patch Changes
