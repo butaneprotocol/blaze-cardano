@@ -6,6 +6,21 @@
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./wasm": {
+      "import": "./dist/wasm/pkg-node/uplc_wasm.js",
+      "default": "./dist/wasm/pkg-node/uplc_wasm.js",
+      "types": "./dist/wasm/pkg-node/uplc_wasm.d.ts"
+    },
+    "./wasm/web": {
+      "import": "./dist/wasm/pkg-web/uplc_wasm.js",
+      "default": "./dist/wasm/pkg-web/uplc_wasm.js",
+      "types": "./dist/wasm/pkg-web/uplc_wasm.d.ts"
+    },
+    "./wasm/bundler": {
+      "import": "./dist/wasm/pkg-bundler/uplc_wasm.js",
+      "default": "./dist/wasm/pkg-bundler/uplc_wasm.js",
+      "types": "./dist/wasm/pkg-bundler/uplc_wasm.d.ts"
     }
   },
   "types": "./dist/index.d.ts",
