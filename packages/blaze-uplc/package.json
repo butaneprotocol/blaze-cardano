@@ -28,7 +28,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown src/index.ts --format esm,cjs --dts --external rxjs",
+    "build": "tsdown src/index.ts --format esm,cjs --dts --external rxjs && cd wasm && ./build.sh",
+    "build:wasm": "./scripts/build.sh",
     "dev": "tsdown src/index.ts --format esm,cjs --watch --dts --external rxjs",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",

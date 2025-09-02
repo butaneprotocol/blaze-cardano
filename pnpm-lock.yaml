@@ -474,9 +474,9 @@ importers:
       '@blaze-cardano/core':
         specifier: workspace:*
         version: link:../blaze-core
-      uplc-node:
-        specifier: github:SundaeSwap-finance/uplc-node#2d99037a215950b46a47a13eb69a12190cb25836
-        version: uplc-wasm@https://codeload.github.com/SundaeSwap-finance/uplc-node/tar.gz/2d99037a215950b46a47a13eb69a12190cb25836
+      '@blaze-cardano/uplc':
+        specifier: workspace:*
+        version: link:../blaze-uplc
     devDependencies:
       '@blaze-cardano/eslint-config':
         specifier: workspace:*
@@ -3645,10 +3645,6 @@ packages:
 
   uplc-node@0.0.3:
     resolution: {integrity: sha512-4vr7+RzsRmzS2xuMMMsAs7/VgUzq0Y6ha03IKY1yvTwTz4JQcrlOB0wISzpQ0wJUCxXCirsWKh95BJdrC9OT+w==}
-
-  uplc-wasm@https://codeload.github.com/SundaeSwap-finance/uplc-node/tar.gz/2d99037a215950b46a47a13eb69a12190cb25836:
-    resolution: {tarball: https://codeload.github.com/SundaeSwap-finance/uplc-node/tar.gz/2d99037a215950b46a47a13eb69a12190cb25836}
-    version: 0.0.5
 
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
@@ -7964,8 +7960,6 @@ snapshots:
     optional: true
 
   uplc-node@0.0.3: {}
-
-  uplc-wasm@https://codeload.github.com/SundaeSwap-finance/uplc-node/tar.gz/2d99037a215950b46a47a13eb69a12190cb25836: {}
 
   uri-js@4.4.1:
     dependencies:
