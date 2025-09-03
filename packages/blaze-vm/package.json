@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
-    "uplc-node": "github:SundaeSwap-finance/uplc-node#2d99037a215950b46a47a13eb69a12190cb25836"
+    "@blaze-cardano/uplc": "workspace:*"
   }
 }
