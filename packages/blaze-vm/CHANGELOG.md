@@ -1,5 +1,16 @@
 # @blaze-cardano/vm
 
+## 0.2.0
+
+### Minor Changes
+
+- eecb7fc: Updates UPLC to export the latest wasm bindings for UPLC, and updates @blaze-cardano/vm to use these instead of a GitHub repo.
+
+### Patch Changes
+
+- Updated dependencies [eecb7fc]
+  - @blaze-cardano/uplc@0.4.0
+
 ## 0.1.12
 
 ### Patch Changes
