@@ -57,7 +57,6 @@
   },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
-    "@blaze-cardano/tx": "workspace:*",
     "@blaze-cardano/data": "workspace:*",
     "hex-encoding": "^2.0.2"
   }

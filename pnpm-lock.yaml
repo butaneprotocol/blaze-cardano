@@ -428,9 +428,6 @@ importers:
       '@blaze-cardano/data':
         specifier: workspace:*
         version: link:../blaze-data
-      '@blaze-cardano/tx':
-        specifier: workspace:*
-        version: link:../blaze-tx
       hex-encoding:
         specifier: ^2.0.2
         version: 2.0.2

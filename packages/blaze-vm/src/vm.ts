@@ -29,11 +29,11 @@ export function makeUplcEvaluator(
   params: ProtocolParameters,
   overEstimateSteps: number,
   overEstimateMem: number,
-  slotConfig: SlotConfig = SLOT_CONFIG_NETWORK.Mainnet
+  slotConfig: SlotConfig = SLOT_CONFIG_NETWORK.Mainnet,
 ): Evaluator {
   return (
     draft_tx: Transaction,
-    allUtxos: TransactionUnspentOutput[]
+    allUtxos: TransactionUnspentOutput[],
   ): Promise<Redeemers> => {
     // Simulate the execution of scripts using the UPLC (Untyped Plutus Core) evaluator.
     const uplcResults = U.eval_phase_two_raw(
@@ -44,17 +44,18 @@ export function makeUplcEvaluator(
       BigInt(
         Math.floor(
           params.maxExecutionUnitsPerTransaction.steps /
-            (overEstimateSteps ?? 1)
-        )
+            (overEstimateSteps ?? 1),
+        ),
       ), // Calculate the estimated max execution steps.
       BigInt(
         Math.floor(
-          params.maxExecutionUnitsPerTransaction.memory / (overEstimateMem ?? 1)
-        )
+          params.maxExecutionUnitsPerTransaction.memory /
+            (overEstimateMem ?? 1),
+        ),
       ), // Calculate the estimated max memory.
       BigInt(slotConfig.zeroTime), // Network-specific zero time for slot calculation.
       BigInt(slotConfig.zeroSlot), // Network-specific zero slot.
-      slotConfig.slotLength // Network-specific slot length.
+      slotConfig.slotLength, // Network-specific slot length.
     );
 
     const redeemerValues: Redeemer[] = []; // Initialize an array to hold the updated redeemers.
@@ -67,10 +68,10 @@ export function makeUplcEvaluator(
 
       // Adjust the execution units based on overestimation factors.
       exUnits.setSteps(
-        BigInt(Math.round(Number(exUnits.steps()) * overEstimateSteps))
+        BigInt(Math.round(Number(exUnits.steps()) * overEstimateSteps)),
       );
       exUnits.setMem(
-        BigInt(Math.round(Number(exUnits.mem()) * overEstimateMem))
+        BigInt(Math.round(Number(exUnits.mem()) * overEstimateMem)),
       );
 
       redeemer.setExUnits(exUnits); // Update the redeemer with the adjusted execution units.
