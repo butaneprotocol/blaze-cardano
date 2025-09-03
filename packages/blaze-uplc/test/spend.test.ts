@@ -6,7 +6,7 @@ import {
   toHex,
 } from "@blaze-cardano/core";
 import { applyParams } from "../src/index";
-import { apply_params_to_script } from "uplc-node";
+import { apply_params_to_script } from "../dist/wasm/pkg-node";
 import { UPLCDecoder } from "../src/decoder";
 import { UPLCEncoder } from "../src/encoder";
 
