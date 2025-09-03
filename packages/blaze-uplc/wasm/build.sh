@@ -2,13 +2,16 @@ rm -rf pkg ../dist/wasm ../dist/wasm/pkg-node ../dist/wasm/pkg-web ../dist/wasm/
 mkdir ../dist/wasm
 
 wasm-pack build --target nodejs
+rm pkg/.gitignore
 jq '.name = "uplc-node"' pkg/package.json > pkgtemp.json && mv pkgtemp.json pkg/package.json
 mv pkg ../dist/wasm/pkg-node
 
 wasm-pack build --target web
+rm pkg/.gitignore
 jq '.name = "uplc-web"' pkg/package.json > pkgtemp.json && mv pkgtemp.json pkg/package.json
 mv pkg ../dist/wasm/pkg-web
 
 wasm-pack build --target bundler
+rm pkg/.gitignore
 jq '.name = "uplc-bundler"' pkg/package.json > pkgtemp.json && mv pkgtemp.json pkg/package.json
 mv pkg ../dist/wasm/pkg-bundler
