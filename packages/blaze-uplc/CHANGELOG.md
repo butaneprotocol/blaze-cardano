@@ -1,5 +1,11 @@
 # @blaze-cardano/uplc
 
+## 0.4.1
+
+### Patch Changes
+
+- ab30a97: Updates the wasm pack script to remove default .gitignore file from packages. This was preventing them from being included in published files.
+
 ## 0.4.0
 
 ### Minor Changes

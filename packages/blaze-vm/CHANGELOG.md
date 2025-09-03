@@ -1,5 +1,13 @@
 # @blaze-cardano/vm
 
+## 0.2.1
+
+### Patch Changes
+
+- ab30a97: Updates the wasm pack script to remove default .gitignore file from packages. This was preventing them from being included in published files.
+- Updated dependencies [ab30a97]
+  - @blaze-cardano/uplc@0.4.1
+
 ## 0.2.0
 
 ### Minor Changes
