@@ -50,7 +50,7 @@
     "ts-jest": "^29.2.3",
     "tsdown": "^0.14.1",
     "typescript": "^5.5.4",
-    "uplc-node": "^0.0.3"
+    "wasm-pack": "^0.13.1"
   },
   "publishConfig": {
     "access": "public"
