@@ -8,6 +8,7 @@
       "require": "./dist/index.js"
     },
     "./wasm": {
+      "browser": "./dist/wasm/pkg-bundler/uplc_wasm.js",
       "import": "./dist/wasm/pkg-node/uplc_wasm.js",
       "default": "./dist/wasm/pkg-node/uplc_wasm.js",
       "types": "./dist/wasm/pkg-node/uplc_wasm.d.ts"
