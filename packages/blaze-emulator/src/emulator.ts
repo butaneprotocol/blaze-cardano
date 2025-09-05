@@ -13,6 +13,10 @@ import {
   type Script,
   Datum,
   Slot,
+  CertificateType,
+  PoolId,
+  DRep,
+  Certificate,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -79,6 +83,12 @@ const deserialiseInput = (input: SerialisedInput): TransactionInput => {
   return new TransactionInput(TransactionId(txId!), BigInt(index!));
 };
 
+interface RegisteredAccount {
+  balance: bigint;
+  poolId?: PoolId;
+  drep?: DRep;
+}
+
 export interface EmulatorOptions {
   evaluator?: Evaluator;
   slotConfig?: SlotConfig;
@@ -111,7 +121,7 @@ export class Emulator {
   /**
    * The map of reward accounts and their balances.
    */
-  accounts: Map<RewardAccount, bigint> = new Map();
+  accounts: Map<RewardAccount, RegisteredAccount> = new Map();
 
   /**
    * A map from label to blaze instance for that wallet
@@ -769,10 +779,10 @@ export class Emulator {
     // -- Withdrawals
     Array.from(body.withdrawals() ?? []).forEach(
       ([rewardAddr, amount], index) => {
-        const balance = this.accounts.get(rewardAddr);
-        if (balance !== amount)
+        const account = this.getAccount(rewardAddr);
+        if (account.balance !== amount)
           throw new Error(
-            `Withdrawal amount for ${rewardAddr} does not match the actual reward balance (Withdrawing: ${amount} Balance: ${balance}).`,
+            `Withdrawal amount for ${rewardAddr} does not match the actual reward balance (Withdrawing: ${amount} Balance: ${account.balance}).`,
           );
 
         const stakeCred =
@@ -927,7 +937,7 @@ export class Emulator {
       );
 
     let refScriptFee = 0n;
-    if (refInputs && this.params.minFeeReferenceScripts) {
+    if (refInputs && this.params.minFeeRefScriptCostPerByte) {
       const refScripts = [...inputs, ...refInputs]
         .map((x) => this.getOutput(x)!.scriptRef())
         .filter((x) => x !== undefined);
@@ -986,33 +996,15 @@ export class Emulator {
     };
 
     const certs = tx.body().certs()?.values() ?? [];
-    for (let i = 0; i < certs.length; i++) {
-      const cert = certs[i]!;
-      const stakeRegistration = cert.asStakeRegistration();
-      if (stakeRegistration != undefined) {
-        const cred = stakeRegistration.stakeCredential();
-        const rewardAccount = RewardAccount.fromCredential(
-          cred,
-          NetworkId.Testnet,
-        );
-        this.accounts.set(rewardAccount, 0n);
-      }
-      const stakeDeregistration = cert.asStakeDeregistration();
-      if (stakeDeregistration != undefined) {
-        const cred = stakeDeregistration.stakeCredential();
-        const rewardAccount = RewardAccount.fromCredential(
-          cred,
-          NetworkId.Testnet,
-        );
-        this.accounts.delete(rewardAccount);
-      }
+    for (const cert of certs) {
+      this.applyCertificate(cert);
     }
 
     const withdrawals: Map<RewardAccount, bigint> =
       tx.body().withdrawals() ?? new Map();
-    for (const [account, withdrawn] of withdrawals.entries()) {
-      const balance = this.accounts.get(account)?.valueOf() ?? 0n;
-      this.accounts.set(account, balance - withdrawn);
+    for (const [rewardAccount, withdrawn] of withdrawals.entries()) {
+      const account = this.accounts.get(rewardAccount)!;
+      account.balance -= withdrawn;
     }
 
     tx
@@ -1022,5 +1014,73 @@ export class Emulator {
       .forEach((datum) => {
         this.datumHashes[blake2b_256(datum.toCbor())] = datum;
       });
+  }
+
+  private applyCertificate(cert: Certificate) {
+    switch (cert.toCore().__typename) {
+      case CertificateType.StakeRegistration: {
+        const stakeRegistration = cert.asStakeRegistration()!;
+        const rewardAccount = this.rewardAccount(
+          stakeRegistration.stakeCredential(),
+        );
+        if (this.accounts.has(rewardAccount))
+          throw new Error(
+            `Stake key with reward address ${rewardAccount} is already registered.`,
+          );
+        this.accounts.set(rewardAccount, { balance: 0n });
+        break;
+      }
+      case CertificateType.StakeDeregistration: {
+        const stakeDeregistration = cert.asStakeDeregistration()!;
+        const rewardAccount = this.rewardAccount(
+          stakeDeregistration.stakeCredential(),
+        );
+        if (!this.accounts.has(rewardAccount))
+          throw new Error(
+            `Stake key with reward address ${rewardAccount} is not registered.`,
+          );
+        this.accounts.delete(rewardAccount);
+        break;
+      }
+      // TODO: All of the combinations of certificates (e.g. StakeVoteRegistrationDelegation)
+      case CertificateType.VoteDelegation: {
+        const voteDelegation = cert.asVoteDelegationCert()!;
+        const cred = voteDelegation.stakeCredential();
+        this.getAccount(cred).drep = voteDelegation.dRep();
+        break;
+      }
+      case CertificateType.StakeDelegation: {
+        const stakeDelegation = cert.asStakeDelegation()!;
+        const cred = stakeDelegation.stakeCredential();
+        this.getAccount(cred).poolId = PoolId.fromKeyHash(
+          stakeDelegation.poolKeyHash(),
+        );
+        break;
+      }
+      default: {
+        console.warn(
+          `Emulator encountered an unhandled certificate type: ${cert.toCore().__typename}`,
+        );
+        break;
+      }
+    }
+  }
+
+  private getAccount(
+    accountAddr: CredentialCore | RewardAccount,
+  ): RegisteredAccount {
+    if (typeof accountAddr === "object" && "type" in accountAddr) {
+      accountAddr = this.rewardAccount(accountAddr);
+    }
+    const res = this.accounts.get(accountAddr);
+    if (!res)
+      throw new Error(
+        `Account with reward address ${accountAddr} is not registered.`,
+      );
+    return res;
+  }
+
+  private rewardAccount(cred: CredentialCore): RewardAccount {
+    return RewardAccount.fromCredential(cred, NetworkId.Testnet);
   }
 }
