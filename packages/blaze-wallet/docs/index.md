@@ -1,5 +1,5 @@
 ---
-title: Wallet
+title: "@blaze-cardano/wallet"
 ---
 
-The introduction page for the `@blaze-cardano/wallet` package.
+This page will be updated soon!

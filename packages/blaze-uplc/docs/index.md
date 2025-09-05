@@ -1,5 +1,5 @@
 ---
-title: UPLC
+title: "@blaze-cardano/uplc"
 ---
 
-The introduction page for the `@blaze-cardano/uplc` package.
+This page will be updated soon!

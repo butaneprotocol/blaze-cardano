@@ -1,5 +1,5 @@
 ---
-title: Ogmios
+title: "@blaze-cardano/ogmios"
 ---
 
-The introduction page for the `@blaze-cardano/ogmios` package.
+This page will be updated soon!

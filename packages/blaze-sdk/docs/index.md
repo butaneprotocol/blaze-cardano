@@ -1,5 +1,5 @@
 ---
-title: SDK
+title: "@blaze-cardano/sdk"
 ---
 
-The introduction page for the `@blaze-cardano/sdk` package.
+This page will be updated soon!
