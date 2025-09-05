@@ -1,5 +1,5 @@
 ---
-title: Tx
+title: "@blaze-cardano/tx"
 ---
 
-The introduction page for the `@blaze-cardano/tx` package.
+This page will be updated soon!

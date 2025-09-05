@@ -1,5 +1,5 @@
 ---
-title: VM
+title: "@blaze-cardano/vm"
 ---
 
-The introduction page for the `@blaze-cardano/vm` package.
+This page will be updated soon!

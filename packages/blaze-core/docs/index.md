@@ -1,5 +1,5 @@
 ---
-title: Core
+title: "@blaze-cardano/core"
 ---
 
-The introduction page for the `@blaze-cardano/core` package.
+This page will be updated soon!

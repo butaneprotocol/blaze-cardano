@@ -1,5 +1,5 @@
 ---
-title: Data
+title: "@blaze-cardano/data"
 ---
 
-The introduction page for the `@blaze-cardano/data` package.
+This page will be updated soon!
