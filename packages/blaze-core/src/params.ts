@@ -53,7 +53,7 @@ export interface ProtocolParameters {
   // TODO: all of the new params
   minFeeReferenceScripts?: MinFeeReferenceScripts;
   /** Raw cost-per-byte parameter for reference scripts (Conway) */
-  minFeeRefScriptCostPerByte?: string;
+  minFeeRefScriptCostPerByte?: number;
   /** Maximum reference scripts size (bytes) */
   maxReferenceScriptsSize?: number;
   /** Stake pool voting thresholds (Conway/Chang) */
@@ -79,7 +79,6 @@ export interface ProtocolParameters {
  */
 export const hardCodedProtocolParams: ProtocolParameters = {
   coinsPerUtxoByte: 4310, // The number of coins per UTXO byte.
-  minFeeReferenceScripts: { base: 15, range: 25600, multiplier: 1.2 },
   maxTxSize: 16384, // The maximum transaction size.
   minFeeCoefficient: 44, // The minimum fee coefficient.
   minFeeConstant: 155381, // The minimum fee constant.
@@ -114,7 +113,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
         64566, 4, 20467, 1, 4, 0, 141992, 32, 100788, 420, 1, 1, 81663, 32,
         59498, 32, 20142, 32, 24588, 32, 20744, 32, 25933, 32, 24623, 32,
         53384111, 14333, 10,
-      ],
+      ]
     )
     .set(
       1,
@@ -132,7 +131,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
         22588, 4, 1457325, 64566, 4, 20467, 1, 4, 0, 141992, 32, 100788, 420, 1,
         1, 81663, 32, 59498, 32, 20142, 32, 24588, 32, 20744, 32, 25933, 32,
         24623, 32, 43053543, 10, 53384111, 14333, 10, 43574283, 26308, 10,
-      ],
+      ]
     )
     .set(
       2,
@@ -161,24 +160,40 @@ export const hardCodedProtocolParams: ProtocolParameters = {
         680, 0, 1, 95336, 1, 281145, 18848, 0, 1, 180194, 159, 1, 1, 158519,
         8942, 0, 1, 159378, 8813, 0, 1, 107490, 3298, 1, 106057, 655, 1,
         1964219, 24520, 3,
-      ],
+      ]
     ),
   prices: { memory: 577 / 10000, steps: 0.0000721 }, // The prices.
   maxExecutionUnitsPerTransaction: { memory: 14000000, steps: 10000000000 }, // The maximum execution units per transaction.
   maxExecutionUnitsPerBlock: { memory: 62000000, steps: 20000000000 }, // The maximum execution units per block.
   // Conway/Chang governance-related defaults (may be overridden by provider on Chang networks)
   maxReferenceScriptsSize: 204800,
-  stakePoolVotingThresholds: undefined,
-  delegateRepresentativeVotingThresholds: undefined,
-  constitutionalCommitteeMinSize: undefined,
-  constitutionalCommitteeMaxTermLength: undefined,
-  governanceActionLifetime: undefined,
+  stakePoolVotingThresholds: {
+    motionNoConfidence: { numerator: 51, denominator: 100 },
+    committeeNormal: { numerator: 51, denominator: 100 },
+    committeeNoConfidence: { numerator: 51, denominator: 100 },
+    hardForkInitiation: { numerator: 51, denominator: 100 },
+    securityRelevantParamVotingThreshold: { numerator: 51, denominator: 100 },
+  },
+  delegateRepresentativeVotingThresholds: {
+    motionNoConfidence: { numerator: 67, denominator: 100 },
+    committeeNormal: { numerator: 67, denominator: 100 },
+    committeeNoConfidence: { numerator: 3, denominator: 5 },
+    hardForkInitiation: { numerator: 3, denominator: 5 },
+    updateConstitution: { numerator: 3, denominator: 4 },
+    ppNetworkGroup: { numerator: 67, denominator: 100 },
+    ppEconomicGroup: { numerator: 67, denominator: 100 },
+    ppTechnicalGroup: { numerator: 67, denominator: 100 },
+    ppGovernanceGroup: { numerator: 3, denominator: 4 },
+    treasuryWithdrawal: { numerator: 67, denominator: 100 },
+  },
+  constitutionalCommitteeMinSize: 7,
+  constitutionalCommitteeMaxTermLength: 146,
+  governanceActionLifetime: 6,
   governanceActionDeposit: 0,
   delegateRepresentativeDeposit: 0,
-  delegateRepresentativeMaxIdleTime: undefined,
-  minFeeRefScriptCostPerByte: undefined,
+  // delegateRepresentativeMaxIdleTime: undefined,
+  minFeeReferenceScripts: { base: 15, range: 25600, multiplier: 1.2 },
 };
-
 export interface MinFeeReferenceScripts {
   base: number;
   range: number;
