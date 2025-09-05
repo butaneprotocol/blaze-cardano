@@ -119,7 +119,7 @@ export class Maestro extends Provider {
               memory: params.max_execution_units_per_block.memory,
               steps: params.max_execution_units_per_block.cpu,
             },
-          } as ProtocolParameters;
+          };
         }
         throw new Error("getParameters: Could not parse response json");
       });
