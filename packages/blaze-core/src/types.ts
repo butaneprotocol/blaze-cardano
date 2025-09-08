@@ -197,6 +197,9 @@ export type Voter = C.Serialization.Voter;
 export const VoteDelegation = C.Serialization.VoteDelegation;
 export type VoteDelegation = C.Serialization.VoteDelegation;
 
+export const Vote = C.Cardano.Vote;
+export type Vote = C.Cardano.Vote;
+
 export const ProposalProcedure = C.Serialization.ProposalProcedure;
 export type ProposalProcedure = C.Serialization.ProposalProcedure;
 

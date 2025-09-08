@@ -88,9 +88,9 @@ export const hardCodedProtocolParams: ProtocolParameters = {
   poolDeposit: 500000000, // The pool deposit.
   poolRetirementEpochBound: 18, // The pool retirement epoch bound.
   desiredNumberOfPools: 500, // The desired number of pools.
-  poolInfluence: "3/10", // The pool influence.
-  monetaryExpansion: "3/1000", // The monetary expansion.
-  treasuryExpansion: "1/5", // The treasury expansion.
+  poolInfluence: "0.3", // The pool influence.
+  monetaryExpansion: "0.003", // The monetary expansion.
+  treasuryExpansion: "0.2", // The treasury expansion.
   minPoolCost: 170000000, // The minimum pool cost.
   protocolVersion: { major: 9, minor: 0 }, // The protocol version.
   maxValueSize: 5000, // The maximum value size.
@@ -113,7 +113,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
         64566, 4, 20467, 1, 4, 0, 141992, 32, 100788, 420, 1, 1, 81663, 32,
         59498, 32, 20142, 32, 24588, 32, 20744, 32, 25933, 32, 24623, 32,
         53384111, 14333, 10,
-      ]
+      ],
     )
     .set(
       1,
@@ -131,7 +131,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
         22588, 4, 1457325, 64566, 4, 20467, 1, 4, 0, 141992, 32, 100788, 420, 1,
         1, 81663, 32, 59498, 32, 20142, 32, 24588, 32, 20744, 32, 25933, 32,
         24623, 32, 43053543, 10, 53384111, 14333, 10, 43574283, 26308, 10,
-      ]
+      ],
     )
     .set(
       2,
@@ -160,7 +160,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
         680, 0, 1, 95336, 1, 281145, 18848, 0, 1, 180194, 159, 1, 1, 158519,
         8942, 0, 1, 159378, 8813, 0, 1, 107490, 3298, 1, 106057, 655, 1,
         1964219, 24520, 3,
-      ]
+      ],
     ),
   prices: { memory: 577 / 10000, steps: 0.0000721 }, // The prices.
   maxExecutionUnitsPerTransaction: { memory: 14000000, steps: 10000000000 }, // The maximum execution units per transaction.
