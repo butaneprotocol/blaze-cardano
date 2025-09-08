@@ -17,6 +17,10 @@ import {
   PoolId,
   DRep,
   Certificate,
+  GovernanceActionId,
+  ProposalProcedure,
+  Vote,
+  Voter,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -55,28 +59,53 @@ import { makeUplcEvaluator } from "@blaze-cardano/vm";
 import { randomBytes } from "crypto";
 import { EmulatorProvider } from "./provider";
 
+enum ProposalStatus {
+  Active = "Active",
+  Ratified = "Ratified",
+  Enacted = "Enacted",
+  Rejected = "Rejected",
+  Expired = "Expired",
+}
+
 export class LedgerTimer {
   zeroTime: number;
+  zeroSlot: number;
   block: number;
   slot: number;
   time: number;
   slotLength: number;
+  slotsPerEpoch: number;
+  epoch: number;
 
   constructor(
     slotConfig: SlotConfig = { zeroTime: 0, zeroSlot: 0, slotLength: 1000 },
+    slotsPerEpoch: number = 432000,
   ) {
     this.block = 0;
     this.slot = slotConfig.zeroSlot;
+    this.zeroSlot = slotConfig.zeroSlot;
     this.zeroTime = slotConfig.zeroTime;
     this.time = slotConfig.zeroTime;
     this.slotLength = slotConfig.slotLength;
+    this.slotsPerEpoch = slotsPerEpoch;
+    this.epoch = Math.floor((this.slot - this.zeroSlot) / this.slotsPerEpoch);
   }
 }
 
 type SerialisedInput = `${TransactionId}:${bigint}`;
+type SerialisedGovId = `${TransactionId}:${bigint}`;
 
 const serialiseInput = (input: TransactionInput): SerialisedInput =>
   `${input.transactionId()}:${input.index()}`;
+
+const serialiseGovId = (
+  id: GovernanceActionId | ReturnType<GovernanceActionId["toCore"]>,
+): SerialisedGovId => {
+  if ("toCore" in id) {
+    id = id.toCore();
+  }
+  return `${id.id}:${BigInt(id.actionIndex)}`;
+};
 
 const deserialiseInput = (input: SerialisedInput): TransactionInput => {
   const [txId, index] = input.split(":");
@@ -92,6 +121,19 @@ interface RegisteredAccount {
 export interface EmulatorOptions {
   evaluator?: Evaluator;
   slotConfig?: SlotConfig;
+  slotsPerEpoch?: number;
+  treasury?: bigint;
+}
+
+interface GovProposal {
+  proposal: ProposalProcedure;
+  submittedEpoch: number;
+  expiryEpoch: number;
+  status: ProposalStatus;
+  votes: Array<{
+    voter: Voter;
+    vote: Vote;
+  }>;
 }
 
 /**
@@ -104,6 +146,9 @@ export class Emulator {
    * The ledger of unspent transaction outputs.
    */
   #ledger: Record<SerialisedInput, TransactionOutput> = {};
+
+  // Record of governance proposals
+  #proposals: Record<SerialisedGovId, GovProposal> = {};
 
   /**
    * A pending pool of transactions to be confirmed in the next block.
@@ -153,6 +198,10 @@ export class Emulator {
    */
   evaluator: Evaluator;
 
+  treasury: bigint;
+  depositPot: bigint = 0n;
+  feePot: bigint = 0n;
+
   /**
    * Constructs a new instance of the Emulator class.
    * Initializes the ledger with the provided genesis outputs and parameters.
@@ -163,7 +212,12 @@ export class Emulator {
   constructor(
     genesisOutputs: TransactionOutput[],
     params: ProtocolParameters = hardCodedProtocolParams,
-    { evaluator, slotConfig }: EmulatorOptions = {},
+    {
+      evaluator,
+      slotConfig,
+      slotsPerEpoch,
+      treasury = 0n,
+    }: EmulatorOptions = {},
   ) {
     this.#nextGenesisUtxo = 0;
     for (let i = 0; i < genesisOutputs.length; i++) {
@@ -174,7 +228,8 @@ export class Emulator {
       this.#nextGenesisUtxo += 1;
       this.#ledger[serialiseInput(txIn)] = genesisOutputs[i]!;
     }
-    this.clock = new LedgerTimer(slotConfig);
+    this.clock = new LedgerTimer(slotConfig, slotsPerEpoch);
+    this.treasury = treasury;
     this.params = params;
     this.evaluator =
       evaluator ??
@@ -346,9 +401,13 @@ export class Emulator {
     if (Number(slot) <= this.clock.slot) {
       throw new Error("Time travel is unsafe");
     }
+    const prevEpoch = this.clock.epoch;
     this.clock.slot = Number(slot);
     this.clock.block = Math.ceil(Number(slot) / 20);
     this.clock.time = this.slotToUnix(slot);
+    this.clock.epoch = Math.floor(
+      (this.clock.slot - this.clock.zeroSlot) / this.clock.slotsPerEpoch,
+    );
 
     Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
       inputs.forEach(this.removeUtxo);
@@ -356,6 +415,16 @@ export class Emulator {
     });
 
     this.#mempool = {};
+
+    if (this.clock.epoch > prevEpoch) {
+      this.onEpochBoundary();
+    }
+  }
+
+  public stepForwardToNextEpoch(): void {
+    const nextEpochSlot =
+      (this.clock.epoch + 1) * this.clock.slotsPerEpoch + this.clock.zeroSlot;
+    this.stepForwardToSlot(nextEpochSlot);
   }
 
   stepForwardToUnix(unix: number | bigint) {
@@ -1014,6 +1083,11 @@ export class Emulator {
       .forEach((datum) => {
         this.datumHashes[blake2b_256(datum.toCbor())] = datum;
       });
+
+    this.applyGovernance(tx);
+
+    this.feePot += tx.body().fee();
+    this.treasury += tx.body().donation() ?? 0n;
   }
 
   private applyCertificate(cert: Certificate) {
@@ -1028,6 +1102,7 @@ export class Emulator {
             `Stake key with reward address ${rewardAccount} is already registered.`,
           );
         this.accounts.set(rewardAccount, { balance: 0n });
+        this.depositPot += BigInt(this.params.stakeKeyDeposit);
         break;
       }
       case CertificateType.StakeDeregistration: {
@@ -1040,6 +1115,7 @@ export class Emulator {
             `Stake key with reward address ${rewardAccount} is not registered.`,
           );
         this.accounts.delete(rewardAccount);
+        this.depositPot -= BigInt(this.params.stakeKeyDeposit);
         break;
       }
       // TODO: All of the combinations of certificates (e.g. StakeVoteRegistrationDelegation)
@@ -1082,5 +1158,80 @@ export class Emulator {
 
   private rewardAccount(cred: CredentialCore): RewardAccount {
     return RewardAccount.fromCredential(cred, NetworkId.Testnet);
+  }
+
+  private onEpochBoundary(): void {
+    if (this.feePot > 0n) {
+      const treasuryShare = BigInt(
+        Math.floor(
+          Number(this.feePot) * parseFloat(this.params.treasuryExpansion),
+        ),
+      );
+      // TODO (?): Handle stake rewards distribution
+      this.treasury += treasuryShare;
+      this.feePot = 0n;
+
+      // TODO: Governance ratification
+    }
+  }
+
+  /**
+   * Extract and apply governance proposals and votes from the transaction body.
+   */
+  private applyGovernance(tx: Transaction): void {
+    const body = tx.body();
+    const txId = tx.getId();
+    const currentEpoch = this.clock.epoch;
+    const lifetime = this.params.governanceActionLifetime ?? 0;
+
+    const proposalSet = body.proposalProcedures();
+    if (proposalSet) {
+      const proposals = proposalSet.values();
+      for (let i = 0; i < proposals.length; i++) {
+        const p = proposals[i]!;
+        const gid = new GovernanceActionId(txId, BigInt(i));
+        const key = serialiseGovId(gid);
+        if (key in this.#proposals) {
+          throw new Error(
+            `Unreachable: Somehow have duplicate governance action ids ${key}`,
+          );
+        }
+        if (
+          BigInt(p.deposit()) !==
+          BigInt(this.params.governanceActionDeposit ?? 0)
+        ) {
+          throw new Error(
+            `Invalid governance deposit: supplied ${p.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`,
+          );
+        }
+        this.depositPot += BigInt(p.deposit());
+
+        this.#proposals[key] = {
+          proposal: p,
+          submittedEpoch: currentEpoch,
+          expiryEpoch: currentEpoch + lifetime,
+          status: ProposalStatus.Active,
+          votes: [],
+        };
+      }
+    }
+
+    const voting = body.votingProcedures();
+    if (voting !== undefined) {
+      for (const { voter, votes } of voting.toCore()) {
+        for (const { actionId, votingProcedure } of votes) {
+          const key = serialiseGovId(actionId);
+          if (!(key in this.#proposals)) {
+            throw new Error(
+              `Vote references unknown GovernanceActionId ${key}`,
+            );
+          }
+          this.#proposals[key]!.votes.push({
+            voter: Voter.fromCore(voter),
+            vote: votingProcedure.vote,
+          });
+        }
+      }
+    }
   }
 }
