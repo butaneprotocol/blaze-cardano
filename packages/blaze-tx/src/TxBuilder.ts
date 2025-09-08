@@ -2236,7 +2236,6 @@ export class TxBuilder {
    * Adds a governance proposal to this transaction.
    * Accepts either an existing ProposalProcedure, or raw fields to construct one.
    */
-  // Overloads for strong typing
   addProposal(proposal: ProposalProcedure): TxBuilder;
   addProposal(params: {
     deposit: bigint;
@@ -2255,16 +2254,11 @@ export class TxBuilder {
         },
   ): TxBuilder {
     let pp: ProposalProcedure;
-    if ("toCbor" in (proposalOrParams as ProposalProcedure)) {
-      pp = proposalOrParams as ProposalProcedure;
+    if ("toCbor" in proposalOrParams) {
+      pp = proposalOrParams;
     } else {
       const { deposit, rewardAccount, governanceAction, anchor } =
-        proposalOrParams as {
-          deposit: bigint;
-          rewardAccount: RewardAccount;
-          governanceAction: GovernanceAction;
-          anchor: Anchor | AnchorCore;
-        };
+        proposalOrParams;
       const coreAnchor: AnchorCore =
         (anchor as Anchor).toCore !== undefined
           ? (anchor as Anchor).toCore()
