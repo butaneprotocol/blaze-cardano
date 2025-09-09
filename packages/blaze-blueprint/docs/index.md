@@ -1,5 +1,5 @@
 ---
-title: Blueprint
+title: "@blaze-cardano/blueprint"
 ---
 
-The introduction page for the `@blaze-cardano/blueprint` package.
+This page will be updated soon!

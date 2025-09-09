@@ -1,5 +1,5 @@
 ---
-title: Emulator
+title: "@blaze-cardano/emulator"
 ---
 
-The introduction page for the `@blaze-cardano/emulator` package.
+This page will be updated soon!
