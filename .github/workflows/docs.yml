@@ -25,7 +25,8 @@ jobs:
       - name: Build project
         run: pnpm run build
       - name: Build Docs
-        run: cd docs
+        run: |
+          cd docs
           bun run build
       - name: Upload Docs
         uses: actions/upload-pages-artifact@v3
