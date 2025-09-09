@@ -23,7 +23,9 @@ jobs:
       - name: Install dependencies
         run: pnpm i
       - name: Build project
-        run: pnpm run build
+        run: |
+          pnpm run build
+          pnpm docs:prepare
       - name: Build Docs
         run: |
           cd docs
