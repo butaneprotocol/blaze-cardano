@@ -27,6 +27,7 @@ jobs:
       - name: Build Docs
         run: |
           cd docs
+          bun install --frozen-lockfile
           bun run build
       - name: Upload Docs
         uses: actions/upload-pages-artifact@v3
