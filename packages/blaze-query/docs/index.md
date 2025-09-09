@@ -1,5 +1,5 @@
 ---
-title: Query
+title: "@blaze-cardano/query"
 ---
 
-The introduction page for the `@blaze-cardano/query` package.
+This page will be updated soon!
