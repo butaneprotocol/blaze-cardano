@@ -21,6 +21,12 @@ import {
   ProposalProcedure,
   Vote,
   Voter,
+  Ed25519KeyHashHex,
+  ConstitutionCore,
+  type AnchorCore,
+  VoterKind,
+  GovernanceActionKind,
+  Committee,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -123,10 +129,11 @@ export interface EmulatorOptions {
   slotConfig?: SlotConfig;
   slotsPerEpoch?: number;
   treasury?: bigint;
+  cc?: Committee;
 }
 
 interface GovProposal {
-  proposal: ProposalProcedure;
+  procedure: ProposalProcedure;
   submittedEpoch: number;
   expiryEpoch: number;
   status: ProposalStatus;
@@ -134,6 +141,34 @@ interface GovProposal {
     voter: Voter;
     vote: Vote;
   }>;
+}
+
+interface DRepState {
+  credential: CredentialCore;
+  deposit: bigint;
+  anchor?: AnchorCore;
+  lastActiveEpoch: number;
+  isRegistered: boolean;
+}
+
+interface StakeSnapshot {
+  drepDelegation: Record<
+    RewardAccount,
+    CredentialCore | "alwaysAbstain" | "alwaysNoConfidence"
+  >;
+  poolDelegation: Record<RewardAccount, PoolId>;
+  stakeDistribution: Record<Ed25519KeyHashHex | PoolId, bigint>;
+}
+
+interface Tally {
+  yes: bigint;
+  no: bigint;
+}
+type Tallies = Record<"drep" | "spo" | "cc", Tally>;
+
+interface EnactQueueItem {
+  actionId: SerialisedGovId;
+  enactAtEpoch: number;
 }
 
 /**
@@ -202,6 +237,17 @@ export class Emulator {
   depositPot: bigint = 0n;
   feePot: bigint = 0n;
 
+  // Governance state
+  dreps: Record<Hash28ByteBase16, DRepState> = {};
+  cc: Committee;
+  constitution: ConstitutionCore = {
+    anchor: { url: "", dataHash: "" as Hash32ByteBase16 },
+    scriptHash: null,
+  };
+  snapshots: Record<number, StakeSnapshot> = {};
+  enactQueue: EnactQueueItem[] = [];
+  bootstrapMode: boolean = true;
+
   /**
    * Constructs a new instance of the Emulator class.
    * Initializes the ledger with the provided genesis outputs and parameters.
@@ -217,8 +263,10 @@ export class Emulator {
       slotConfig,
       slotsPerEpoch,
       treasury = 0n,
+      cc = { members: [], quorumThreshold: { numerator: 0, denominator: 1 } },
     }: EmulatorOptions = {},
   ) {
+    this.cc = cc;
     this.#nextGenesisUtxo = 0;
     for (let i = 0; i < genesisOutputs.length; i++) {
       const txIn = new TransactionInput(
@@ -798,53 +846,6 @@ export class Emulator {
       }
     }
 
-    // Witnesses
-    // -- Certificates
-    body
-      .certs()
-      ?.values()
-      .forEach((cert, index) => {
-        switch (cert.kind()) {
-          case 0: {
-            // StakeRegistration
-            const stakeRegistration = cert.asStakeRegistration()!;
-            const rewardAddr = RewardAccount.fromCredential(
-              stakeRegistration.stakeCredential(),
-              NetworkId.Testnet,
-            );
-            if (this.accounts.has(rewardAddr))
-              throw new Error(
-                `Stake key with reward address ${rewardAddr} is already registered.`,
-              );
-            netValue = V.sub(
-              netValue,
-              new Value(BigInt(this.params.stakeKeyDeposit)),
-            );
-            break;
-          }
-          case 1: {
-            // StakeDeregistration
-            const stakeDeregistration = cert.asStakeDeregistration()!;
-            const stakeCred = stakeDeregistration.stakeCredential();
-            const rewardAddr = RewardAccount.fromCredential(
-              stakeCred,
-              NetworkId.Testnet,
-            );
-            if (!this.accounts.has(rewardAddr))
-              throw new Error(
-                `Stake key with reward address ${rewardAddr} is not registered.`,
-              );
-            consumeCred(stakeCred, RedeemerTag.Cert, BigInt(index));
-            netValue = V.merge(
-              netValue,
-              new Value(BigInt(this.params.stakeKeyDeposit)),
-            );
-            break;
-          }
-          // TODO: Other kinds (delegation, governance, e.t.c.)
-        }
-      });
-
     // -- Withdrawals
     Array.from(body.withdrawals() ?? []).forEach(
       ([rewardAddr, amount], index) => {
@@ -1107,15 +1108,63 @@ export class Emulator {
       }
       case CertificateType.StakeDeregistration: {
         const stakeDeregistration = cert.asStakeDeregistration()!;
-        const rewardAccount = this.rewardAccount(
-          stakeDeregistration.stakeCredential(),
+        const stakeCred = stakeDeregistration.stakeCredential();
+        const rewardAddr = RewardAccount.fromCredential(
+          stakeCred,
+          NetworkId.Testnet,
         );
-        if (!this.accounts.has(rewardAccount))
+        if (!this.accounts.has(rewardAddr))
           throw new Error(
-            `Stake key with reward address ${rewardAccount} is not registered.`,
+            `Stake key with reward address ${rewardAddr} is not registered.`,
           );
-        this.accounts.delete(rewardAccount);
+        this.accounts.delete(rewardAddr);
         this.depositPot -= BigInt(this.params.stakeKeyDeposit);
+        break;
+      }
+      case CertificateType.RegisterDelegateRepresentative: {
+        const regDRep = cert.asRegisterDelegateRepresentativeCert()!;
+        const cred = regDRep.credential();
+        const keyHash = cred.hash;
+        if (this.dreps[keyHash]?.isRegistered) {
+          throw new Error("DRep is already registered.");
+        }
+        this.dreps[keyHash] = {
+          credential: cred,
+          deposit: regDRep.deposit(),
+          anchor: regDRep.anchor()?.toCore(),
+          lastActiveEpoch: this.clock.epoch,
+          isRegistered: true,
+        };
+        this.depositPot += BigInt(regDRep.deposit());
+        break;
+      }
+      case CertificateType.UnregisterDelegateRepresentative: {
+        const unregDRep = cert.asUnregisterDelegateRepresentativeCert()!;
+        const cred = unregDRep.credential();
+        const keyHash = cred.hash;
+        const drep = this.dreps[keyHash];
+        if (!drep?.isRegistered) {
+          throw new Error("DRep is not registered.");
+        }
+        this.depositPot -= BigInt(drep.deposit);
+        drep.isRegistered = false;
+        // The deposit is returned to the reward account associated with the DRep's credential
+        const rewardAccount = this.rewardAccount(cred);
+        const account = this.accounts.get(rewardAccount);
+        if (account) {
+          account.balance += drep.deposit;
+        }
+        break;
+      }
+      case CertificateType.UpdateDelegateRepresentative: {
+        const updateDRep = cert.asUpdateDelegateRepresentativeCert()!;
+        const cred = updateDRep.credential();
+        const keyHash = cred.hash;
+        const drep = this.dreps[keyHash];
+        if (!drep?.isRegistered) {
+          throw new Error("DRep is not registered.");
+        }
+        drep.anchor = updateDRep.anchor()?.toCore();
         break;
       }
       // TODO: All of the combinations of certificates (e.g. StakeVoteRegistrationDelegation)
@@ -1135,7 +1184,9 @@ export class Emulator {
       }
       default: {
         console.warn(
-          `Emulator encountered an unhandled certificate type: ${cert.toCore().__typename}`,
+          `Emulator encountered an unhandled certificate type: ${
+            cert.toCore().__typename
+          }`,
         );
         break;
       }
@@ -1170,9 +1221,13 @@ export class Emulator {
       // TODO (?): Handle stake rewards distribution
       this.treasury += treasuryShare;
       this.feePot = 0n;
-
-      // TODO: Governance ratification
     }
+
+    // Governance epoch boundary processing
+    this.createStakeSnapshot();
+    this.ratifyGovernanceActions();
+    this.enactGovernanceActions();
+    this.expireDReps();
   }
 
   /**
@@ -1207,7 +1262,7 @@ export class Emulator {
         this.depositPot += BigInt(p.deposit());
 
         this.#proposals[key] = {
-          proposal: p,
+          procedure: p,
           submittedEpoch: currentEpoch,
           expiryEpoch: currentEpoch + lifetime,
           status: ProposalStatus.Active,
@@ -1232,6 +1287,258 @@ export class Emulator {
           });
         }
       }
+    }
+  }
+
+  /**
+   * Create a snapshot of current stake delegations for deterministic vote counting
+   */
+  private createStakeSnapshot(): void {
+    const currentEpoch = this.clock.epoch;
+    const snapshot: StakeSnapshot = {
+      drepDelegation: {},
+      poolDelegation: {},
+      stakeDistribution: {},
+    };
+
+    // Aggregate stake by DRep and Pool from registered accounts
+    for (const [rewardAccount, account] of this.accounts.entries()) {
+      if (account.drep) {
+        // Simplified delegation tracking - in practice would need proper DRep resolution
+        snapshot.drepDelegation[rewardAccount] = "alwaysAbstain"; // Default for now
+      }
+
+      if (account.poolId) {
+        snapshot.poolDelegation[rewardAccount] = account.poolId;
+      }
+
+      // Calculate stake distribution (simplified: use account balance)
+      const stake = account.balance;
+      if (account.poolId && stake > 0n) {
+        snapshot.stakeDistribution[account.poolId] =
+          (snapshot.stakeDistribution[account.poolId] || 0n) + stake;
+      }
+    }
+
+    this.snapshots[currentEpoch] = snapshot;
+  }
+
+  /**
+   * Ratify active governance proposals based on vote tallies and thresholds
+   */
+  private ratifyGovernanceActions(): void {
+    const currentEpoch = this.clock.epoch;
+    const snapshot = this.snapshots[currentEpoch - 1]; // Use previous epoch's snapshot
+
+    if (!snapshot) return;
+
+    for (const [actionId, proposal] of Object.entries(this.#proposals)) {
+      if (proposal.status !== ProposalStatus.Active) continue;
+
+      // Check if proposal has expired
+      if (proposal.expiryEpoch <= currentEpoch) {
+        proposal.status = ProposalStatus.Expired;
+        this.refundProposalDeposit(proposal);
+        continue;
+      }
+
+      // Tally votes by role
+      const tallies: Tallies = {
+        drep: { yes: 0n, no: 0n },
+        spo: { yes: 0n, no: 0n },
+        cc: { yes: 0n, no: 0n },
+      };
+
+      for (const { voter, vote } of proposal.votes) {
+        const voterCore = voter.toCore();
+        const stake = this.getVoterStake(voterCore, snapshot);
+
+        switch (voter.kind()) {
+          case VoterKind.DrepKeyHash:
+          case VoterKind.DRepScriptHash:
+            tallies.drep[vote === Vote.yes ? "yes" : "no"] += stake;
+            break;
+          case VoterKind.StakePoolKeyHash:
+            tallies.spo[vote === Vote.yes ? "yes" : "no"] += stake;
+            break;
+          case VoterKind.ConstitutionalCommitteeKeyHash:
+          case VoterKind.ConstitutionalCommitteeScriptHash:
+            tallies.cc[vote === Vote.yes ? "yes" : "no"] += stake;
+            break;
+        }
+      }
+
+      // Check ratification thresholds based on proposal type
+      const isRatified = this.checkRatificationThresholds(proposal, tallies);
+
+      if (isRatified) {
+        proposal.status = ProposalStatus.Ratified;
+        this.enactQueue.push({
+          actionId: actionId as SerialisedGovId,
+          enactAtEpoch: currentEpoch + 1,
+        });
+      } else {
+        proposal.status = ProposalStatus.Rejected;
+        this.refundProposalDeposit(proposal);
+      }
+    }
+  }
+
+  /**
+   * Enact ratified governance actions that are due for this epoch
+   */
+  private enactGovernanceActions(): void {
+    const currentEpoch = this.clock.epoch;
+    const toEnact = this.enactQueue.filter(
+      (item) => item.enactAtEpoch === currentEpoch,
+    );
+
+    for (const item of toEnact) {
+      const proposal = this.#proposals[item.actionId];
+      if (!proposal) continue;
+
+      // Apply the governance action effects based on type
+      this.applyGovernanceEffect(proposal);
+      proposal.status = ProposalStatus.Enacted;
+      this.refundProposalDeposit(proposal);
+    }
+
+    // Remove enacted items from queue
+    this.enactQueue = this.enactQueue.filter(
+      (item) => item.enactAtEpoch !== currentEpoch,
+    );
+  }
+
+  /**
+   * Expire inactive DReps based on delegateRepresentativeMaxIdleTime
+   */
+  private expireDReps(): void {
+    const maxIdleTime = this.params.delegateRepresentativeMaxIdleTime;
+    if (!maxIdleTime) return;
+
+    const currentEpoch = this.clock.epoch;
+    for (const drep of Object.values(this.dreps)) {
+      if (
+        drep.isRegistered &&
+        currentEpoch - drep.lastActiveEpoch > maxIdleTime
+      ) {
+        drep.isRegistered = false;
+        // Refund deposit would be handled here if we track it separately
+      }
+    }
+  }
+
+  private getVoterStake(
+    _voter: ReturnType<Voter["toCore"]>,
+    _snapshot: StakeSnapshot,
+  ): bigint {
+    // TODO
+    return 1000n;
+  }
+
+  private checkRatificationThresholds(
+    proposal: GovProposal,
+    _tallies: Tallies,
+  ): boolean {
+    // Simplified ratification check - in practice this would check specific thresholds
+    // based on the governance action type and apply bootstrap restrictions
+    if (this.bootstrapMode) {
+      // In bootstrap mode, only allow certain proposal types
+      const actionKind = proposal.procedure.kind();
+      if (actionKind !== 1 && actionKind !== 0 && actionKind !== 6) {
+        // HardFork, ParamChange, Info only
+        return false;
+      }
+    }
+
+    // TODO
+    return true;
+  }
+
+  private applyGovernanceEffect(proposal: GovProposal): void {
+    const actionKind = proposal.procedure.kind();
+
+    switch (actionKind) {
+      case GovernanceActionKind.ParameterChange:
+        const paramChange = proposal.procedure.getParameterChangeAction();
+        if (paramChange) {
+          const updates = paramChange.toCore().protocolParamUpdate;
+          if (updates.minFeeRefScriptCostPerByte) {
+            this.params.minFeeRefScriptCostPerByte = Number(
+              updates.minFeeRefScriptCostPerByte,
+            );
+            delete updates.minFeeRefScriptCostPerByte;
+          }
+          this.params = {
+            ...this.params,
+            ...(updates as ProtocolParameters),
+            ...(updates.costModels && {
+              costModels: {
+                ...this.params.costModels,
+                ...updates.costModels,
+              },
+            }),
+          };
+        }
+        break;
+      case GovernanceActionKind.HardForkInitiation:
+        // No-op in emulator
+        break;
+      case GovernanceActionKind.TreasuryWithdrawals:
+        const treasuryAction =
+          proposal.procedure.getTreasuryWithdrawalsAction();
+        if (treasuryAction) {
+          for (const [rewardAccount, amount] of treasuryAction
+            .withdrawals()
+            .entries()) {
+            if (this.treasury >= amount) {
+              this.treasury -= amount;
+              const account = this.accounts.get(rewardAccount);
+              if (account) {
+                account.balance += amount;
+              }
+            }
+          }
+        }
+        break;
+      case GovernanceActionKind.UpdateCommittee:
+        const committeeUpdate = proposal.procedure.getUpdateCommittee();
+        if (committeeUpdate) {
+          const update = committeeUpdate.toCore();
+          const membersToRemove = new Set(
+            Array.from(update.membersToBeRemoved.values()).map(
+              (cred) => cred.hash,
+            ),
+          );
+          // Filter out removed members
+          this.cc.members = this.cc.members.filter(
+            (member) => !membersToRemove.has(member.coldCredential.hash),
+          );
+          // Add new members
+          this.cc.members.push(...update.membersToBeAdded.values());
+        }
+        break;
+      case GovernanceActionKind.NewConstitution:
+        const newConstitution = proposal.procedure.getNewConstitution();
+        if (newConstitution) {
+          this.constitution = newConstitution.toCore().constitution;
+        }
+        break;
+      case GovernanceActionKind.Info:
+        // No state change required
+        break;
+    }
+  }
+
+  private refundProposalDeposit(proposal: GovProposal): void {
+    const deposit = BigInt(proposal.procedure.deposit());
+    const rewardAccount = proposal.procedure.rewardAccount();
+
+    this.depositPot -= deposit;
+
+    const account = this.accounts.get(rewardAccount);
+    if (account) {
+      account.balance += deposit;
     }
   }
 }

@@ -193,6 +193,8 @@ export type VotingProcedure = C.Serialization.VotingProcedure;
 export const Voter = C.Serialization.Voter;
 export type Voter = C.Serialization.Voter;
 
+export const VoterKind = C.Serialization.VoterKind;
+
 // Additional governance-related types
 export const VoteDelegation = C.Serialization.VoteDelegation;
 export type VoteDelegation = C.Serialization.VoteDelegation;
@@ -205,6 +207,16 @@ export type ProposalProcedure = C.Serialization.ProposalProcedure;
 
 export const GovernanceActionId = C.Serialization.GovernanceActionId;
 export type GovernanceActionId = C.Serialization.GovernanceActionId;
+
+export const GovernanceActionKind = C.Serialization.GovernanceActionKind;
+
+export const Constitution = C.Serialization.Constitution;
+export type Constitution = C.Serialization.Constitution;
+
+export type ConstitutionCore = C.Cardano.Constitution;
+
+export type CommitteeMember = C.Cardano.CommitteeMember;
+export type Committee = C.Cardano.Committee;
 
 // Stake Pool
 export type PoolParameters = C.Cardano.PoolParameters;
