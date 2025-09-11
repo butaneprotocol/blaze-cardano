@@ -193,6 +193,8 @@ export type VotingProcedure = C.Serialization.VotingProcedure;
 export const Voter = C.Serialization.Voter;
 export type Voter = C.Serialization.Voter;
 
+export type VoterCore = C.Cardano.Voter;
+
 export const VoterKind = C.Serialization.VoterKind;
 
 // Additional governance-related types
@@ -214,6 +216,11 @@ export const Constitution = C.Serialization.Constitution;
 export type Constitution = C.Serialization.Constitution;
 
 export type ConstitutionCore = C.Cardano.Constitution;
+
+export type Fraction = C.Cardano.Fraction;
+
+export type DelegateRepresentativeThresholds = C.Cardano.DelegateRepresentativeThresholds;
+export type PoolVotingThresholds = C.Cardano.PoolVotingThresholds;
 
 export type CommitteeMember = C.Cardano.CommitteeMember;
 export type Committee = C.Cardano.Committee;
