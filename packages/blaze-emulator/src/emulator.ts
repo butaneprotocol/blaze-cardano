@@ -31,6 +31,15 @@ import {
   VoterCore,
   DelegateRepresentativeThresholds,
   PoolVotingThresholds,
+  type CertificateCore,
+  StakeRegistrationCertificateTypes,
+  StakeDelegationCertificateTypes,
+  RegAndDeregCertificateTypes,
+  StakeCredentialCertificateTypes,
+  VoteDelegationCredentialCertificateTypes,
+  isCertType,
+  StakeAddressCertificate,
+  PoolParameters,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -105,6 +114,15 @@ export class LedgerTimer {
 type SerialisedInput = `${TransactionId}:${bigint}`;
 type SerialisedGovId = `${TransactionId}:${bigint}`;
 
+const isStakeAddressCertificate = (
+  cert: CertificateCore
+): cert is StakeAddressCertificate => {
+  return (
+    cert.__typename === CertificateType.StakeRegistration ||
+    cert.__typename === CertificateType.StakeDeregistration
+  );
+};
+
 const objectHasAnyKeys = <T extends Record<string, unknown>>(
   obj: T,
   ...keys: (keyof T)[]
@@ -174,13 +192,11 @@ interface DRepState {
   isRegistered: boolean;
 }
 
+type SerializedDRep = HexBlob;
+
 interface StakeSnapshot {
-  drepDelegation: Record<
-    RewardAccount,
-    CredentialCore | "alwaysAbstain" | "alwaysNoConfidence"
-  >;
-  poolDelegation: Record<RewardAccount, PoolId>;
-  stakeDistribution: Record<Ed25519KeyHashHex | PoolId, bigint>;
+  drepDelegation: Record<SerializedDRep, bigint>;
+  spoDelegation: Record<PoolId, bigint>;
 }
 
 interface Tally {
@@ -270,6 +286,7 @@ export class Emulator {
   snapshots: Record<number, StakeSnapshot> = {};
   enactQueue: EnactQueueItem[] = [];
   bootstrapMode: boolean = true;
+  activePools: Record<PoolId, PoolParameters> = {};
 
   /**
    * Constructs a new instance of the Emulator class.
@@ -921,6 +938,114 @@ export class Emulator {
     if (validFrom >= validUntil)
       throw new Error("Validity interval is invalid.");
 
+    // -- Certificates
+    body
+      .certs()
+      ?.values()
+      .forEach((cert, index) => {
+        const core = cert.toCore() as CertificateCore;
+        const certType = core.__typename;
+
+        // Deposits (stake reg family)
+        if (isCertType(core, StakeRegistrationCertificateTypes)) {
+          const deposit = isStakeAddressCertificate(core)
+            ? BigInt(this.params.stakeKeyDeposit)
+            : BigInt(core.deposit ?? 0);
+          netValue = V.sub(netValue, new Value(deposit));
+        }
+
+        // Refunds (reg + dereg family where applicable)
+        if (
+          isCertType(core, RegAndDeregCertificateTypes) &&
+          (certType === CertificateType.Unregistration ||
+            certType === CertificateType.StakeDeregistration)
+        ) {
+          const deposit = isStakeAddressCertificate(core)
+            ? BigInt(this.params.stakeKeyDeposit)
+            : BigInt(core.deposit ?? 0);
+          netValue = V.merge(netValue, new Value(deposit));
+        }
+
+        // Witnesses by stake/vote groups
+        if (
+          isCertType(core, StakeCredentialCertificateTypes) ||
+          isCertType(core, VoteDelegationCredentialCertificateTypes)
+        ) {
+          const stakeCred = core.stakeCredential;
+          if (stakeCred)
+            consumeCred(stakeCred, RedeemerTag.Cert, BigInt(index));
+        }
+
+        // DRep credential on DRRep certs
+        if (
+          certType === CertificateType.RegisterDelegateRepresentative ||
+          certType === CertificateType.UnregisterDelegateRepresentative ||
+          certType === CertificateType.UpdateDelegateRepresentative
+        ) {
+          const drepCred = core.dRepCredential;
+          if (drepCred) consumeCred(drepCred, RedeemerTag.Cert, BigInt(index));
+        }
+
+        // Committee certificates
+        if (
+          certType === CertificateType.AuthorizeCommitteeHot ||
+          certType === CertificateType.ResignCommitteeCold
+        ) {
+          consumeCred(core.coldCredential, RedeemerTag.Cert, BigInt(index));
+        }
+      });
+
+    // Governance proposal deposits
+    {
+      const proposalSet = body.proposalProcedures();
+      if (proposalSet) {
+        const proposals = proposalSet.values();
+        let totalDeposit = 0n;
+        for (let i = 0; i < proposals.length; i++) {
+          const p = proposals[i]!;
+          const expected = BigInt(this.params.governanceActionDeposit ?? 0);
+          if (BigInt(p.deposit()) !== expected) {
+            throw new Error(
+              `Invalid governance deposit: supplied ${p.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`
+            );
+          }
+          totalDeposit += BigInt(p.deposit());
+        }
+        if (totalDeposit > 0n) {
+          netValue = V.sub(netValue, new Value(totalDeposit));
+        }
+      }
+    }
+
+    // Voting witnesses
+    {
+      const voting = body.votingProcedures();
+      if (voting !== undefined) {
+        for (const { voter } of voting.toCore()) {
+          const vs = Voter.fromCore(voter);
+          switch (vs.kind()) {
+            case VoterKind.DrepKeyHash:
+            case VoterKind.DRepScriptHash: {
+              const cred = vs.toDrepCred()!;
+              consumeCred(cred);
+              break;
+            }
+            case VoterKind.ConstitutionalCommitteeKeyHash:
+            case VoterKind.ConstitutionalCommitteeScriptHash: {
+              const cred = vs.toConstitutionalCommitteeHotCred()!;
+              consumeCred(cred);
+              break;
+            }
+            case VoterKind.StakePoolKeyHash: {
+              const keyHash = vs.toStakingPoolKeyHash()!;
+              consumeVkey(Hash28ByteBase16.fromEd25519KeyHashHex(keyHash));
+              break;
+            }
+          }
+        }
+      }
+    }
+
     // Outputs
     body.outputs().forEach((output, index) => {
       if (output.datum()?.kind() == DatumKind.DataHash) {
@@ -1065,8 +1190,8 @@ export class Emulator {
    * @param tx - The transaction to accept.
    *
    * @remarks
-   * This function iterates over the inputs of the transaction and removes the corresponding UTXOs from the ledger.
-   * It then iterates over the outputs of the transaction and adds them as new UTXOs to the ledger.
+   * This function iterates over the inputs of the transaction and removes the corresponding UTxOs from the ledger.
+   * It then iterates over the outputs of the transaction and adds them as new UTxOs to the ledger.
    * If the transaction includes any certificates, it processes them accordingly.
    * Finally, it updates the balances of the accounts based on any withdrawals in the transaction.
    */
@@ -1115,55 +1240,79 @@ export class Emulator {
   }
 
   private applyCertificate(cert: Certificate) {
-    switch (cert.toCore().__typename) {
-      case CertificateType.StakeRegistration: {
-        const stakeRegistration = cert.asStakeRegistration()!;
-        const rewardAccount = this.rewardAccount(
-          stakeRegistration.stakeCredential()
+    const core = cert.toCore() as CertificateCore;
+    const certType = core.__typename;
+
+    // Stake registrations
+    if (isCertType(core, StakeRegistrationCertificateTypes)) {
+      const rewardAccount = this.rewardAccount(core.stakeCredential);
+      if (this.accounts.has(rewardAccount)) {
+        throw new Error(
+          `Stake key with reward address ${rewardAccount} is already registered.`
         );
-        if (this.accounts.has(rewardAccount))
-          throw new Error(
-            `Stake key with reward address ${rewardAccount} is already registered.`
-          );
-        this.accounts.set(rewardAccount, { balance: 0n });
-        this.depositPot += BigInt(this.params.stakeKeyDeposit);
-        break;
       }
-      case CertificateType.StakeDeregistration: {
-        const stakeDeregistration = cert.asStakeDeregistration()!;
-        const stakeCred = stakeDeregistration.stakeCredential();
-        const rewardAddr = RewardAccount.fromCredential(
-          stakeCred,
-          NetworkId.Testnet
+      const deposit = isStakeAddressCertificate(core)
+        ? BigInt(this.params.stakeKeyDeposit)
+        : BigInt(core.deposit ?? 0);
+
+      const newAccount: RegisteredAccount = { balance: 0n };
+      if ("poolId" in core && core.poolId) newAccount.poolId = core.poolId;
+      if ("dRep" in core && core.dRep)
+        newAccount.drep = DRep.fromCore(core.dRep);
+      this.accounts.set(rewardAccount, newAccount);
+      this.depositPot += deposit;
+    }
+
+    // Stake deregistrations (all kinds)
+    if (
+      isCertType(core, RegAndDeregCertificateTypes) &&
+      (certType === CertificateType.Unregistration ||
+        certType === CertificateType.StakeDeregistration)
+    ) {
+      const rewardAccount = this.rewardAccount(core.stakeCredential);
+      if (!this.accounts.has(rewardAccount)) {
+        throw new Error(
+          `Stake key with reward address ${rewardAccount} is not registered.`
         );
-        if (!this.accounts.has(rewardAddr))
-          throw new Error(
-            `Stake key with reward address ${rewardAddr} is not registered.`
-          );
-        this.accounts.delete(rewardAddr);
-        this.depositPot -= BigInt(this.params.stakeKeyDeposit);
-        break;
       }
+      const deposit = isStakeAddressCertificate(core)
+        ? BigInt(this.params.stakeKeyDeposit)
+        : BigInt(core.deposit ?? 0);
+      this.accounts.delete(rewardAccount);
+      this.depositPot -= deposit;
+    }
+
+    if (isCertType(core, StakeDelegationCertificateTypes)) {
+      const acc = this.getAccount(core.stakeCredential);
+      acc.poolId = core.poolId;
+    }
+
+    // Vote delegations (all kinds)
+    if (isCertType(core, VoteDelegationCredentialCertificateTypes)) {
+      const acc = this.getAccount(core.stakeCredential);
+      acc.drep = DRep.fromCore(core.dRep);
+    }
+
+    // DRep certificates
+    switch (certType) {
       case CertificateType.RegisterDelegateRepresentative: {
-        const regDRep = cert.asRegisterDelegateRepresentativeCert()!;
-        const cred = regDRep.credential();
+        const cred = core.dRepCredential;
         const keyHash = cred.hash;
         if (this.dreps[keyHash]?.isRegistered) {
           throw new Error("DRep is already registered.");
         }
         this.dreps[keyHash] = {
           credential: cred,
-          deposit: regDRep.deposit(),
-          anchor: regDRep.anchor()?.toCore(),
+          deposit: BigInt(core.deposit),
+          anchor: core.anchor ?? undefined,
           lastActiveEpoch: this.clock.epoch,
           isRegistered: true,
         };
-        this.depositPot += BigInt(regDRep.deposit());
+        this.depositPot += BigInt(core.deposit);
         break;
       }
       case CertificateType.UnregisterDelegateRepresentative: {
-        const unregDRep = cert.asUnregisterDelegateRepresentativeCert()!;
-        const cred = unregDRep.credential();
+        const cred = core.dRepCredential;
         const keyHash = cred.hash;
         const drep = this.dreps[keyHash];
         if (!drep?.isRegistered) {
@@ -1171,46 +1320,41 @@ export class Emulator {
         }
         this.depositPot -= BigInt(drep.deposit);
         drep.isRegistered = false;
-        // The deposit is returned to the reward account associated with the DRep's credential
         const rewardAccount = this.rewardAccount(cred);
         const account = this.accounts.get(rewardAccount);
-        if (account) {
-          account.balance += drep.deposit;
-        }
+        if (account) account.balance += drep.deposit;
         break;
       }
       case CertificateType.UpdateDelegateRepresentative: {
-        const updateDRep = cert.asUpdateDelegateRepresentativeCert()!;
-        const cred = updateDRep.credential();
+        const cred = core.dRepCredential;
         const keyHash = cred.hash;
         const drep = this.dreps[keyHash];
-        if (!drep?.isRegistered) {
-          throw new Error("DRep is not registered.");
-        }
-        drep.anchor = updateDRep.anchor()?.toCore();
+        if (!drep?.isRegistered) throw new Error("DRep is not registered.");
+        drep.anchor = core.anchor ?? undefined;
         break;
       }
-      // TODO: All of the combinations of certificates (e.g. StakeVoteRegistrationDelegation)
-      case CertificateType.VoteDelegation: {
-        const voteDelegation = cert.asVoteDelegationCert()!;
-        const cred = voteDelegation.stakeCredential();
-        this.getAccount(cred).drep = voteDelegation.dRep();
+    }
+
+    // Committee and pool certificates
+    switch (certType) {
+      case CertificateType.AuthorizeCommitteeHot: {
+        // TODO (?)
         break;
       }
-      case CertificateType.StakeDelegation: {
-        const stakeDelegation = cert.asStakeDelegation()!;
-        const cred = stakeDelegation.stakeCredential();
-        this.getAccount(cred).poolId = PoolId.fromKeyHash(
-          stakeDelegation.poolKeyHash()
+      case CertificateType.ResignCommitteeCold: {
+        this.cc.members = this.cc.members.filter(
+          (m) => m.coldCredential.hash !== core.coldCredential.hash
         );
         break;
       }
-      default: {
-        console.warn(
-          `Emulator encountered an unhandled certificate type: ${
-            cert.toCore().__typename
-          }`
-        );
+      case CertificateType.PoolRegistration: {
+        const poolParams = core.poolParameters;
+        this.activePools[poolParams.id] = poolParams;
+
+        break;
+      }
+      case CertificateType.PoolRetirement: {
+        delete this.activePools[core.poolId];
         break;
       }
     }
@@ -1317,33 +1461,30 @@ export class Emulator {
    * Create a snapshot of current stake delegations for deterministic vote counting
    */
   private createStakeSnapshot(): void {
-    const currentEpoch = this.clock.epoch;
     const snapshot: StakeSnapshot = {
       drepDelegation: {},
-      poolDelegation: {},
-      stakeDistribution: {},
+      spoDelegation: {},
     };
 
-    // Aggregate stake by DRep and Pool from registered accounts
-    for (const [rewardAccount, account] of this.accounts.entries()) {
-      if (account.drep) {
-        // Simplified delegation tracking - in practice would need proper DRep resolution
-        snapshot.drepDelegation[rewardAccount] = "alwaysAbstain"; // Default for now
-      }
-
-      if (account.poolId) {
-        snapshot.poolDelegation[rewardAccount] = account.poolId;
-      }
-
-      // Calculate stake distribution (simplified: use account balance)
+    for (const [, account] of this.accounts.entries()) {
       const stake = account.balance;
-      if (account.poolId && stake > 0n) {
-        snapshot.stakeDistribution[account.poolId] =
-          (snapshot.stakeDistribution[account.poolId] || 0n) + stake;
+      if (stake === 0n) continue;
+
+      // Aggregate DRep delegations
+      if (account.drep) {
+        const drepId = account.drep.toCbor();
+        snapshot.drepDelegation[drepId] =
+          (snapshot.drepDelegation[drepId] ?? 0n) + stake;
+      }
+
+      // Aggregate SPO delegations
+      if (account.poolId) {
+        snapshot.spoDelegation[account.poolId] =
+          (snapshot.spoDelegation[account.poolId] ?? 0n) + stake;
       }
     }
 
-    this.snapshots[currentEpoch] = snapshot;
+    this.snapshots[this.clock.epoch] = snapshot;
   }
 
   /**
@@ -1451,9 +1592,45 @@ export class Emulator {
     }
   }
 
-  private getVoterStake(_voter: VoterCore, _snapshot: StakeSnapshot): bigint {
-    // TODO
-    return 1000n;
+  private getVoterStake(voter: VoterCore, snapshot: StakeSnapshot): bigint {
+    const v = Voter.fromCore(voter);
+    switch (v.kind()) {
+      case VoterKind.DrepKeyHash:
+      case VoterKind.DRepScriptHash: {
+        const cred = v.toDrepCred()!;
+        let dRep: DRep;
+        if (cred.type === CredentialType.KeyHash) {
+          dRep = DRep.newKeyHash(
+            Ed25519KeyHashHex(cred.hash as Hash28ByteBase16)
+          );
+        } else {
+          dRep = DRep.newScriptHash(cred.hash as ScriptHash);
+        }
+        const dRepId = dRep.toCbor();
+        return snapshot.drepDelegation[dRepId] ?? 0n;
+      }
+      case VoterKind.StakePoolKeyHash: {
+        const keyHash = v.toStakingPoolKeyHash()!;
+        for (const [poolId, poolParams] of Object.entries(this.activePools)) {
+          if (
+            poolParams.owners.some(
+              (o) =>
+                RewardAccount.toHash(o) ===
+                Hash28ByteBase16.fromEd25519KeyHashHex(keyHash)
+            )
+          ) {
+            return snapshot.spoDelegation[poolId as PoolId] ?? 0n;
+          }
+        }
+        return 0n;
+      }
+      case VoterKind.ConstitutionalCommitteeKeyHash:
+      case VoterKind.ConstitutionalCommitteeScriptHash: {
+        return 1n; // Each CC member has one vote, stake is irrelevant
+      }
+      default:
+        return 0n;
+    }
   }
 
   private getActionThresholds(proposal: GovProposal): {
