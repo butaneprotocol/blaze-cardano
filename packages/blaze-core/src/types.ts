@@ -156,6 +156,22 @@ export type StakeDelegationCertificate = C.Cardano.StakeDelegationCertificate;
 export const CertificateType = C.Cardano.CertificateType;
 export type CertificateType = C.Cardano.CertificateType;
 
+export type StakeAddressCertificate = C.Cardano.StakeAddressCertificate;
+
+// Cardano core certificate union and helpers
+export type CertificateCore = C.Cardano.Certificate;
+export const StakeRegistrationCertificateTypes =
+  C.Cardano.StakeRegistrationCertificateTypes;
+export const StakeDelegationCertificateTypes =
+  C.Cardano.StakeDelegationCertificateTypes;
+export const RegAndDeregCertificateTypes =
+  C.Cardano.RegAndDeregCertificateTypes;
+export const StakeCredentialCertificateTypes =
+  C.Cardano.StakeCredentialCertificateTypes;
+export const VoteDelegationCredentialCertificateTypes =
+  C.Cardano.VoteDelegationCredentialCertificateTypes;
+export const isCertType = C.Cardano.isCertType;
+
 export const VkeyWitness = C.Serialization.VkeyWitness;
 export type VkeyWitness = C.Serialization.VkeyWitness;
 
@@ -219,7 +235,8 @@ export type ConstitutionCore = C.Cardano.Constitution;
 
 export type Fraction = C.Cardano.Fraction;
 
-export type DelegateRepresentativeThresholds = C.Cardano.DelegateRepresentativeThresholds;
+export type DelegateRepresentativeThresholds =
+  C.Cardano.DelegateRepresentativeThresholds;
 export type PoolVotingThresholds = C.Cardano.PoolVotingThresholds;
 
 export type CommitteeMember = C.Cardano.CommitteeMember;
