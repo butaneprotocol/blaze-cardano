@@ -1435,6 +1435,8 @@ export class TxBuilder {
       this.params.minFeeConstant + txSize * this.params.minFeeCoefficient,
     );
 
+    console.log("txSize", txSize)
+
     let refScriptFee = 0;
     if (this.params.minFeeReferenceScripts) {
       // The minFeeReferenceScripts parameter governs the cost of *reference scripts*, not to be confused with *reference inputs*
@@ -2189,6 +2191,7 @@ export class TxBuilder {
    */
   setVotingProcedures(votingProcedures: VotingProcedures): TxBuilder {
     this.body.setVotingProcedures(votingProcedures);
+    console.log(this.body.votingProcedures()!.toCore())
     return this;
   }
 

@@ -166,8 +166,10 @@ interface RegisteredAccount {
 }
 
 export interface EmulatorOptions {
+  params?: ProtocolParameters;
   evaluator?: Evaluator;
   slotConfig?: SlotConfig;
+  trace?: boolean;
   slotsPerEpoch?: number;
   treasury?: bigint;
   cc?: Committee;
@@ -287,6 +289,11 @@ export class Emulator {
   enactQueue: EnactQueueItem[] = [];
   bootstrapMode: boolean = true;
   activePools: Record<PoolId, PoolParameters> = {};
+  private govTraceEnabled: boolean = false;
+
+  private govTrace(...args: unknown[]) {
+    if (this.govTraceEnabled) console.debug("[GOV]", ...args);
+  }
 
   /**
    * Constructs a new instance of the Emulator class.
@@ -297,11 +304,12 @@ export class Emulator {
    */
   constructor(
     genesisOutputs: TransactionOutput[],
-    params: ProtocolParameters = hardCodedProtocolParams,
     {
       evaluator,
       slotConfig,
+      trace: traceGovernance,
       slotsPerEpoch,
+      params = hardCodedProtocolParams,
       treasury = 0n,
       cc = { members: [], quorumThreshold: { numerator: 0, denominator: 1 } },
     }: EmulatorOptions = {},
@@ -319,6 +327,7 @@ export class Emulator {
     this.clock = new LedgerTimer(slotConfig, slotsPerEpoch);
     this.treasury = treasury;
     this.params = params;
+    this.govTraceEnabled = Boolean(traceGovernance);
     this.evaluator =
       evaluator ??
       makeUplcEvaluator(
@@ -1146,6 +1155,8 @@ export class Emulator {
       ),
     );
 
+    console.log("txSize", txSize)
+
     let fee =
       evalFee +
       BigInt(
@@ -1153,6 +1164,8 @@ export class Emulator {
           this.params.minFeeConstant + txSize * this.params.minFeeCoefficient,
         ),
       );
+
+    console.log("fee", fee)
 
     let refScriptFee = 0n;
     if (refInputs && this.params.minFeeRefScriptCostPerByte) {
@@ -1256,9 +1269,6 @@ export class Emulator {
         : BigInt(core.deposit ?? 0);
 
       const newAccount: RegisteredAccount = { balance: 0n };
-      if ("poolId" in core && core.poolId) newAccount.poolId = core.poolId;
-      if ("dRep" in core && core.dRep)
-        newAccount.drep = DRep.fromCore(core.dRep);
       this.accounts.set(rewardAccount, newAccount);
       this.depositPot += deposit;
     }
@@ -1379,11 +1389,17 @@ export class Emulator {
   }
 
   private onEpochBoundary(): void {
+    this.govTrace(
+      `Epoch ${this.clock.epoch} boundary. feePot=${this.feePot} depositPot=${this.depositPot} treasury=${this.treasury}`,
+    );
     if (this.feePot > 0n) {
       const treasuryShare = BigInt(
         Math.floor(
           Number(this.feePot) * parseFloat(this.params.treasuryExpansion),
         ),
+      );
+      this.govTrace(
+        `Distribute fees treasury=${treasuryShare}, stakers=${this.feePot - treasuryShare}`,
       );
       // TODO (?): Handle stake rewards distribution
       this.treasury += treasuryShare;
@@ -1408,6 +1424,7 @@ export class Emulator {
 
     const proposalSet = body.proposalProcedures();
     if (proposalSet) {
+      this.govTrace(`Tx ${txId}: proposals=${proposalSet.values().length}`);
       const proposals = proposalSet.values();
       for (let i = 0; i < proposals.length; i++) {
         const p = proposals[i]!;
@@ -1435,11 +1452,15 @@ export class Emulator {
           status: ProposalStatus.Active,
           votes: [],
         };
+        this.govTrace(
+          `Registered proposal ${key} kind=${p.kind()} expiry=${currentEpoch + lifetime}`,
+        );
       }
     }
 
     const voting = body.votingProcedures();
     if (voting !== undefined) {
+      this.govTrace(`Tx ${txId}: voters=${voting.toCore().length}`);
       for (const { voter, votes } of voting.toCore()) {
         for (const { actionId, votingProcedure } of votes) {
           const key = serialiseGovId(actionId);
@@ -1448,6 +1469,7 @@ export class Emulator {
               `Vote references unknown GovernanceActionId ${key}`,
             );
           }
+          this.govTrace(`Vote for ${key}: vote=${votingProcedure.vote}`);
           this.#proposals[key]!.votes.push({
             voter: Voter.fromCore(voter),
             vote: votingProcedure.vote,
@@ -1485,6 +1507,17 @@ export class Emulator {
     }
 
     this.snapshots[this.clock.epoch] = snapshot;
+    const drepTotal = Object.values(snapshot.drepDelegation).reduce(
+      (a, b) => a + b,
+      0n,
+    );
+    const spoTotal = Object.values(snapshot.spoDelegation).reduce(
+      (a, b) => a + b,
+      0n,
+    );
+    this.govTrace(
+      `Snapshot epoch=${this.clock.epoch}: drepTotal=${drepTotal} spoTotal=${spoTotal} drepKeys=${Object.keys(snapshot.drepDelegation).length} spoKeys=${Object.keys(snapshot.spoDelegation).length}`,
+    );
   }
 
   /**
@@ -1494,7 +1527,10 @@ export class Emulator {
     const currentEpoch = this.clock.epoch;
     const snapshot = this.snapshots[currentEpoch - 1]; // Use previous epoch's snapshot
 
-    if (!snapshot) return;
+    if (!snapshot) {
+      this.govTrace(`No snapshot for epoch ${currentEpoch - 1}; skip RATIFY`);
+      return;
+    }
 
     for (const [actionId, proposal] of Object.entries(this.#proposals)) {
       if (proposal.status !== ProposalStatus.Active) continue;
@@ -1532,6 +1568,9 @@ export class Emulator {
         }
       }
 
+      this.govTrace(
+        `Tallies ${actionId}: drep(y=${tallies.drep.yes},n=${tallies.drep.no}) spo(y=${tallies.spo.yes},n=${tallies.spo.no}) cc(y=${tallies.cc.yes},n=${tallies.cc.no})`,
+      );
       // Check ratification thresholds based on proposal type
       const isRatified = this.checkRatificationThresholds(proposal, tallies);
 
@@ -1542,8 +1581,7 @@ export class Emulator {
           enactAtEpoch: currentEpoch + 1,
         });
       } else {
-        proposal.status = ProposalStatus.Rejected;
-        this.refundProposalDeposit(proposal);
+        this.govTrace(`Proposal ${actionId} not ratified; stays Active`);
       }
     }
   }
@@ -1607,7 +1645,9 @@ export class Emulator {
           dRep = DRep.newScriptHash(cred.hash as ScriptHash);
         }
         const dRepId = dRep.toCbor();
-        return snapshot.drepDelegation[dRepId] ?? 0n;
+        const stake = snapshot.drepDelegation[dRepId] ?? 0n;
+        this.govTrace(`Stake DRep ${dRepId} = ${stake}`);
+        return stake;
       }
       case VoterKind.StakePoolKeyHash: {
         const keyHash = v.toStakingPoolKeyHash()!;
@@ -1619,13 +1659,17 @@ export class Emulator {
                 Hash28ByteBase16.fromEd25519KeyHashHex(keyHash),
             )
           ) {
-            return snapshot.spoDelegation[poolId as PoolId] ?? 0n;
+            const stake = snapshot.spoDelegation[poolId as PoolId] ?? 0n;
+            this.govTrace(`Stake SPO ${poolId} = ${stake}`);
+            return stake;
           }
         }
+        this.govTrace(`Stake SPO (no match) = 0`);
         return 0n;
       }
       case VoterKind.ConstitutionalCommitteeKeyHash:
       case VoterKind.ConstitutionalCommitteeScriptHash: {
+        this.govTrace(`Stake CC = 1`);
         return 1n; // Each CC member has one vote, stake is irrelevant
       }
       default:
@@ -1763,6 +1807,11 @@ export class Emulator {
           ...groups.drep.map((g) => dRepThresh[g]),
         );
         const spoFraction = fractionMax(...groups.spo.map((g) => spoThresh[g]));
+        this.govTrace(
+          `Thresholds ParamChange drep=${JSON.stringify(
+            drepFraction,
+          )} spo=${JSON.stringify(spoFraction)} groups=${JSON.stringify(groups)}`,
+        );
         return {
           drep: drepFraction,
           spo: spoFraction,
@@ -1836,7 +1885,11 @@ export class Emulator {
         tallies.cc.yes * BigInt(quorum.denominator) >=
           BigInt(quorum.numerator) * ccMembers);
 
-    return drepPass && spoPass && ccPass;
+    const pass = drepPass && spoPass && ccPass;
+    this.govTrace(
+      `Check kind=${kind} drepPass=${drepPass} spoPass=${spoPass} ccPass=${ccPass} => pass=${pass}`,
+    );
+    return pass;
   }
 
   private applyGovernanceEffect(proposal: GovProposal): void {
