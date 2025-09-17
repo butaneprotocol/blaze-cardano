@@ -14,23 +14,22 @@ import {
   Datum,
   Slot,
   CertificateType,
-  PoolId,
+  type PoolId,
   DRep,
-  Certificate,
+  type Certificate,
   GovernanceActionId,
-  ProposalProcedure,
+  type ProposalProcedure,
   Vote,
   Voter,
   Ed25519KeyHashHex,
-  ConstitutionCore,
+  type ConstitutionCore,
   type AnchorCore,
   VoterKind,
   GovernanceActionKind,
-  Committee,
-  Fraction,
-  VoterCore,
-  DelegateRepresentativeThresholds,
-  PoolVotingThresholds,
+  type Committee,
+  type Fraction,
+  type DelegateRepresentativeThresholds,
+  type PoolVotingThresholds,
   type CertificateCore,
   StakeRegistrationCertificateTypes,
   StakeDelegationCertificateTypes,
@@ -38,8 +37,9 @@ import {
   StakeCredentialCertificateTypes,
   VoteDelegationCredentialCertificateTypes,
   isCertType,
-  StakeAddressCertificate,
-  PoolParameters,
+  type StakeAddressCertificate,
+  type PoolParameters,
+  CommitteeMember,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -98,7 +98,7 @@ export class LedgerTimer {
 
   constructor(
     slotConfig: SlotConfig = { zeroTime: 0, zeroSlot: 0, slotLength: 1000 },
-    slotsPerEpoch: number = 432000,
+    slotsPerEpoch: number = 432000
   ) {
     this.block = 0;
     this.slot = slotConfig.zeroSlot;
@@ -115,7 +115,7 @@ type SerialisedInput = `${TransactionId}:${bigint}`;
 type SerialisedGovId = `${TransactionId}:${bigint}`;
 
 const isStakeAddressCertificate = (
-  cert: CertificateCore,
+  cert: CertificateCore
 ): cert is StakeAddressCertificate => {
   return (
     cert.__typename === CertificateType.StakeRegistration ||
@@ -138,7 +138,7 @@ const fractionMax = (...fractions: Fraction[]) => {
         ? fraction
         : max;
     },
-    { numerator: 0, denominator: 1 },
+    { numerator: 0, denominator: 1 }
   );
 };
 
@@ -146,7 +146,7 @@ const serialiseInput = (input: TransactionInput): SerialisedInput =>
   `${input.transactionId()}:${input.index()}`;
 
 const serialiseGovId = (
-  id: GovernanceActionId | ReturnType<GovernanceActionId["toCore"]>,
+  id: GovernanceActionId | ReturnType<GovernanceActionId["toCore"]>
 ): SerialisedGovId => {
   if ("toCore" in id) {
     id = id.toCore();
@@ -175,15 +175,22 @@ export interface EmulatorOptions {
   cc?: Committee;
 }
 
+interface VoteRecord {
+  voter: Voter;
+  vote: Vote;
+  anchor?: AnchorCore;
+  epoch: number;
+}
+
+type ProposalVoteMap = Map<string, VoteRecord>;
+
 interface GovProposal {
   procedure: ProposalProcedure;
   submittedEpoch: number;
   expiryEpoch: number;
   status: ProposalStatus;
-  votes: Array<{
-    voter: Voter;
-    vote: Vote;
-  }>;
+  deposit: bigint;
+  votes: ProposalVoteMap;
 }
 
 interface DRepState {
@@ -290,6 +297,12 @@ export class Emulator {
   bootstrapMode: boolean = true;
   activePools: Record<PoolId, PoolParameters> = {};
   private govTraceEnabled: boolean = false;
+  private proposalDepositsByAccount: Map<RewardAccount, bigint> = new Map();
+  private ccHotCredentials: Record<string, CredentialCore | undefined> = {};
+  private lastEnactedActionByKind: Partial<
+    Record<GovernanceActionKind, SerialisedGovId>
+  > = {};
+  private delayingActionBarrierUntil?: number;
 
   private govTrace(...args: unknown[]) {
     if (this.govTraceEnabled) console.debug("[GOV]", ...args);
@@ -312,14 +325,17 @@ export class Emulator {
       params = hardCodedProtocolParams,
       treasury = 0n,
       cc = { members: [], quorumThreshold: { numerator: 0, denominator: 1 } },
-    }: EmulatorOptions = {},
+    }: EmulatorOptions = {}
   ) {
     this.cc = cc;
+    for (const member of cc.members) {
+      this.ccHotCredentials[member.coldCredential.hash] = undefined;
+    }
     this.#nextGenesisUtxo = 0;
     for (let i = 0; i < genesisOutputs.length; i++) {
       const txIn = new TransactionInput(
         TransactionId("00".repeat(32)),
-        BigInt(this.#nextGenesisUtxo),
+        BigInt(this.#nextGenesisUtxo)
       );
       this.#nextGenesisUtxo += 1;
       this.#ledger[serialiseInput(txIn)] = genesisOutputs[i]!;
@@ -338,7 +354,7 @@ export class Emulator {
           zeroSlot: this.clock.slot,
           zeroTime: this.clock.time,
           slotLength: this.clock.slotLength,
-        },
+        }
       );
     this.addUtxo = this.addUtxo.bind(this);
     this.removeUtxo = this.removeUtxo.bind(this);
@@ -358,7 +374,7 @@ export class Emulator {
   public async register(
     label: string,
     value?: Value,
-    datum?: PlutusData,
+    datum?: PlutusData
   ): Promise<Address> {
     await this.fund(label, value, datum);
     const wallet = await this.getOrAddWallet(label);
@@ -374,7 +390,7 @@ export class Emulator {
     const wallet = await this.getOrAddWallet(label);
     const output = new TransactionOutput(
       await wallet.getChangeAddress(),
-      value ?? makeValue(100_000_000n),
+      value ?? makeValue(100_000_000n)
     );
     if (datum) {
       output.setDatum(Datum.newInlineData(datum));
@@ -383,17 +399,17 @@ export class Emulator {
       new TransactionUnspentOutput(
         new TransactionInput(
           TransactionId("00".repeat(32)),
-          BigInt(this.#nextGenesisUtxo),
+          BigInt(this.#nextGenesisUtxo)
         ),
-        output,
-      ),
+        output
+      )
     );
     this.#nextGenesisUtxo += 1;
   }
 
   public async as<T = void>(
     label: string,
-    callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>,
+    callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>
   ): Promise<T> {
     const provider = new EmulatorProvider(this);
     const wallet = await this.getOrAddWallet(label);
@@ -404,17 +420,17 @@ export class Emulator {
   public async publishScript(script: Script) {
     const utxo = new TransactionOutput(
       getBurnAddress(NetworkId.Testnet),
-      makeValue(5_000_001n),
+      makeValue(5_000_001n)
     );
     utxo.setScriptRef(script);
     this.addUtxo(
       new TransactionUnspentOutput(
         new TransactionInput(
           TransactionId("00".repeat(32)),
-          BigInt(this.#nextGenesisUtxo),
+          BigInt(this.#nextGenesisUtxo)
         ),
-        utxo,
-      ),
+        utxo
+      )
     );
     this.#nextGenesisUtxo += 1;
   }
@@ -430,7 +446,7 @@ export class Emulator {
 
   public async expectValidTransaction(
     blaze: Blaze<Provider, Wallet>,
-    tx: TxBuilder,
+    tx: TxBuilder
   ) {
     const scriptBytes = tx.toCbor();
     try {
@@ -449,7 +465,7 @@ export class Emulator {
 
   public async expectValidMultisignedTransaction(
     signers: string[],
-    tx: TxBuilder,
+    tx: TxBuilder
   ) {
     const scriptBytes = tx.toCbor();
     try {
@@ -486,8 +502,8 @@ export class Emulator {
   unixToSlot(unix_millis: bigint | number): Slot {
     return Slot(
       Math.ceil(
-        (Number(unix_millis) - this.clock.zeroTime) / this.clock.slotLength,
-      ),
+        (Number(unix_millis) - this.clock.zeroTime) / this.clock.slotLength
+      )
     );
   }
   slotToUnix(slot: Slot | number | bigint): number {
@@ -503,7 +519,7 @@ export class Emulator {
     this.clock.block = Math.ceil(Number(slot) / 20);
     this.clock.time = this.slotToUnix(slot);
     this.clock.epoch = Math.floor(
-      (this.clock.slot - this.clock.zeroSlot) / this.clock.slotsPerEpoch,
+      (this.clock.slot - this.clock.zeroSlot) / this.clock.slotsPerEpoch
     );
 
     Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
@@ -701,12 +717,12 @@ export class Emulator {
             const sig = Ed25519Signature.fromHex(vkey.signature());
             if (!key.verify(sig, HexBlob(txId))) {
               throw new Error(
-                `Invalid vkey in witness set with hash ${keyHash}`,
+                `Invalid vkey in witness set with hash ${keyHash}`
               );
             }
             return Hash28ByteBase16.fromEd25519KeyHashHex(keyHash.hex());
-          }),
-      ),
+          })
+      )
     );
 
     // TODO: bootstrap addresses validation
@@ -716,7 +732,7 @@ export class Emulator {
         ...(witnessSet.plutusV1Scripts()?.values() ?? []),
         ...(witnessSet.plutusV2Scripts()?.values() ?? []),
         ...(witnessSet.plutusV3Scripts()?.values() ?? []),
-      ].map((script) => script.hash()),
+      ].map((script) => script.hash())
     );
 
     // Total set of plutus hashes including referenced scripts
@@ -729,7 +745,7 @@ export class Emulator {
         .map((script) => {
           // TODO: Validate native scripts with validity interval
           return script.hash();
-        }),
+        })
     );
 
     const nativeHashes = new Set(attachedNativeHashes);
@@ -752,7 +768,7 @@ export class Emulator {
     const consumeScript = (
       hash: ScriptHash,
       redeemerTag?: RedeemerTag,
-      redeemerIndex?: bigint,
+      redeemerIndex?: bigint
     ) => {
       if (nativeHashes.has(hash)) {
         consumed.add(hash);
@@ -776,7 +792,7 @@ export class Emulator {
     const consumeCred = (
       cred: CredentialCore,
       redeemerTag?: RedeemerTag,
-      redeemerIndex?: bigint,
+      redeemerIndex?: bigint
     ) => {
       if (cred.type === CredentialType.KeyHash) {
         consumeVkey(cred.hash);
@@ -793,13 +809,13 @@ export class Emulator {
         const out = this.getOutput(input);
         if (!out) {
           throw new Error(
-            `Collateral input ${input.toCore()} not found in the ledger.`,
+            `Collateral input ${input.toCore()} not found in the ledger.`
           );
         }
         const paymentCred = out.address().getProps().paymentPart!;
         if (paymentCred.type !== CredentialType.KeyHash) {
           throw new Error(
-            `Collateral input ${input.toCore()} must contain a vkey.`,
+            `Collateral input ${input.toCore()} must contain a vkey.`
           );
         }
         consumeVkey(paymentCred.hash);
@@ -811,7 +827,7 @@ export class Emulator {
       collateral.length > this.params.maxCollateralInputs
     )
       throw new Error(
-        `Collateral inputs exceed the maximum allowed. Provided: ${collateral?.length}, Maximum: ${this.params.maxCollateralInputs}`,
+        `Collateral inputs exceed the maximum allowed. Provided: ${collateral?.length}, Maximum: ${this.params.maxCollateralInputs}`
       );
 
     const usedInputs: TransactionUnspentOutput[] = [];
@@ -825,7 +841,7 @@ export class Emulator {
 
       if (!out) {
         throw new Error(
-          `Input ${JSON.stringify(input.toCore())} not found in the ledger.`,
+          `Input ${JSON.stringify(input.toCore())} not found in the ledger.`
         );
       }
 
@@ -850,7 +866,7 @@ export class Emulator {
       .sort(
         (a, b) =>
           a.transactionId().localeCompare(b.transactionId()) ||
-          Number(a.index() - b.index()),
+          Number(a.index() - b.index())
       )
       .forEach((input, index) => {
         const out = this.getOutput(input)!;
@@ -869,8 +885,8 @@ export class Emulator {
         refInputs?.some(
           (ref) =>
             ref.transactionId() === input.transactionId() &&
-            ref.index() === input.index(),
-        ),
+            ref.index() === input.index()
+        )
       )
     ) {
       throw new Error("Inputs and reference inputs must be disjoint.");
@@ -878,7 +894,7 @@ export class Emulator {
 
     // Minimum collateral amount included
     const minCollateral = BigInt(
-      Math.ceil((this.params.collateralPercentage / 100) * Number(body.fee())),
+      Math.ceil((this.params.collateralPercentage / 100) * Number(body.fee()))
     );
 
     // If any scripts have been invoked, minimum collateral must be included
@@ -901,14 +917,14 @@ export class Emulator {
         const account = this.getAccount(rewardAddr);
         if (account.balance !== amount)
           throw new Error(
-            `Withdrawal amount for ${rewardAddr} does not match the actual reward balance (Withdrawing: ${amount} Balance: ${account.balance}).`,
+            `Withdrawal amount for ${rewardAddr} does not match the actual reward balance (Withdrawing: ${amount} Balance: ${account.balance}).`
           );
 
         const stakeCred =
           Address.fromBech32(rewardAddr).getProps().paymentPart!;
         consumeCred(stakeCred, RedeemerTag.Reward, BigInt(index));
         netValue = V.merge(netValue, new Value(amount));
-      },
+      }
     );
 
     // -- Mints
@@ -941,7 +957,7 @@ export class Emulator {
     // Validity interval contains the current slot range and is formed correctly
     if (this.clock.slot < validFrom || this.clock.slot >= validUntil)
       throw new Error(
-        `Validity interval (${validFrom} to ${validUntil}) is outside the slot range (${this.clock.slot}).`,
+        `Validity interval (${validFrom} to ${validUntil}) is outside the slot range (${this.clock.slot}).`
       );
 
     if (validFrom >= validUntil)
@@ -977,12 +993,19 @@ export class Emulator {
 
         // Witnesses by stake/vote groups
         if (
-          isCertType(core, StakeCredentialCertificateTypes) ||
-          isCertType(core, VoteDelegationCredentialCertificateTypes)
+          (isCertType(core, StakeCredentialCertificateTypes) ||
+          isCertType(core, VoteDelegationCredentialCertificateTypes))
+          // Legacy stake registration cert doesn't require redeemer, new version in conway does
+          && certType !== CertificateType.StakeRegistration
         ) {
           const stakeCred = core.stakeCredential;
-          if (stakeCred)
-            consumeCred(stakeCred, RedeemerTag.Cert, BigInt(index));
+          if (stakeCred) {
+            consumeCred(
+              stakeCred,
+              RedeemerTag.Cert,
+              BigInt(index)
+            );
+          }
         }
 
         // DRep credential on DRRep certs
@@ -1015,7 +1038,7 @@ export class Emulator {
           const expected = BigInt(this.params.governanceActionDeposit ?? 0);
           if (BigInt(p.deposit()) !== expected) {
             throw new Error(
-              `Invalid governance deposit: supplied ${p.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`,
+              `Invalid governance deposit: supplied ${p.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`
             );
           }
           totalDeposit += BigInt(p.deposit());
@@ -1069,13 +1092,13 @@ export class Emulator {
         throw new Error(
           `Output ${index} does not meet the minADA requirement. Output: ${output
             .amount()
-            .coin()}, MinADA: ${minAda}`,
+            .coin()}, MinADA: ${minAda}`
         );
 
       const length = output.amount().toCbor().length / 2;
       if (length > this.params.maxValueSize)
         throw new Error(
-          `Output ${index}'s value exceeds the maximum allowed size. Output: ${length} bytes, Maximum: ${this.params.maxValueSize} bytes`,
+          `Output ${index}'s value exceeds the maximum allowed size. Output: ${length} bytes, Maximum: ${this.params.maxValueSize} bytes`
         );
 
       netValue = V.sub(netValue, output.amount());
@@ -1107,7 +1130,7 @@ export class Emulator {
             witnessType = "Unknown";
         }
         throw new Error(
-          `Extraneous ${witnessType} witness. ${hash} has not been consumed.`,
+          `Extraneous ${witnessType} witness. ${hash} has not been consumed.`
         );
       }
     });
@@ -1115,7 +1138,7 @@ export class Emulator {
     const txSize = tx.toCbor().length / 2;
     if (txSize > this.params.maxTxSize) {
       throw new Error(
-        `Transaction size exceeds the maximum allowed. Supplied: ${txSize}, Maximum: ${this.params.maxTxSize}`,
+        `Transaction size exceeds the maximum allowed. Supplied: ${txSize}, Maximum: ${this.params.maxTxSize}`
       );
     }
 
@@ -1126,13 +1149,13 @@ export class Emulator {
         evaluatedRedeemers.values().reduce((acc, redeemer) => {
           // Unsure if redeemer lists would be in the same order so we find it explicitly
           const providedRedeemer = redeemers.find(
-            (r) => r.tag() === redeemer.tag() && r.index() === redeemer.index(),
+            (r) => r.tag() === redeemer.tag() && r.index() === redeemer.index()
           );
           if (!providedRedeemer) {
             throw new Error(
               `Missing redeemer: Purpose ${
                 redeemer.toCore().purpose
-              }, Index ${redeemer.index()})`,
+              }, Index ${redeemer.index()})`
             );
           }
           const { memory, steps } = redeemer.exUnits().toCore();
@@ -1144,28 +1167,24 @@ export class Emulator {
                 redeemer.toCore().purpose
               } ${redeemer.index()}): ${providedMemory - memory} Memory, ${
                 providedSteps - steps
-              } Steps`,
+              } Steps`
             );
           return (
             acc +
             this.params.prices.memory * memory +
             this.params.prices.steps * steps
           );
-        }, 0),
-      ),
+        }, 0)
+      )
     );
-
-    console.log("txSize", txSize)
 
     let fee =
       evalFee +
       BigInt(
         Math.ceil(
-          this.params.minFeeConstant + txSize * this.params.minFeeCoefficient,
-        ),
+          this.params.minFeeConstant + txSize * this.params.minFeeCoefficient
+        )
       );
-
-    console.log("fee", fee)
 
     let refScriptFee = 0n;
     if (refInputs && this.params.minFeeRefScriptCostPerByte) {
@@ -1174,7 +1193,7 @@ export class Emulator {
         .filter((x) => x !== undefined);
 
       refScriptFee += BigInt(
-        Math.ceil(calculateReferenceScriptFee(refScripts, this.params)),
+        Math.ceil(calculateReferenceScriptFee(refScripts, this.params))
       );
     }
 
@@ -1182,15 +1201,15 @@ export class Emulator {
 
     if (fee > body.fee())
       throw new Error(
-        `Insufficient transaction fee. Supplied: ${body.fee()}, Required: ${fee}`,
+        `Insufficient transaction fee. Supplied: ${body.fee()}, Required: ${fee}`
       );
 
     netValue = V.sub(netValue, new Value(body.fee() + (body.donation() ?? 0n)));
     if (!V.empty(netValue))
       throw new Error(
         `Value not conserved. Leftover Value: ${netValue.coin()}, ${Array.from(
-          netValue.multiasset()?.entries() ?? [],
-        )}`,
+          netValue.multiasset()?.entries() ?? []
+        )}`
       );
 
     this.acceptTransaction(tx);
@@ -1220,9 +1239,9 @@ export class Emulator {
           (output, i) =>
             new TransactionUnspentOutput(
               new TransactionInput(txId, BigInt(i)),
-              output!,
-            ),
-        ),
+              output!
+            )
+        )
       ),
     };
 
@@ -1261,7 +1280,7 @@ export class Emulator {
       const rewardAccount = this.rewardAccount(core.stakeCredential);
       if (this.accounts.has(rewardAccount)) {
         throw new Error(
-          `Stake key with reward address ${rewardAccount} is already registered.`,
+          `Stake key with reward address ${rewardAccount} is already registered.`
         );
       }
       const deposit = isStakeAddressCertificate(core)
@@ -1282,7 +1301,7 @@ export class Emulator {
       const rewardAccount = this.rewardAccount(core.stakeCredential);
       if (!this.accounts.has(rewardAccount)) {
         throw new Error(
-          `Stake key with reward address ${rewardAccount} is not registered.`,
+          `Stake key with reward address ${rewardAccount} is not registered.`
         );
       }
       const deposit = isStakeAddressCertificate(core)
@@ -1348,13 +1367,20 @@ export class Emulator {
     // Committee and pool certificates
     switch (certType) {
       case CertificateType.AuthorizeCommitteeHot: {
-        // TODO (?)
+        const coldHash = core.coldCredential.hash;
+        if (!this.findCommitteeMemberByColdHash(coldHash)) {
+          throw new Error(
+            "Committee cold credential not found for hot authorization"
+          );
+        }
+        this.ccHotCredentials[coldHash] = core.hotCredential;
         break;
       }
       case CertificateType.ResignCommitteeCold: {
         this.cc.members = this.cc.members.filter(
-          (m) => m.coldCredential.hash !== core.coldCredential.hash,
+          (m) => m.coldCredential.hash !== core.coldCredential.hash
         );
+        delete this.ccHotCredentials[core.coldCredential.hash];
         break;
       }
       case CertificateType.PoolRegistration: {
@@ -1371,7 +1397,7 @@ export class Emulator {
   }
 
   private getAccount(
-    accountAddr: CredentialCore | RewardAccount,
+    accountAddr: CredentialCore | RewardAccount
   ): RegisteredAccount {
     if (typeof accountAddr === "object" && "type" in accountAddr) {
       accountAddr = this.rewardAccount(accountAddr);
@@ -1379,7 +1405,7 @@ export class Emulator {
     const res = this.accounts.get(accountAddr);
     if (!res)
       throw new Error(
-        `Account with reward address ${accountAddr} is not registered.`,
+        `Account with reward address ${accountAddr} is not registered.`
       );
     return res;
   }
@@ -1388,18 +1414,92 @@ export class Emulator {
     return RewardAccount.fromCredential(cred, NetworkId.Testnet);
   }
 
+  private serialiseVoter(voter: Voter): string {
+    return voter.toCbor();
+  }
+
+  private serialiseDrepCredential(cred: CredentialCore): string {
+    if (cred.type === CredentialType.KeyHash) {
+      return DRep.newKeyHash(
+        Ed25519KeyHashHex(cred.hash as Hash28ByteBase16)
+      ).toCbor();
+    }
+    return DRep.newScriptHash(cred.hash as ScriptHash).toCbor();
+  }
+
+  private increaseProposalDepositStake(
+    rewardAccount: RewardAccount,
+    amount: bigint
+  ): void {
+    const current = this.proposalDepositsByAccount.get(rewardAccount) ?? 0n;
+    this.proposalDepositsByAccount.set(rewardAccount, current + amount);
+    const account = this.accounts.get(rewardAccount);
+    if (account) {
+      account.balance += amount;
+    }
+  }
+
+  private decreaseProposalDepositStake(
+    rewardAccount: RewardAccount,
+    amount: bigint
+  ): void {
+    const current = this.proposalDepositsByAccount.get(rewardAccount) ?? 0n;
+    if (current < amount) {
+      throw new Error("Proposal deposit accounting underflow");
+    }
+    const next = current - amount;
+    if (next === 0n) {
+      this.proposalDepositsByAccount.delete(rewardAccount);
+    } else {
+      this.proposalDepositsByAccount.set(rewardAccount, next);
+    }
+    const account = this.accounts.get(rewardAccount);
+    if (account) {
+      account.balance = account.balance - amount;
+      if (account.balance < 0n) account.balance = 0n;
+    }
+  }
+
+  private findCommitteeMemberByColdHash(
+    hash: Hash28ByteBase16
+  ): CommitteeMember | undefined {
+    return this.cc.members.find(
+      (member) => member.coldCredential.hash === hash
+    );
+  }
+
+  private committeeMemberTermActive(member: CommitteeMember): boolean {
+    return Number(member.epoch) >= this.clock.epoch;
+  }
+
+  private isValidCommitteeHotCredential(credential: CredentialCore): boolean {
+    const hotMatch = Object.entries(this.ccHotCredentials).find(
+      ([, hot]) => hot?.hash === credential.hash
+    );
+    if (hotMatch) {
+      const member = this.findCommitteeMemberByColdHash(
+        hotMatch[0] as Hash28ByteBase16
+      );
+      return Boolean(member && this.committeeMemberTermActive(member));
+    }
+    const member = this.findCommitteeMemberByColdHash(
+      credential.hash as Hash28ByteBase16
+    );
+    return Boolean(member && this.committeeMemberTermActive(member));
+  }
+
   private onEpochBoundary(): void {
     this.govTrace(
-      `Epoch ${this.clock.epoch} boundary. feePot=${this.feePot} depositPot=${this.depositPot} treasury=${this.treasury}`,
+      `Epoch ${this.clock.epoch} boundary. feePot=${this.feePot} depositPot=${this.depositPot} treasury=${this.treasury}`
     );
     if (this.feePot > 0n) {
       const treasuryShare = BigInt(
         Math.floor(
-          Number(this.feePot) * parseFloat(this.params.treasuryExpansion),
-        ),
+          Number(this.feePot) * parseFloat(this.params.treasuryExpansion)
+        )
       );
       this.govTrace(
-        `Distribute fees treasury=${treasuryShare}, stakers=${this.feePot - treasuryShare}`,
+        `Distribute fees treasury=${treasuryShare}, stakers=${this.feePot - treasuryShare}`
       );
       // TODO (?): Handle stake rewards distribution
       this.treasury += treasuryShare;
@@ -1424,59 +1524,327 @@ export class Emulator {
 
     const proposalSet = body.proposalProcedures();
     if (proposalSet) {
-      this.govTrace(`Tx ${txId}: proposals=${proposalSet.values().length}`);
       const proposals = proposalSet.values();
+      this.govTrace(`Tx ${txId}: proposals=${proposals.length}`);
       for (let i = 0; i < proposals.length; i++) {
-        const p = proposals[i]!;
+        const procedure = proposals[i]!;
         const gid = new GovernanceActionId(txId, BigInt(i));
         const key = serialiseGovId(gid);
         if (key in this.#proposals) {
+          throw new Error(`Duplicate governance action id ${key}`);
+        }
+
+        const deposit = BigInt(procedure.deposit());
+        const expectedDeposit = BigInt(
+          this.params.governanceActionDeposit ?? 0
+        );
+        if (deposit !== expectedDeposit) {
           throw new Error(
-            `Unreachable: Somehow have duplicate governance action ids ${key}`,
+            `Invalid governance deposit: supplied ${procedure.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`
           );
         }
-        if (
-          BigInt(p.deposit()) !==
-          BigInt(this.params.governanceActionDeposit ?? 0)
-        ) {
+
+        const rewardAccount = procedure.rewardAccount();
+        if (RewardAccount.toNetworkId(rewardAccount) !== NetworkId.Testnet) {
+          throw new Error("Proposal reward account network mismatch");
+        }
+
+        if (!this.accounts.has(rewardAccount)) {
           throw new Error(
-            `Invalid governance deposit: supplied ${p.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`,
+            `Proposal reward account ${rewardAccount} is not registered`
           );
         }
-        this.depositPot += BigInt(p.deposit());
+
+        const kind = procedure.kind();
+        this.assertBootstrapProposalAllowed(kind);
+        this.validateGovernanceAction(procedure, currentEpoch);
+        const previousId = this.extractPrevActionId(procedure);
+        this.ensurePrevActionLink(kind, previousId);
+
+        this.depositPot += deposit;
+        if (deposit > 0n) {
+          this.increaseProposalDepositStake(rewardAccount, deposit);
+        }
 
         this.#proposals[key] = {
-          procedure: p,
+          procedure,
           submittedEpoch: currentEpoch,
           expiryEpoch: currentEpoch + lifetime,
           status: ProposalStatus.Active,
-          votes: [],
+          deposit,
+          votes: new Map(),
         };
         this.govTrace(
-          `Registered proposal ${key} kind=${p.kind()} expiry=${currentEpoch + lifetime}`,
+          `Registered proposal ${key} kind=${kind} expiry=${currentEpoch + lifetime}`
         );
       }
     }
 
     const voting = body.votingProcedures();
     if (voting !== undefined) {
-      this.govTrace(`Tx ${txId}: voters=${voting.toCore().length}`);
-      for (const { voter, votes } of voting.toCore()) {
+      const votingEntries = voting.toCore();
+      this.govTrace(`Tx ${txId}: voters=${votingEntries.length}`);
+      for (const { voter, votes } of votingEntries) {
+        const voterObj = Voter.fromCore(voter);
+        const voterKey = this.serialiseVoter(voterObj);
         for (const { actionId, votingProcedure } of votes) {
           const key = serialiseGovId(actionId);
-          if (!(key in this.#proposals)) {
+          const proposal = this.#proposals[key];
+          if (!proposal) {
             throw new Error(
-              `Vote references unknown GovernanceActionId ${key}`,
+              `Vote references unknown GovernanceActionId ${key}`
             );
           }
-          this.govTrace(`Vote for ${key}: vote=${votingProcedure.vote}`);
-          this.#proposals[key]!.votes.push({
-            voter: Voter.fromCore(voter),
-            vote: votingProcedure.vote,
+          this.assertBootstrapVoteAllowed(voterObj, proposal.procedure.kind());
+          const voteValue = votingProcedure.vote;
+          this.validateVote(voterObj, proposal, voteValue, currentEpoch);
+          proposal.votes.set(voterKey, {
+            voter: voterObj,
+            vote: voteValue,
+            anchor: votingProcedure.anchor ?? undefined,
+            epoch: currentEpoch,
           });
+          this.govTrace(`Vote for ${key}: voter=${voterKey} vote=${voteValue}`);
         }
       }
     }
+  }
+
+  private assertBootstrapProposalAllowed(kind: number): void {
+    if (!this.bootstrapMode) return;
+    if (
+      kind === GovernanceActionKind.ParameterChange ||
+      kind === GovernanceActionKind.HardForkInitiation ||
+      kind === GovernanceActionKind.Info
+    ) {
+      return;
+    }
+    throw new Error(
+      `Governance action ${GovernanceActionKind[kind]} not allowed during bootstrap`
+    );
+  }
+
+  private assertBootstrapVoteAllowed(voter: Voter, actionKind: number): void {
+    if (!this.bootstrapMode) return;
+    if (actionKind === GovernanceActionKind.Info) return;
+    switch (voter.kind()) {
+      case VoterKind.ConstitutionalCommitteeKeyHash:
+      case VoterKind.ConstitutionalCommitteeScriptHash:
+        return;
+      case VoterKind.StakePoolKeyHash:
+        if (actionKind === GovernanceActionKind.HardForkInitiation) return;
+        break;
+    }
+    throw new Error(
+      `Vote from ${VoterKind[voter.kind()]} not allowed during bootstrap`
+    );
+  }
+
+  private validateGovernanceAction(
+    procedure: ProposalProcedure,
+    currentEpoch: number
+  ): void {
+    const kind = procedure.kind();
+    switch (kind) {
+      case GovernanceActionKind.ParameterChange: {
+        const action = procedure.getParameterChangeAction();
+        if (!action) {
+          throw new Error("Malformed parameter change action");
+        }
+        const update = action.toCore().protocolParamUpdate;
+        const hasChange = Object.values(update).some(
+          (value) => value !== undefined && value !== null
+        );
+        if (!hasChange) {
+          throw new Error(
+            "Parameter change action must alter at least one parameter"
+          );
+        }
+        const policyHash = action.policyHash();
+        if (
+          policyHash &&
+          this.constitution.scriptHash &&
+          policyHash !== this.constitution.scriptHash
+        ) {
+          throw new Error(
+            "Parameter change policy hash must reference current constitution"
+          );
+        }
+        break;
+      }
+      case GovernanceActionKind.TreasuryWithdrawals: {
+        const action = procedure.getTreasuryWithdrawalsAction();
+        if (!action) throw new Error("Malformed treasury withdrawal action");
+        for (const [rewardAccount, amount] of action.withdrawals().entries()) {
+          if (amount <= 0n) {
+            throw new Error("Treasury withdrawal amount must be positive");
+          }
+          if (!this.accounts.has(rewardAccount)) {
+            throw new Error(
+              `Treasury withdrawal references unknown reward account ${rewardAccount}`
+            );
+          }
+        }
+        break;
+      }
+      case GovernanceActionKind.UpdateCommittee: {
+        const action = procedure.getUpdateCommittee();
+        if (!action) throw new Error("Malformed committee update action");
+        const removals = new Set(
+          Array.from(action.membersToBeRemoved()).map((cred) => cred.hash)
+        );
+        for (const [credential, expiry] of action.membersToBeAdded()) {
+          if (removals.has(credential.hash)) {
+            throw new Error(
+              "Committee update cannot add and remove the same credential"
+            );
+          }
+          if (Number(expiry) <= currentEpoch) {
+            throw new Error("Committee member term must end in the future");
+          }
+        }
+        break;
+      }
+      case GovernanceActionKind.NewConstitution: {
+        if (!procedure.getNewConstitution()) {
+          throw new Error("Malformed constitution update action");
+        }
+        break;
+      }
+      case GovernanceActionKind.HardForkInitiation: {
+        if (!procedure.getHardForkInitiationAction()) {
+          throw new Error("Malformed hard fork action");
+        }
+        break;
+      }
+      case GovernanceActionKind.NoConfidence: {
+        if (!procedure.getNoConfidence()) {
+          throw new Error("Malformed no confidence action");
+        }
+        break;
+      }
+      case GovernanceActionKind.Info:
+        break;
+      default:
+        throw new Error(`Unhandled governance action kind ${kind}`);
+    }
+  }
+
+  private extractPrevActionId(
+    procedure: ProposalProcedure
+  ): GovernanceActionId | undefined {
+    switch (procedure.kind()) {
+      case GovernanceActionKind.ParameterChange:
+        return procedure.getParameterChangeAction()?.govActionId();
+      case GovernanceActionKind.HardForkInitiation:
+        return procedure.getHardForkInitiationAction()?.govActionId();
+      case GovernanceActionKind.NoConfidence:
+        return procedure.getNoConfidence()?.govActionId();
+      case GovernanceActionKind.UpdateCommittee:
+        return procedure.getUpdateCommittee()?.govActionId();
+      case GovernanceActionKind.NewConstitution:
+        return procedure.getNewConstitution()?.govActionId();
+      default:
+        return undefined;
+    }
+  }
+
+  private ensurePrevActionLink(
+    kind: GovernanceActionKind,
+    prevActionId?: GovernanceActionId
+  ): void {
+    const expected = this.lastEnactedActionByKind[kind];
+    if (expected) {
+      if (!prevActionId) {
+        throw new Error(
+          `Governance action ${GovernanceActionKind[kind]} must reference last enacted action`
+        );
+      }
+      const serialised = serialiseGovId(prevActionId.toCore());
+      if (serialised !== expected) {
+        throw new Error(
+          `Governance action ${GovernanceActionKind[kind]} must reference ${expected}, received ${serialised}`
+        );
+      }
+      return;
+    }
+    if (prevActionId) {
+      const serialised = serialiseGovId(prevActionId.toCore());
+      if (!(serialised in this.#proposals)) {
+        throw new Error(
+          `Governance action ${GovernanceActionKind[kind]} references unknown action ${serialised}`
+        );
+      }
+    }
+  }
+
+  private isDelayingAction(kind: number): boolean {
+    return (
+      kind === GovernanceActionKind.NoConfidence ||
+      kind === GovernanceActionKind.UpdateCommittee ||
+      kind === GovernanceActionKind.NewConstitution ||
+      kind === GovernanceActionKind.HardForkInitiation
+    );
+  }
+
+  private validateVote(
+    voter: Voter,
+    proposal: GovProposal,
+    vote: Vote,
+    currentEpoch: number
+  ): void {
+    if (proposal.status !== ProposalStatus.Active) {
+      throw new Error("Cannot vote on inactive governance action");
+    }
+
+    switch (voter.kind()) {
+      case VoterKind.DrepKeyHash:
+      case VoterKind.DRepScriptHash: {
+        const cred = voter.toDrepCred();
+        if (!cred) throw new Error("Missing DRep credential for vote");
+        const keyHash = cred.hash;
+        const state = this.dreps[keyHash];
+        if (!state?.isRegistered) {
+          throw new Error("Vote cast by unregistered DRep");
+        }
+        state.lastActiveEpoch = currentEpoch;
+        break;
+      }
+      case VoterKind.ConstitutionalCommitteeKeyHash:
+      case VoterKind.ConstitutionalCommitteeScriptHash: {
+        const cred = voter.toConstitutionalCommitteeHotCred();
+        if (!cred || !this.isValidCommitteeHotCredential(cred)) {
+          throw new Error("Committee voter is not authorized");
+        }
+        break;
+      }
+      case VoterKind.StakePoolKeyHash: {
+        const keyHash = voter.toStakingPoolKeyHash();
+        if (!keyHash || !this.isKnownStakePool(keyHash)) {
+          throw new Error("Stake pool voter is not recognized");
+        }
+        break;
+      }
+      default:
+        throw new Error("Unknown voter kind");
+    }
+
+    if (!Object.values(Vote).includes(vote)) {
+      throw new Error("Unsupported vote value");
+    }
+  }
+
+  private isKnownStakePool(keyHash: string): boolean {
+    const target = Hash28ByteBase16.fromEd25519KeyHashHex(
+      Ed25519KeyHashHex(keyHash)
+    );
+    return Object.values(this.activePools).some((pool) => {
+      const ownersIterable = pool?.owners ?? [];
+      const owners = Array.isArray(ownersIterable)
+        ? ownersIterable
+        : Array.from(ownersIterable as Iterable<RewardAccount>);
+      return owners.some((owner) => RewardAccount.toHash(owner) === target);
+    });
   }
 
   /**
@@ -1509,15 +1877,103 @@ export class Emulator {
     this.snapshots[this.clock.epoch] = snapshot;
     const drepTotal = Object.values(snapshot.drepDelegation).reduce(
       (a, b) => a + b,
-      0n,
+      0n
     );
     const spoTotal = Object.values(snapshot.spoDelegation).reduce(
       (a, b) => a + b,
-      0n,
+      0n
     );
     this.govTrace(
-      `Snapshot epoch=${this.clock.epoch}: drepTotal=${drepTotal} spoTotal=${spoTotal} drepKeys=${Object.keys(snapshot.drepDelegation).length} spoKeys=${Object.keys(snapshot.spoDelegation).length}`,
+      `Snapshot epoch=${this.clock.epoch}: drepTotal=${drepTotal} spoTotal=${spoTotal} drepKeys=${Object.keys(snapshot.drepDelegation).length} spoKeys=${Object.keys(snapshot.spoDelegation).length}`
     );
+  }
+
+  private computeGovernanceTallies(
+    proposal: GovProposal,
+    snapshot: StakeSnapshot
+  ): { tallies: Tallies; activeCcMembers: bigint } {
+    const drepVotes = new Map<string, Vote>();
+    const spoVotes = new Map<string, Vote>();
+    const ccVotes = new Map<string, Vote>();
+
+    for (const record of proposal.votes.values()) {
+      switch (record.voter.kind()) {
+        case VoterKind.DrepKeyHash:
+        case VoterKind.DRepScriptHash: {
+          const cred = record.voter.toDrepCred();
+          if (!cred) break;
+          const key = this.serialiseDrepCredential(cred);
+          drepVotes.set(key, record.vote);
+          break;
+        }
+        case VoterKind.StakePoolKeyHash: {
+          const keyHash = record.voter.toStakingPoolKeyHash();
+          if (!keyHash) break;
+          spoVotes.set(keyHash, record.vote);
+          break;
+        }
+        case VoterKind.ConstitutionalCommitteeKeyHash:
+        case VoterKind.ConstitutionalCommitteeScriptHash: {
+          const cred = record.voter.toConstitutionalCommitteeHotCred();
+          if (!cred) break;
+          ccVotes.set(cred.hash, record.vote);
+          break;
+        }
+      }
+    }
+
+    const tallies: Tallies = {
+      drep: { yes: 0n, no: 0n },
+      spo: { yes: 0n, no: 0n },
+      cc: { yes: 0n, no: 0n },
+    };
+
+    for (const [drepId, stake] of Object.entries(snapshot.drepDelegation)) {
+      const vote = drepVotes.get(drepId) ?? Vote.no;
+      if (vote === Vote.yes) tallies.drep.yes += stake;
+      else if (vote === Vote.no) tallies.drep.no += stake;
+    }
+
+    for (const [poolId, stake] of Object.entries(snapshot.spoDelegation)) {
+      const vote = this.resolveStakePoolVote(poolId as PoolId, spoVotes);
+      if (vote === Vote.yes) tallies.spo.yes += stake;
+      else if (vote === Vote.no) tallies.spo.no += stake;
+    }
+
+    const activeMembers = this.cc.members.filter((member) =>
+      this.committeeMemberTermActive(member)
+    );
+    for (const member of activeMembers) {
+      const hot = this.ccHotCredentials[member.coldCredential.hash];
+      let vote: Vote | undefined;
+      if (hot?.hash) {
+        vote = ccVotes.get(hot.hash) ?? Vote.no;
+      } else {
+        vote = ccVotes.get(member.coldCredential.hash) ?? Vote.abstain;
+      }
+      if (vote === Vote.yes) tallies.cc.yes += 1n;
+      else if (vote === Vote.no) tallies.cc.no += 1n;
+    }
+
+    return {
+      tallies,
+      activeCcMembers: BigInt(activeMembers.length),
+    };
+  }
+
+  private resolveStakePoolVote(
+    poolId: PoolId,
+    spoVotes: Map<string, Vote>
+  ): Vote {
+    const pool = this.activePools[poolId];
+    if (!pool?.owners) return Vote.no;
+    for (const owner of pool.owners) {
+      const ownerHash = String(RewardAccount.toHash(owner));
+      if (spoVotes.has(ownerHash)) {
+        return spoVotes.get(ownerHash)!;
+      }
+    }
+    return Vote.no;
   }
 
   /**
@@ -1532,8 +1988,28 @@ export class Emulator {
       return;
     }
 
+    if (
+      this.delayingActionBarrierUntil !== undefined &&
+      currentEpoch >= this.delayingActionBarrierUntil
+    ) {
+      this.delayingActionBarrierUntil = undefined;
+    }
+
     for (const [actionId, proposal] of Object.entries(this.#proposals)) {
       if (proposal.status !== ProposalStatus.Active) continue;
+
+      const kind = proposal.procedure.kind();
+
+      if (
+        this.delayingActionBarrierUntil !== undefined &&
+        currentEpoch < this.delayingActionBarrierUntil &&
+        !this.isDelayingAction(kind)
+      ) {
+        this.govTrace(
+          `Proposal ${actionId} delayed until epoch ${this.delayingActionBarrierUntil}`
+        );
+        continue;
+      }
 
       // Check if proposal has expired
       if (proposal.expiryEpoch <= currentEpoch) {
@@ -1542,44 +2018,35 @@ export class Emulator {
         continue;
       }
 
-      // Tally votes by role
-      const tallies: Tallies = {
-        drep: { yes: 0n, no: 0n },
-        spo: { yes: 0n, no: 0n },
-        cc: { yes: 0n, no: 0n },
-      };
-
-      for (const { voter, vote } of proposal.votes) {
-        const voterCore = voter.toCore();
-        const stake = this.getVoterStake(voterCore, snapshot);
-
-        switch (voter.kind()) {
-          case VoterKind.DrepKeyHash:
-          case VoterKind.DRepScriptHash:
-            tallies.drep[vote === Vote.yes ? "yes" : "no"] += stake;
-            break;
-          case VoterKind.StakePoolKeyHash:
-            tallies.spo[vote === Vote.yes ? "yes" : "no"] += stake;
-            break;
-          case VoterKind.ConstitutionalCommitteeKeyHash:
-          case VoterKind.ConstitutionalCommitteeScriptHash:
-            tallies.cc[vote === Vote.yes ? "yes" : "no"] += stake;
-            break;
-        }
-      }
+      const { tallies, activeCcMembers } = this.computeGovernanceTallies(
+        proposal,
+        snapshot
+      );
 
       this.govTrace(
-        `Tallies ${actionId}: drep(y=${tallies.drep.yes},n=${tallies.drep.no}) spo(y=${tallies.spo.yes},n=${tallies.spo.no}) cc(y=${tallies.cc.yes},n=${tallies.cc.no})`,
+        `Tallies ${actionId}: drep(y=${tallies.drep.yes},n=${tallies.drep.no}) spo(y=${tallies.spo.yes},n=${tallies.spo.no}) cc(y=${tallies.cc.yes},n=${tallies.cc.no})`
       );
-      // Check ratification thresholds based on proposal type
-      const isRatified = this.checkRatificationThresholds(proposal, tallies);
+
+      const isRatified = this.checkRatificationThresholds(
+        proposal,
+        tallies,
+        activeCcMembers
+      );
 
       if (isRatified) {
         proposal.status = ProposalStatus.Ratified;
         this.enactQueue.push({
           actionId: actionId as SerialisedGovId,
-          enactAtEpoch: currentEpoch + 1,
+          enactAtEpoch: currentEpoch,
         });
+        this.govTrace(`Proposal ${actionId} ratified`);
+        if (this.isDelayingAction(kind)) {
+          this.delayingActionBarrierUntil = currentEpoch + 1;
+          this.govTrace(
+            `Delaying other governance actions until epoch ${this.delayingActionBarrierUntil}`
+          );
+          break;
+        }
       } else {
         this.govTrace(`Proposal ${actionId} not ratified; stays Active`);
       }
@@ -1592,7 +2059,7 @@ export class Emulator {
   private enactGovernanceActions(): void {
     const currentEpoch = this.clock.epoch;
     const toEnact = this.enactQueue.filter(
-      (item) => item.enactAtEpoch === currentEpoch,
+      (item) => item.enactAtEpoch === currentEpoch
     );
 
     for (const item of toEnact) {
@@ -1600,14 +2067,14 @@ export class Emulator {
       if (!proposal) continue;
 
       // Apply the governance action effects based on type
-      this.applyGovernanceEffect(proposal);
+      this.applyGovernanceEffect(item.actionId, proposal);
       proposal.status = ProposalStatus.Enacted;
       this.refundProposalDeposit(proposal);
     }
 
     // Remove enacted items from queue
     this.enactQueue = this.enactQueue.filter(
-      (item) => item.enactAtEpoch !== currentEpoch,
+      (item) => item.enactAtEpoch !== currentEpoch
     );
   }
 
@@ -1630,53 +2097,6 @@ export class Emulator {
     }
   }
 
-  private getVoterStake(voter: VoterCore, snapshot: StakeSnapshot): bigint {
-    const v = Voter.fromCore(voter);
-    switch (v.kind()) {
-      case VoterKind.DrepKeyHash:
-      case VoterKind.DRepScriptHash: {
-        const cred = v.toDrepCred()!;
-        let dRep: DRep;
-        if (cred.type === CredentialType.KeyHash) {
-          dRep = DRep.newKeyHash(
-            Ed25519KeyHashHex(cred.hash as Hash28ByteBase16),
-          );
-        } else {
-          dRep = DRep.newScriptHash(cred.hash as ScriptHash);
-        }
-        const dRepId = dRep.toCbor();
-        const stake = snapshot.drepDelegation[dRepId] ?? 0n;
-        this.govTrace(`Stake DRep ${dRepId} = ${stake}`);
-        return stake;
-      }
-      case VoterKind.StakePoolKeyHash: {
-        const keyHash = v.toStakingPoolKeyHash()!;
-        for (const [poolId, poolParams] of Object.entries(this.activePools)) {
-          if (
-            poolParams.owners.some(
-              (o) =>
-                RewardAccount.toHash(o) ===
-                Hash28ByteBase16.fromEd25519KeyHashHex(keyHash),
-            )
-          ) {
-            const stake = snapshot.spoDelegation[poolId as PoolId] ?? 0n;
-            this.govTrace(`Stake SPO ${poolId} = ${stake}`);
-            return stake;
-          }
-        }
-        this.govTrace(`Stake SPO (no match) = 0`);
-        return 0n;
-      }
-      case VoterKind.ConstitutionalCommitteeKeyHash:
-      case VoterKind.ConstitutionalCommitteeScriptHash: {
-        this.govTrace(`Stake CC = 1`);
-        return 1n; // Each CC member has one vote, stake is irrelevant
-      }
-      default:
-        return 0n;
-    }
-  }
-
   private getActionThresholds(proposal: GovProposal): {
     drep?: Fraction;
     spo?: Fraction;
@@ -1687,7 +2107,7 @@ export class Emulator {
       !this.params.stakePoolVotingThresholds
     ) {
       throw new Error(
-        "Trying to enact governance action without full conway parameters",
+        "Trying to enact governance action without full conway parameters"
       );
     }
     const dRepThresh = this.params.delegateRepresentativeVotingThresholds;
@@ -1711,7 +2131,7 @@ export class Emulator {
           "maxExecutionUnitsPerTransaction",
           "maxExecutionUnitsPerBlock",
           "maxValueSize",
-          "maxCollateralInputs",
+          "maxCollateralInputs"
         )
       )
         drepGroups.push("ppNetworkGroup");
@@ -1730,7 +2150,7 @@ export class Emulator {
           "prices",
           "minFeeRefScriptCostPerByte",
           "minPoolCost",
-          "poolInfluence",
+          "poolInfluence"
         )
       )
         drepGroups.push("ppEconomicGroup");
@@ -1743,7 +2163,7 @@ export class Emulator {
           "desiredNumberOfPools",
           "poolInfluence",
           "collateralPercentage",
-          "costModels",
+          "costModels"
         )
       )
         drepGroups.push("ppTechnicalGroup");
@@ -1759,7 +2179,7 @@ export class Emulator {
           "governanceActionValidityPeriod",
           "governanceActionDeposit",
           "dRepDeposit",
-          "dRepInactivityPeriod",
+          "dRepInactivityPeriod"
         )
       )
         drepGroups.push("ppGovernanceGroup");
@@ -1777,7 +2197,7 @@ export class Emulator {
           "coinsPerUtxoByte",
           "governanceActionDeposit",
           "minFeeCoefficient", // a
-          "minFeeConstant", // b
+          "minFeeConstant" // b
         )
       ) {
         spoGroups.push("securityRelevantParamVotingThreshold");
@@ -1804,13 +2224,13 @@ export class Emulator {
         const groups = getParamsGroups();
         // Pick the strictest dRep threshold among all impacted groups (largest ratio)
         const drepFraction = fractionMax(
-          ...groups.drep.map((g) => dRepThresh[g]),
+          ...groups.drep.map((g) => dRepThresh[g])
         );
         const spoFraction = fractionMax(...groups.spo.map((g) => spoThresh[g]));
         this.govTrace(
           `Thresholds ParamChange drep=${JSON.stringify(
-            drepFraction,
-          )} spo=${JSON.stringify(spoFraction)} groups=${JSON.stringify(groups)}`,
+            drepFraction
+          )} spo=${JSON.stringify(spoFraction)} groups=${JSON.stringify(groups)}`
         );
         return {
           drep: drepFraction,
@@ -1844,7 +2264,7 @@ export class Emulator {
   private fractionAtLeast(yes: bigint, no: bigint, thresh?: Fraction): boolean {
     if (!thresh) return true;
     const total = yes + no;
-    if (total === 0n) return false;
+    if (total === 0n) return BigInt(thresh.numerator) === 0n;
     const num = BigInt(thresh.numerator);
     const den = BigInt(thresh.denominator);
     return yes * den >= num * total;
@@ -1853,6 +2273,7 @@ export class Emulator {
   private checkRatificationThresholds(
     proposal: GovProposal,
     tallies: Tallies,
+    activeCcMembers: bigint
   ): boolean {
     const kind = proposal.procedure.kind();
     if (this.bootstrapMode) {
@@ -1870,39 +2291,44 @@ export class Emulator {
     const drepPass = this.fractionAtLeast(
       tallies.drep.yes,
       tallies.drep.no,
-      drep,
+      drep
     );
     const spoPass = this.fractionAtLeast(tallies.spo.yes, tallies.spo.no, spo);
 
     // CC quorum: yes votes against total committee members
-    const ccMembers = BigInt(this.cc.members.length);
+    const ccMembers = activeCcMembers;
     const quorum = this.cc.quorumThreshold;
+    const minSize = this.params.constitutionalCommitteeMinSize;
     const ccPass =
       kind === GovernanceActionKind.UpdateCommittee ||
       kind === GovernanceActionKind.NoConfidence ||
       ccMembers === 0n ||
       (quorum !== undefined &&
+        (minSize === undefined || ccMembers >= BigInt(minSize)) &&
         tallies.cc.yes * BigInt(quorum.denominator) >=
           BigInt(quorum.numerator) * ccMembers);
 
     const pass = drepPass && spoPass && ccPass;
     this.govTrace(
-      `Check kind=${kind} drepPass=${drepPass} spoPass=${spoPass} ccPass=${ccPass} => pass=${pass}`,
+      `Check kind=${kind} drepPass=${drepPass} spoPass=${spoPass} ccPass=${ccPass} (ccMembers=${ccMembers}) => pass=${pass}`
     );
     return pass;
   }
 
-  private applyGovernanceEffect(proposal: GovProposal): void {
+  private applyGovernanceEffect(
+    actionId: SerialisedGovId,
+    proposal: GovProposal
+  ): void {
     const actionKind = proposal.procedure.kind();
 
     switch (actionKind) {
-      case GovernanceActionKind.ParameterChange:
+      case GovernanceActionKind.ParameterChange: {
         const paramChange = proposal.procedure.getParameterChangeAction();
         if (paramChange) {
           const updates = paramChange.toCore().protocolParamUpdate;
           if (updates.minFeeRefScriptCostPerByte) {
             this.params.minFeeRefScriptCostPerByte = Number(
-              updates.minFeeRefScriptCostPerByte,
+              updates.minFeeRefScriptCostPerByte
             );
             delete updates.minFeeRefScriptCostPerByte;
           }
@@ -1918,10 +2344,12 @@ export class Emulator {
           };
         }
         break;
-      case GovernanceActionKind.HardForkInitiation:
+      }
+      case GovernanceActionKind.HardForkInitiation: {
         // No-op in emulator
         break;
-      case GovernanceActionKind.TreasuryWithdrawals:
+      }
+      case GovernanceActionKind.TreasuryWithdrawals: {
         const treasuryAction =
           proposal.procedure.getTreasuryWithdrawalsAction();
         if (treasuryAction) {
@@ -1938,44 +2366,58 @@ export class Emulator {
           }
         }
         break;
-      case GovernanceActionKind.UpdateCommittee:
+      }
+      case GovernanceActionKind.UpdateCommittee: {
         const committeeUpdate = proposal.procedure.getUpdateCommittee();
         if (committeeUpdate) {
           const update = committeeUpdate.toCore();
           const membersToRemove = new Set(
             Array.from(update.membersToBeRemoved.values()).map(
-              (cred) => cred.hash,
-            ),
+              (cred) => cred.hash
+            )
           );
-          // Filter out removed members
           this.cc.members = this.cc.members.filter(
-            (member) => !membersToRemove.has(member.coldCredential.hash),
+            (member) => !membersToRemove.has(member.coldCredential.hash)
           );
-          // Add new members
-          this.cc.members.push(...update.membersToBeAdded.values());
+          for (const hash of membersToRemove) {
+            delete this.ccHotCredentials[hash];
+          }
+          const additions = Array.from(update.membersToBeAdded.values());
+          this.cc.members.push(...additions);
+          for (const member of additions) {
+            this.ccHotCredentials[member.coldCredential.hash] = undefined;
+          }
+          this.cc.quorumThreshold = update.newQuorumThreshold;
         }
         break;
-      case GovernanceActionKind.NewConstitution:
+      }
+      case GovernanceActionKind.NewConstitution: {
         const newConstitution = proposal.procedure.getNewConstitution();
         if (newConstitution) {
           this.constitution = newConstitution.toCore().constitution;
         }
         break;
-      case GovernanceActionKind.Info:
+      }
+      case GovernanceActionKind.Info: {
         // No state change required
         break;
+      }
     }
+
+    this.lastEnactedActionByKind[actionKind] = actionId;
+    this.govTrace(
+      `Enacted action ${actionId} (${GovernanceActionKind[actionKind]})`
+    );
   }
 
   private refundProposalDeposit(proposal: GovProposal): void {
-    const deposit = BigInt(proposal.procedure.deposit());
-    const rewardAccount = proposal.procedure.rewardAccount();
-
-    this.depositPot -= deposit;
-
-    const account = this.accounts.get(rewardAccount);
-    if (account) {
-      account.balance += deposit;
-    }
+    const deposit = proposal.deposit;
+    if (deposit === 0n) return;
+    this.depositPot =
+      this.depositPot >= deposit ? this.depositPot - deposit : 0n;
+    this.decreaseProposalDepositStake(
+      proposal.procedure.rewardAccount(),
+      deposit
+    );
   }
 }
