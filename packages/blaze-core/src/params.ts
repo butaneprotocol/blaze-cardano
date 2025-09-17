@@ -189,7 +189,7 @@ export const hardCodedProtocolParams: ProtocolParameters = {
   constitutionalCommitteeMinSize: 7,
   constitutionalCommitteeMaxTermLength: 146,
   governanceActionLifetime: 6,
-  governanceActionDeposit: 0,
+  governanceActionDeposit: 100_000_000_000,
   delegateRepresentativeDeposit: 0,
   // delegateRepresentativeMaxIdleTime: undefined,
   minFeeReferenceScripts: { base: 15, range: 25600, multiplier: 1.2 },

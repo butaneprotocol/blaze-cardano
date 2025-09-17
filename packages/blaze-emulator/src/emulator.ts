@@ -988,17 +988,13 @@ export class Emulator {
         // Witnesses by stake/vote groups
         if (
           (isCertType(core, StakeCredentialCertificateTypes) ||
-          isCertType(core, VoteDelegationCredentialCertificateTypes))
+            isCertType(core, VoteDelegationCredentialCertificateTypes)) &&
           // Legacy stake registration cert doesn't require redeemer, new version in conway does
-          && certType !== CertificateType.StakeRegistration
+          certType !== CertificateType.StakeRegistration
         ) {
           const stakeCred = core.stakeCredential;
           if (stakeCred) {
-            consumeCred(
-              stakeCred,
-              RedeemerTag.Cert,
-              BigInt(index)
-            );
+            consumeCred(stakeCred, RedeemerTag.Cert, BigInt(index));
           }
         }
 
@@ -1487,11 +1483,7 @@ export class Emulator {
       `Epoch ${this.clock.epoch} boundary. feePot=${this.feePot} depositPot=${this.depositPot} treasury=${this.treasury}`
     );
     if (this.feePot > 0n) {
-      const treasuryShare = BigInt(
-        Math.floor(
-          Number(this.feePot) * parseFloat(this.params.treasuryExpansion)
-        )
-      );
+      const treasuryShare = this.getCurrentTreasuryFeeShare();
       this.govTrace(
         `Distribute fees treasury=${treasuryShare}, stakers=${this.feePot - treasuryShare}`
       );
@@ -1826,6 +1818,14 @@ export class Emulator {
     if (!Object.values(Vote).includes(vote)) {
       throw new Error("Unsupported vote value");
     }
+  }
+
+  getCurrentTreasuryFeeShare(): bigint {
+    return BigInt(
+      Math.floor(
+        Number(this.feePot) * parseFloat(this.params.treasuryExpansion)
+      )
+    );
   }
 
   private isKnownStakePool(keyHash: string): boolean {
