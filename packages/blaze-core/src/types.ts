@@ -227,6 +227,7 @@ export const GovernanceActionId = C.Serialization.GovernanceActionId;
 export type GovernanceActionId = C.Serialization.GovernanceActionId;
 
 export const GovernanceActionKind = C.Serialization.GovernanceActionKind;
+export type GovernanceActionKind = C.Serialization.GovernanceActionKind;
 
 export const Constitution = C.Serialization.Constitution;
 export type Constitution = C.Serialization.Constitution;
