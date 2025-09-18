@@ -1,5 +1,5 @@
 import WebSocket from "isomorphic-ws";
-import type * as schema from "./schema";
+import type { Schema as schema } from "./schema";
 
 export class Ogmios {
   url: string;
@@ -10,7 +10,6 @@ export class Ogmios {
   > = {};
 
   private constructor(url: string) {
-    console.log("url", url);
     this.url = url;
     this.ws = new WebSocket(this.url);
   }

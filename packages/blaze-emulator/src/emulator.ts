@@ -770,13 +770,19 @@ export class Emulator {
       redeemerTag?: RedeemerTag,
       redeemerIndex?: bigint
     ) => {
-      if (
-        nativeHashes.has(hash) ||
-        (plutusHashes.has(hash) &&
-          redeemers.some(
-            (r) => r.tag() === redeemerTag && r.index() === redeemerIndex
-          ))
-      ) {
+      if (nativeHashes.has(hash)) {
+        consumed.add(hash);
+      } else if (plutusHashes.has(hash)) {
+        const hasRedeemer = redeemers.some(
+          (r) => r.tag() === redeemerTag && r.index() === redeemerIndex,
+        );
+
+        if (!hasRedeemer) {
+          throw new Error(
+            `Script (hash ${hash}) was found but without a redeemer.`,
+          );
+        }
+
         consumed.add(hash);
       } else {
         throw new Error(`Script (hash ${hash}) not found in witness set.`);

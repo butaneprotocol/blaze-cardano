@@ -201,11 +201,11 @@ export function computeScriptData(
   // Write out the script data hash to the cbor writer
   // NOTE: this uses bytestring concatenation, and will not result in valid CBOR
   const writer = new CborWriter();
-  writer.writeEncodedValue(redeemersEncoded);
+  writer.writeEncodedValue(new Uint8Array(redeemersEncoded));
   if (writeDatums) {
-    writer.writeEncodedValue(datumsEncoded!);
+    writer.writeEncodedValue(new Uint8Array(datumsEncoded!));
   }
-  writer.writeEncodedValue(costModelsEncoded);
+  writer.writeEncodedValue(new Uint8Array(costModelsEncoded));
 
   // Compute the hash
   const hashedData = writer.encodeAsHex();

@@ -921,17 +921,21 @@ export class TxBuilder {
         }
       }
       // Mark the script language versions used in the transaction
-      const lang = scriptLookup[requiredScriptHash]?.language();
-      if (lang == 1) {
-        this.usedLanguages[PlutusLanguageVersion.V1] = true;
-      } else if (lang == 2) {
-        this.usedLanguages[PlutusLanguageVersion.V2] = true;
-      } else if (lang == 3) {
-        this.usedLanguages[PlutusLanguageVersion.V3] = true;
-      } else if (!lang) {
-        throw new Error(
-          "buildTransactionWitnessSet: lang script lookup failed"
-        );
+      // Skip language checking for native scripts
+      const script = scriptLookup[requiredScriptHash];
+      if (script?.asNative() == undefined) {
+        const lang = script?.language();
+        if (lang == 1) {
+          this.usedLanguages[PlutusLanguageVersion.V1] = true;
+        } else if (lang == 2) {
+          this.usedLanguages[PlutusLanguageVersion.V2] = true;
+        } else if (lang == 3) {
+          this.usedLanguages[PlutusLanguageVersion.V3] = true;
+        } else if (!lang) {
+          throw new Error(
+            "buildTransactionWitnessSet: lang script lookup failed",
+          );
+        }
       }
     }
     // do native script check too
@@ -1498,10 +1502,9 @@ export class TxBuilder {
    * Throws an error if suitable collateral cannot be found or if some inputs cannot be resolved.{boolean}
    */
   protected prepareCollateral(
-    { useCoinSelection = true }: UseCoinSelectionArgs = {
-      useCoinSelection: true,
-    }
+    params: UseCoinSelectionArgs = { useCoinSelection: true },
   ) {
+    const { useCoinSelection = true } = params;
     if (this.redeemers.size() === 0) {
       this.trace(
         "prepareCollateral: No redeemers, skipping collateral preparation."
@@ -1650,6 +1653,12 @@ export class TxBuilder {
 
         this.collateralUtxos = new Set(selectedInputs);
         this.body.setCollateral(collateralSet);
+      } else {
+        const collateralSet = CborSet.fromCore([], TransactionInput.fromCore);
+        collateralSet.setValues(
+          [...this.collateralUtxos.values()].map((c) => c.input()),
+        );
+        this.body.setCollateral(collateralSet);
       }
 
       const collateralOutput = new TransactionOutput(
@@ -1690,10 +1699,9 @@ export class TxBuilder {
    * @returns {Promise<Transaction>} A new Transaction object with all components set and ready for submission.
    */
   async complete(
-    { useCoinSelection = true }: UseCoinSelectionArgs = {
-      useCoinSelection: true,
-    }
+    params: UseCoinSelectionArgs = { useCoinSelection: true },
   ): Promise<Transaction> {
+    const { useCoinSelection = true } = params;
     // Execute pre-complete hooks
     if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
       for (const hook of this.preCompleteHooks) {
@@ -1778,6 +1786,18 @@ export class TxBuilder {
 
       // Classify inputs as either part of the transaction, or "spare" for UTxO selection
       let spareInputs: TransactionUnspentOutput[] = [];
+
+      // In the case where inputs come from native script
+      // we do might not have any native key inputs
+      let allScriptInputs = true;
+      for (const utxo of this.utxos.values()) {
+        allScriptInputs =
+          utxo.output().address().getProps().paymentPart?.type !==
+          CredentialType.KeyHash;
+        if (!allScriptInputs) {
+          break;
+        }
+      }
       for (const utxo of this.utxos.values()) {
         let hasInput = false;
         for (const input of inputs) {
@@ -1790,8 +1810,9 @@ export class TxBuilder {
         // Only add non-script UTXOs for inputs.
         if (
           !hasInput &&
-          utxo.output().address().getProps().paymentPart?.type !==
-            CredentialType.ScriptHash
+          (utxo.output().address().getProps().paymentPart?.type !==
+            CredentialType.ScriptHash ||
+            allScriptInputs)
         ) {
           spareInputs.push(utxo);
         }

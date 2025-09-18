@@ -1,5 +1,49 @@
 # @blaze-cardano/sdk
 
+## 0.2.43
+
+### Patch Changes
+
+- Updated dependencies [ab30a97]
+  - @blaze-cardano/uplc@0.4.1
+  - @blaze-cardano/tx@0.13.4
+  - @blaze-cardano/wallet@0.4.13
+
+## 0.2.42
+
+### Patch Changes
+
+- Updated dependencies [eecb7fc]
+  - @blaze-cardano/uplc@0.4.0
+  - @blaze-cardano/tx@0.13.3
+  - @blaze-cardano/wallet@0.4.12
+
+## 0.2.41
+
+### Patch Changes
+
+- Updated dependencies [3859529]
+  - @blaze-cardano/uplc@0.3.9
+
+## 0.2.40
+
+### Patch Changes
+
+- Updated dependencies [5f0893b]
+  - @blaze-cardano/tx@0.13.2
+  - @blaze-cardano/uplc@0.3.8
+  - @blaze-cardano/wallet@0.4.11
+
+## 0.2.39
+
+### Patch Changes
+
+- 66859b6: Fix an error with setting the collateral manually
+- Updated dependencies [66859b6]
+  - @blaze-cardano/tx@0.13.1
+  - @blaze-cardano/uplc@0.3.7
+  - @blaze-cardano/wallet@0.4.10
+
 ## 0.2.38
 
 ### Patch Changes

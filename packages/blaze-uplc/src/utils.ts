@@ -79,7 +79,7 @@ function stripCbor(cbor: string) {
  * to it, and then re-encodes the script. The parameters are cast to the specified
  * type and converted to a list of PlutusData before being applied.
  *
- * @template T - The type of the parameters list.
+ * @typeParam T - The type of the parameters list.
  * @param {HexBlob} plutusScript - The hex-encoded Plutus script to which the parameters will be applied.
  * @param {Exact<T>} params - The parameters to apply to the Plutus script.
  * @param {T} type - The type of the parameters list.

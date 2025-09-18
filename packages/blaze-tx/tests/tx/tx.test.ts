@@ -375,7 +375,7 @@ describe("Transaction Building", () => {
       .complete();
 
     // TODO: Double check that this is accurate.
-    expect(tx.body().fee().toString()).toEqual("287643");
+    expect(tx.body().fee().toString()).toEqual("289447");
   });
 
   // The following test is based on the below transaction, which was a transaction built by JPG Store. It created a fee that was too small.
@@ -624,7 +624,7 @@ describe("Transaction Building", () => {
       .complete();
 
     // TODO: Ensure that this is accurate.
-    expect(tx.body().fee().toString()).toEqual("473990");
+    expect(tx.body().fee().toString()).toEqual("475794");
   });
 
   it("should not use coin selection when set to false", async () => {

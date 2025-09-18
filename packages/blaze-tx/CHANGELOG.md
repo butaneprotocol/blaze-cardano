@@ -1,5 +1,33 @@
 # @blaze-cardano/tx
 
+## 0.13.4
+
+### Patch Changes
+
+- Updated dependencies [ab30a97]
+  - @blaze-cardano/vm@0.2.1
+
+## 0.13.3
+
+### Patch Changes
+
+- Updated dependencies [eecb7fc]
+  - @blaze-cardano/vm@0.2.0
+
+## 0.13.2
+
+### Patch Changes
+
+- 5f0893b: Support native script coin selection
+- Updated dependencies [e835407]
+  - @blaze-cardano/vm@0.1.12
+
+## 0.13.1
+
+### Patch Changes
+
+- 66859b6: Fix an error with setting the collateral manually
+
 ## 0.13.0
 
 ### Minor Changes

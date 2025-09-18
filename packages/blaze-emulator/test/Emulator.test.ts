@@ -11,6 +11,7 @@ import {
   CredentialType,
   TransactionUnspentOutput,
   RewardAccount,
+  Ed25519KeyHashHex,
 } from "@blaze-cardano/core";
 import { HotWallet } from "@blaze-cardano/wallet";
 import { Emulator, EmulatorProvider } from "../src";
@@ -55,6 +56,66 @@ describe("Emulator", () => {
     wallet1 = await HotWallet.fromMasterkey(masterkeyHex1, provider);
     wallet2 = await HotWallet.fromMasterkey(masterkeyHex2, provider);
     blaze = await Blaze.from(provider, wallet1);
+  });
+
+  test("register", async () => {
+    expect(emulator.mockedWallets.size).toEqual(0);
+    await emulator.register("0", makeValue(100_000_000n));
+    expect(emulator.mockedWallets.size).toEqual(1);
+    expect(emulator.mockedWallets.get("0")).toBeDefined();
+  });
+
+  test("as", async () => {
+    await emulator.as("1", async (blaze, address) => {
+      expect(await blaze.wallet?.getChangeAddress()).toEqual(address);
+    });
+  });
+
+  test("should be able to publish and lookup a script", async () => {
+    expect(() => emulator.lookupScript(alwaysTrueScript)).toThrow();
+    await emulator.publishScript(alwaysTrueScript);
+    expect(() => emulator.lookupScript(alwaysTrueScript)).not.toThrow();
+  });
+
+  test("a valid transaction", async () => {
+    await emulator.register("2", makeValue(100_000_000n));
+    await emulator.as("2", async (blaze, address) => {
+      const tx = blaze.newTransaction().addRegisterStake(
+        Credential.fromCore({
+          hash: address.getProps().delegationPart!.hash,
+          type: CredentialType.KeyHash,
+        }),
+      );
+
+      expect(emulator.expectValidTransaction(blaze, tx)).resolves.not.toThrow();
+    });
+  });
+
+  test("a valid multisig transaction", async () => {
+    const wallet3 = await emulator.register("3", makeValue(100_000_000n));
+    const wallet4 = await emulator.register("4", makeValue(10_000_000n));
+    await emulator.as("3", async (blaze) => {
+      const tx = blaze
+        .newTransaction()
+        .payLovelace(wallet4, 10_000_000n)
+        .addRequiredSigner(
+          Ed25519KeyHashHex(wallet3.getProps().paymentPart!.hash),
+        )
+        .addRequiredSigner(
+          Ed25519KeyHashHex(wallet4.getProps().paymentPart!.hash),
+        );
+      expect(
+        emulator.expectValidMultisignedTransaction(["3", "4"], tx),
+      ).resolves.not.toThrow();
+    });
+  });
+
+  test("stop and start event loop", () => {
+    expect(emulator.eventLoop).toBeUndefined();
+    emulator.startEventLoop();
+    expect(emulator.eventLoop).toBeDefined();
+    emulator.stopEventLoop();
+    expect(emulator.eventLoop).toBeUndefined();
   });
 
   test("Should be able to get a genesis UTxO", async () => {
@@ -221,7 +282,7 @@ describe("Emulator", () => {
     expect(out.amount().multiasset()?.get(AssetId(policy))).toEqual(1n);
   });
 
-  test("Should be able to register stake for a script", async () => {
+  test("Should be able to register and deregister stake for a script", async () => {
     const cred = {
       hash: alwaysTrueScript.hash(),
       type: CredentialType.ScriptHash,
@@ -238,6 +299,15 @@ describe("Emulator", () => {
     emulator.awaitTransactionConfirmation(txHash);
 
     expect(emulator.accounts.get(rewardAccount)).toEqual({ balance: 0n });
+
+    const deregister = await blaze
+      .newTransaction()
+      .provideScript(alwaysTrueScript)
+      .addDeregisterStake(Credential.fromCore(cred), VOID_PLUTUS_DATA)
+      .complete();
+
+    const deregisterTxHash = await signAndSubmit(deregister, blaze);
+    emulator.awaitTransactionConfirmation(deregisterTxHash);
   });
 
   test("Should be able to withdraw from a script", async () => {

@@ -54,6 +54,7 @@ export class Maestro extends Provider {
 
   /**
    * This method fetches the protocol parameters from the Maestro API.
+   * @remarks
    * It constructs the query URL, sends a GET request with the appropriate headers, and processes the response.
    * The response is parsed into a ProtocolParameters object, which is then returned.
    * If the response is not in the expected format, an error is thrown.

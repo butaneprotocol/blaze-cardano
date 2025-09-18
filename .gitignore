@@ -5,3 +5,11 @@ node_modules
 dist/
 build
 *.pdf
+
+# Docs
+packages/*/docs/api
+packages/*/docs/types
+packages/*/etc/*.api.json
+packages/*/temp
+docs/types
+docs/.docusaurus
