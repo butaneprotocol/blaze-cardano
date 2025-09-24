@@ -1,11 +1,27 @@
 {
   "name": "@blaze-cardano/uplc",
-  "version": "0.3.2",
+  "version": "0.4.1",
   "description": "Blaze untyped plutus core library",
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./wasm": {
+      "browser": "./dist/wasm/pkg-bundler/uplc_wasm.js",
+      "import": "./dist/wasm/pkg-node/uplc_wasm.js",
+      "default": "./dist/wasm/pkg-node/uplc_wasm.js",
+      "types": "./dist/wasm/pkg-node/uplc_wasm.d.ts"
+    },
+    "./wasm/web": {
+      "import": "./dist/wasm/pkg-web/uplc_wasm.js",
+      "default": "./dist/wasm/pkg-web/uplc_wasm.js",
+      "types": "./dist/wasm/pkg-web/uplc_wasm.d.ts"
+    },
+    "./wasm/bundler": {
+      "import": "./dist/wasm/pkg-bundler/uplc_wasm.js",
+      "default": "./dist/wasm/pkg-bundler/uplc_wasm.js",
+      "types": "./dist/wasm/pkg-bundler/uplc_wasm.d.ts"
     }
   },
   "types": "./dist/index.d.ts",
@@ -13,11 +29,16 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --external rxjs",
-    "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external rxjs",
+    "build": "tsdown src/index.ts --format esm,cjs --dts --external rxjs && cd wasm && ./build.sh",
+    "build:wasm": "./scripts/build.sh",
+    "dev": "tsdown src/index.ts --format esm,cjs --watch --dts --external rxjs",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "test": "jest"
+    "test": "jest",
+    "build:types": "tsc -p tsconfig.docs.json",
+    "api:extract": "api-extractor run --local --verbose",
+    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
+    "api:prepare": "pnpm build:types && pnpm api:extract && pnpm api:md"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
@@ -28,16 +49,15 @@
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.3",
-    "tsup": "^8.2.3",
+    "tsdown": "^0.14.1",
     "typescript": "^5.5.4",
-    "uplc-node": "^0.0.3"
+    "wasm-pack": "^0.13.1"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
-    "@blaze-cardano/tx": "workspace:*",
     "@blaze-cardano/data": "workspace:*",
     "hex-encoding": "^2.0.2"
   }

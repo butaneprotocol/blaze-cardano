@@ -1,5 +1,24 @@
 # @blaze-cardano/query
 
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [52c1956]
+  - @blaze-cardano/core@0.7.0
+
+## 0.5.1
+
+### Patch Changes
+
+- 3e26e5e: Allows user's to turn off script ref caching on a per Blockfrost instance basis. This is a temporary workaround to avoid private member access errors when accessing these again at a later time.
+
+## 0.5.0
+
+### Minor Changes
+
+- 6c4d07c: Fixed an issue where a string would cause Blockfrost.resolveScriptRef to throw a fatal error.
+
 ## 0.4.5
 
 ### Patch Changes

@@ -1,0 +1,16 @@
+{
+  "extends": "@blaze-cardano/tsconfig/base.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": true,
+    "stripInternal": true,
+    "rootDir": "src",
+    "outDir": "./docs/types",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["src"],
+  "exclude": ["dist", "node_modules", ".turbo"]
+}

@@ -19,6 +19,7 @@ import {
   type TImport,
   type TTuple,
   type TOptional,
+  type TAny,
   OptionalKind,
 } from "@sinclair/typebox";
 import {
@@ -30,7 +31,7 @@ import {
   PlutusMap,
   toHex,
 } from "@blaze-cardano/core";
-export { Type, type TSchema, type TArray } from "@sinclair/typebox";
+export * from "@sinclair/typebox";
 
 export const Void = (): PlutusData =>
   PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, new PlutusList()));
@@ -54,6 +55,7 @@ const isString = (t: TSchema): t is TString => t[Kind] === "String";
 const isThis = (t: TSchema): t is TThis => t[Kind] === "This";
 const isTuple = (t: TSchema): t is TTuple => t[Kind] === "Tuple";
 const isUnion = (t: TSchema): t is TUnion => t[Kind] === "Union";
+const isAny = (t: TSchema): t is TAny => t[Kind] === "Any";
 
 export function serialize<T extends TSchema>(
   type: T,
@@ -80,6 +82,19 @@ export function _serialize<T extends TSchema>(
     );
   }
 
+  if (isOptional(type)) {
+    if (data !== null && data !== undefined) {
+      const innerType = Type.Optional(type, false);
+      const fields = new PlutusList();
+      fields.add(_serialize(innerType, data as any, path, defs));
+      return PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, fields));
+    } else {
+      return PlutusData.newConstrPlutusData(
+        new ConstrPlutusData(1n, new PlutusList()),
+      );
+    }
+  }
+
   if (data instanceof PlutusData) {
     return data;
   }
@@ -99,19 +114,6 @@ export function _serialize<T extends TSchema>(
       );
     }
     return _serialize(resolvedType, data, path, defs);
-  }
-
-  if (isOptional(type)) {
-    if (data !== null && data !== undefined) {
-      const innerType = Type.Optional(type, false);
-      const fields = new PlutusList();
-      fields.add(_serialize(innerType, data as any, path, defs));
-      return PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, fields));
-    } else {
-      return PlutusData.newConstrPlutusData(
-        new ConstrPlutusData(1n, new PlutusList()),
-      );
-    }
   }
 
   if (isUnion(type)) {
@@ -557,6 +559,9 @@ export function _parse<T extends TSchema>(
       return { [variantName!]: nestedValue } as Exact<T>;
     }
   }
+  if (isAny(type)) {
+    return data as Exact<T>;
+  }
   throw new Error(
     `Invalid type at ${path.join(".")}: Unrecognized type "${type[Kind]}".`,
   );
@@ -569,11 +574,14 @@ function resolveType<T extends TSchema>(
 ): T {
   if (isRef(type) || isThis(type) || isImport(type)) {
     defs = { ...defs, ...type.$defs };
-    const realType = defs[type.$ref];
+    let realType = defs[type.$ref];
     if (!realType) {
       throw new Error(
         `Invalid type at ${path.join(".")}: Unrecognized reference ${type.$ref}`,
       );
+    }
+    if (isOptional(type)) {
+      realType = Type.Optional(realType, true);
     }
     return resolveType(realType, path, defs) as T;
   }

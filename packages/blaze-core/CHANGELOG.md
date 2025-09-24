@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.7.0
+
+### Minor Changes
+
+- 52c1956: nativescript utils, exported as "NativeScript" from @blaze-cardano/core
+
 ## 0.6.4
 
 ### Patch Changes

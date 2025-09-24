@@ -1,5 +1,70 @@
 # @blaze-cardano/emulator
 
+## 0.3.34
+
+### Patch Changes
+
+- Updated dependencies [ab30a97]
+  - @blaze-cardano/vm@0.2.1
+  - @blaze-cardano/tx@0.13.4
+  - @blaze-cardano/wallet@0.4.13
+
+## 0.3.33
+
+### Patch Changes
+
+- Updated dependencies [eecb7fc]
+  - @blaze-cardano/vm@0.2.0
+  - @blaze-cardano/tx@0.13.3
+  - @blaze-cardano/wallet@0.4.12
+
+## 0.3.32
+
+### Patch Changes
+
+- Updated dependencies [e835407]
+- Updated dependencies [5f0893b]
+  - @blaze-cardano/vm@0.1.12
+  - @blaze-cardano/tx@0.13.2
+  - @blaze-cardano/wallet@0.4.11
+
+## 0.3.31
+
+### Patch Changes
+
+- 39a9999: Increases code coverage to >= 80%
+- Updated dependencies [66859b6]
+  - @blaze-cardano/tx@0.13.1
+  - @blaze-cardano/wallet@0.4.10
+
+## 0.3.30
+
+### Patch Changes
+
+- Updated dependencies [f66af3b]
+- Updated dependencies [52c1956]
+  - @blaze-cardano/tx@0.13.0
+  - @blaze-cardano/core@0.7.0
+  - @blaze-cardano/wallet@0.4.9
+  - @blaze-cardano/query@0.5.2
+  - @blaze-cardano/vm@0.1.11
+
+## 0.3.29
+
+### Patch Changes
+
+- Updated dependencies [3e26e5e]
+  - @blaze-cardano/query@0.5.1
+  - @blaze-cardano/wallet@0.4.8
+
+## 0.3.28
+
+### Patch Changes
+
+- Updated dependencies [6c4d07c]
+  - @blaze-cardano/query@0.5.0
+  - @blaze-cardano/wallet@0.4.7
+
 ## 0.3.27
 
 ### Patch Changes

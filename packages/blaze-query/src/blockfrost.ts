@@ -22,6 +22,7 @@ import {
   HexBlob,
   NetworkId,
   PlutusData,
+  PlutusLanguageVersion,
   PlutusV1Script,
   PlutusV2Script,
   PlutusV3Script,
@@ -33,21 +34,20 @@ import {
   TransactionUnspentOutput,
   Value,
 } from "@blaze-cardano/core";
-import { PlutusLanguageVersion } from "@blaze-cardano/core";
 import { purposeToTag, Provider, type NetworkName } from "./provider";
 
 export class Blockfrost extends Provider {
   url: string;
   private projectId: string;
   private scriptCache: Map<string, Script>;
+  public withScriptRefCaching: boolean;
 
-  constructor({
-    network,
-    projectId,
-  }: {
+  constructor(params: {
     network: NetworkName;
     projectId: string;
+    withScriptRefCaching?: boolean;
   }) {
+    const { network, projectId, withScriptRefCaching = true } = params;
     super(
       network == "cardano-mainnet" ? NetworkId.Mainnet : NetworkId.Testnet,
       network,
@@ -55,6 +55,7 @@ export class Blockfrost extends Provider {
     this.url = `https://${network}.blockfrost.io/api/v0/`;
     this.projectId = projectId;
     this.scriptCache = new Map<string, Script>();
+    this.withScriptRefCaching = withScriptRefCaching;
   }
 
   headers() {
@@ -63,6 +64,7 @@ export class Blockfrost extends Provider {
 
   /**
    * This method fetches the protocol parameters from the Blockfrost API.
+   * @remarks
    * It constructs the query URL, sends a GET request with the appropriate headers, and processes the response.
    * The response is parsed into a ProtocolParameters object, which is then returned.
    * If the response is not in the expected format, an error is thrown.
@@ -139,6 +141,7 @@ export class Blockfrost extends Provider {
 
   /**
    * This method fetches the UTxOs under a given address.
+   * @remarks
    * The response is parsed into a TransactionUnspentOutput[] type, which is
    * then returned.
    * If the response is not in the expected format, an error is thrown.
@@ -203,8 +206,8 @@ export class Blockfrost extends Provider {
   }
 
   /**
-   * This method fetches the UTxOs under a given address that hold
-   * a particular asset.
+   * This method fetches the UTxOs under a given address that hold a particular asset.
+   * @remarks
    * The response is parsed into a TransactionUnspentOutput[] type, which is
    * then returned.
    * If the response is not in the expected format, an error is thrown.
@@ -272,8 +275,8 @@ export class Blockfrost extends Provider {
   }
 
   /**
-   * This method fetches the UTxO that holds a particular NFT given as
-   * argument.
+   * This method fetches the UTxO that holds a particular NFT given as argument.
+   * @remarks
    * The response is parsed into a TransactionUnspentOutput type, which is
    * then returned.
    * If the response is not in the expected format, an error is thrown.
@@ -327,8 +330,8 @@ export class Blockfrost extends Provider {
   }
 
   /**
-   * This method resolves transaction outputs from a list of transaction
-   * inputs given as argument.
+   * This method resolves transaction outputs from a list of transaction inputs given as argument.
+   * @remarks
    * The response is parsed into a TransactionUnspentOutput[] type, which is
    * then returned.
    * If the response is not in the expected format, an error is thrown.
@@ -383,6 +386,7 @@ export class Blockfrost extends Provider {
 
   /**
    * This method returns the datum for the datum hash given as argument.
+   * @remarks
    * The response is parsed into a PlutusData type, which is then returned.
    * If the response is not in the expected format, an error is thrown.
    * @param datumHash - The hash of a datum
@@ -409,6 +413,7 @@ export class Blockfrost extends Provider {
 
   /**
    * This method awaits confirmation of the transaction given as argument.
+   * @remarks
    * The response is parsed into a boolean, which is then returned.
    * If tx is not confirmed at first and no value for timeout is provided,
    * then false is returned.
@@ -416,8 +421,7 @@ export class Blockfrost extends Provider {
    * then subsequent checks will be performed at a 20 second interval until
    * timeout is reached.
    * @param txId - The hash of a transaction
-   * @param timeout - An optional timeout for waiting for confirmation. This
-   * value should be greater than average block time of 20000 ms
+   * @param timeout - An optional timeout for waiting for confirmation. This value should be greater than average block time of 20000 ms
    * @returns A Promise that resolves to a boolean
    */
   async awaitTransactionConfirmation(
@@ -490,6 +494,7 @@ export class Blockfrost extends Provider {
 
   /**
    * This method evaluates how much execution units a transaction requires.
+   * @remarks
    * Optionally, additional outputs can be provided. These are added to the
    * evaluation without checking for their presence on-chain. This is useful
    * when performing transaction chaining, where some outputs used as inputs
@@ -504,9 +509,7 @@ export class Blockfrost extends Provider {
   ): Promise<Redeemers> {
     const currentRedeemers = tx.witnessSet().redeemers()?.values();
     if (!currentRedeemers || currentRedeemers.length === 0) {
-      throw new Error(
-        `evaluateTransaction: No Redeemers found in transaction"`,
-      );
+      throw new Error(`evaluateTransaction: No Redeemers found in transaction`);
     }
 
     const additionalUtxoSet = new Set();
@@ -607,7 +610,7 @@ export class Blockfrost extends Provider {
 
   private async getScriptRef(scriptHash: ScriptHash): Promise<Script> {
     const cachedScript = this.scriptCache.get(scriptHash);
-    if (cachedScript) {
+    if (cachedScript && this.withScriptRefCaching) {
       return cachedScript;
     }
 
@@ -688,7 +691,7 @@ export class Blockfrost extends Provider {
     script: Script | Hash28ByteBase16,
     address: Address = getBurnAddress(this.network),
   ): Promise<TransactionUnspentOutput | undefined> {
-    if ("hash" in script) {
+    if (script instanceof Script) {
       script = script.hash();
     }
     const utxos = await this.getUnspentOutputs(
@@ -698,8 +701,9 @@ export class Blockfrost extends Provider {
     return utxos[0];
   }
 
-  // Partially applies address in order to avoid sending it
-  // as argument repeatedly when building TransactionUnspentOutput
+  /**
+   * Partially applies address in order to avoid sending it as argument repeatedly when building TransactionUnspentOutput
+   */
   private buildTransactionUnspentOutput(
     address: Address,
   ): (blockfrostUTxO: BlockfrostUTxO) => Promise<TransactionUnspentOutput> {

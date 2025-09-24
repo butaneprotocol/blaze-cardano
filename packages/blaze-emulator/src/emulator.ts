@@ -186,7 +186,7 @@ export class Emulator {
     if (!this.mockedWallets.has(label)) {
       const provider = new EmulatorProvider(this);
       const entropy = randomBytes(96);
-      const masterkey = Bip32PrivateKey.fromBytes(entropy);
+      const masterkey = Bip32PrivateKey.fromBytes(new Uint8Array(entropy));
       const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
       this.mockedWallets.set(label, wallet);
     }
@@ -451,6 +451,7 @@ export class Emulator {
    *
    * @remarks
    * This function performs the following checks and validations:
+   *   - Balance Inputs/Outputs: Ensure that inputs/outputs are accurately balanced.
    *   - Verify Witnesses: Ensure that all witnesses in the transaction are valid.
    *   - Correct Count of Scripts and Vkeys: Check that the transaction has the correct number of scripts and vkeys.
    *   - Stake Key Registration: If the transaction involves a stake key registration, ensure that the stake key is not already registered.
@@ -577,13 +578,19 @@ export class Emulator {
       redeemerTag?: RedeemerTag,
       redeemerIndex?: bigint,
     ) => {
-      if (
-        nativeHashes.has(hash) ||
-        (plutusHashes.has(hash) &&
-          redeemers.some(
-            (r) => r.tag() === redeemerTag && r.index() === redeemerIndex,
-          ))
-      ) {
+      if (nativeHashes.has(hash)) {
+        consumed.add(hash);
+      } else if (plutusHashes.has(hash)) {
+        const hasRedeemer = redeemers.some(
+          (r) => r.tag() === redeemerTag && r.index() === redeemerIndex,
+        );
+
+        if (!hasRedeemer) {
+          throw new Error(
+            `Script (hash ${hash}) was found but without a redeemer.`,
+          );
+        }
+
         consumed.add(hash);
       } else {
         throw new Error(`Script (hash ${hash}) not found in witness set.`);
@@ -641,7 +648,9 @@ export class Emulator {
       const out = this.getOutput(input);
 
       if (!out) {
-        throw new Error(`Input ${input.toCore()} not found in the ledger.`);
+        throw new Error(
+          `Input ${JSON.stringify(input.toCore())} not found in the ledger.`,
+        );
       }
 
       usedInputs.push(new TransactionUnspentOutput(input, out));

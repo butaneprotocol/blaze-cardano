@@ -29,6 +29,7 @@ export type NetworkName =
 
 /**
  * Abstract class for the Provider.
+ * @remarks
  * This class provides an interface for interacting with the blockchain.
  */
 export abstract class Provider {
@@ -42,14 +43,12 @@ export abstract class Provider {
 
   /**
    * Retrieves the parameters for a transaction.
-   *
    * @returns {Promise<ProtocolParameters>} - The parameters for a transaction.
    */
   abstract getParameters(): Promise<ProtocolParameters>;
 
   /**
    * Retrieves the unspent outputs for a given address.
-   *
    * @param {Address} address - The address to retrieve unspent outputs for.
    * @returns {Promise<TransactionUnspentOutput[]>} - The unspent outputs for the address.
    */
@@ -59,7 +58,6 @@ export abstract class Provider {
 
   /**
    * Retrieves the unspent outputs for a given address and asset.
-   *
    * @param {Address} address - The address to retrieve unspent outputs for.
    * @param {AssetId} unit - The asset to retrieve unspent outputs for.
    * @returns {Promise<TransactionUnspentOutput[]>} - The unspent outputs for the address and asset.
@@ -71,7 +69,6 @@ export abstract class Provider {
 
   /**
    * Retrieves the unspent output for a given NFT.
-   *
    * @param {AssetId} unit - The NFT to retrieve the unspent output for.
    * @returns {Promise<TransactionUnspentOutput>} - The unspent output for the NFT.
    */
@@ -81,7 +78,6 @@ export abstract class Provider {
 
   /**
    * Resolves the unspent outputs for a given set of transaction inputs.
-   *
    * @param {TransactionInput[]} txIns - The transaction inputs to resolve unspent outputs for.
    * @returns {Promise<TransactionUnspentOutput[]>} - The resolved unspent outputs.
    */
@@ -91,7 +87,6 @@ export abstract class Provider {
 
   /**
    * Resolves the datum for a given datum hash.
-   *
    * @param {DatumHash} datumHash - The datum hash to resolve the datum for.
    * @returns {Promise<PlutusData>} - The resolved datum.
    */
@@ -99,7 +94,6 @@ export abstract class Provider {
 
   /**
    * Waits for the confirmation of a given transaction.
-   *
    * @param {TransactionId} txId - The transaction id to wait for confirmation.
    * @param {number} [timeout] - The timeout in milliseconds.
    * @returns {Promise<boolean>} - A boolean indicating whether the transaction is confirmed.
@@ -111,16 +105,16 @@ export abstract class Provider {
 
   /**
    * Posts a given transaction to the chain.
-   *
    * @param {Transaction} tx - The transaction to post to the chain.
    * @returns {Promise<TransactionId>} - The id of the posted transaction.
    */
   abstract postTransactionToChain(tx: Transaction): Promise<TransactionId>;
 
   /**
-   * Evaluates the transaction by calculating the exunits for each redeemer, applying them, and returning the redeemers.
+   * Evaluates the transaction.
+   * @remarks
+   * It does so by calculating the exunits for each redeemer, applying them, and returning the redeemers.
    * This makes a remote call to the provider in most cases, however may use a virtual machine in some implementations.
-   *
    * @param {Transaction} tx - The transaction to evaluate.
    * @param {TransactionUnspentOutput[]} additionalUtxos - The additional unspent outputs to consider.
    * @returns {Promise<Redeemers>} - The redeemers with applied exunits.
@@ -132,18 +126,15 @@ export abstract class Provider {
 
   /**
    * Resolves the script deployment by finding a UTxO containing the script reference.
-   *
    * @param {Script | Hash28ByteBase16} script - The script or its hash to resolve.
    * @param {Address} [address] - The address to search for the script deployment. Defaults to a burn address.
    * @returns {Promise<TransactionUnspentOutput | undefined>} - The UTxO containing the script reference, or undefined if not found.
-   *
    * @remarks
    * This is a default implementation that works but may not be optimal.
    * Subclasses of Provider should implement their own version for better performance.
    *
    * The method searches for a UTxO at the given address (or a burn address by default)
    * that contains a script reference matching the provided script or script hash.
-   *
    * @example
    * ```typescript
    * const scriptUtxo = await provider.resolveScriptRef(myScript);
@@ -166,10 +157,10 @@ export abstract class Provider {
   }
 
   /**
-   * Get the slot config, which describes how to translate between slots and unix timestamps
-   * TODO: this is brittle; in theory this should work with the era histories; also, networkName is awkward
+   * Get the slot config, which describes how to translate between slots and unix timestamps.
    */
   getSlotConfig(): SlotConfig {
+    // TODO: this is brittle; in theory this should work with the era histories; also, networkName is awkward
     switch (this.networkName) {
       case "cardano-mainnet":
         return SLOT_CONFIG_NETWORK.Mainnet;
@@ -210,8 +201,7 @@ export abstract class Provider {
 }
 
 /**
- * Mapping of RedeemerPurpose to RedeemerTag.
- * Ensures consistency between purpose strings and tag numbers.
+ * Mapping of RedeemerPurpose to RedeemerTag. Ensures consistency between purpose strings and tag numbers.
  */
 export const purposeToTag: { [key: string]: number } = {
   [RedeemerPurpose.spend]: RedeemerTag.Spend,

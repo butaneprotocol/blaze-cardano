@@ -1,5 +1,71 @@
 # @blaze-cardano/uplc
 
+## 0.4.1
+
+### Patch Changes
+
+- ab30a97: Updates the wasm pack script to remove default .gitignore file from packages. This was preventing them from being included in published files.
+
+## 0.4.0
+
+### Minor Changes
+
+- eecb7fc: Updates UPLC to export the latest wasm bindings for UPLC, and updates @blaze-cardano/vm to use these instead of a GitHub repo.
+
+## 0.3.9
+
+### Patch Changes
+
+- 3859529: Add latest builtins and add check if builtin function not found
+
+## 0.3.8
+
+### Patch Changes
+
+- Updated dependencies [5f0893b]
+  - @blaze-cardano/tx@0.13.2
+
+## 0.3.7
+
+### Patch Changes
+
+- Updated dependencies [66859b6]
+  - @blaze-cardano/tx@0.13.1
+
+## 0.3.6
+
+### Patch Changes
+
+- Updated dependencies [1efe3b1]
+  - @blaze-cardano/data@0.6.4
+  - @blaze-cardano/tx@0.13.0
+
+## 0.3.5
+
+### Patch Changes
+
+- Updated dependencies [f66af3b]
+- Updated dependencies [52c1956]
+  - @blaze-cardano/tx@0.13.0
+  - @blaze-cardano/core@0.7.0
+  - @blaze-cardano/data@0.6.3
+
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [3396834]
+  - @blaze-cardano/data@0.6.2
+  - @blaze-cardano/tx@0.12.3
+
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [aeecdcc]
+  - @blaze-cardano/data@0.6.1
+  - @blaze-cardano/tx@0.12.3
+
 ## 0.3.2
 
 ### Patch Changes
