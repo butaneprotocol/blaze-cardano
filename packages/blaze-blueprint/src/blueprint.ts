@@ -520,23 +520,23 @@ class Generator {
 
 export type BlueprintArgs = {
   infile?: string;
-  infileWithTrace?: string;
+  tracedBlueprint?: string;
   outfile?: string;
   useSdk?: boolean;
   recursiveType?: string;
 };
 export async function generateBlueprint({
   infile = "plutus.json",
-  infileWithTrace = undefined,
+  tracedBlueprint = undefined,
   outfile = "plutus.ts",
   useSdk = false,
 }: BlueprintArgs) {
   const plutusJson: Blueprint = JSON.parse(await fs.readFile(infile, "utf8"));
 
   let plutusJsonWithTrace: Blueprint | undefined;
-  if (infileWithTrace) {
+  if (tracedBlueprint) {
     plutusJsonWithTrace = JSON.parse(
-      await fs.readFile(infileWithTrace, "utf8"),
+      await fs.readFile(tracedBlueprint, "utf8"),
     );
   } else {
     plutusJsonWithTrace = undefined;
