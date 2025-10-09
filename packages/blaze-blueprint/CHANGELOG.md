@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.7.0
+
+### Minor Changes
+
+- 6731836: Adds an option for including a second traced plutus.json allowing for easy switching between untraced and traced validators.
+
 ## 0.6.1
 
 ### Patch Changes
