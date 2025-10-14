@@ -1,5 +1,5 @@
 ---
-"@blaze-cardano/blueprint": minor
+"@blaze-cardano/blueprint": patch
 ---
 
 Add PolicyId type to blueprint generation
