@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.7.1
+
+### Patch Changes
+
+- 44c5467: Add PolicyId type to blueprint generation
+
 ## 0.7.0
 
 ### Minor Changes
