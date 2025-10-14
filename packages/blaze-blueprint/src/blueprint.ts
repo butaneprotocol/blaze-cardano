@@ -108,6 +108,7 @@ class Generator {
     this.writeLine(`type Data = PlutusData;`);
     this.writeLine(`type Int = bigint;`);
     this.writeLine(`type ByteArray = string;`);
+    this.writeLine(`const PolicyId = Type.String();`);
 
     if (useSdk) {
       this.writeLine(`type OutputReference = Core.TransactionInput;`);
