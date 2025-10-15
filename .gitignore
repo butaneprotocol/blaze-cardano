@@ -4,7 +4,6 @@ node_modules
 .turbo
 dist/
 build
-*.pdf
 
 # Docs
 packages/*/docs/api
