@@ -14,7 +14,7 @@ import {
   Datum,
   Slot,
   CertificateType,
-  type PoolId,
+  PoolId,
   DRep,
   type Certificate,
   GovernanceActionId,
@@ -28,8 +28,6 @@ import {
   GovernanceActionKind,
   type Committee,
   type Fraction,
-  type DelegateRepresentativeThresholds,
-  type PoolVotingThresholds,
   type CertificateCore,
   StakeRegistrationCertificateTypes,
   StakeDelegationCertificateTypes,
@@ -39,7 +37,7 @@ import {
   isCertType,
   type StakeAddressCertificate,
   type PoolParameters,
-  CommitteeMember,
+  type CommitteeMember,
 } from "@blaze-cardano/core";
 import {
   TransactionId,
@@ -123,13 +121,6 @@ const isStakeAddressCertificate = (
   );
 };
 
-const objectHasAnyKeys = <T extends Record<string, unknown>>(
-  obj: T,
-  ...keys: (keyof T)[]
-) => {
-  return keys.some((key) => key in obj);
-};
-
 const fractionMax = (...fractions: Fraction[]) => {
   return fractions.reduce(
     (max, fraction) => {
@@ -141,6 +132,66 @@ const fractionMax = (...fractions: Fraction[]) => {
     { numerator: 0, denominator: 1 }
   );
 };
+
+const DREP_KIND_ABSTAIN = 2;
+const DREP_KIND_NO_CONFIDENCE = 3;
+
+const NETWORK_GROUP_FIELDS = new Set([
+  "maxBlockBodySize",
+  "maxTxSize",
+  "maxBlockHeaderSize",
+  "maxExecutionUnitsPerTransaction",
+  "maxExecutionUnitsPerBlock",
+  "maxValueSize",
+  "maxCollateralInputs",
+]);
+
+const ECONOMIC_GROUP_FIELDS = new Set([
+  "minFeeCoefficient",
+  "minFeeConstant",
+  "stakeKeyDeposit",
+  "poolDeposit",
+  "minPoolCost",
+  "monetaryExpansion",
+  "treasuryExpansion",
+  "coinsPerUtxoByte",
+  "prices",
+  "minFeeRefScriptCostPerByte",
+  "maxReferenceScriptsSize",
+  "minFeeReferenceScripts",
+]);
+
+const TECHNICAL_GROUP_FIELDS = new Set([
+  "poolRetirementEpochBound",
+  "desiredNumberOfPools",
+  "poolInfluence",
+  "collateralPercentage",
+  "costModels",
+]);
+
+const GOVERNANCE_GROUP_FIELDS = new Set([
+  "stakePoolVotingThresholds",
+  "delegateRepresentativeVotingThresholds",
+  "constitutionalCommitteeMinSize",
+  "constitutionalCommitteeMaxTermLength",
+  "governanceActionLifetime",
+  "governanceActionDeposit",
+  "delegateRepresentativeDeposit",
+  "delegateRepresentativeMaxIdleTime",
+]);
+
+const SECURITY_GROUP_FIELDS = new Set([
+  "maxBlockBodySize",
+  "maxTxSize",
+  "maxBlockHeaderSize",
+  "maxExecutionUnitsPerBlock",
+  "maxValueSize",
+  "minFeeCoefficient",
+  "minFeeConstant",
+  "minFeeRefScriptCostPerByte",
+  "coinsPerUtxoByte",
+  "governanceActionDeposit",
+]);
 
 const serialiseInput = (input: TransactionInput): SerialisedInput =>
   `${input.transactionId()}:${input.index()}`;
@@ -173,6 +224,7 @@ export interface EmulatorOptions {
   slotsPerEpoch?: number;
   treasury?: bigint;
   cc?: Committee;
+  ccHotCredentials?: Record<string, CredentialCore | undefined>;
 }
 
 interface VoteRecord {
@@ -197,7 +249,7 @@ interface DRepState {
   credential: CredentialCore;
   deposit: bigint;
   anchor?: AnchorCore;
-  lastActiveEpoch: number;
+  expiryEpoch?: number;
   isRegistered: boolean;
 }
 
@@ -287,7 +339,10 @@ export class Emulator {
 
   // Governance state
   dreps: Record<Hash28ByteBase16, DRepState> = {};
-  cc: Committee;
+  cc: Committee = {
+    members: [],
+    quorumThreshold: { numerator: 0, denominator: 1 },
+  };
   constitution: ConstitutionCore = {
     anchor: { url: "", dataHash: "" as Hash32ByteBase16 },
     scriptHash: null,
@@ -325,12 +380,10 @@ export class Emulator {
       params = hardCodedProtocolParams,
       treasury = 0n,
       cc = { members: [], quorumThreshold: { numerator: 0, denominator: 1 } },
+      ccHotCredentials,
     }: EmulatorOptions = {}
   ) {
-    this.cc = cc;
-    for (const member of cc.members) {
-      this.ccHotCredentials[member.coldCredential.hash] = undefined;
-    }
+    this.setCommitteeState(cc, { hotCredentials: ccHotCredentials });
     this.#nextGenesisUtxo = 0;
     for (let i = 0; i < genesisOutputs.length; i++) {
       const txIn = new TransactionInput(
@@ -641,52 +694,7 @@ export class Emulator {
    *   - Input witnesses
    *   - Consumed witnesses
    *
-   * @remarks
-   * This function performs the following checks and validations:
-   *   - Balance Inputs/Outputs: Ensure that inputs/outputs are accurately balanced.
-   *   - Verify Witnesses: Ensure that all witnesses in the transaction are valid.
-   *   - Correct Count of Scripts and Vkeys: Check that the transaction has the correct number of scripts and vkeys.
-   *   - Stake Key Registration: If the transaction involves a stake key registration, ensure that the stake key is not already registered.
-   *   - Withdrawals: If the transaction involves withdrawals, ensure that the withdrawal amount matches the actual reward balance (in babbage, zero should be valid).
-   *   - Validity Interval: Check that the transaction's validity interval is within the slot range.
-   *   - Input Existence: Check that all inputs in the transaction exist and have not been spent.
-   *   - Script Refs: For each input, check if it has a script ref and handle it accordingly.
-   *   - Collateral Inputs: Check that all collateral inputs only contain vkeys.
-   *   - Required Signers: Check that all required signers are included in the transaction.
-   *   - Mint Witnesses: Check that all mint witnesses are included in the transaction.
-   *   - Cert Witnesses: Check that all cert witnesses are included in the transaction.
-   *   - Input Witnesses: Check that all input witnesses are included in the transaction.
-   *   - Check Consumed Witnesses: Check that all witnesses have been consumed.
-   *   - Apply Transitions: Apply the necessary transitions to the ledger, mempool, withdrawal requests, cert requests, and outputs, create outputs and consume datum hashes: For each output, create a new unspent output and consume the datum hash.
-   *   - UTXO: Check that the transaction's outputs are valid. Fee checking, minSize, ada /= 0, Alonzo.validateOutputTooBigUTxO,
-   *   - Fee Checking: Ensure that the transaction fee is not too small. See the fee calculator in tx builder.
-   *   - Collateral Checking: Check that the collateral inputs are valid. Collateral should be UTxOs where all are held by pubkeys such that the sum of the collateral minus the collateral return is greater than the minimum collateral fee for the transaction.
-   *      - Understanding collateral balancing: if the tx fails, instead of consuming inputs and producing outputs, you consume collateral inputs and produce 1 output (the collateral return), this is
-   *   - Disjoint RefInputs: Ensure that there is no intersection between the input set of a transaction and the reference input set of a transaction. I.e no reference inputs may be spent.
-   *   - Outputs Too Small: Check that all outputs of the transaction are not too small. See size calculation in tx builder, use the min size parameter from protocol params.
-   *   - Other UTxO Transition Rules: Check other transition rules for the UTXO.
-   *   - PPUP: Run the PPUP rule before script evaluation. Note from micah: not fully understood.
-   *   - Expect Scripts To Pass: Ensure that all scripts pass. Simple enough, requires an 'Evaluator' to be attached to the emulator (see tx class).
-   *   - Valid field matters for scripts/collateral: Check that the valid field is true for scripts and collateral.
-   *      - The valid field tells you whether the tx should be passed as a collateral forfeit or if the tx should succeed.
-   *      - I believe when the valid field is true, even if the tx fails, the node will reject it, but a malicious node could accept and propagate it.
-   *   - Babbage Missing Scripts: Check for missing scripts according to the Babbage rules. Reference scripts get counted for free, in conway the constitution script is given for free, others need to be included in witnesses.
-   *   - Scripts Well Formed: Ensure that all scripts are well-formed.
-   *   - Check scripts needed: Check that all needed scripts are provided.
-   *   - Missing Script Witnesses: Check for missing script witnesses.
-   *   - Extraneous Script Witness: No unnecessary scripts may be attached to the transaction.
-   *   - Failed Babbage Scripts: Validate failed Babbage scripts.
-   *   - Outside Forecast: Validate that the transaction is bounded within the forecast (start <-> ttl).
-   *   - Inputs Is Not Empty Set: Validate that the inputs are not an empty set.
-   *   - Value Conserved: Validate that the value is conserved (inputs + withdrawals = outputs + fee + mint && collateral inputs = collateral outputs + collateral fee). See getPitch() from tx builder.
-   *   - ADA is not minted: Ensure that ADA is not minted.
-   *   - Output Too Big: Validate that the output is not too big.
-   *   - Output Boot AddrAttrs Too Big: Validate that the output boot address attributes are not too big.
-   *   - Correct Network Id: Validate that the correct network ID is used.
-   *   - Network for Withdrawals: Validate the network for withdrawals.
-   *   - Size of Tx: Validate the size of the transaction.
-   *   - Consumed Exunits: Validate the consumed exunits.
-   *   - Number of Collateral Inputs: Validate the number of collateral inputs.
+   * @returns {Promise<TransactionId>} - The transaction hash.
    */
   async submitTransaction(tx: Transaction): Promise<TransactionId> {
     const body = tx.body();
@@ -774,12 +782,12 @@ export class Emulator {
         consumed.add(hash);
       } else if (plutusHashes.has(hash)) {
         const hasRedeemer = redeemers.some(
-          (r) => r.tag() === redeemerTag && r.index() === redeemerIndex,
+          (r) => r.tag() === redeemerTag && r.index() === redeemerIndex
         );
 
         if (!hasRedeemer) {
           throw new Error(
-            `Script (hash ${hash}) was found but without a redeemer.`,
+            `Script (hash ${hash}) was found but without a redeemer.`
           );
         }
 
@@ -1323,17 +1331,38 @@ export class Emulator {
       case CertificateType.RegisterDelegateRepresentative: {
         const cred = core.dRepCredential;
         const keyHash = cred.hash;
-        if (this.dreps[keyHash]?.isRegistered) {
+        const existing = this.dreps[keyHash];
+        if (existing?.isRegistered) {
           throw new Error("DRep is already registered.");
         }
-        this.dreps[keyHash] = {
-          credential: cred,
-          deposit: BigInt(core.deposit),
-          anchor: core.anchor ?? undefined,
-          lastActiveEpoch: this.clock.epoch,
-          isRegistered: true,
-        };
-        this.depositPot += BigInt(core.deposit);
+        const providedDeposit = BigInt(core.deposit ?? 0);
+        const expectedDeposit = BigInt(
+          this.params.delegateRepresentativeDeposit ?? 0
+        );
+        const expiryEpoch = this.nextDrepExpiryEpoch(this.clock.epoch);
+
+        if (!existing) {
+          if (providedDeposit !== expectedDeposit) {
+            throw new Error(
+              `DRep deposit must equal ${expectedDeposit} for new registrations`
+            );
+          }
+          this.dreps[keyHash] = {
+            credential: cred,
+            deposit: providedDeposit,
+            anchor: core.anchor ?? undefined,
+            expiryEpoch,
+            isRegistered: true,
+          };
+          this.depositPot += providedDeposit;
+        } else {
+          if (providedDeposit !== 0n) {
+            throw new Error("Re-registering DRep must not include a deposit.");
+          }
+          existing.isRegistered = true;
+          existing.anchor = core.anchor ?? existing.anchor;
+          existing.expiryEpoch = expiryEpoch;
+        }
         break;
       }
       case CertificateType.UnregisterDelegateRepresentative: {
@@ -1345,6 +1374,7 @@ export class Emulator {
         }
         this.depositPot -= BigInt(drep.deposit);
         drep.isRegistered = false;
+        drep.expiryEpoch = undefined;
         const rewardAccount = this.rewardAccount(cred);
         const account = this.accounts.get(rewardAccount);
         if (account) account.balance += drep.deposit;
@@ -1468,18 +1498,85 @@ export class Emulator {
     return Number(member.epoch) >= this.clock.epoch;
   }
 
+  public setCommitteeState(
+    committee: Committee,
+    {
+      hotCredentials,
+    }: { hotCredentials?: Record<string, CredentialCore | undefined> } = {}
+  ): void {
+    this.cc = committee;
+    this.ccHotCredentials = {};
+    for (const member of committee.members) {
+      const coldHash = member.coldCredential.hash;
+      const providedHot = hotCredentials?.[coldHash];
+      this.ccHotCredentials[coldHash] = providedHot ?? undefined;
+    }
+    if (committee.members.length === 0) {
+      this.constitution = {
+        anchor: { url: "", dataHash: "" as Hash32ByteBase16 },
+        scriptHash: null,
+      };
+    }
+  }
+
+  public setCommitteeHotCredential(
+    coldCredentialHash: Hash28ByteBase16 | string,
+    credential?: CredentialCore
+  ): void {
+    const hash =
+      typeof coldCredentialHash === "string"
+        ? Hash28ByteBase16(coldCredentialHash)
+        : coldCredentialHash;
+    if (!this.findCommitteeMemberByColdHash(hash)) {
+      throw new Error(
+        "Committee cold credential not found for hot credential assignment"
+      );
+    }
+    this.ccHotCredentials[hash] = credential;
+  }
+
+  public getCommitteeHotCredential(
+    coldCredentialHash: Hash28ByteBase16 | string
+  ): CredentialCore | undefined {
+    const hash =
+      typeof coldCredentialHash === "string"
+        ? Hash28ByteBase16(coldCredentialHash)
+        : coldCredentialHash;
+    return this.ccHotCredentials[hash];
+  }
+
+  public getGovernanceProposalStatus(
+    actionId: GovernanceActionId | SerialisedGovId
+  ): ProposalStatus | undefined {
+    const key =
+      typeof actionId === "string" ? actionId : serialiseGovId(actionId);
+    return this.#proposals[key]?.status;
+  }
+
+  public getTallies(actionId: GovernanceActionId | SerialisedGovId):
+    | {
+        tallies: Tallies;
+        activeCcMembers: bigint;
+      }
+    | undefined {
+    const key =
+      typeof actionId === "string" ? actionId : serialiseGovId(actionId);
+    const proposal = this.#proposals[key];
+    if (!proposal) return undefined;
+    const snapshot = this.snapshots[this.clock.epoch - 1];
+    if (!snapshot) return undefined;
+    return this.computeGovernanceTallies(proposal, snapshot);
+  }
+
   private isValidCommitteeHotCredential(credential: CredentialCore): boolean {
-    const hotMatch = Object.entries(this.ccHotCredentials).find(
+    const hotEntry = Object.entries(this.ccHotCredentials).find(
       ([, hot]) => hot?.hash === credential.hash
     );
-    if (hotMatch) {
-      const member = this.findCommitteeMemberByColdHash(
-        hotMatch[0] as Hash28ByteBase16
-      );
-      return Boolean(member && this.committeeMemberTermActive(member));
+    if (!hotEntry) {
+      return false;
     }
     const member = this.findCommitteeMemberByColdHash(
-      credential.hash as Hash28ByteBase16
+      Hash28ByteBase16(hotEntry[0])
     );
     return Boolean(member && this.committeeMemberTermActive(member));
   }
@@ -1521,54 +1618,7 @@ export class Emulator {
       for (let i = 0; i < proposals.length; i++) {
         const procedure = proposals[i]!;
         const gid = new GovernanceActionId(txId, BigInt(i));
-        const key = serialiseGovId(gid);
-        if (key in this.#proposals) {
-          throw new Error(`Duplicate governance action id ${key}`);
-        }
-
-        const deposit = BigInt(procedure.deposit());
-        const expectedDeposit = BigInt(
-          this.params.governanceActionDeposit ?? 0
-        );
-        if (deposit !== expectedDeposit) {
-          throw new Error(
-            `Invalid governance deposit: supplied ${procedure.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`
-          );
-        }
-
-        const rewardAccount = procedure.rewardAccount();
-        if (RewardAccount.toNetworkId(rewardAccount) !== NetworkId.Testnet) {
-          throw new Error("Proposal reward account network mismatch");
-        }
-
-        if (!this.accounts.has(rewardAccount)) {
-          throw new Error(
-            `Proposal reward account ${rewardAccount} is not registered`
-          );
-        }
-
-        const kind = procedure.kind();
-        this.assertBootstrapProposalAllowed(kind);
-        this.validateGovernanceAction(procedure, currentEpoch);
-        const previousId = this.extractPrevActionId(procedure);
-        this.ensurePrevActionLink(kind, previousId);
-
-        this.depositPot += deposit;
-        if (deposit > 0n) {
-          this.increaseProposalDepositStake(rewardAccount, deposit);
-        }
-
-        this.#proposals[key] = {
-          procedure,
-          submittedEpoch: currentEpoch,
-          expiryEpoch: currentEpoch + lifetime,
-          status: ProposalStatus.Active,
-          deposit,
-          votes: new Map(),
-        };
-        this.govTrace(
-          `Registered proposal ${key} kind=${kind} expiry=${currentEpoch + lifetime}`
-        );
+        this.registerGovernanceProposal(gid, procedure, currentEpoch, lifetime);
       }
     }
 
@@ -1600,6 +1650,60 @@ export class Emulator {
         }
       }
     }
+  }
+
+  private registerGovernanceProposal(
+    actionId: GovernanceActionId,
+    procedure: ProposalProcedure,
+    currentEpoch: number,
+    lifetime: number
+  ): void {
+    const key = serialiseGovId(actionId);
+    if (key in this.#proposals) {
+      throw new Error(`Duplicate governance action id ${key}`);
+    }
+
+    const deposit = BigInt(procedure.deposit());
+    const expectedDeposit = BigInt(this.params.governanceActionDeposit ?? 0);
+    if (deposit !== expectedDeposit) {
+      throw new Error(
+        `Invalid governance deposit: supplied ${procedure.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`
+      );
+    }
+
+    const rewardAccount = procedure.rewardAccount();
+    if (RewardAccount.toNetworkId(rewardAccount) !== NetworkId.Testnet) {
+      throw new Error("Proposal reward account network mismatch");
+    }
+
+    if (!this.accounts.has(rewardAccount)) {
+      throw new Error(
+        `Proposal reward account ${rewardAccount} is not registered`
+      );
+    }
+
+    const kind = procedure.kind();
+    this.assertBootstrapProposalAllowed(kind);
+    this.validateGovernanceAction(procedure, currentEpoch);
+    const previousId = this.extractPrevActionId(procedure);
+    this.ensurePrevActionLink(kind, previousId);
+
+    this.depositPot += deposit;
+    if (deposit > 0n) {
+      this.increaseProposalDepositStake(rewardAccount, deposit);
+    }
+
+    this.#proposals[key] = {
+      procedure,
+      submittedEpoch: currentEpoch,
+      expiryEpoch: currentEpoch + lifetime,
+      status: ProposalStatus.Active,
+      deposit,
+      votes: new Map(),
+    };
+    this.govTrace(
+      `Registered proposal ${key} kind=${kind} expiry=${currentEpoch + lifetime}`
+    );
   }
 
   private assertBootstrapProposalAllowed(kind: number): void {
@@ -1653,13 +1757,16 @@ export class Emulator {
           );
         }
         const policyHash = action.policyHash();
-        if (
-          policyHash &&
-          this.constitution.scriptHash &&
-          policyHash !== this.constitution.scriptHash
-        ) {
+        const expectedPolicy = this.constitution.scriptHash;
+        if (expectedPolicy) {
+          if (!policyHash || policyHash !== expectedPolicy) {
+            throw new Error(
+              "Parameter change policy hash must reference current proposal policy"
+            );
+          }
+        } else if (policyHash) {
           throw new Error(
-            "Parameter change policy hash must reference current constitution"
+            "Parameter change policy hash must match current proposal policy"
           );
         }
         break;
@@ -1693,6 +1800,15 @@ export class Emulator {
           }
           if (Number(expiry) <= currentEpoch) {
             throw new Error("Committee member term must end in the future");
+          }
+          const maxTerm = this.params.constitutionalCommitteeMaxTermLength;
+          if (
+            maxTerm !== undefined &&
+            Number(expiry) > currentEpoch + maxTerm
+          ) {
+            throw new Error(
+              "Committee member term exceeds maximum allowable duration"
+            );
           }
         }
         break;
@@ -1745,6 +1861,12 @@ export class Emulator {
     kind: GovernanceActionKind,
     prevActionId?: GovernanceActionId
   ): void {
+    if (
+      kind === GovernanceActionKind.Info ||
+      kind === GovernanceActionKind.TreasuryWithdrawals
+    ) {
+      return;
+    }
     const expected = this.lastEnactedActionByKind[kind];
     if (expected) {
       if (!prevActionId) {
@@ -1799,7 +1921,7 @@ export class Emulator {
         if (!state?.isRegistered) {
           throw new Error("Vote cast by unregistered DRep");
         }
-        state.lastActiveEpoch = currentEpoch;
+        state.expiryEpoch = this.nextDrepExpiryEpoch(currentEpoch);
         break;
       }
       case VoterKind.ConstitutionalCommitteeKeyHash:
@@ -1835,16 +1957,13 @@ export class Emulator {
   }
 
   private isKnownStakePool(keyHash: string): boolean {
-    const target = Hash28ByteBase16.fromEd25519KeyHashHex(
-      Ed25519KeyHashHex(keyHash)
-    );
-    return Object.values(this.activePools).some((pool) => {
-      const ownersIterable = pool?.owners ?? [];
-      const owners = Array.isArray(ownersIterable)
-        ? ownersIterable
-        : Array.from(ownersIterable as Iterable<RewardAccount>);
-      return owners.some((owner) => RewardAccount.toHash(owner) === target);
-    });
+    try {
+      const poolId = PoolId.fromKeyHash(Ed25519KeyHashHex(keyHash));
+      const key = this.normalisePoolId(poolId) as PoolId;
+      return this.activePools[key] !== undefined;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -1909,7 +2028,8 @@ export class Emulator {
         case VoterKind.StakePoolKeyHash: {
           const keyHash = record.voter.toStakingPoolKeyHash();
           if (!keyHash) break;
-          spoVotes.set(keyHash, record.vote);
+          const poolId = PoolId.fromKeyHash(Ed25519KeyHashHex(keyHash));
+          spoVotes.set(this.normalisePoolId(poolId), record.vote);
           break;
         }
         case VoterKind.ConstitutionalCommitteeKeyHash:
@@ -1934,8 +2054,13 @@ export class Emulator {
       else if (vote === Vote.no) tallies.drep.no += stake;
     }
 
+    const actionKind = proposal.procedure.kind();
     for (const [poolId, stake] of Object.entries(snapshot.spoDelegation)) {
-      const vote = this.resolveStakePoolVote(poolId as PoolId, spoVotes);
+      const vote = this.resolveStakePoolVote(
+        PoolId(poolId),
+        spoVotes,
+        actionKind
+      );
       if (vote === Vote.yes) tallies.spo.yes += stake;
       else if (vote === Vote.no) tallies.spo.no += stake;
     }
@@ -1949,7 +2074,7 @@ export class Emulator {
       if (hot?.hash) {
         vote = ccVotes.get(hot.hash) ?? Vote.no;
       } else {
-        vote = ccVotes.get(member.coldCredential.hash) ?? Vote.abstain;
+        vote = Vote.abstain;
       }
       if (vote === Vote.yes) tallies.cc.yes += 1n;
       else if (vote === Vote.no) tallies.cc.no += 1n;
@@ -1963,17 +2088,59 @@ export class Emulator {
 
   private resolveStakePoolVote(
     poolId: PoolId,
-    spoVotes: Map<string, Vote>
+    spoVotes: Map<string, Vote>,
+    actionKind: GovernanceActionKind
   ): Vote {
-    const pool = this.activePools[poolId];
-    if (!pool?.owners) return Vote.no;
-    for (const owner of pool.owners) {
-      const ownerHash = String(RewardAccount.toHash(owner));
-      if (spoVotes.has(ownerHash)) {
-        return spoVotes.get(ownerHash)!;
-      }
+    const key = this.normalisePoolId(poolId);
+    const explicitVote = spoVotes.get(key);
+    if (explicitVote !== undefined) {
+      return explicitVote;
+    }
+    return this.defaultStakePoolVote(poolId, actionKind);
+  }
+
+  private normalisePoolId(poolId: PoolId | string): string {
+    return typeof poolId === "string" ? poolId : String(poolId);
+  }
+
+  private defaultStakePoolVote(
+    poolId: PoolId,
+    actionKind: GovernanceActionKind
+  ): Vote {
+    if (this.bootstrapMode) {
+      return Vote.abstain;
+    }
+    const key = this.normalisePoolId(poolId) as PoolId;
+    const pool = this.activePools[key];
+    if (!pool) {
+      return Vote.no;
+    }
+    const operatorAccount = this.accounts.get(pool.rewardAccount);
+    const operatorDrep = operatorAccount?.drep;
+    const drepKind = operatorDrep?.kind?.();
+    if (drepKind === undefined) {
+      return Vote.no;
+    }
+    if (drepKind === DREP_KIND_ABSTAIN) {
+      return Vote.abstain;
+    }
+    if (
+      drepKind === DREP_KIND_NO_CONFIDENCE &&
+      actionKind === GovernanceActionKind.NoConfidence
+    ) {
+      return Vote.yes;
     }
     return Vote.no;
+  }
+
+  private canRatifyTreasuryWithdrawal(proposal: GovProposal): boolean {
+    const action = proposal.procedure.getTreasuryWithdrawalsAction();
+    if (!action) return false;
+    let total = 0n;
+    for (const amount of action.withdrawals().values()) {
+      total += amount;
+    }
+    return total <= this.treasury;
   }
 
   /**
@@ -2040,13 +2207,6 @@ export class Emulator {
           enactAtEpoch: currentEpoch,
         });
         this.govTrace(`Proposal ${actionId} ratified`);
-        if (this.isDelayingAction(kind)) {
-          this.delayingActionBarrierUntil = currentEpoch + 1;
-          this.govTrace(
-            `Delaying other governance actions until epoch ${this.delayingActionBarrierUntil}`
-          );
-          break;
-        }
       } else {
         this.govTrace(`Proposal ${actionId} not ratified; stays Active`);
       }
@@ -2058,24 +2218,50 @@ export class Emulator {
    */
   private enactGovernanceActions(): void {
     const currentEpoch = this.clock.epoch;
-    const toEnact = this.enactQueue.filter(
-      (item) => item.enactAtEpoch === currentEpoch
-    );
+    const remainingQueue: EnactQueueItem[] = [];
+    let delayingActionTriggered = false;
 
-    for (const item of toEnact) {
+    for (const item of this.enactQueue) {
+      if (item.enactAtEpoch !== currentEpoch) {
+        remainingQueue.push(item);
+        continue;
+      }
       const proposal = this.#proposals[item.actionId];
       if (!proposal) continue;
 
-      // Apply the governance action effects based on type
-      this.applyGovernanceEffect(item.actionId, proposal);
+      const kind = proposal.procedure.kind();
+      if (delayingActionTriggered) {
+        item.enactAtEpoch = currentEpoch + 1;
+        remainingQueue.push(item);
+        continue;
+      }
+
+      const enacted = this.applyGovernanceEffect(item.actionId, proposal);
+      if (!enacted) {
+        item.enactAtEpoch = currentEpoch + 1;
+        remainingQueue.push(item);
+        continue;
+      }
+
       proposal.status = ProposalStatus.Enacted;
       this.refundProposalDeposit(proposal);
+
+      if (this.isDelayingAction(kind)) {
+        delayingActionTriggered = true;
+        this.delayingActionBarrierUntil = currentEpoch + 1;
+        this.govTrace(
+          `Delaying subsequent governance actions until epoch ${this.delayingActionBarrierUntil}`
+        );
+      }
     }
 
-    // Remove enacted items from queue
-    this.enactQueue = this.enactQueue.filter(
-      (item) => item.enactAtEpoch !== currentEpoch
-    );
+    this.enactQueue = remainingQueue;
+  }
+
+  private nextDrepExpiryEpoch(currentEpoch: number): number | undefined {
+    const maxIdleTime = this.params.delegateRepresentativeMaxIdleTime;
+    if (maxIdleTime === undefined) return undefined;
+    return currentEpoch + maxIdleTime;
   }
 
   /**
@@ -2089,7 +2275,8 @@ export class Emulator {
     for (const drep of Object.values(this.dreps)) {
       if (
         drep.isRegistered &&
-        currentEpoch - drep.lastActiveEpoch > maxIdleTime
+        drep.expiryEpoch !== undefined &&
+        currentEpoch > drep.expiryEpoch
       ) {
         drep.isRegistered = false;
         // Refund deposit would be handled here if we track it separately
@@ -2113,102 +2300,6 @@ export class Emulator {
     const dRepThresh = this.params.delegateRepresentativeVotingThresholds;
     const spoThresh = this.params.stakePoolVotingThresholds;
 
-    const getParamsGroups = () => {
-      const p = proposal.procedure.getParameterChangeAction();
-      if (!p) throw new Error("Unreachable: Parameter change action not found");
-      const u = p.toCore().protocolParamUpdate;
-
-      const drepGroups: (keyof DelegateRepresentativeThresholds)[] = [];
-      const spoGroups: (keyof PoolVotingThresholds)[] = [];
-
-      // Network group
-      if (
-        objectHasAnyKeys(
-          u,
-          "maxBlockBodySize",
-          "maxTxSize",
-          "maxBlockHeaderSize",
-          "maxExecutionUnitsPerTransaction",
-          "maxExecutionUnitsPerBlock",
-          "maxValueSize",
-          "maxCollateralInputs"
-        )
-      )
-        drepGroups.push("ppNetworkGroup");
-
-      // Economic group
-      if (
-        objectHasAnyKeys(
-          u,
-          "minFeeCoefficient",
-          "minFeeConstant",
-          "stakeKeyDeposit",
-          "poolDeposit",
-          "monetaryExpansion",
-          "treasuryExpansion",
-          "coinsPerUtxoByte",
-          "prices",
-          "minFeeRefScriptCostPerByte",
-          "minPoolCost",
-          "poolInfluence"
-        )
-      )
-        drepGroups.push("ppEconomicGroup");
-
-      // Technical group
-      if (
-        objectHasAnyKeys(
-          u,
-          "poolRetirementEpochBound",
-          "desiredNumberOfPools",
-          "poolInfluence",
-          "collateralPercentage",
-          "costModels"
-        )
-      )
-        drepGroups.push("ppTechnicalGroup");
-
-      // Governance group
-      if (
-        objectHasAnyKeys(
-          u,
-          "poolVotingThresholds",
-          "dRepVotingThresholds",
-          "minCommitteeSize",
-          "committeeTermLimit",
-          "governanceActionValidityPeriod",
-          "governanceActionDeposit",
-          "dRepDeposit",
-          "dRepInactivityPeriod"
-        )
-      )
-        drepGroups.push("ppGovernanceGroup");
-
-      // SPO security-relevant keys (Security group)
-      if (
-        objectHasAnyKeys(
-          u,
-          "maxBlockBodySize",
-          "maxTxSize",
-          "maxBlockHeaderSize",
-          "maxValueSize",
-          "maxExecutionUnitsPerBlock",
-          "minFeeRefScriptCostPerByte",
-          "coinsPerUtxoByte",
-          "governanceActionDeposit",
-          "minFeeCoefficient", // a
-          "minFeeConstant" // b
-        )
-      ) {
-        spoGroups.push("securityRelevantParamVotingThreshold");
-      }
-
-      return {
-        drep: drepGroups,
-        spo: spoGroups,
-      };
-    };
-
     switch (kind) {
       case GovernanceActionKind.NoConfidence:
         return {
@@ -2221,16 +2312,51 @@ export class Emulator {
           spo: spoThresh.hardForkInitiation,
         };
       case GovernanceActionKind.ParameterChange: {
-        const groups = getParamsGroups();
-        // Pick the strictest dRep threshold among all impacted groups (largest ratio)
+        const update =
+          proposal.procedure.getParameterChangeAction()?.toCore()
+            .protocolParamUpdate ?? {};
+        const groups = this.identifyParameterGroups(update);
+        const drepGroups = Array.from(groups).filter((group) =>
+          [
+            "NetworkGroup",
+            "EconomicGroup",
+            "TechnicalGroup",
+            "GovernanceGroup",
+          ].includes(group)
+        ) as Array<
+          | "NetworkGroup"
+          | "EconomicGroup"
+          | "TechnicalGroup"
+          | "GovernanceGroup"
+        >;
+        if (drepGroups.length === 0) {
+          throw new Error(
+            "Parameter change must impact at least one parameter group"
+          );
+        }
         const drepFraction = fractionMax(
-          ...groups.drep.map((g) => dRepThresh[g])
+          ...drepGroups.map((group) => {
+            switch (group) {
+              case "NetworkGroup":
+                return dRepThresh.ppNetworkGroup;
+              case "EconomicGroup":
+                return dRepThresh.ppEconomicGroup;
+              case "TechnicalGroup":
+                return dRepThresh.ppTechnicalGroup;
+              case "GovernanceGroup":
+                return dRepThresh.ppGovernanceGroup;
+            }
+          })
         );
-        const spoFraction = fractionMax(...groups.spo.map((g) => spoThresh[g]));
+        const spoFraction = groups.has("SecurityGroup")
+          ? spoThresh.securityRelevantParamVotingThreshold
+          : undefined;
         this.govTrace(
           `Thresholds ParamChange drep=${JSON.stringify(
             drepFraction
-          )} spo=${JSON.stringify(spoFraction)} groups=${JSON.stringify(groups)}`
+          )} spo=${JSON.stringify(spoFraction)} groups=${JSON.stringify(
+            Array.from(groups)
+          )}`
         );
         return {
           drep: drepFraction,
@@ -2261,6 +2387,63 @@ export class Emulator {
     }
   }
 
+  private identifyParameterGroups(
+    update: Record<string, unknown>
+  ): Set<
+    | "NetworkGroup"
+    | "EconomicGroup"
+    | "TechnicalGroup"
+    | "GovernanceGroup"
+    | "SecurityGroup"
+  > {
+    const groups = new Set<
+      | "NetworkGroup"
+      | "EconomicGroup"
+      | "TechnicalGroup"
+      | "GovernanceGroup"
+      | "SecurityGroup"
+    >();
+    const hasField = (field: string): boolean =>
+      this.isParameterUpdatePresent(update, field);
+
+    if ([...NETWORK_GROUP_FIELDS].some(hasField)) {
+      groups.add("NetworkGroup");
+    }
+    if ([...ECONOMIC_GROUP_FIELDS].some(hasField)) {
+      groups.add("EconomicGroup");
+    }
+    if ([...TECHNICAL_GROUP_FIELDS].some(hasField)) {
+      groups.add("TechnicalGroup");
+    }
+    if ([...GOVERNANCE_GROUP_FIELDS].some(hasField)) {
+      groups.add("GovernanceGroup");
+    }
+    if ([...SECURITY_GROUP_FIELDS].some(hasField)) {
+      groups.add("SecurityGroup");
+    }
+    return groups;
+  }
+
+  private isParameterUpdatePresent(
+    update: Record<string, unknown>,
+    field: string
+  ): boolean {
+    if (!Object.prototype.hasOwnProperty.call(update, field)) return false;
+    const value = (update as Record<string, unknown>)[field];
+    if (value === undefined) return false;
+    if (value === null) return true;
+    if (typeof value === "object") {
+      if (value instanceof Map) {
+        return value.size > 0;
+      }
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+      return Object.keys(value).length > 0;
+    }
+    return true;
+  }
+
   private fractionAtLeast(yes: bigint, no: bigint, thresh?: Fraction): boolean {
     if (!thresh) return true;
     const total = yes + no;
@@ -2286,27 +2469,51 @@ export class Emulator {
       }
     }
 
+    if (
+      kind === GovernanceActionKind.TreasuryWithdrawals &&
+      !this.canRatifyTreasuryWithdrawal(proposal)
+    ) {
+      this.govTrace(
+        "Treasury withdrawal cannot be ratified: insufficient treasury balance"
+      );
+      return false;
+    }
+
     const { drep, spo } = this.getActionThresholds(proposal);
 
-    const drepPass = this.fractionAtLeast(
+    let drepPass = this.fractionAtLeast(
       tallies.drep.yes,
       tallies.drep.no,
       drep
     );
-    const spoPass = this.fractionAtLeast(tallies.spo.yes, tallies.spo.no, spo);
+    let spoPass = this.fractionAtLeast(tallies.spo.yes, tallies.spo.no, spo);
 
     // CC quorum: yes votes against total committee members
     const ccMembers = activeCcMembers;
     const quorum = this.cc.quorumThreshold;
     const minSize = this.params.constitutionalCommitteeMinSize;
-    const ccPass =
-      kind === GovernanceActionKind.UpdateCommittee ||
-      kind === GovernanceActionKind.NoConfidence ||
-      ccMembers === 0n ||
-      (quorum !== undefined &&
-        (minSize === undefined || ccMembers >= BigInt(minSize)) &&
-        tallies.cc.yes * BigInt(quorum.denominator) >=
-          BigInt(quorum.numerator) * ccMembers);
+    let ccPass = true;
+    if (
+      kind !== GovernanceActionKind.UpdateCommittee &&
+      kind !== GovernanceActionKind.NoConfidence &&
+      quorum !== undefined
+    ) {
+      if (
+        (minSize !== undefined && ccMembers < BigInt(minSize)) ||
+        ccMembers === 0n
+      ) {
+        ccPass = false;
+      } else {
+        ccPass =
+          tallies.cc.yes * BigInt(quorum.denominator) >=
+          BigInt(quorum.numerator) * ccMembers;
+      }
+    }
+
+    if (this.bootstrapMode) {
+      drepPass = true;
+      spoPass = true;
+    }
 
     const pass = drepPass && spoPass && ccPass;
     this.govTrace(
@@ -2318,7 +2525,7 @@ export class Emulator {
   private applyGovernanceEffect(
     actionId: SerialisedGovId,
     proposal: GovProposal
-  ): void {
+  ): boolean {
     const actionKind = proposal.procedure.kind();
 
     switch (actionKind) {
@@ -2353,15 +2560,27 @@ export class Emulator {
         const treasuryAction =
           proposal.procedure.getTreasuryWithdrawalsAction();
         if (treasuryAction) {
-          for (const [rewardAccount, amount] of treasuryAction
-            .withdrawals()
-            .entries()) {
-            if (this.treasury >= amount) {
-              this.treasury -= amount;
-              const account = this.accounts.get(rewardAccount);
-              if (account) {
-                account.balance += amount;
-              }
+          const withdrawals = Array.from(
+            treasuryAction.withdrawals().entries()
+          );
+          const total = withdrawals.reduce(
+            (sum, [, amount]) => sum + amount,
+            0n
+          );
+          if (total > this.treasury) {
+            this.govTrace(
+              `Enactment blocked for ${actionId}: treasury shortfall ${total - this.treasury}`
+            );
+            return false;
+          }
+          this.govTrace(
+            `Enacting treasury withdrawal total=${total} treasuryBefore=${this.treasury} recipients=${withdrawals.length}`
+          );
+          this.treasury -= total;
+          for (const [rewardAccount, amount] of withdrawals) {
+            const account = this.accounts.get(rewardAccount);
+            if (account) {
+              account.balance += amount;
             }
           }
         }
@@ -2395,6 +2614,12 @@ export class Emulator {
         const newConstitution = proposal.procedure.getNewConstitution();
         if (newConstitution) {
           this.constitution = newConstitution.toCore().constitution;
+          const scriptHash = this.constitution.scriptHash;
+          if (scriptHash !== null) {
+            for (const member of this.cc.members) {
+              this.ccHotCredentials[member.coldCredential.hash] = undefined;
+            }
+          }
         }
         break;
       }
@@ -2404,10 +2629,16 @@ export class Emulator {
       }
     }
 
-    this.lastEnactedActionByKind[actionKind] = actionId;
+    if (
+      actionKind !== GovernanceActionKind.Info &&
+      actionKind !== GovernanceActionKind.TreasuryWithdrawals
+    ) {
+      this.lastEnactedActionByKind[actionKind] = actionId;
+    }
     this.govTrace(
       `Enacted action ${actionId} (${GovernanceActionKind[actionKind]})`
     );
+    return true;
   }
 
   private refundProposalDeposit(proposal: GovProposal): void {

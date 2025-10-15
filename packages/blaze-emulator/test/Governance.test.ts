@@ -8,10 +8,11 @@ import {
   Hash28ByteBase16,
   Hash32ByteBase16,
   NetworkId,
+  PoolId,
   ProposalProcedure,
   RewardAccount,
   TransactionId,
-  type EpochNo,
+  EpochNo,
   VotingProcedure,
   VotingProcedures,
   Voter,
@@ -19,6 +20,7 @@ import {
   Ed25519KeyHashHex,
   DRep,
   hardCodedProtocolParams,
+  Cardano,
 } from "@blaze-cardano/core";
 import { Blaze, makeValue, Provider } from "@blaze-cardano/sdk";
 import { HotWallet } from "@blaze-cardano/wallet";
@@ -41,41 +43,44 @@ if (!(BigInt.prototype as unknown as { toJSON?: () => string }).toJSON) {
     };
 }
 
-function replacer(_key: any, value: any) {
-  if(value instanceof Map) {
-    return {
-      dataType: 'Map',
-      value: Array.from(value.entries()), // or with spread: value: [...value]
-    };
-  } else {
-    return value;
-  }
-}
-
-function reviver(_key: any, value: any) {
-  if(typeof value === 'object' && value !== null) {
-    if (value.dataType === 'Map') {
-      return new Map(value.value);
-    }
-  }
-  return value;
-}
-
 describe("Emulator governance", () => {
   let emulator: Emulator;
   let blaze: Blaze<Provider, HotWallet>;
   let address: Address;
 
   beforeEach(async () => {
+    const coldCredential = {
+      type: CredentialType.KeyHash,
+      hash: Hash28ByteBase16("aa".repeat(28)),
+    } as CredentialCore;
+    const committeeMember: CommitteeMember = {
+      coldCredential,
+      epoch: EpochNo(100),
+    };
     emulator = new Emulator([], {
-      params: JSON.parse(JSON.stringify(hardCodedProtocolParams, replacer), reviver),
+      params: structuredClone(hardCodedProtocolParams),
       slotConfig: {
         zeroTime: 0,
         zeroSlot: 0,
         slotLength: 1000,
       },
+      cc: {
+        members: [committeeMember],
+        quorumThreshold: { numerator: 0, denominator: 1 },
+      },
+      ccHotCredentials: { [coldCredential.hash]: undefined },
     });
+    emulator.params.constitutionalCommitteeMinSize = 1;
     emulator.bootstrapMode = false;
+    emulator.params.collateralPercentage = 0;
+    emulator.setCommitteeState(emulator.cc, {
+      hotCredentials: emulator.cc.members.reduce<
+        Record<string, CredentialCore | undefined>
+      >((acc, member) => {
+        acc[member.coldCredential.hash] = undefined;
+        return acc;
+      }, {}),
+    });
     if (emulator.params.stakePoolVotingThresholds) {
       emulator.params.stakePoolVotingThresholds.securityRelevantParamVotingThreshold =
         {
@@ -91,7 +96,6 @@ describe("Emulator governance", () => {
   });
 
   const ZERO_HASH32 = Hash32ByteBase16("".padStart(64, "0"));
-  const toEpochNo = (value: number): EpochNo => value as unknown as EpochNo;
 
   const registerStakeHolder = async ({
     registerDRep = true,
@@ -127,6 +131,18 @@ describe("Emulator governance", () => {
       }
     }
     return { stakeCred, rewardAccount };
+  };
+
+  const submitProposal = async (
+    procedure: ProposalProcedure
+  ): Promise<GovernanceActionId> => {
+    const builder = blaze.newTransaction().addProposal(procedure);
+    builder.setMinimumFee(0n);
+    const tx = await builder.complete();
+    tx.body().setFee(0n);
+    const hash = await signAndSubmit(tx, blaze);
+    emulator.awaitTransactionConfirmation(hash);
+    return new GovernanceActionId(TransactionId(hash), 0n);
   };
 
   const castDrepVotes = async (
@@ -191,7 +207,7 @@ describe("Emulator governance", () => {
         __typename: "parameter_change_action",
         governanceActionId: null,
         protocolParamUpdate: { minFeeConstant: newMinFeeConstant },
-        policyHash: null,
+        policyHash: emulator.constitution.scriptHash,
       },
       anchor: {
         url: "ipfs://example",
@@ -223,6 +239,106 @@ describe("Emulator governance", () => {
     emulator.stepForwardToNextEpoch();
 
     expect(emulator.params.minFeeConstant).toBe(newMinFeeConstant);
+  });
+
+  test("stake pool default votes respect bootstrap and delegation rules", async () => {
+    const poolStakeCred: CredentialCore = {
+      type: CredentialType.KeyHash,
+      hash: Hash28ByteBase16("bb".repeat(28)),
+    };
+    const poolReward = RewardAccount.fromCredential(
+      poolStakeCred,
+      NetworkId.Testnet
+    );
+    emulator.accounts.set(poolReward, {
+      balance: 600_000_000n,
+      poolId: undefined,
+    });
+    const poolId = PoolId.fromKeyHash(Ed25519KeyHashHex(poolStakeCred.hash));
+    const poolAccount = emulator.accounts.get(poolReward)!;
+    poolAccount.poolId = poolId;
+    emulator.activePools[poolId] = {
+      id: poolId,
+      rewardAccount: poolReward,
+      owners: [poolReward],
+      pledge: 0n,
+      cost: 0n,
+      margin: { numerator: 0, denominator: 1 },
+      relays: [],
+      metadataJson: undefined,
+      metadata: undefined,
+      vrf: Cardano.VrfVkHex("".padStart(64, "0")),
+    };
+
+    const proposer = await registerStakeHolder({
+      registerDRep: true,
+      stake: 800_000_000n,
+    });
+
+    const originalDeposit = emulator.params.governanceActionDeposit ?? 0;
+    emulator.params.governanceActionDeposit = 0;
+
+    emulator.stepForwardToNextEpoch();
+
+    // Bootstrap mode → SPO abstains by default.
+    emulator.bootstrapMode = true;
+    const bootstrapParamChange = ProposalProcedure.fromCore({
+      deposit: BigInt(emulator.params.governanceActionDeposit ?? 0),
+      rewardAccount: proposer.rewardAccount,
+      governanceAction: {
+        // @ts-expect-error - GovernanceActionType is not exported
+        __typename: "info_action",
+        governanceActionId: null,
+      },
+      anchor: { url: "ipfs://bootstrap-spo", dataHash: ZERO_HASH32 },
+    });
+    const bootstrapActionId = await submitProposal(bootstrapParamChange);
+    emulator.stepForwardToNextEpoch();
+    const bootstrapTallies = emulator.getTallies(bootstrapActionId)!;
+    expect(bootstrapTallies.tallies.spo.yes).toBe(0n);
+    expect(bootstrapTallies.tallies.spo.no).toBe(0n);
+
+    // Post-bootstrap without delegation → defaults to no.
+    emulator.bootstrapMode = false;
+    emulator.stepForwardToNextEpoch();
+    const postBootstrapParamChange = ProposalProcedure.fromCore({
+      deposit: BigInt(emulator.params.governanceActionDeposit ?? 0),
+      rewardAccount: proposer.rewardAccount,
+      governanceAction: {
+        // @ts-expect-error - GovernanceActionType is not exported
+        __typename: "info_action",
+        governanceActionId: null,
+      },
+      anchor: { url: "ipfs://post-bootstrap-spo", dataHash: ZERO_HASH32 },
+    });
+    const postBootstrapActionId = await submitProposal(
+      postBootstrapParamChange
+    );
+    emulator.stepForwardToNextEpoch();
+    const postBootstrapTallies = emulator.getTallies(postBootstrapActionId)!;
+    expect(postBootstrapTallies.tallies.spo.yes).toBe(0n);
+    expect(postBootstrapTallies.tallies.spo.no).toBe(600_000_000n);
+
+    // Delegating to AlwaysNoConfidence flips the default to yes for no-confidence votes.
+    poolAccount.drep = DRep.newAlwaysNoConfidence();
+    emulator.stepForwardToNextEpoch();
+    const noConfidenceProposal = ProposalProcedure.fromCore({
+      deposit: BigInt(emulator.params.governanceActionDeposit ?? 0),
+      rewardAccount: proposer.rewardAccount,
+      governanceAction: {
+        // @ts-expect-error - GovernanceActionType is not exported
+        __typename: "no_confidence",
+        governanceActionId: null,
+      },
+      anchor: { url: "ipfs://noc-default", dataHash: ZERO_HASH32 },
+    });
+    const noConfidenceActionId = await submitProposal(noConfidenceProposal);
+    emulator.stepForwardToNextEpoch();
+    const noConfidenceTallies = emulator.getTallies(noConfidenceActionId)!;
+    expect(noConfidenceTallies.tallies.spo.yes).toBe(600_000_000n);
+    expect(noConfidenceTallies.tallies.spo.no).toBe(0n);
+
+    emulator.params.governanceActionDeposit = originalDeposit;
   });
 
   test("latest vote from a voter overrides previous votes", async () => {
@@ -259,7 +375,7 @@ describe("Emulator governance", () => {
         __typename: "parameter_change_action",
         governanceActionId: null,
         protocolParamUpdate: { minFeeConstant: newMinFeeConstant },
-        policyHash: null,
+        policyHash: emulator.constitution.scriptHash,
       },
       anchor: {
         url: "ipfs://example",
@@ -327,7 +443,7 @@ describe("Emulator governance", () => {
         protocolParamUpdate: {
           minFeeConstant: emulator.params.minFeeConstant + 500,
         },
-        policyHash: null,
+        policyHash: emulator.constitution.scriptHash,
       },
       anchor: {
         url: "https://example.com",
@@ -399,7 +515,7 @@ describe("Emulator governance", () => {
     const actionId = new GovernanceActionId(TransactionId(proposalHash), 0n);
     await castDrepVotes(stakeCred, [{ actionId }]);
 
-    const currentTreasury = emulator.treasury
+    const currentTreasury = emulator.treasury;
     const treasuryFee = emulator.getCurrentTreasuryFeeShare();
 
     emulator.stepForwardToNextEpoch();
@@ -413,8 +529,47 @@ describe("Emulator governance", () => {
     expect(emulator.depositPot).toBe(BigInt(emulator.params.stakeKeyDeposit));
   });
 
+  test("treasury withdrawals exceeding treasury remain active", async () => {
+    emulator.treasury = 500_000_000n;
+    if (emulator.params.stakePoolVotingThresholds) {
+      emulator.params.stakePoolVotingThresholds.committeeNormal = {
+        numerator: 0,
+        denominator: 1,
+      };
+    }
+
+    emulator.stepForwardToNextEpoch();
+    const { stakeCred, rewardAccount } = await registerStakeHolder({
+      stake: 900_000_000n,
+    });
+
+    emulator.stepForwardToNextEpoch();
+
+    const excessiveWithdrawal = ProposalProcedure.fromCore({
+      deposit: DEPOSIT,
+      rewardAccount,
+      governanceAction: {
+        // @ts-expect-error - GovernanceActionType is not exported
+        __typename: "treasury_withdrawals_action",
+        withdrawals: new Set([{ rewardAccount, coin: 600_000_000n }]),
+        policyHash: null,
+      },
+      anchor: { url: "ipfs://treasury-excess", dataHash: ZERO_HASH32 },
+    });
+
+    const actionId = await submitProposal(excessiveWithdrawal);
+
+    await castDrepVotes(stakeCred, [{ actionId }]);
+
+    const treasuryBefore = emulator.treasury;
+    const feeShare = emulator.getCurrentTreasuryFeeShare();
+    emulator.stepForwardToNextEpoch();
+
+    expect(emulator.getGovernanceProposalStatus(actionId)).toBe("Active");
+    expect(emulator.treasury).toBe(treasuryBefore + feeShare);
+  });
+
   test("committee update rejects candidates whose term has already expired", async () => {
-    // Spec Fig. 59 (lines 3316-3335) rejects expired actions during RATIFY.
     emulator.stepForwardToNextEpoch();
     const { rewardAccount } = await registerStakeHolder({
       registerDRep: false,
@@ -437,7 +592,7 @@ describe("Emulator governance", () => {
         membersToBeAdded: new Set([
           {
             coldCredential: expiredCandidate,
-            epoch: toEpochNo(emulator.clock.epoch),
+            epoch: EpochNo(emulator.clock.epoch),
           },
         ]) as Set<CommitteeMember>,
         newQuorumThreshold: { numerator: 1, denominator: 1 },
@@ -453,7 +608,6 @@ describe("Emulator governance", () => {
   });
 
   test("committee updates refresh membership and reset hot credentials on enactment", async () => {
-    // Spec §9.4 dictates UpdateCommittee removals/additions and hot-key resets.
     const coldToRemove = Hash28ByteBase16("01".repeat(28));
     const newCold = Hash28ByteBase16("02".repeat(28));
     const existingHot: CredentialCore = {
@@ -461,22 +615,21 @@ describe("Emulator governance", () => {
       hash: Hash28ByteBase16("03".repeat(28)),
     };
 
-    emulator.cc = {
-      members: [
-        {
-          coldCredential: {
-            type: CredentialType.KeyHash,
-            hash: coldToRemove,
+    emulator.setCommitteeState(
+      {
+        members: [
+          {
+            coldCredential: {
+              type: CredentialType.KeyHash,
+              hash: coldToRemove,
+            },
+            epoch: EpochNo(emulator.clock.epoch + 5),
           },
-          epoch: toEpochNo(emulator.clock.epoch + 5),
-        },
-      ],
-      quorumThreshold: { numerator: 1, denominator: 1 },
-    };
-    const internals = emulator as unknown as {
-      ccHotCredentials: Record<string, CredentialCore | undefined>;
-    };
-    internals.ccHotCredentials[coldToRemove] = existingHot;
+        ],
+        quorumThreshold: { numerator: 1, denominator: 1 },
+      },
+      { hotCredentials: { [coldToRemove]: existingHot } }
+    );
 
     if (emulator.params.stakePoolVotingThresholds) {
       emulator.params.stakePoolVotingThresholds.committeeNormal = {
@@ -491,7 +644,7 @@ describe("Emulator governance", () => {
     });
     emulator.stepForwardToNextEpoch();
 
-    const newTermEpoch = toEpochNo(emulator.clock.epoch + 5);
+    const newTermEpoch = EpochNo(emulator.clock.epoch + 5);
     const proposal = ProposalProcedure.fromCore({
       deposit: DEPOSIT,
       rewardAccount,
@@ -541,12 +694,11 @@ describe("Emulator governance", () => {
       numerator: 2,
       denominator: 3,
     });
-    expect(internals.ccHotCredentials[coldToRemove]).toBeUndefined();
-    expect(internals.ccHotCredentials[newCold]).toBeUndefined();
+    expect(emulator.getCommitteeHotCredential(coldToRemove)).toBeUndefined();
+    expect(emulator.getCommitteeHotCredential(newCold)).toBeUndefined();
   });
 
   test("new constitution proposals must reference last enacted constitution", async () => {
-    // Spec Fig. 52 mandates chained governanceActionId references for
     // constitution updates.
     emulator.stepForwardToNextEpoch();
     const { stakeCred, rewardAccount } = await registerStakeHolder({
@@ -638,7 +790,6 @@ describe("Emulator governance", () => {
   });
 
   test("no-confidence ratification delays unrelated governance actions until next epoch", async () => {
-    // Spec Fig. 59 delayingAction rules (lines 3335-3535) gate RATIFY.
     if (emulator.params.stakePoolVotingThresholds) {
       emulator.params.stakePoolVotingThresholds.motionNoConfidence = {
         numerator: 0,
@@ -709,7 +860,6 @@ describe("Emulator governance", () => {
   });
 
   test("proposal deposits expire and refund stake when lifetime elapses", async () => {
-    // Spec Fig. 59 expired rules (lines 3316-3353) refund deposits after expiry.
     emulator.params.governanceActionLifetime = 1;
 
     const { rewardAccount } = await registerStakeHolder({
@@ -732,8 +882,6 @@ describe("Emulator governance", () => {
       anchor: { url: "ipfs://expiring", dataHash: ZERO_HASH32 },
     });
 
-    console.log("HEREEEEEEEEE");
-
     const tx = await blaze.newTransaction().addProposal(proposal).complete();
     const hash = await signAndSubmit(tx, blaze);
     emulator.awaitTransactionConfirmation(hash);
@@ -749,7 +897,6 @@ describe("Emulator governance", () => {
   });
 
   test("committee votes reject unauthorized hot credentials", async () => {
-    // Spec §9.5 actualCCVote (lines 3230-3335) requires authorized hot keys.
     emulator.stepForwardToNextEpoch();
 
     const coldAddress = await emulator.register(
@@ -769,15 +916,15 @@ describe("Emulator governance", () => {
     const coldStakeCred = coldAddress.getProps().delegationPart!;
     const hotStakeCred = hotAddress.getProps().delegationPart!;
 
-    emulator.cc = {
+    emulator.setCommitteeState({
       members: [
         {
           coldCredential: coldStakeCred,
-          epoch: toEpochNo(emulator.clock.epoch + 5),
+          epoch: EpochNo(emulator.clock.epoch + 5),
         },
       ],
       quorumThreshold: { numerator: 1, denominator: 1 },
-    };
+    });
 
     const { rewardAccount } = await registerStakeHolder({
       registerDRep: false,
@@ -794,7 +941,7 @@ describe("Emulator governance", () => {
         protocolParamUpdate: {
           minFeeConstant: emulator.params.minFeeConstant + 50,
         },
-        policyHash: null,
+        policyHash: emulator.constitution.scriptHash,
       },
       anchor: { url: "ipfs://param-hot", dataHash: ZERO_HASH32 },
     });
@@ -823,6 +970,211 @@ describe("Emulator governance", () => {
 
     await expect(signAndSubmit(voteTx, ccHotBlaze, true)).rejects.toThrow(
       /committee voter is not authorized/i
+    );
+  });
+
+  test("drep re-registration enforces deposit rules and refreshes expiry", async () => {
+    emulator.params.delegateRepresentativeDeposit = 5_000_000;
+    emulator.params.delegateRepresentativeMaxIdleTime = 2;
+
+    const deposit = BigInt(emulator.params.delegateRepresentativeDeposit);
+    const maxIdle = emulator.params.delegateRepresentativeMaxIdleTime ?? 0;
+
+    emulator.stepForwardToNextEpoch();
+    const { stakeCred, rewardAccount } = await registerStakeHolder({
+      registerDRep: true,
+      drepDeposit: deposit,
+      stake: 1_000_000_000n,
+    });
+
+    const drepState = emulator.dreps[stakeCred.hash]!;
+    expect(drepState.deposit).toBe(deposit);
+    expect(drepState.expiryEpoch).toBe(emulator.clock.epoch + maxIdle);
+    expect(emulator.depositPot).toBe(STAKE_KEY_DEPOSIT + deposit);
+
+    const unregisterTx = await blaze
+      .newTransaction()
+      .addUnregisterDRep(Credential.fromCore(stakeCred), deposit)
+      .complete();
+    const unregisterHash = await signAndSubmit(unregisterTx, blaze, true);
+    emulator.awaitTransactionConfirmation(unregisterHash);
+    expect(emulator.depositPot).toBe(STAKE_KEY_DEPOSIT);
+
+    const reRegisterTx = await blaze
+      .newTransaction()
+      .addRegisterDRep(Credential.fromCore(stakeCred), 0n)
+      .complete();
+    const reRegisterHash = await signAndSubmit(reRegisterTx, blaze, true);
+    emulator.awaitTransactionConfirmation(reRegisterHash);
+    expect(emulator.depositPot).toBe(STAKE_KEY_DEPOSIT);
+
+    const paramChange = ProposalProcedure.fromCore({
+      deposit: DEPOSIT,
+      rewardAccount,
+      governanceAction: {
+        // @ts-expect-error - GovernanceActionType is not exported
+        __typename: "parameter_change_action",
+        governanceActionId: null,
+        protocolParamUpdate: {
+          minFeeConstant: emulator.params.minFeeConstant + 42,
+        },
+        policyHash: emulator.constitution.scriptHash,
+      },
+      anchor: { url: "ipfs://drep-refresh", dataHash: ZERO_HASH32 },
+    });
+
+    const paramActionId = await submitProposal(paramChange);
+
+    const voteEpoch = emulator.clock.epoch;
+    await castDrepVotes(stakeCred, [{ actionId: paramActionId }]);
+    emulator.stepForwardToNextEpoch();
+
+    const refreshed = emulator.dreps[stakeCred.hash]!;
+    expect(refreshed.expiryEpoch).toBe(voteEpoch + maxIdle);
+  });
+
+  test("parameter group combination selects strictest thresholds", async () => {
+    if (!emulator.params.delegateRepresentativeVotingThresholds) {
+      throw new Error("Missing delegateRepresentativeVotingThresholds");
+    }
+    emulator.params.delegateRepresentativeVotingThresholds.ppEconomicGroup = {
+      numerator: 3,
+      denominator: 4,
+    };
+    emulator.params.delegateRepresentativeVotingThresholds.ppGovernanceGroup = {
+      numerator: 4,
+      denominator: 5,
+    };
+    if (!emulator.params.stakePoolVotingThresholds) {
+      throw new Error("Missing stakePoolVotingThresholds");
+    }
+    emulator.params.stakePoolVotingThresholds.securityRelevantParamVotingThreshold =
+      {
+        numerator: 0,
+        denominator: 1,
+      };
+
+    const { stakeCred, rewardAccount } = await registerStakeHolder({
+      stake: 800_000_000n,
+    });
+
+    emulator.stepForwardToNextEpoch();
+
+    const update = ProposalProcedure.fromCore({
+      deposit: DEPOSIT,
+      rewardAccount,
+      governanceAction: {
+        // @ts-expect-error - GovernanceActionType is not exported
+        __typename: "parameter_change_action",
+        governanceActionId: null,
+        protocolParamUpdate: {
+          coinsPerUtxoByte: emulator.params.coinsPerUtxoByte + 1,
+          governanceActionValidityPeriod: EpochNo(
+            (emulator.params.governanceActionLifetime ?? 0) + 5
+          ),
+        },
+        policyHash: emulator.constitution.scriptHash,
+      },
+      anchor: { url: "ipfs://group-thresholds", dataHash: ZERO_HASH32 },
+    });
+
+    const actionId = await submitProposal(update);
+    await castDrepVotes(stakeCred, [{ actionId }]);
+
+    emulator.stepForwardToNextEpoch();
+    emulator.stepForwardToNextEpoch();
+
+    const drepThreshold =
+      emulator.params.delegateRepresentativeVotingThresholds.ppGovernanceGroup;
+    expect(drepThreshold).toEqual({ numerator: 4, denominator: 5 });
+    const spoThreshold =
+      emulator.params.stakePoolVotingThresholds
+        .securityRelevantParamVotingThreshold;
+    expect(spoThreshold).toEqual({ numerator: 0, denominator: 1 });
+    expect(emulator.getGovernanceProposalStatus(actionId)).toBe("Enacted");
+  });
+
+  test("info and treasury actions skip previous-action linkage", async () => {
+    const { stakeCred, rewardAccount } = await registerStakeHolder({
+      stake: 600_000_000n,
+    });
+
+    emulator.setCommitteeState({ members: [], quorumThreshold: { numerator: 0, denominator: 1 } });
+    emulator.params.constitutionalCommitteeMinSize = 0;
+    if (emulator.params.stakePoolVotingThresholds) {
+      emulator.params.stakePoolVotingThresholds.committeeNormal = {
+        numerator: 0,
+        denominator: 1,
+      };
+    }
+
+    emulator.stepForwardToNextEpoch();
+
+    const infoProposal = ProposalProcedure.fromCore({
+      deposit: DEPOSIT,
+      rewardAccount,
+      governanceAction: {
+        // @ts-expect-error - GovernanceActionType is not exported
+        __typename: "info_action",
+        governanceActionId: null,
+      },
+      anchor: { url: "ipfs://info-1", dataHash: ZERO_HASH32 },
+    });
+    const infoAction1 = await submitProposal(infoProposal);
+    await castDrepVotes(stakeCred, [{ actionId: infoAction1 }]);
+    emulator.stepForwardToNextEpoch();
+
+    const infoProposal2 = ProposalProcedure.fromCore({
+      deposit: DEPOSIT,
+      rewardAccount,
+      governanceAction: {
+        // @ts-expect-error - GovernanceActionType is not exported
+        __typename: "info_action",
+        governanceActionId: null,
+      },
+      anchor: { url: "ipfs://info-2", dataHash: ZERO_HASH32 },
+    });
+    const infoAction2 = await submitProposal(infoProposal2);
+    await castDrepVotes(stakeCred, [{ actionId: infoAction2 }]);
+    emulator.stepForwardToNextEpoch();
+    expect(emulator.getGovernanceProposalStatus(infoAction2)).toBe("Active");
+
+    emulator.treasury = 1_000_000_000n;
+    const treasuryProposal = ProposalProcedure.fromCore({
+      deposit: DEPOSIT,
+      rewardAccount,
+      governanceAction: {
+        // @ts-expect-error - GovernanceActionType is not exported
+        __typename: "treasury_withdrawals_action",
+        withdrawals: new Set([{ rewardAccount, coin: 100_000_000n }]),
+        policyHash: null,
+      },
+      anchor: { url: "ipfs://treasury-1", dataHash: ZERO_HASH32 },
+    });
+    const treasuryAction1 = await submitProposal(treasuryProposal);
+    await castDrepVotes(stakeCred, [{ actionId: treasuryAction1 }]);
+    emulator.stepForwardToNextEpoch();
+    emulator.stepForwardToNextEpoch();
+
+    const treasuryProposal2 = ProposalProcedure.fromCore({
+      deposit: DEPOSIT,
+      rewardAccount,
+      governanceAction: {
+        // @ts-expect-error - GovernanceActionType is not exported
+        __typename: "treasury_withdrawals_action",
+        withdrawals: new Set([{ rewardAccount, coin: 50_000_000n }]),
+        policyHash: null,
+      },
+      anchor: { url: "ipfs://treasury-2", dataHash: ZERO_HASH32 },
+    });
+    const treasuryAction2 = await submitProposal(treasuryProposal2);
+    await castDrepVotes(stakeCred, [{ actionId: treasuryAction2 }]);
+    emulator.stepForwardToNextEpoch();
+    const treasuryTallies = emulator.getTallies(treasuryAction2)!;
+    expect(treasuryTallies.tallies.drep.yes).toBeGreaterThan(0n);
+    emulator.stepForwardToNextEpoch();
+    expect(emulator.getGovernanceProposalStatus(treasuryAction2)).toBe(
+      "Active"
     );
   });
 });
