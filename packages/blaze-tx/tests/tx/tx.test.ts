@@ -22,6 +22,7 @@ import {
   Ed25519KeyHashHex,
   Credential,
   CredentialType,
+  addressFromCredential,
 } from "@blaze-cardano/core";
 import { makeUplcEvaluator } from "@blaze-cardano/vm";
 import { Void } from "@blaze-cardano/data";
@@ -765,5 +766,58 @@ describe("Transaction Building", () => {
     expect(txComplete.toCbor()).toEqual(
       "84a400d90102828258200000000000000000000000000000000000000000000000000000000000000000008258207f11d088de6c214c25dbeff5a98ef5cb4f34741c062ead606859bee58ae0794d00018282583901f44f8751f03d767ba51c4fe988ed289b7ced4c7e832223d44b31bcce2341d750452778e9a0962600af8e05eef6697c83df9f492103bc8b531a02e73d2482583901f44f8751f03d767ba51c4fe988ed289b7ced4c7e832223d44b31bcce2341d750452778e9a0962600af8e05eef6697c83df9f492103bc8b531a00111b57021a00029805161a000f4240a0f5f6",
     );
+  });
+
+  it("should set the collateral if set explicitly with coin selection turned on", async () => {
+    // $hosky
+    const testAddress = Address.fromBech32(
+      "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
+    );
+
+    const collateral = new TransactionUnspentOutput(
+      new TransactionInput(TransactionId("0".repeat(64)), 0n),
+      new TransactionOutput(testAddress, value.makeValue(123_000_000n)),
+    );
+
+    const alwaysTrueScript = Script.newPlutusV2Script(
+      new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
+    );
+
+    const cred = Credential.fromCore({
+      hash: alwaysTrueScript.hash(),
+      type: CredentialType.ScriptHash,
+    });
+
+    const scriptUtxo = new TransactionUnspentOutput(
+      new TransactionInput(TransactionId("0".repeat(64)), 0n),
+      new TransactionOutput(
+        addressFromCredential(NetworkId.Mainnet, cred),
+        value.makeValue(10_000_000n),
+      ),
+    );
+    scriptUtxo.output().setDatum(Datum.newInlineData(Void()));
+
+    const tx = new TxBuilder(hardCodedProtocolParams)
+      .setNetworkId(NetworkId.Testnet)
+      .setChangeAddress(testAddress)
+      .useEvaluator(makeUplcEvaluator(hardCodedProtocolParams, 1, 1))
+      .addUnspentOutputs([
+        scriptUtxo,
+        new TransactionUnspentOutput(
+          new TransactionInput(
+            TransactionId(
+              "7f11d088de6c214c25dbeff5a98ef5cb4f34741c062ead606859bee58ae0794d",
+            ),
+            0n,
+          ),
+          new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
+        ),
+      ])
+      .provideScript(alwaysTrueScript)
+      .addInput(scriptUtxo, Void())
+      .provideCollateral([collateral]);
+
+    const txComplete = await tx.complete();
+    expect(txComplete.body().collateral()?.values()[0]).toEqual(collateral);
   });
 });
