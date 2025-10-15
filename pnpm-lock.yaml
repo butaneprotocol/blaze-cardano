@@ -264,8 +264,8 @@ importers:
         specifier: ^9.1.0
         version: 9.1.2(eslint@8.57.1)
       eslint-config-turbo:
-        specifier: ^2.5.0
-        version: 2.5.8(eslint@8.57.1)(turbo@2.5.8)
+        specifier: ^2.5.9-canary.5
+        version: 2.5.9-canary.7(eslint@8.57.1)(turbo@2.5.8)
 
   packages/blaze-jest-config:
     devDependencies:
@@ -2079,14 +2079,14 @@ packages:
     peerDependencies:
       eslint: '>=7.0.0'
 
-  eslint-config-turbo@2.5.8:
-    resolution: {integrity: sha512-wzxmN7dJNFGDwOvR/4j8U2iaIH/ruYez8qg/sCKrezJ3+ljbFMvJLmgKKt/1mDuyU9wj5aZqO6VijP3QH169FA==}
+  eslint-config-turbo@2.5.9-canary.7:
+    resolution: {integrity: sha512-kFHCsR19OoPNpv2LTVsCSEag/gC/DDYAN/7K2i6osi3W/A95O+UvBDlBqRurQZtH3RX45DPfroq/+Jy59F51bA==}
     peerDependencies:
       eslint: '>6.6.0'
       turbo: '>2.0.0'
 
-  eslint-plugin-turbo@2.5.8:
-    resolution: {integrity: sha512-bVjx4vTH0oTKIyQ7EGFAXnuhZMrKIfu17qlex/dps7eScPnGQLJ3r1/nFq80l8xA+8oYjsSirSQ2tXOKbz3kEw==}
+  eslint-plugin-turbo@2.5.9-canary.7:
+    resolution: {integrity: sha512-gbjmV+nBLQsU5mlcx9RvBO4xkAcGjgosu4YiMTlMyS1meoh+9SARew+LSdxhFlgRnJOnDzUizvLKPcu9rpZ8OQ==}
     peerDependencies:
       eslint: '>6.6.0'
       turbo: '>2.0.0'
@@ -5491,13 +5491,13 @@ snapshots:
     dependencies:
       eslint: 8.57.1
 
-  eslint-config-turbo@2.5.8(eslint@8.57.1)(turbo@2.5.8):
+  eslint-config-turbo@2.5.9-canary.7(eslint@8.57.1)(turbo@2.5.8):
     dependencies:
       eslint: 8.57.1
-      eslint-plugin-turbo: 2.5.8(eslint@8.57.1)(turbo@2.5.8)
+      eslint-plugin-turbo: 2.5.9-canary.7(eslint@8.57.1)(turbo@2.5.8)
       turbo: 2.5.8
 
-  eslint-plugin-turbo@2.5.8(eslint@8.57.1)(turbo@2.5.8):
+  eslint-plugin-turbo@2.5.9-canary.7(eslint@8.57.1)(turbo@2.5.8):
     dependencies:
       dotenv: 16.0.3
       eslint: 8.57.1
