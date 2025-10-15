@@ -84,6 +84,10 @@ enum ProposalStatus {
   Expired = "Expired",
 }
 
+/**
+ * Tracks slot, block, and epoch progression for the emulator, mirroring
+ * the Conway notion of slot configuration (see ledger spec §3.1).
+ */
 export class LedgerTimer {
   zeroTime: number;
   zeroSlot: number;
@@ -364,11 +368,10 @@ export class Emulator {
   }
 
   /**
-   * Constructs a new instance of the Emulator class.
-   * Initializes the ledger with the provided genesis outputs and parameters.
+   * Constructs a new emulator instance seeded with the provided genesis outputs.
    *
-   * @param {TransactionOutput[]} genesisOutputs - The genesis outputs to initialize the ledger with.
-   * @param {ProtocolParameters} [params=hardCodedProtocolParams] - The parameters to initialize the emulator with.
+   * @param {TransactionOutput[]} genesisOutputs - Initial UTxOs used to populate the ledger.
+   * @param {EmulatorOptions} [options] - Optional overrides for evaluator, protocol parameters, slot configuration, and governance state.
    */
   constructor(
     genesisOutputs: TransactionOutput[],
@@ -424,6 +427,14 @@ export class Emulator {
     return this.mockedWallets.get(label)!;
   }
 
+  /**
+   * Funds and registers a labelled wallet, returning its default change address.
+   *
+   * @param {string} label - Identifier for the wallet to bootstrap.
+   * @param {Value} [value] - Optional value to fund the wallet with (defaults to 100 ADA equivalent).
+   * @param {PlutusData} [datum] - Optional inline datum to attach to the funding output.
+   * @returns {Promise<Address>} Resolves to the wallet's change address once funded.
+   */
   public async register(
     label: string,
     value?: Value,
@@ -434,11 +445,25 @@ export class Emulator {
     return wallet.getChangeAddress();
   }
 
+  /**
+   * Returns the current change address for a labelled wallet, creating the wallet if it has not been initialised yet.
+   *
+   * @param {string} label - Identifier of the wallet to query.
+   * @returns {Promise<Address>} Resolves to the wallet's change address.
+   */
   public async addressOf(label: string): Promise<Address> {
     const wallet = await this.getOrAddWallet(label);
     return wallet.getChangeAddress();
   }
 
+  /**
+   * Mints a synthetic genesis UTxO to the labelled wallet to seed it with funds.
+   *
+   * @param {string} label - Wallet identifier to fund.
+   * @param {Value} [value] - Optional custom value (defaults to 100 ADA equivalent).
+   * @param {PlutusData} [datum] - Optional inline datum to attach to the output.
+   * @returns {Promise<void>} Resolves once the UTxO has been added to the ledger.
+   */
   public async fund(label: string, value?: Value, datum?: PlutusData) {
     const wallet = await this.getOrAddWallet(label);
     const output = new TransactionOutput(
@@ -460,6 +485,14 @@ export class Emulator {
     this.#nextGenesisUtxo += 1;
   }
 
+  /**
+   * Executes the supplied callback in the context of a labelled wallet and
+   * Blaze client, simplifying multi-party test flows.
+   *
+   * @param {string} label - Wallet label whose context should be used.
+   * @param {(blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>} callback - Function executed with the wallet's Blaze client and address.
+   * @returns {Promise<T>} Resolves with the callback's return value.
+   */
   public async as<T = void>(
     label: string,
     callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>
@@ -470,6 +503,13 @@ export class Emulator {
     return callback(blaze, await wallet.getChangeAddress());
   }
 
+  /**
+   * Attaches the provided script to a genesis-style UTxO so tests can reference
+   * it via `lookupScript` without building an on-chain transaction.
+   *
+   * @param {Script} script - Script to publish as a reference UTxO.
+   * @returns {Promise<void>} Resolves once the script reference has been added.
+   */
   public async publishScript(script: Script) {
     const utxo = new TransactionOutput(
       getBurnAddress(NetworkId.Testnet),
@@ -488,6 +528,14 @@ export class Emulator {
     this.#nextGenesisUtxo += 1;
   }
 
+  /**
+   * Locates the synthetic script reference UTxO for the provided script.
+   *
+   * @param {Script} script - Script whose published reference should be retrieved.
+   * @returns {TransactionUnspentOutput} The reference UTxO containing the script.
+   *
+   * @throws {Error} When the script has not been published.
+   */
   public lookupScript(script: Script): TransactionUnspentOutput {
     for (const utxo of this.utxos()) {
       if (utxo.output().scriptRef()?.hash() === script.hash()) {
@@ -497,6 +545,14 @@ export class Emulator {
     throw new Error("Script not published");
   }
 
+  /**
+   * Completes, signs, and submits a transaction, throwing if validation fails.
+   * Retains the CBOR for debugging in line with emulator troubleshooting flow.
+   *
+   * @param {Blaze<Provider, Wallet>} blaze - Wallet context used to sign the transaction.
+   * @param {TxBuilder} tx - Builder producing the transaction to validate and submit.
+   * @returns {Promise<void>} Resolves once the transaction has been confirmed.
+   */
   public async expectValidTransaction(
     blaze: Blaze<Provider, Wallet>,
     tx: TxBuilder
@@ -516,6 +572,14 @@ export class Emulator {
     }
   }
 
+  /**
+   * Submits a transaction requiring multiple labelled wallets to co-sign.
+   * Each signer is resolved via `getOrAddWallet` before submission.
+   *
+   * @param {string[]} signers - Labels of wallets that must co-sign the transaction.
+   * @param {TxBuilder} tx - Builder producing the transaction to validate and submit.
+   * @returns {Promise<void>} Resolves once the transaction has been confirmed.
+   */
   public async expectValidMultisignedTransaction(
     signers: string[],
     tx: TxBuilder
@@ -539,6 +603,14 @@ export class Emulator {
     }
   }
 
+  /**
+   * Asserts that completing the provided transaction fails with an optional
+   * matching error message. Helps validate negative Plutus scenarios.
+   *
+   * @param {TxBuilder} tx - Builder expected to fail during completion.
+   * @param {RegExp} [pattern] - Optional pattern that the thrown error message must satisfy.
+   * @returns {Promise<void>} Resolves when the expected failure is observed.
+   */
   public async expectScriptFailure(tx: TxBuilder, pattern?: RegExp) {
     try {
       const complete = await tx.complete();
@@ -552,17 +624,37 @@ export class Emulator {
     throw new Error("Transaction was valid!");
   }
 
-  unixToSlot(unix_millis: bigint | number): Slot {
+  /**
+   * Converts a unix timestamp (ms) into a slot using the current slot configuration.
+   *
+   * @param {bigint | number} unixMillis - Unix timestamp in milliseconds.
+   * @returns {Slot} Slot corresponding to the provided timestamp.
+   */
+  unixToSlot(unixMillis: bigint | number): Slot {
     return Slot(
       Math.ceil(
-        (Number(unix_millis) - this.clock.zeroTime) / this.clock.slotLength
+        (Number(unixMillis) - this.clock.zeroTime) / this.clock.slotLength
       )
     );
   }
+
+  /**
+   * Converts a slot index back into a unix timestamp (ms).
+   *
+   * @param {Slot | number | bigint} slot - Slot index to convert.
+   * @returns {number} Unix timestamp in milliseconds.
+   */
   slotToUnix(slot: Slot | number | bigint): number {
     return Number(slot.valueOf()) * this.clock.slotLength + this.clock.zeroTime;
   }
 
+  /**
+   * Advances the emulator forward to the provided slot, triggering epoch
+   * transitions and materialising the mempool as needed.
+   *
+   * @param {number | bigint} slot - Target slot to advance to.
+   * @returns {void}
+   */
   stepForwardToSlot(slot: number | bigint) {
     if (Number(slot) <= this.clock.slot) {
       throw new Error("Time travel is unsafe");
@@ -587,20 +679,43 @@ export class Emulator {
     }
   }
 
+  /**
+   * Advances the emulator to the first slot of the next epoch.
+   * Mirrors the epoch boundary workflow defined in the Conway ledger spec.
+   *
+   * @returns {void}
+   */
   public stepForwardToNextEpoch(): void {
     const nextEpochSlot =
       (this.clock.epoch + 1) * this.clock.slotsPerEpoch + this.clock.zeroSlot;
     this.stepForwardToSlot(nextEpochSlot);
   }
 
+  /**
+   * Advances time to the slot corresponding to the provided unix timestamp.
+   *
+   * @param {number | bigint} unix - Unix timestamp (ms) to advance to.
+   * @returns {void}
+   */
   stepForwardToUnix(unix: number | bigint) {
     this.stepForwardToSlot(this.unixToSlot(unix));
   }
 
+  /**
+   * Advances exactly one block (20 slots) according to the emulator clock.
+   *
+   * @returns {void}
+   */
   stepForwardBlock(): void {
     this.stepForwardToSlot(this.clock.slot + 20);
   }
 
+  /**
+   * Forces block production until the referenced transaction leaves the mempool.
+   *
+   * @param {TransactionId} txId - Identifier of the transaction awaiting confirmation.
+   * @returns {void}
+   */
   awaitTransactionConfirmation(txId: TransactionId) {
     if (this.#mempool[txId]) {
       this.stepForwardBlock();
@@ -611,6 +726,8 @@ export class Emulator {
    * Starts the event loop for the ledger.
    * If the event loop is already running, it is cleared and restarted.
    * The event loop calls the stepForwardBlock method every 20 slots.
+   *
+   * @returns {void}
    */
   startEventLoop() {
     if (this.eventLoop) {
@@ -624,6 +741,8 @@ export class Emulator {
   /**
    * Stops the event loop for the ledger.
    * If the event loop is running, it is cleared.
+   *
+   * @returns {void}
    */
   stopEventLoop() {
     if (this.eventLoop) {
@@ -635,7 +754,8 @@ export class Emulator {
   /**
    * Adds a given UTxO to the Emulator's ledger. Overwrites any existing UTxO with the same input.
    *
-   * @param utxo - The UTxO to add to the ledger.
+   * @param {TransactionUnspentOutput} utxo - The UTxO to add to the ledger.
+   * @returns {void}
    */
   addUtxo(utxo: TransactionUnspentOutput): void {
     this.#ledger[serialiseInput(utxo.input())] = utxo.output();
@@ -644,7 +764,8 @@ export class Emulator {
   /**
    * Removes a given UTxO from the Emulator's ledger by input.
    *
-   * @param inp - The input to remove from the ledger.
+   * @param {TransactionInput} inp - The input to remove from the ledger.
+   * @returns {void}
    */
   removeUtxo(inp: TransactionInput): void {
     delete this.#ledger[serialiseInput(inp)];
@@ -653,8 +774,8 @@ export class Emulator {
   /**
    * Retrieves an output from the ledger by input.
    *
-   * @param inp - The input to retrieve the output for.
-   * @returns The output corresponding to the input, or undefined if the input is not found.
+   * @param {TransactionInput} inp - Input referencing the desired UTxO.
+   * @returns {TransactionOutput | undefined} The corresponding output, if found.
    */
   getOutput(inp: TransactionInput): TransactionOutput | undefined {
     // Should utxos in the mempool be considered?
@@ -663,7 +784,8 @@ export class Emulator {
 
   /**
    * Retrieves the Emulator's ledger as an array of UTxOs.
-   * @returns The full list of UTxOs in the Emulator's ledger.
+   *
+   * @returns {TransactionUnspentOutput[]} The full list of UTxOs in the Emulator's ledger.
    */
   utxos(): TransactionUnspentOutput[] {
     return (
@@ -676,25 +798,10 @@ export class Emulator {
   /**
    * Submits a transaction to the ledger.
    *
-   * @param tx - The transaction to submit.
-   * @returns A promise that resolves to the transaction hash.
+   * @param {Transaction} tx - The transaction to submit.
+   * @returns {Promise<TransactionId>} Resolves to the submitted transaction hash.
    *
-   * @throws {Error} - If any of the following checks fail:
-   *   - Invalid witnesses
-   *   - Incorrect count of scripts and vkeys
-   *   - Stake key registration
-   *   - Withdrawals
-   *   - Validity interval
-   *   - Input existence
-   *   - Script refs
-   *   - Collateral inputs
-   *   - Required signers
-   *   - Mint witnesses
-   *   - Cert witnesses
-   *   - Input witnesses
-   *   - Consumed witnesses
-   *
-   * @returns {Promise<TransactionId>} - The transaction hash.
+   * @throws {Error} If witness validation, collateral checks, validity intervals, or governance constraints fail.
    */
   async submitTransaction(tx: Transaction): Promise<TransactionId> {
     const body = tx.body();
@@ -1220,17 +1327,6 @@ export class Emulator {
     return txId;
   }
 
-  /**
-   * Transitions the ledger state according to a transaction's inputs and outputs.
-   *
-   * @param tx - The transaction to accept.
-   *
-   * @remarks
-   * This function iterates over the inputs of the transaction and removes the corresponding UTxOs from the ledger.
-   * It then iterates over the outputs of the transaction and adds them as new UTxOs to the ledger.
-   * If the transaction includes any certificates, it processes them accordingly.
-   * Finally, it updates the balances of the accounts based on any withdrawals in the transaction.
-   */
   private acceptTransaction(tx: Transaction) {
     const inputs = tx.body().inputs().values();
     const outputs = tx.body().outputs();
@@ -1498,6 +1594,14 @@ export class Emulator {
     return Number(member.epoch) >= this.clock.epoch;
   }
 
+  /**
+   * Replaces the current constitutional committee and resets cached hot credentials.
+   * Clearing the committee also clears the last enacted constitution per Conway §5.5.
+   *
+   * @param {Committee} committee - New committee configuration to apply.
+   * @param {{ hotCredentials?: Record<string, CredentialCore | undefined> }} [options] - Optional map of cold hashes to hot credentials for immediate activation.
+   * @returns {void}
+   */
   public setCommitteeState(
     committee: Committee,
     {
@@ -1519,6 +1623,14 @@ export class Emulator {
     }
   }
 
+  /**
+   * Assigns or clears the active hot credential for a committee member.
+   * Throws when the supplied cold credential hash is not part of the committee.
+   *
+   * @param {Hash28ByteBase16 | string} coldCredentialHash - Committee cold credential hash.
+   * @param {CredentialCore} [credential] - Hot credential to assign; omit to clear.
+   * @returns {void}
+   */
   public setCommitteeHotCredential(
     coldCredentialHash: Hash28ByteBase16 | string,
     credential?: CredentialCore
@@ -1535,6 +1647,12 @@ export class Emulator {
     this.ccHotCredentials[hash] = credential;
   }
 
+  /**
+   * Retrieves the cached hot credential for the provided committee cold hash.
+   *
+   * @param {Hash28ByteBase16 | string} coldCredentialHash - Committee cold credential hash.
+   * @returns {CredentialCore | undefined} The active hot credential, if registered.
+   */
   public getCommitteeHotCredential(
     coldCredentialHash: Hash28ByteBase16 | string
   ): CredentialCore | undefined {
@@ -1545,6 +1663,12 @@ export class Emulator {
     return this.ccHotCredentials[hash];
   }
 
+  /**
+   * Returns the lifecycle status for a governance action, if the emulator is tracking it.
+   *
+   * @param {GovernanceActionId | SerialisedGovId} actionId - Identifier of the governance action.
+   * @returns {ProposalStatus | undefined} Current status if available.
+   */
   public getGovernanceProposalStatus(
     actionId: GovernanceActionId | SerialisedGovId
   ): ProposalStatus | undefined {
@@ -1553,6 +1677,12 @@ export class Emulator {
     return this.#proposals[key]?.status;
   }
 
+  /**
+   * Computes the latest ratification tallies for an action using the most recent stake snapshot.
+   *
+   * @param {GovernanceActionId | SerialisedGovId} actionId - Identifier of the governance action to inspect.
+   * @returns {{ tallies: Tallies; activeCcMembers: bigint } | undefined} Tallies plus the count of active committee members, or undefined if unavailable.
+   */
   public getTallies(actionId: GovernanceActionId | SerialisedGovId):
     | {
         tallies: Tallies;
@@ -1602,9 +1732,6 @@ export class Emulator {
     this.expireDReps();
   }
 
-  /**
-   * Extract and apply governance proposals and votes from the transaction body.
-   */
   private applyGovernance(tx: Transaction): void {
     const body = tx.body();
     const txId = tx.getId();
@@ -1948,6 +2075,11 @@ export class Emulator {
     }
   }
 
+  /**
+   * Calculates the treasury's share of accumulated fees based on the current parameters.
+   *
+   * @returns {bigint} Amount of fees allocated to the treasury.
+   */
   getCurrentTreasuryFeeShare(): bigint {
     return BigInt(
       Math.floor(
@@ -1966,9 +2098,6 @@ export class Emulator {
     }
   }
 
-  /**
-   * Create a snapshot of current stake delegations for deterministic vote counting
-   */
   private createStakeSnapshot(): void {
     const snapshot: StakeSnapshot = {
       drepDelegation: {},
@@ -2143,9 +2272,6 @@ export class Emulator {
     return total <= this.treasury;
   }
 
-  /**
-   * Ratify active governance proposals based on vote tallies and thresholds
-   */
   private ratifyGovernanceActions(): void {
     const currentEpoch = this.clock.epoch;
     const snapshot = this.snapshots[currentEpoch - 1]; // Use previous epoch's snapshot
@@ -2213,9 +2339,6 @@ export class Emulator {
     }
   }
 
-  /**
-   * Enact ratified governance actions that are due for this epoch
-   */
   private enactGovernanceActions(): void {
     const currentEpoch = this.clock.epoch;
     const remainingQueue: EnactQueueItem[] = [];
@@ -2264,9 +2387,6 @@ export class Emulator {
     return currentEpoch + maxIdleTime;
   }
 
-  /**
-   * Expire inactive DReps based on delegateRepresentativeMaxIdleTime
-   */
   private expireDReps(): void {
     const maxIdleTime = this.params.delegateRepresentativeMaxIdleTime;
     if (!maxIdleTime) return;
