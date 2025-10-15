@@ -246,6 +246,7 @@ export type Committee = C.Cardano.Committee;
 // Stake Pool
 export type PoolParameters = C.Cardano.PoolParameters;
 export type EpochNo = C.Cardano.EpochNo;
+export const EpochNo = C.Cardano.EpochNo;
 export const PoolRegistration = C.Serialization.PoolRegistration;
 export type PoolRegistration = C.Serialization.PoolRegistration;
 export const PoolRetirement = C.Serialization.PoolRetirement;
