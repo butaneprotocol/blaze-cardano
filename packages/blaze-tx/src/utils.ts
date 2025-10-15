@@ -44,12 +44,17 @@ export function calculateReferenceScriptFee(
   refScripts: Script[],
   params: ProtocolParameters,
 ): number {
+  if (!params.minFeeReferenceScripts) {
+    throw new Error(
+      "calculateReferenceScriptFee: minFeeRefScriptCostPerByte is not set",
+    );
+  }
   let referenceScriptSize = refScripts.reduce(
     (acc, refScript) => acc + getScriptSize(refScript),
     0,
   );
 
-  const { base, multiplier, range } = params.minFeeReferenceScripts!;
+  const { base, multiplier, range } = params.minFeeReferenceScripts;
   let baseFee = base;
   let refFee = 0;
 

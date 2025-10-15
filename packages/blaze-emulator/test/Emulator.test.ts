@@ -298,7 +298,7 @@ describe("Emulator", () => {
     const txHash = await signAndSubmit(tx, blaze);
     emulator.awaitTransactionConfirmation(txHash);
 
-    expect(emulator.accounts.get(rewardAccount)).toEqual(0n);
+    expect(emulator.accounts.get(rewardAccount)).toEqual({ balance: 0n });
 
     const deregister = await blaze
       .newTransaction()
@@ -319,7 +319,7 @@ describe("Emulator", () => {
       NetworkId.Testnet,
     );
 
-    emulator.accounts.set(rewardAccount, 10_000_000n);
+    emulator.accounts.set(rewardAccount, { balance: 10_000_000n });
     const tx = await blaze
       .newTransaction()
       .addWithdrawal(rewardAccount, 10_000_000n, VOID_PLUTUS_DATA)

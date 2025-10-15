@@ -52,6 +52,26 @@ export interface ProtocolParameters {
   // Conway params are optional while not on mainnet
   // TODO: all of the new params
   minFeeReferenceScripts?: MinFeeReferenceScripts;
+  /** Raw cost-per-byte parameter for reference scripts (Conway) */
+  minFeeRefScriptCostPerByte?: number;
+  /** Maximum reference scripts size (bytes) */
+  maxReferenceScriptsSize?: number;
+  /** Stake pool voting thresholds (Conway/Chang) */
+  stakePoolVotingThresholds?: Cardano.PoolVotingThresholds;
+  /** dRep voting thresholds (Conway/Chang) */
+  delegateRepresentativeVotingThresholds?: Cardano.DelegateRepresentativeThresholds;
+  /** Minimum constitutional committee size */
+  constitutionalCommitteeMinSize?: number;
+  /** Maximum constitutional committee term length (epochs) */
+  constitutionalCommitteeMaxTermLength?: number;
+  /** Governance action lifetime (epochs) */
+  governanceActionLifetime?: number;
+  /** Governance action deposit (lovelace) */
+  governanceActionDeposit?: number;
+  /** dRep registration deposit (lovelace) */
+  delegateRepresentativeDeposit?: number;
+  /** dRep maximum idle time (epochs) */
+  delegateRepresentativeMaxIdleTime?: number;
 }
 /**
  * Hard coded protocol parameters for the Cardano ledger.
@@ -59,7 +79,6 @@ export interface ProtocolParameters {
  */
 export const hardCodedProtocolParams: ProtocolParameters = {
   coinsPerUtxoByte: 4310, // The number of coins per UTXO byte.
-  minFeeReferenceScripts: { base: 15, range: 25600, multiplier: 1.2 },
   maxTxSize: 16384, // The maximum transaction size.
   minFeeCoefficient: 44, // The minimum fee coefficient.
   minFeeConstant: 155381, // The minimum fee constant.
@@ -69,9 +88,9 @@ export const hardCodedProtocolParams: ProtocolParameters = {
   poolDeposit: 500000000, // The pool deposit.
   poolRetirementEpochBound: 18, // The pool retirement epoch bound.
   desiredNumberOfPools: 500, // The desired number of pools.
-  poolInfluence: "3/10", // The pool influence.
-  monetaryExpansion: "3/1000", // The monetary expansion.
-  treasuryExpansion: "1/5", // The treasury expansion.
+  poolInfluence: "0.3", // The pool influence.
+  monetaryExpansion: "0.003", // The monetary expansion.
+  treasuryExpansion: "0.2", // The treasury expansion.
   minPoolCost: 170000000, // The minimum pool cost.
   protocolVersion: { major: 9, minor: 0 }, // The protocol version.
   maxValueSize: 5000, // The maximum value size.
@@ -146,8 +165,35 @@ export const hardCodedProtocolParams: ProtocolParameters = {
   prices: { memory: 577 / 10000, steps: 0.0000721 }, // The prices.
   maxExecutionUnitsPerTransaction: { memory: 14000000, steps: 10000000000 }, // The maximum execution units per transaction.
   maxExecutionUnitsPerBlock: { memory: 62000000, steps: 20000000000 }, // The maximum execution units per block.
+  // Conway/Chang governance-related defaults (may be overridden by provider on Chang networks)
+  maxReferenceScriptsSize: 204800,
+  stakePoolVotingThresholds: {
+    motionNoConfidence: { numerator: 51, denominator: 100 },
+    committeeNormal: { numerator: 51, denominator: 100 },
+    committeeNoConfidence: { numerator: 51, denominator: 100 },
+    hardForkInitiation: { numerator: 51, denominator: 100 },
+    securityRelevantParamVotingThreshold: { numerator: 51, denominator: 100 },
+  },
+  delegateRepresentativeVotingThresholds: {
+    motionNoConfidence: { numerator: 67, denominator: 100 },
+    committeeNormal: { numerator: 67, denominator: 100 },
+    committeeNoConfidence: { numerator: 3, denominator: 5 },
+    hardForkInitiation: { numerator: 3, denominator: 5 },
+    updateConstitution: { numerator: 3, denominator: 4 },
+    ppNetworkGroup: { numerator: 67, denominator: 100 },
+    ppEconomicGroup: { numerator: 67, denominator: 100 },
+    ppTechnicalGroup: { numerator: 67, denominator: 100 },
+    ppGovernanceGroup: { numerator: 3, denominator: 4 },
+    treasuryWithdrawal: { numerator: 67, denominator: 100 },
+  },
+  constitutionalCommitteeMinSize: 7,
+  constitutionalCommitteeMaxTermLength: 146,
+  governanceActionLifetime: 6,
+  governanceActionDeposit: 100_000_000_000,
+  delegateRepresentativeDeposit: 0,
+  // delegateRepresentativeMaxIdleTime: undefined,
+  minFeeReferenceScripts: { base: 15, range: 25600, multiplier: 1.2 },
 };
-
 export interface MinFeeReferenceScripts {
   base: number;
   range: number;
