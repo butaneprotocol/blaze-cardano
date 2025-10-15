@@ -24,8 +24,8 @@
     "api:prepare": "pnpm build:types && pnpm api:extract && pnpm api:md"
   },
   "dependencies": {
-    "@sinclair/typebox": "^0.34.28",
-    "@blaze-cardano/core": "workspace:*"
+    "@blaze-cardano/core": "workspace:*",
+    "@sinclair/typebox": "^0.34.28"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",

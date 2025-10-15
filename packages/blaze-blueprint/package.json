@@ -30,12 +30,12 @@
   },
   "devDependencies": {
     "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/data": "workspace:*",
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/jest-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
     "@blaze-cardano/uplc": "workspace:*",
-    "@blaze-cardano/data": "workspace:*",
     "@commander-js/extra-typings": "^12.1.0",
     "@sinclair/typebox": "^0.32.35",
     "@types/jest": "^29.5.12",

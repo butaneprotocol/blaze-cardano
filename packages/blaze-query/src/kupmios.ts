@@ -47,7 +47,7 @@ export class Kupmios extends Provider {
   static readonly confirmationTimeout: number = 20_000;
 
   /**
-   * Constructor to initialize Kupmios instance.
+   * Constructor to initialize Kupmios instance. 
    * @param kupoUrl - URL of the Kupo service.
    * @param ogmiosUrl - URL of the Ogmios service.
    */
