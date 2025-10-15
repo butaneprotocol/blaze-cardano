@@ -121,7 +121,7 @@ describe("Emulator governance", () => {
 
     const rewardAccount = RewardAccount.fromCredential(
       stakeCred,
-      NetworkId.Testnet
+      NetworkId.Testnet,
     );
     const account = emulator.accounts.get(rewardAccount);
     if (account) {
@@ -134,7 +134,7 @@ describe("Emulator governance", () => {
   };
 
   const submitProposal = async (
-    procedure: ProposalProcedure
+    procedure: ProposalProcedure,
   ): Promise<GovernanceActionId> => {
     const builder = blaze.newTransaction().addProposal(procedure);
     builder.setMinimumFee(0n);
@@ -147,7 +147,7 @@ describe("Emulator governance", () => {
 
   const castDrepVotes = async (
     stakeCred: CredentialCore,
-    targets: Array<{ actionId: GovernanceActionId; vote?: Vote }>
+    targets: Array<{ actionId: GovernanceActionId; vote?: Vote }>,
   ) => {
     const procedures = new VotingProcedures();
     for (const { actionId, vote = Vote.yes } of targets) {
@@ -186,7 +186,7 @@ describe("Emulator governance", () => {
     // Give the delegator some voting stake in the snapshot model
     const rewardAccount = RewardAccount.fromCredential(
       stakeCred,
-      NetworkId.Testnet
+      NetworkId.Testnet,
     );
     const acct = emulator.accounts.get(rewardAccount);
     if (acct) {
@@ -248,7 +248,7 @@ describe("Emulator governance", () => {
     };
     const poolReward = RewardAccount.fromCredential(
       poolStakeCred,
-      NetworkId.Testnet
+      NetworkId.Testnet,
     );
     emulator.accounts.set(poolReward, {
       balance: 600_000_000n,
@@ -312,7 +312,7 @@ describe("Emulator governance", () => {
       anchor: { url: "ipfs://post-bootstrap-spo", dataHash: ZERO_HASH32 },
     });
     const postBootstrapActionId = await submitProposal(
-      postBootstrapParamChange
+      postBootstrapParamChange,
     );
     emulator.stepForwardToNextEpoch();
     const postBootstrapTallies = emulator.getTallies(postBootstrapActionId)!;
@@ -357,7 +357,7 @@ describe("Emulator governance", () => {
 
     const rewardAccount = RewardAccount.fromCredential(
       stakeCred,
-      NetworkId.Testnet
+      NetworkId.Testnet,
     );
     const account = emulator.accounts.get(rewardAccount);
     if (account) account.balance = 500_000_000n;
@@ -424,7 +424,7 @@ describe("Emulator governance", () => {
     const stakeCred = address.getProps().delegationPart!;
     const rewardAccount = RewardAccount.fromCredential(
       stakeCred,
-      NetworkId.Testnet
+      NetworkId.Testnet,
     );
     const setupTx = await blaze
       .newTransaction()
@@ -470,7 +470,7 @@ describe("Emulator governance", () => {
       .complete();
 
     await expect(signAndSubmit(voteTx, blaze, true)).rejects.toThrow(
-      /unregistered drep/i
+      /unregistered drep/i,
     );
   });
 
@@ -521,7 +521,7 @@ describe("Emulator governance", () => {
     emulator.stepForwardToNextEpoch();
 
     expect(emulator.treasury).toBe(
-      currentTreasury - withdrawAmount + treasuryFee
+      currentTreasury - withdrawAmount + treasuryFee,
     );
     const account = emulator.accounts.get(rewardAccount);
     expect(account).toBeDefined();
@@ -603,7 +603,7 @@ describe("Emulator governance", () => {
     const tx = await blaze.newTransaction().addProposal(proposal).complete();
 
     await expect(signAndSubmit(tx, blaze)).rejects.toThrow(
-      /term must end in the future/i
+      /term must end in the future/i,
     );
   });
 
@@ -628,7 +628,7 @@ describe("Emulator governance", () => {
         ],
         quorumThreshold: { numerator: 1, denominator: 1 },
       },
-      { hotCredentials: { [coldToRemove]: existingHot } }
+      { hotCredentials: { [coldToRemove]: existingHot } },
     );
 
     if (emulator.params.stakePoolVotingThresholds) {
@@ -760,7 +760,7 @@ describe("Emulator governance", () => {
       .complete();
 
     await expect(signAndSubmit(proposalTx2, blaze)).rejects.toThrow(
-      /must reference last enacted action/i
+      /must reference last enacted action/i,
     );
 
     const linkedSecond = ProposalProcedure.fromCore({
@@ -901,11 +901,11 @@ describe("Emulator governance", () => {
 
     const coldAddress = await emulator.register(
       "ccCold",
-      makeValue(1_000_000_000n)
+      makeValue(1_000_000_000n),
     );
     const hotAddress = await emulator.register(
       "ccHot",
-      makeValue(1_000_000_000n)
+      makeValue(1_000_000_000n),
     );
 
     let ccHotBlaze!: Blaze<Provider, HotWallet>;
@@ -959,7 +959,7 @@ describe("Emulator governance", () => {
     procedures.insert(
       Voter.newConstitutionalCommitteeHotKey(hotCredential.toCore()),
       actionId,
-      new VotingProcedure(Vote.yes)
+      new VotingProcedure(Vote.yes),
     );
 
     const voteTx = await ccHotBlaze
@@ -969,7 +969,7 @@ describe("Emulator governance", () => {
       .complete();
 
     await expect(signAndSubmit(voteTx, ccHotBlaze, true)).rejects.toThrow(
-      /committee voter is not authorized/i
+      /committee voter is not authorized/i,
     );
   });
 
@@ -1070,7 +1070,7 @@ describe("Emulator governance", () => {
         protocolParamUpdate: {
           coinsPerUtxoByte: emulator.params.coinsPerUtxoByte + 1,
           governanceActionValidityPeriod: EpochNo(
-            (emulator.params.governanceActionLifetime ?? 0) + 5
+            (emulator.params.governanceActionLifetime ?? 0) + 5,
           ),
         },
         policyHash: emulator.constitution.scriptHash,
@@ -1099,7 +1099,10 @@ describe("Emulator governance", () => {
       stake: 600_000_000n,
     });
 
-    emulator.setCommitteeState({ members: [], quorumThreshold: { numerator: 0, denominator: 1 } });
+    emulator.setCommitteeState({
+      members: [],
+      quorumThreshold: { numerator: 0, denominator: 1 },
+    });
     emulator.params.constitutionalCommitteeMinSize = 0;
     if (emulator.params.stakePoolVotingThresholds) {
       emulator.params.stakePoolVotingThresholds.committeeNormal = {
@@ -1174,7 +1177,7 @@ describe("Emulator governance", () => {
     expect(treasuryTallies.tallies.drep.yes).toBeGreaterThan(0n);
     emulator.stepForwardToNextEpoch();
     expect(emulator.getGovernanceProposalStatus(treasuryAction2)).toBe(
-      "Active"
+      "Active",
     );
   });
 });
