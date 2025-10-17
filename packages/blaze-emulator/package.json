@@ -42,10 +42,14 @@
     "access": "public"
   },
   "dependencies": {
+    "@hono/node-server": "^1.4.0",
+    "@hono/zod-validator": "^0.2.1",
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/query": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
     "@blaze-cardano/vm": "workspace:*",
-    "@blaze-cardano/wallet": "workspace:*"
+    "@blaze-cardano/wallet": "workspace:*",
+    "hono": "^4.6.6",
+    "zod": "^3.23.8"
   }
 }
