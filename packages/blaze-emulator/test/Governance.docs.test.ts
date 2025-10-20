@@ -125,7 +125,10 @@ describe("docs governance examples", () => {
     return new GovernanceActionId(TransactionId(hash), 0n);
   };
 
-  const voteAsDRep = async (actionId: GovernanceActionId, vote: Vote = Vote.yes) => {
+  const voteAsDRep = async (
+    actionId: GovernanceActionId,
+    vote: Vote = Vote.yes,
+  ) => {
     const voter = Voter.newDrep(Credential.fromCore(stakeCred).toCore());
     const procedures = new VotingProcedures();
     procedures.insert(voter, actionId, new VotingProcedure(vote));
@@ -194,9 +197,7 @@ describe("docs governance examples", () => {
     emulator.stepForwardToNextEpoch();
 
     expect(emulator.getGovernanceProposalStatus(actionId)).toBe("Enacted");
-    expect(emulator.treasury).toBe(
-      treasuryBefore - 150_000_000n + feeShare,
-    );
+    expect(emulator.treasury).toBe(treasuryBefore - 150_000_000n + feeShare);
     expect(emulator.accounts.get(rewardAccount)?.balance).toBe(
       500_000_000n + 150_000_000n,
     );

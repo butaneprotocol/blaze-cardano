@@ -1,5 +1,5 @@
-import { serve } from '@hono/node-server';
-import app from './app';
+import { serve } from "@hono/node-server";
+import app from "./app";
 
 export interface RpcServerOptions {
   port?: number;
@@ -12,7 +12,7 @@ export interface RpcServer {
 
 export const startRpcServer = ({
   port = 8787,
-  hostname = '0.0.0.0',
+  hostname = "0.0.0.0",
 }: RpcServerOptions = {}): RpcServer => {
   const server = serve({
     fetch: app.fetch,

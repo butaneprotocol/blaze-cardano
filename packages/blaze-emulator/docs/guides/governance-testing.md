@@ -4,9 +4,11 @@ title: Governance Testing
 
 # Governance Testing
 
-The emulator ships with Conway-era governance logic so you can exercise proposal submission, voting, and enactment flows in tests.
+The emulator ships with Conway-era governance logic so you can exercise proposal submission, voting, and enactment flows in tests. This guide will walk you through setting up the emulator for governance testing, registering a DRep, submitting a proposal, and voting on it.
 
-## Set Up the Emulator
+## Setup the Emulator
+
+First, we need to set up our emulator with some specific protocol parameters for governance testing. For simplicity, we'll set the governance action deposit and DRep deposit to zero. We'll also configure the voting thresholds to make it easier to pass proposals in our test environment.
 
 ```ts
 import { describe, beforeEach, it, expect } from "bun:test";
@@ -38,6 +40,7 @@ import { Emulator } from "@blaze-cardano/emulator";
 
 const ZERO_HASH32 = Hash32ByteBase16("".padStart(64, "0"));
 
+// We'll use this helper function to sign and submit transactions
 async function signAndSubmit(
   tx: Transaction,
   blaze: Blaze<Provider, HotWallet>,
@@ -101,14 +104,11 @@ describe("governance examples", () => {
       rewardAccount = RewardAccount.fromCredential(stakeCred, NetworkId.Testnet);
     });
   });
-
-  // helpers will be added here
-});
 ```
 
 ## Register a DRep for Testing
 
-For the examples below we rely on three helpers: one to register a DRep, one to submit proposals with zero fees, and one to cast votes. Add these inside the `describe` block above.
+To participate in governance, a stakeholder needs to be registered as a Delegated Representative (DRep). Here's a helper function to register a DRep and delegate stake to them.
 
 ```ts
 const registerStakeholder = async (stake: bigint) => {
@@ -139,7 +139,13 @@ const registerStakeholder = async (stake: bigint) => {
       (emulator.params.delegateRepresentativeMaxIdleTime ?? 0);
   }
 };
+```
 
+## Submitting and Voting on Proposals
+
+We'll also create helper functions to submit proposals and cast votes.
+
+```ts
 const submitProposal = async (procedure: ProposalProcedure) => {
   const builder = blaze.newTransaction().addProposal(procedure);
   builder.setMinimumFee(0n);
@@ -169,7 +175,7 @@ const voteAsDRep = async (
 
 ## Example: Parameter Change Enactment
 
-A DRep who registers stake, votes “yes”, and advances two epochs should trigger enactment of a parameter change proposal.
+Now, let's use these helpers to test a parameter change proposal. A DRep who registers stake, votes “yes”, and advances two epochs should trigger the enactment of the proposal.
 
 ```ts
 it("enacts a parameter change when a dRep votes yes", async () => {

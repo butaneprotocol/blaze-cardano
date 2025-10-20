@@ -1,20 +1,13 @@
-import type { Emulator } from '../../emulator';
+import type { Emulator } from "../../emulator";
 import type {
   TransactionUnspentOutput,
   CredentialCore,
-} from '@blaze-cardano/core';
+} from "@blaze-cardano/core";
 
 const formatBigInt = (value: bigint) => value.toString();
 
 export const toUtxoSnapshot = (utxo: TransactionUnspentOutput) => {
-  const input = utxo.input();
-  const output = utxo.output();
-  return {
-    txId: input.transactionId().toString(),
-    index: Number(input.index()),
-    address: output.address().toBech32(),
-    outputCbor: utxo.toCbor(),
-  };
+  return utxo.toCbor();
 };
 
 export const listWallets = async (emulator: Emulator) => {
@@ -96,15 +89,15 @@ export const serializeState = async (
   };
 
   if (options.includeWallets) {
-    snapshot['wallets'] = await listWallets(emulator);
+    snapshot["wallets"] = await listWallets(emulator);
   }
 
   if (options.includeUtxos) {
-    snapshot['utxos'] = emulator.utxos().map(toUtxoSnapshot);
+    snapshot["utxos"] = emulator.utxos().map(toUtxoSnapshot);
   }
 
   if (options.includeGovernance) {
-    snapshot['governance'] = getGovernanceState(emulator);
+    snapshot["governance"] = getGovernanceState(emulator);
   }
 
   return snapshot;
