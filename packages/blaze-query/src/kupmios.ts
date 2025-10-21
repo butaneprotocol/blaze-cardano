@@ -30,6 +30,9 @@ import {
 import { purposeToTag, Provider } from "./provider";
 import type { Unwrapped } from "@blaze-cardano/ogmios";
 import type * as Schema from "@cardano-ogmios/schema";
+import JSONbig_ from 'json-bigint';
+
+const JSONbig = JSONbig_({ useNativeBigInt: true });
 
 export class Kupmios extends Provider {
   kupoUrl: string;
@@ -88,7 +91,8 @@ export class Kupmios extends Provider {
       postfix ? postfix : ""
     }`;
     // Debug: console.log(`Fetching unspent outputs from ${url}`);
-    const result: any = await fetch(url).then((res) => res.json());
+    const resultText = await fetch(url).then((res) => res.text());
+    const result: any[] = JSONbig.parse(resultText);
 
     return await Promise.all(
       result.map(async (utxo: any) => {
