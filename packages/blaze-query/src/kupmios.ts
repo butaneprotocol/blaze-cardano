@@ -30,7 +30,7 @@ import {
 import { purposeToTag, Provider } from "./provider";
 import type { Unwrapped } from "@blaze-cardano/ogmios";
 import type * as Schema from "@cardano-ogmios/schema";
-import JSONbig_ from 'json-bigint';
+import JSONbig_ from "json-bigint";
 
 const JSONbig = JSONbig_({ useNativeBigInt: true });
 
