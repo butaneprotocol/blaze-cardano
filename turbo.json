@@ -9,6 +9,10 @@
     "test": {
       "dependsOn": ["^build"]
     },
+    "@blaze-cardano/uplc#build": {
+      "dependsOn": ["build:wasm"]
+    },
+    "@blaze-cardano/uplc#build:wasm": {},
     "dev": {
       "cache": false,
       "persistent": true
