@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.5.3
+
+### Patch Changes
+
+- 99fa846: fix: use json-bigint from kupo
+
 ## 0.5.2
 
 ### Patch Changes
