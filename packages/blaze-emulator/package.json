@@ -30,6 +30,7 @@
     "@blaze-cardano/jest-config": "workspace:*",
     "@blaze-cardano/sdk": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
+    "@blaze-cardano/blueprint": "workspace:*",
     "@types/jest": "^29.5.5",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",

@@ -25,7 +25,8 @@ import {
 import { Blaze, makeValue, Provider } from "@blaze-cardano/sdk";
 import { HotWallet } from "@blaze-cardano/wallet";
 import { Emulator } from "../src";
-import { signAndSubmit } from "./util";
+import { signAndSubmit, VOID_PLUTUS_DATA } from "./util";
+import { AlwaysTrueScriptPropose, AlwaysTrueScriptVote } from "./aiken/plutus";
 
 const DEPOSIT = BigInt(hardCodedProtocolParams.governanceActionDeposit!);
 const STAKE_KEY_DEPOSIT = BigInt(hardCodedProtocolParams.stakeKeyDeposit!);
@@ -1179,5 +1180,100 @@ describe("Emulator governance", () => {
     expect(emulator.getGovernanceProposalStatus(treasuryAction2)).toBe(
       "Active",
     );
+  });
+
+  test("script drep should be able to vote and propose", async () => {
+    emulator.stepForwardToNextEpoch();
+
+    const scriptVote = new AlwaysTrueScriptVote(0n, "");
+    const scriptPropose = new AlwaysTrueScriptPropose(0n, "");
+
+    const scriptDrepCredential = Credential.fromCore({
+      type: CredentialType.ScriptHash,
+      hash: scriptVote.Script.hash(),
+    });
+
+    const registerBuilder = blaze
+      .newTransaction()
+      .provideScript(scriptVote.Script)
+      .addRegisterDRep(scriptDrepCredential, 0n, undefined, VOID_PLUTUS_DATA);
+
+    const registerTx = await registerBuilder.complete();
+    const registerHash = await signAndSubmit(registerTx, blaze);
+    emulator.awaitTransactionConfirmation(registerHash);
+
+    console.log("REGISTERED")
+
+    const scriptDrepHash = scriptDrepCredential.toCore().hash;
+    expect(emulator.dreps[scriptDrepHash]).toEqual(
+      expect.objectContaining({ isRegistered: true }),
+    );
+
+    const { stakeCred } = await registerStakeHolder({
+      registerDRep: false,
+      stake: 900_000_000n,
+    });
+
+    const delegateTx = await blaze
+      .newTransaction()
+      .addVoteDelegation(Credential.fromCore(stakeCred), scriptDrepCredential)
+      .complete();
+    const delegateHash = await signAndSubmit(delegateTx, blaze, true);
+    emulator.awaitTransactionConfirmation(delegateHash);
+
+    emulator.stepForwardToNextEpoch();
+
+    const scriptRewardCredential: CredentialCore = {
+      type: CredentialType.ScriptHash,
+      hash: scriptPropose.Script.hash(),
+    };
+    const scriptRewardAccount = RewardAccount.fromCredential(
+      scriptRewardCredential,
+      NetworkId.Testnet,
+    );
+    emulator.accounts.set(scriptRewardAccount, { balance: DEPOSIT });
+
+    const targetMinFee = emulator.params.minFeeConstant + 1_111;
+    const proposal = ProposalProcedure.fromCore({
+      deposit: DEPOSIT,
+      rewardAccount: scriptRewardAccount,
+      governanceAction: {
+        // @ts-expect-error - GovernanceActionType is not exported
+        __typename: "parameter_change_action",
+        governanceActionId: null,
+        protocolParamUpdate: { minFeeConstant: targetMinFee },
+        policyHash: emulator.constitution.scriptHash,
+      },
+      anchor: { url: "ipfs://script-drep", dataHash: ZERO_HASH32 },
+    });
+
+    const proposalBuilder = blaze
+      .newTransaction()
+      .setMinimumFee(0n)
+      .provideScript(scriptPropose.Script)
+      .addProposal(proposal, VOID_PLUTUS_DATA);
+    const proposalTx = await proposalBuilder.complete();
+    proposalTx.body().setFee(0n);
+    const proposalHash = await signAndSubmit(proposalTx, blaze);
+    emulator.awaitTransactionConfirmation(proposalHash);
+
+    const actionId = new GovernanceActionId(TransactionId(proposalHash), 0n);
+    const voter = Voter.newDrep(scriptDrepCredential.toCore());
+
+    const voteBuilder = blaze
+      .newTransaction()
+      .setMinimumFee(0n)
+      .provideScript(scriptVote.Script)
+      .addVote(voter, actionId, Vote.yes, { redeemer: VOID_PLUTUS_DATA });
+    const voteTx = await voteBuilder.complete();
+    voteTx.body().setFee(0n);
+    const voteHash = await signAndSubmit(voteTx, blaze);
+    emulator.awaitTransactionConfirmation(voteHash);
+
+    emulator.stepForwardToNextEpoch();
+
+    expect(emulator.params.minFeeConstant).toBe(targetMinFee);
+    const tallies = emulator.getTallies(actionId)!;
+    expect(tallies.tallies.drep.yes).toBeGreaterThan(0n);
   });
 });

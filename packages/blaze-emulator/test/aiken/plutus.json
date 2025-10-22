@@ -1,0 +1,99 @@
+{
+  "preamble": {
+    "title": "emulator/test",
+    "description": "Aiken contracts for project 'emulator/test'",
+    "version": "0.0.0",
+    "plutusVersion": "v3",
+    "compiler": {
+      "name": "Aiken",
+      "version": "v1.1.19+e525483"
+    },
+    "license": "Apache-2.0"
+  },
+  "validators": [
+    {
+      "title": "always_true.script.vote",
+      "redeemer": {
+        "title": "_r",
+        "schema": {
+          "$ref": "#/definitions/Data"
+        }
+      },
+      "parameters": [
+        {
+          "title": "_param1",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        },
+        {
+          "title": "_param2",
+          "schema": {
+            "$ref": "#/definitions/ByteArray"
+          }
+        }
+      ],
+      "compiledCode": "587f0101002229800aba2aba1aab9eaab9dab9a9bad0039bae0024888888966002646465300130073754003300900398048012444b30013370e9004001c4c928980618059baa0048acc004cdc3a401400713233224a26eb4c034004c034c038004c02cdd5002459009201218041804800980400098029baa0088a4d13656400c01",
+      "hash": "3baba939bda13038d1dc677b6dd56cd25a25adc7060d3c570490df34"
+    },
+    {
+      "title": "always_true.script.propose",
+      "redeemer": {
+        "title": "_r",
+        "schema": {
+          "$ref": "#/definitions/Data"
+        }
+      },
+      "parameters": [
+        {
+          "title": "_param1",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        },
+        {
+          "title": "_param2",
+          "schema": {
+            "$ref": "#/definitions/ByteArray"
+          }
+        }
+      ],
+      "compiledCode": "587f0101002229800aba2aba1aab9eaab9dab9a9bad0039bae0024888888966002646465300130073754003300900398048012444b30013370e9004001c4c928980618059baa0048acc004cdc3a401400713233224a26eb4c034004c034c038004c02cdd5002459009201218041804800980400098029baa0088a4d13656400c01",
+      "hash": "3baba939bda13038d1dc677b6dd56cd25a25adc7060d3c570490df34"
+    },
+    {
+      "title": "always_true.script.else",
+      "redeemer": {
+        "schema": {}
+      },
+      "parameters": [
+        {
+          "title": "_param1",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        },
+        {
+          "title": "_param2",
+          "schema": {
+            "$ref": "#/definitions/ByteArray"
+          }
+        }
+      ],
+      "compiledCode": "587f0101002229800aba2aba1aab9eaab9dab9a9bad0039bae0024888888966002646465300130073754003300900398048012444b30013370e9004001c4c928980618059baa0048acc004cdc3a401400713233224a26eb4c034004c034c038004c02cdd5002459009201218041804800980400098029baa0088a4d13656400c01",
+      "hash": "3baba939bda13038d1dc677b6dd56cd25a25adc7060d3c570490df34"
+    }
+  ],
+  "definitions": {
+    "ByteArray": {
+      "dataType": "bytes"
+    },
+    "Data": {
+      "title": "Data",
+      "description": "Any Plutus data."
+    },
+    "Int": {
+      "dataType": "integer"
+    }
+  }
+}
