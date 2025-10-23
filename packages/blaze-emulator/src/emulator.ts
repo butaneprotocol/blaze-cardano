@@ -1144,6 +1144,7 @@ export class Emulator {
       if (proposalSet) {
         const proposals = proposalSet.values();
         let totalDeposit = 0n;
+        let policyInvokes = 0n;
         for (let i = 0; i < proposals.length; i++) {
           const p = proposals[i]!;
           const expected = BigInt(this.params.governanceActionDeposit ?? 0);
@@ -1151,6 +1152,21 @@ export class Emulator {
             throw new Error(
               `Invalid governance deposit: supplied ${p.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`,
             );
+          }
+
+          const action = p.toCore().governanceAction;
+          if (
+            (action.__typename === "parameter_change_action" ||
+              action.__typename === "treasury_withdrawals_action") &&
+            this.constitution.scriptHash
+          ) {
+            const hash = action.policyHash;
+            if (hash === null) {
+              throw new Error(
+                `Governance action needs to include proposal policy: expected ${this.constitution.scriptHash}`,
+              );
+            }
+            consumeScript(hash, RedeemerTag.Proposing, policyInvokes++);
           }
           totalDeposit += BigInt(p.deposit());
         }
@@ -1164,13 +1180,18 @@ export class Emulator {
     {
       const voting = body.votingProcedures();
       if (voting !== undefined) {
+        const voteCore = voting.toCore();
+        const voterOrder = voteCore
+          .map(({ voter }) => voter.credential.hash)
+          .sort();
         for (const { voter } of voting.toCore()) {
           const vs = Voter.fromCore(voter);
           switch (vs.kind()) {
             case VoterKind.DrepKeyHash:
             case VoterKind.DRepScriptHash: {
               const cred = vs.toDrepCred()!;
-              consumeCred(cred);
+              const index = voterOrder.indexOf(cred.hash);
+              consumeCred(cred, RedeemerTag.Voting, BigInt(index));
               break;
             }
             case VoterKind.ConstitutionalCommitteeKeyHash:

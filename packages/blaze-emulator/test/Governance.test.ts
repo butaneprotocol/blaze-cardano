@@ -73,7 +73,6 @@ describe("Emulator governance", () => {
     });
     emulator.params.constitutionalCommitteeMinSize = 1;
     emulator.bootstrapMode = false;
-    emulator.params.collateralPercentage = 0;
     emulator.setCommitteeState(emulator.cc, {
       hotCredentials: emulator.cc.members.reduce<
         Record<string, CredentialCore | undefined>
@@ -138,9 +137,7 @@ describe("Emulator governance", () => {
     procedure: ProposalProcedure,
   ): Promise<GovernanceActionId> => {
     const builder = blaze.newTransaction().addProposal(procedure);
-    builder.setMinimumFee(0n);
     const tx = await builder.complete();
-    tx.body().setFee(0n);
     const hash = await signAndSubmit(tx, blaze);
     emulator.awaitTransactionConfirmation(hash);
     return new GovernanceActionId(TransactionId(hash), 0n);
@@ -1186,7 +1183,6 @@ describe("Emulator governance", () => {
     emulator.stepForwardToNextEpoch();
 
     const scriptVote = new AlwaysTrueScriptVote(0n, "");
-    const scriptPropose = new AlwaysTrueScriptPropose(0n, "");
 
     const scriptDrepCredential = Credential.fromCore({
       type: CredentialType.ScriptHash,
@@ -1202,14 +1198,12 @@ describe("Emulator governance", () => {
     const registerHash = await signAndSubmit(registerTx, blaze);
     emulator.awaitTransactionConfirmation(registerHash);
 
-    console.log("REGISTERED")
-
     const scriptDrepHash = scriptDrepCredential.toCore().hash;
     expect(emulator.dreps[scriptDrepHash]).toEqual(
       expect.objectContaining({ isRegistered: true }),
     );
 
-    const { stakeCred } = await registerStakeHolder({
+    const { stakeCred, rewardAccount } = await registerStakeHolder({
       registerDRep: false,
       stake: 900_000_000n,
     });
@@ -1223,20 +1217,10 @@ describe("Emulator governance", () => {
 
     emulator.stepForwardToNextEpoch();
 
-    const scriptRewardCredential: CredentialCore = {
-      type: CredentialType.ScriptHash,
-      hash: scriptPropose.Script.hash(),
-    };
-    const scriptRewardAccount = RewardAccount.fromCredential(
-      scriptRewardCredential,
-      NetworkId.Testnet,
-    );
-    emulator.accounts.set(scriptRewardAccount, { balance: DEPOSIT });
-
     const targetMinFee = emulator.params.minFeeConstant + 1_111;
     const proposal = ProposalProcedure.fromCore({
       deposit: DEPOSIT,
-      rewardAccount: scriptRewardAccount,
+      rewardAccount,
       governanceAction: {
         // @ts-expect-error - GovernanceActionType is not exported
         __typename: "parameter_change_action",
@@ -1247,13 +1231,8 @@ describe("Emulator governance", () => {
       anchor: { url: "ipfs://script-drep", dataHash: ZERO_HASH32 },
     });
 
-    const proposalBuilder = blaze
-      .newTransaction()
-      .setMinimumFee(0n)
-      .provideScript(scriptPropose.Script)
-      .addProposal(proposal, VOID_PLUTUS_DATA);
+    const proposalBuilder = blaze.newTransaction().addProposal(proposal);
     const proposalTx = await proposalBuilder.complete();
-    proposalTx.body().setFee(0n);
     const proposalHash = await signAndSubmit(proposalTx, blaze);
     emulator.awaitTransactionConfirmation(proposalHash);
 
@@ -1262,11 +1241,9 @@ describe("Emulator governance", () => {
 
     const voteBuilder = blaze
       .newTransaction()
-      .setMinimumFee(0n)
       .provideScript(scriptVote.Script)
       .addVote(voter, actionId, Vote.yes, { redeemer: VOID_PLUTUS_DATA });
     const voteTx = await voteBuilder.complete();
-    voteTx.body().setFee(0n);
     const voteHash = await signAndSubmit(voteTx, blaze);
     emulator.awaitTransactionConfirmation(voteHash);
 
@@ -1275,5 +1252,59 @@ describe("Emulator governance", () => {
     expect(emulator.params.minFeeConstant).toBe(targetMinFee);
     const tallies = emulator.getTallies(actionId)!;
     expect(tallies.tallies.drep.yes).toBeGreaterThan(0n);
+  });
+
+  test("parameter change proposals invoke proposal policy when constitution script is set", async () => {
+    emulator.stepForwardToNextEpoch();
+
+    const policyScript = new AlwaysTrueScriptPropose(0n, "");
+    const previousScriptHash = emulator.constitution.scriptHash;
+    emulator.constitution.scriptHash = policyScript.Script.hash();
+
+    try {
+      const { stakeCred, rewardAccount } = await registerStakeHolder({
+        stake: 900_000_000n,
+      });
+
+      emulator.stepForwardToNextEpoch();
+
+      const updatedMinFee = emulator.params.minFeeConstant + 777;
+      const policyProposal = ProposalProcedure.fromCore({
+        deposit: DEPOSIT,
+        rewardAccount,
+        governanceAction: {
+          // @ts-expect-error - GovernanceActionType is not exported
+          __typename: "parameter_change_action",
+          governanceActionId: null,
+          protocolParamUpdate: { minFeeConstant: updatedMinFee },
+          policyHash: emulator.constitution.scriptHash,
+        },
+        anchor: { url: "ipfs://policy-redeemer", dataHash: ZERO_HASH32 },
+      });
+
+      expect(() =>
+        blaze
+          .newTransaction()
+          .provideScript(policyScript.Script)
+          .addProposal(policyProposal),
+      ).toThrow(/proposal policy requires a redeemer/i);
+
+      const policyTx = await blaze
+        .newTransaction()
+        .provideScript(policyScript.Script)
+        .addProposal(policyProposal, VOID_PLUTUS_DATA)
+        .complete();
+      const policyHash = await signAndSubmit(policyTx, blaze);
+      emulator.awaitTransactionConfirmation(policyHash);
+
+      const actionId = new GovernanceActionId(TransactionId(policyHash), 0n);
+      await castDrepVotes(stakeCred, [{ actionId }]);
+
+      emulator.stepForwardToNextEpoch();
+
+      expect(emulator.params.minFeeConstant).toBe(updatedMinFee);
+    } finally {
+      emulator.constitution.scriptHash = previousScriptHash;
+    }
   });
 });

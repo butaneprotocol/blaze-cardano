@@ -7,6 +7,7 @@ import { type PlutusData } from "@blaze-cardano/core";
 type Data = PlutusData;
 type Int = bigint;
 type ByteArray = string;
+const PolicyId = Type.String();
 type OutputReference = { output_index: bigint; transaction_id: string };
 
 const Contracts = Type.Module({

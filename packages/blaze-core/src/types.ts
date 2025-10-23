@@ -229,6 +229,14 @@ export type GovernanceActionId = C.Serialization.GovernanceActionId;
 export const GovernanceActionKind = C.Serialization.GovernanceActionKind;
 export type GovernanceActionKind = C.Serialization.GovernanceActionKind;
 
+// TODO: All other relevant core governance types
+export type ParameterChangeAction = C.Cardano.ParameterChangeAction;
+export type TreasuryWithdrawalsAction = C.Cardano.TreasuryWithdrawalsAction;
+export type HardForkInitiationAction = C.Cardano.HardForkInitiationAction;
+export type NoConfidence = C.Cardano.NoConfidence;
+export type InfoAction = C.Cardano.InfoAction;
+export type NewConstitution = C.Cardano.NewConstitution;
+
 export const Constitution = C.Serialization.Constitution;
 export type Constitution = C.Serialization.Constitution;
 

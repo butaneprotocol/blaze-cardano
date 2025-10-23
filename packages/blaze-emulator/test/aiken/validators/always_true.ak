@@ -9,6 +9,10 @@ validator script(_param1: Int, _param2: ByteArray) {
     True
   }
 
+  publish(_r: Data, _p: Data, _self: Data) {
+    True
+  }
+
   else(_) {
     fail
   }

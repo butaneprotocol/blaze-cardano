@@ -51,12 +51,10 @@ describe("emulator RPC app", () => {
 
     const utxoResponse = await app.request("/emulator/utxos");
     expect(utxoResponse.status).toBe(200);
-    const utxos = (await utxoResponse.json()) as Array<{
-      outputCbor: string;
-    }>;
+    const utxos = (await utxoResponse.json()) as Array<string>;
     expect(Array.isArray(utxos)).toBe(true);
     expect(utxos.length).toBeGreaterThan(0);
-    expect(utxos[0]!.outputCbor).toEqual(expect.any(String));
+    expect(utxos[0]).toEqual(expect.any(String));
 
     const walletsResponse = await app.request("/emulator/wallets");
     expect(walletsResponse.status).toBe(200);
