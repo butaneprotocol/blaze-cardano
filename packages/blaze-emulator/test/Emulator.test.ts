@@ -110,6 +110,37 @@ describe("Emulator", () => {
     });
   });
 
+  test("expectValidTransaction propagates failures", async () => {
+    await emulator.register("spender", makeValue(1_000_000n));
+    await emulator.as("spender", async (spenderBlaze, address) => {
+      const tx = spenderBlaze
+        .newTransaction()
+        .payLovelace(address, 5_000_000_000n);
+      await expect(
+        emulator.expectValidTransaction(spenderBlaze, tx),
+      ).rejects.toThrow();
+    });
+  });
+
+  test("expectValidMultisignedTransaction enforces all signatures", async () => {
+    const wallet3 = await emulator.register("multiA", makeValue(5_000_000n));
+    const wallet4 = await emulator.register("multiB", makeValue(5_000_000n));
+    await emulator.as("multiA", async (multiBlaze) => {
+      const tx = multiBlaze
+        .newTransaction()
+        .payLovelace(wallet4, 1_000_000n)
+        .addRequiredSigner(
+          Ed25519KeyHashHex(wallet3.getProps().paymentPart!.hash),
+        )
+        .addRequiredSigner(
+          Ed25519KeyHashHex(wallet4.getProps().paymentPart!.hash),
+        );
+      await expect(
+        emulator.expectValidMultisignedTransaction(["multiA"], tx),
+      ).rejects.toThrow();
+    });
+  });
+
   test("stop and start event loop", () => {
     expect(emulator.eventLoop).toBeUndefined();
     emulator.startEventLoop();
@@ -229,6 +260,58 @@ describe("Emulator", () => {
     const out2 = emulator.getOutput(new TransactionInput(spendTxHash, 0n));
     isDefined(out2);
     expect(out2.address()).toEqual(wallet1.address);
+  });
+
+  describe("expectScriptFailure", () => {
+    const LOCK_AMOUNT = 2_000_000n;
+    const createFailingScriptSpend = async (
+      blazeClient: Blaze<any, any>,
+    ) => {
+      const scriptAddress = addressFromCredential(
+        NetworkId.Testnet,
+        Credential.fromCore({
+          type: CredentialType.ScriptHash,
+          hash: alwaysTrueScript.hash(),
+        }),
+      );
+      const lockTx = await blazeClient
+        .newTransaction()
+        .lockAssets(scriptAddress, makeValue(LOCK_AMOUNT), ONE_PLUTUS_DATA)
+        .provideScript(alwaysTrueScript)
+        .complete();
+      const lockHash = await signAndSubmit(lockTx, blazeClient);
+      emulator.awaitTransactionConfirmation(lockHash);
+      const lockedOutput = emulator.getOutput(new TransactionInput(lockHash, 0n));
+      isDefined(lockedOutput);
+      return blazeClient
+        .newTransaction()
+        .addInput(
+          new TransactionUnspentOutput(
+            new TransactionInput(lockHash, 0n),
+            lockedOutput,
+          ),
+        );
+    };
+
+    test("matches expected failure pattern", async () => {
+      await emulator.as("script-user", async (scriptBlaze) => {
+        await emulator.register("script-user", makeValue(5_000_000n));
+        const builder = await createFailingScriptSpend(scriptBlaze);
+        await expect(
+          emulator.expectScriptFailure(builder, /could not resolve script hash/i),
+        ).resolves.not.toThrow();
+      });
+    });
+
+    test("fails when pattern does not match", async () => {
+      await emulator.as("script-user-2", async (scriptBlaze) => {
+        await emulator.register("script-user-2", makeValue(5_000_000n));
+        const builder = await createFailingScriptSpend(scriptBlaze);
+        await expect(
+          emulator.expectScriptFailure(builder, /different pattern/i),
+        ).rejects.toThrow(/didn't match pattern/i);
+      });
+    });
   });
 
   test("Should be able to spend a UTxO with a self-reference script", async () => {

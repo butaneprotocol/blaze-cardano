@@ -26,11 +26,11 @@
     "api:prepare": "pnpm build:types && pnpm api:extract && pnpm api:md"
   },
   "devDependencies": {
+    "@blaze-cardano/blueprint": "workspace:*",
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/jest-config": "workspace:*",
     "@blaze-cardano/sdk": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
-    "@blaze-cardano/blueprint": "workspace:*",
     "@types/jest": "^29.5.5",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
@@ -43,13 +43,15 @@
     "access": "public"
   },
   "dependencies": {
-    "@hono/node-server": "^1.4.0",
-    "@hono/zod-validator": "^0.2.1",
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/query": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
     "@blaze-cardano/vm": "workspace:*",
     "@blaze-cardano/wallet": "workspace:*",
+    "@hono/node-server": "^1.4.0",
+    "@hono/swagger-ui": "^0.4.1",
+    "@hono/zod-openapi": "^0.15.3",
+    "@hono/zod-validator": "^0.2.1",
     "hono": "^4.6.6",
     "zod": "^3.23.8"
   }
