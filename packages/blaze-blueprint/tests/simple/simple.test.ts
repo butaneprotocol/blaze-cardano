@@ -2,6 +2,7 @@ import {
   AlwaysTrueScriptSpend,
   AlwaysTrueScriptElse,
   NestedSometimesTrueScriptSpend,
+  AlwaysTrueScriptNoParamsSpend,
 } from "./plutus";
 
 describe("Blueprint", () => {
@@ -16,6 +17,15 @@ describe("Blueprint", () => {
     expect(alwaysTrueElse).toBeDefined();
     expect(alwaysTrueElse.Script.hash()).toBeDefined();
     expect(alwaysTrueElse.Script.asPlutusV3()?.rawBytes()).toBeDefined();
+  });
+});
+
+describe("Blueprint no params", () => {
+  it("Should be able to construct script", async () => {
+    const alwaysTrueNoParamsSpend = new AlwaysTrueScriptNoParamsSpend();
+    expect(alwaysTrueNoParamsSpend).toBeDefined();
+    expect(alwaysTrueNoParamsSpend.Script.hash()).toBeDefined();
+    expect(alwaysTrueNoParamsSpend.Script.asPlutusV3()?.rawBytes()).toBeDefined();
   });
 });
 
