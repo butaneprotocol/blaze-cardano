@@ -214,7 +214,8 @@ class Generator {
       // const redeemerTitle = Generator.snakeToCamel(redeemer?.title);
       // const redeemerSchema = redeemer?.schema;
 
-      const params = validator.parameters || [];
+      const params = validator.parameters ?? [];
+      const hasParams = params.length > 0;
 
       // const paramsArgs = params.map((_, idx) => {
       //   const name = paramNames[idx]!;
@@ -230,9 +231,12 @@ class Generator {
       this.indent();
       this.writeLine(`public Script: Script`);
       this.buildLine(`constructor(`);
-      if (params.length > 0) {
+      const hasConstructorArgs = hasParams || !!validatorWithTrace;
+      if (hasConstructorArgs) {
         this.finishLine();
         this.indent();
+      }
+      if (hasParams) {
         for (const param of params) {
           this.buildLine(`${Generator.snakeToCamel(param.title)}: `);
           if ("$ref" in param.schema) {
@@ -243,25 +247,24 @@ class Generator {
           }
           this.finishLine(",");
         }
-        this.outdent();
       }
       if (validatorWithTrace) {
-        if (params.length === 0) {
-          this.finishLine();
-        }
-        this.indent();
         this.buildLine(`trace?: boolean = false`);
         this.finishLine(`,`);
+      }
+      if (hasConstructorArgs) {
         this.outdent();
       }
       this.finishLine(") {");
       this.indent();
       this.writeLine(`this.Script = cborToScript(`);
       this.indent();
-      this.writeLine(`applyParamsToScript(`);
-      this.indent();
+      if (hasParams) {
+        this.writeLine(`applyParamsToScript(`);
+        this.indent();
+      }
       if (validatorWithTrace) {
-        this.writeLine(`this.trace`);
+        this.writeLine(`trace`);
         this.indent();
         this.writeLine(`?`);
         this.writeLine(`"${validatorWithTrace.compiledCode}"`);
@@ -271,32 +274,34 @@ class Generator {
       if (validatorWithTrace) {
         this.outdent();
       }
-      this.writeLine(`Type.Tuple([`);
-      this.indent();
-      for (const param of params) {
-        if ("$ref" in param.schema) {
-          const typeName = this.typeName(param.schema);
-          if (this.isStandardType(typeName)) {
-            this.writeTypeboxType(param.schema, blueprint.definitions);
+      if (hasParams) {
+        this.writeLine(`Type.Tuple([`);
+        this.indent();
+        for (const param of params) {
+          if ("$ref" in param.schema) {
+            const typeName = this.typeName(param.schema);
+            if (this.isStandardType(typeName)) {
+              this.writeTypeboxType(param.schema, blueprint.definitions);
+            } else {
+              this.buildLine(typeName);
+            }
           } else {
-            this.buildLine(typeName);
+            console.log("???", param);
           }
-        } else {
-          console.log("???", param);
+          this.finishLine(",");
         }
-        this.finishLine(",");
+        this.outdent();
+        this.writeLine(`]),`);
+        this.writeLine(`[`);
+        this.indent();
+        for (const param of params) {
+          this.writeLine(`${Generator.snakeToCamel(param.title)},`);
+        }
+        this.outdent();
+        this.writeLine(`],`);
+        this.outdent();
+        this.writeLine(`),`);
       }
-      this.outdent();
-      this.writeLine(`]),`);
-      this.writeLine(`[`);
-      this.indent();
-      for (const param of params) {
-        this.writeLine(`${Generator.snakeToCamel(param.title)},`);
-      }
-      this.outdent();
-      this.writeLine(`],`);
-      this.outdent();
-      this.writeLine(`),`);
       this.writeLine(`${plutusVersion}`);
       this.outdent();
       this.writeLine(`);`);
