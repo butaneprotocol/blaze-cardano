@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.7.2
+
+### Patch Changes
+
+- b46088f: Fix apply params for no params
+
 ## 0.7.1
 
 ### Patch Changes
