@@ -222,7 +222,7 @@ export class Emulator {
       treasury = 0n,
       cc = { members: [], quorumThreshold: { numerator: 0, denominator: 1 } },
       ccHotCredentials,
-    }: EmulatorOptions = {}
+    }: EmulatorOptions = {},
   ) {
     const constitution: ConstitutionCore = {
       anchor: { url: "", dataHash: "" as Hash32ByteBase16 },
@@ -236,7 +236,7 @@ export class Emulator {
     for (let i = 0; i < genesisOutputs.length; i++) {
       const txIn = new TransactionInput(
         TransactionId("00".repeat(32)),
-        BigInt(this.#nextGenesisUtxo)
+        BigInt(this.#nextGenesisUtxo),
       );
       this.#nextGenesisUtxo += 1;
       this.#ledger[serialiseInput(txIn)] = genesisOutputs[i]!;
@@ -254,7 +254,7 @@ export class Emulator {
           zeroSlot: this.clock.slot,
           zeroTime: this.clock.time,
           slotLength: this.clock.slotLength,
-        }
+        },
       );
     this.addUtxo = this.addUtxo.bind(this);
     this.removeUtxo = this.removeUtxo.bind(this);
@@ -282,7 +282,7 @@ export class Emulator {
   public async register(
     label: string,
     value?: Value,
-    datum?: PlutusData
+    datum?: PlutusData,
   ): Promise<Address> {
     await this.fund(label, value, datum);
     const wallet = await this.getOrAddWallet(label);
@@ -312,7 +312,7 @@ export class Emulator {
     const wallet = await this.getOrAddWallet(label);
     const output = new TransactionOutput(
       await wallet.getChangeAddress(),
-      value ?? makeValue(100_000_000n)
+      value ?? makeValue(100_000_000n),
     );
     if (datum) {
       output.setDatum(Datum.newInlineData(datum));
@@ -321,10 +321,10 @@ export class Emulator {
       new TransactionUnspentOutput(
         new TransactionInput(
           TransactionId("00".repeat(32)),
-          BigInt(this.#nextGenesisUtxo)
+          BigInt(this.#nextGenesisUtxo),
         ),
-        output
-      )
+        output,
+      ),
     );
     this.#nextGenesisUtxo += 1;
   }
@@ -339,7 +339,7 @@ export class Emulator {
    */
   public async as<T = void>(
     label: string,
-    callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>
+    callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>,
   ): Promise<T> {
     const provider = new EmulatorProvider(this);
     const wallet = await this.getOrAddWallet(label);
@@ -357,17 +357,17 @@ export class Emulator {
   public async publishScript(script: Script) {
     const utxo = new TransactionOutput(
       getBurnAddress(NetworkId.Testnet),
-      makeValue(5_000_001n)
+      makeValue(5_000_001n),
     );
     utxo.setScriptRef(script);
     this.addUtxo(
       new TransactionUnspentOutput(
         new TransactionInput(
           TransactionId("00".repeat(32)),
-          BigInt(this.#nextGenesisUtxo)
+          BigInt(this.#nextGenesisUtxo),
         ),
-        utxo
-      )
+        utxo,
+      ),
     );
     this.#nextGenesisUtxo += 1;
   }
@@ -394,7 +394,7 @@ export class Emulator {
    */
   public async expectValidTransaction(
     blaze: Blaze<Provider, Wallet>,
-    tx: TxBuilder
+    tx: TxBuilder,
   ) {
     const scriptBytes = tx.toCbor();
     try {
@@ -421,7 +421,7 @@ export class Emulator {
    */
   public async expectValidMultisignedTransaction(
     signers: string[],
-    tx: TxBuilder
+    tx: TxBuilder,
   ) {
     const scriptBytes = tx.toCbor();
     try {
@@ -472,8 +472,8 @@ export class Emulator {
   unixToSlot(unixMillis: bigint | number): Slot {
     return Slot(
       Math.ceil(
-        (Number(unixMillis) - this.clock.zeroTime) / this.clock.slotLength
-      )
+        (Number(unixMillis) - this.clock.zeroTime) / this.clock.slotLength,
+      ),
     );
   }
 
@@ -503,7 +503,7 @@ export class Emulator {
     this.clock.block = Math.ceil(Number(slot) / 20);
     this.clock.time = this.slotToUnix(slot);
     this.clock.epoch = Math.floor(
-      (this.clock.slot - this.clock.zeroSlot) / this.clock.slotsPerEpoch
+      (this.clock.slot - this.clock.zeroSlot) / this.clock.slotsPerEpoch,
     );
 
     Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
@@ -666,12 +666,12 @@ export class Emulator {
             const sig = Ed25519Signature.fromHex(vkey.signature());
             if (!key.verify(sig, HexBlob(txId))) {
               throw new Error(
-                `Invalid vkey in witness set with hash ${keyHash}`
+                `Invalid vkey in witness set with hash ${keyHash}`,
               );
             }
             return Hash28ByteBase16.fromEd25519KeyHashHex(keyHash.hex());
-          })
-      )
+          }),
+      ),
     );
 
     // TODO: bootstrap addresses validation
@@ -681,7 +681,7 @@ export class Emulator {
         ...(witnessSet.plutusV1Scripts()?.values() ?? []),
         ...(witnessSet.plutusV2Scripts()?.values() ?? []),
         ...(witnessSet.plutusV3Scripts()?.values() ?? []),
-      ].map((script) => script.hash())
+      ].map((script) => script.hash()),
     );
 
     // Total set of plutus hashes including referenced scripts
@@ -694,7 +694,7 @@ export class Emulator {
         .map((script) => {
           // TODO: Validate native scripts with validity interval
           return script.hash();
-        })
+        }),
     );
 
     const nativeHashes = new Set(attachedNativeHashes);
@@ -717,18 +717,18 @@ export class Emulator {
     const consumeScript = (
       hash: ScriptHash,
       redeemerTag?: RedeemerTag,
-      redeemerIndex?: bigint
+      redeemerIndex?: bigint,
     ) => {
       if (nativeHashes.has(hash)) {
         consumed.add(hash);
       } else if (plutusHashes.has(hash)) {
         const hasRedeemer = redeemers.some(
-          (r) => r.tag() === redeemerTag && r.index() === redeemerIndex
+          (r) => r.tag() === redeemerTag && r.index() === redeemerIndex,
         );
 
         if (!hasRedeemer) {
           throw new Error(
-            `Script (hash ${hash}) was found but without a redeemer.`
+            `Script (hash ${hash}) was found but without a redeemer.`,
           );
         }
 
@@ -741,7 +741,7 @@ export class Emulator {
     const consumeCred = (
       cred: CredentialCore,
       redeemerTag?: RedeemerTag,
-      redeemerIndex?: bigint
+      redeemerIndex?: bigint,
     ) => {
       if (cred.type === CredentialType.KeyHash) {
         consumeVkey(cred.hash);
@@ -758,13 +758,13 @@ export class Emulator {
         const out = this.getOutput(input);
         if (!out) {
           throw new Error(
-            `Collateral input ${input.toCore()} not found in the ledger.`
+            `Collateral input ${input.toCore()} not found in the ledger.`,
           );
         }
         const paymentCred = out.address().getProps().paymentPart!;
         if (paymentCred.type !== CredentialType.KeyHash) {
           throw new Error(
-            `Collateral input ${input.toCore()} must contain a vkey.`
+            `Collateral input ${input.toCore()} must contain a vkey.`,
           );
         }
         consumeVkey(paymentCred.hash);
@@ -776,7 +776,7 @@ export class Emulator {
       collateral.length > this.params.maxCollateralInputs
     )
       throw new Error(
-        `Collateral inputs exceed the maximum allowed. Provided: ${collateral?.length}, Maximum: ${this.params.maxCollateralInputs}`
+        `Collateral inputs exceed the maximum allowed. Provided: ${collateral?.length}, Maximum: ${this.params.maxCollateralInputs}`,
       );
 
     const usedInputs: TransactionUnspentOutput[] = [];
@@ -790,7 +790,7 @@ export class Emulator {
 
       if (!out) {
         throw new Error(
-          `Input ${JSON.stringify(input.toCore())} not found in the ledger.`
+          `Input ${JSON.stringify(input.toCore())} not found in the ledger.`,
         );
       }
 
@@ -815,7 +815,7 @@ export class Emulator {
       .sort(
         (a, b) =>
           a.transactionId().localeCompare(b.transactionId()) ||
-          Number(a.index() - b.index())
+          Number(a.index() - b.index()),
       )
       .forEach((input, index) => {
         const out = this.getOutput(input)!;
@@ -834,8 +834,8 @@ export class Emulator {
         refInputs?.some(
           (ref) =>
             ref.transactionId() === input.transactionId() &&
-            ref.index() === input.index()
-        )
+            ref.index() === input.index(),
+        ),
       )
     ) {
       throw new Error("Inputs and reference inputs must be disjoint.");
@@ -843,7 +843,7 @@ export class Emulator {
 
     // Minimum collateral amount included
     const minCollateral = BigInt(
-      Math.ceil((this.params.collateralPercentage / 100) * Number(body.fee()))
+      Math.ceil((this.params.collateralPercentage / 100) * Number(body.fee())),
     );
 
     // If any scripts have been invoked, minimum collateral must be included
@@ -866,14 +866,14 @@ export class Emulator {
         const account = this.getAccount(rewardAddr);
         if (account.balance !== amount)
           throw new Error(
-            `Withdrawal amount for ${rewardAddr} does not match the actual reward balance (Withdrawing: ${amount} Balance: ${account.balance}).`
+            `Withdrawal amount for ${rewardAddr} does not match the actual reward balance (Withdrawing: ${amount} Balance: ${account.balance}).`,
           );
 
         const stakeCred =
           Address.fromBech32(rewardAddr).getProps().paymentPart!;
         consumeCred(stakeCred, RedeemerTag.Reward, BigInt(index));
         netValue = V.merge(netValue, new Value(amount));
-      }
+      },
     );
 
     // -- Mints
@@ -906,7 +906,7 @@ export class Emulator {
     // Validity interval contains the current slot range and is formed correctly
     if (this.clock.slot < validFrom || this.clock.slot >= validUntil)
       throw new Error(
-        `Validity interval (${validFrom} to ${validUntil}) is outside the slot range (${this.clock.slot}).`
+        `Validity interval (${validFrom} to ${validUntil}) is outside the slot range (${this.clock.slot}).`,
       );
 
     if (validFrom >= validUntil)
@@ -982,7 +982,7 @@ export class Emulator {
         const expected = BigInt(this.params.governanceActionDeposit ?? 0);
         if (BigInt(p.deposit()) !== expected) {
           throw new Error(
-            `Invalid governance deposit: supplied ${p.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`
+            `Invalid governance deposit: supplied ${p.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`,
           );
         }
         totalDeposit += BigInt(p.deposit());
@@ -1033,13 +1033,13 @@ export class Emulator {
         throw new Error(
           `Output ${index} does not meet the minADA requirement. Output: ${output
             .amount()
-            .coin()}, MinADA: ${minAda}`
+            .coin()}, MinADA: ${minAda}`,
         );
 
       const length = output.amount().toCbor().length / 2;
       if (length > this.params.maxValueSize)
         throw new Error(
-          `Output ${index}'s value exceeds the maximum allowed size. Output: ${length} bytes, Maximum: ${this.params.maxValueSize} bytes`
+          `Output ${index}'s value exceeds the maximum allowed size. Output: ${length} bytes, Maximum: ${this.params.maxValueSize} bytes`,
         );
 
       netValue = V.sub(netValue, output.amount());
@@ -1071,7 +1071,7 @@ export class Emulator {
             witnessType = "Unknown";
         }
         throw new Error(
-          `Extraneous ${witnessType} witness. ${hash} has not been consumed.`
+          `Extraneous ${witnessType} witness. ${hash} has not been consumed.`,
         );
       }
     });
@@ -1079,7 +1079,7 @@ export class Emulator {
     const txSize = tx.toCbor().length / 2;
     if (txSize > this.params.maxTxSize) {
       throw new Error(
-        `Transaction size exceeds the maximum allowed. Supplied: ${txSize}, Maximum: ${this.params.maxTxSize}`
+        `Transaction size exceeds the maximum allowed. Supplied: ${txSize}, Maximum: ${this.params.maxTxSize}`,
       );
     }
 
@@ -1090,13 +1090,13 @@ export class Emulator {
         evaluatedRedeemers.values().reduce((acc, redeemer) => {
           // Unsure if redeemer lists would be in the same order so we find it explicitly
           const providedRedeemer = redeemers.find(
-            (r) => r.tag() === redeemer.tag() && r.index() === redeemer.index()
+            (r) => r.tag() === redeemer.tag() && r.index() === redeemer.index(),
           );
           if (!providedRedeemer) {
             throw new Error(
               `Missing redeemer: Purpose ${
                 redeemer.toCore().purpose
-              }, Index ${redeemer.index()})`
+              }, Index ${redeemer.index()})`,
             );
           }
           const { memory, steps } = redeemer.exUnits().toCore();
@@ -1108,23 +1108,23 @@ export class Emulator {
                 redeemer.toCore().purpose
               } ${redeemer.index()}): ${providedMemory - memory} Memory, ${
                 providedSteps - steps
-              } Steps`
+              } Steps`,
             );
           return (
             acc +
             this.params.prices.memory * memory +
             this.params.prices.steps * steps
           );
-        }, 0)
-      )
+        }, 0),
+      ),
     );
 
     let fee =
       evalFee +
       BigInt(
         Math.ceil(
-          this.params.minFeeConstant + txSize * this.params.minFeeCoefficient
-        )
+          this.params.minFeeConstant + txSize * this.params.minFeeCoefficient,
+        ),
       );
 
     let refScriptFee = 0n;
@@ -1134,7 +1134,7 @@ export class Emulator {
         .filter((x) => x !== undefined);
 
       refScriptFee += BigInt(
-        Math.ceil(calculateReferenceScriptFee(refScripts, this.params))
+        Math.ceil(calculateReferenceScriptFee(refScripts, this.params)),
       );
     }
 
@@ -1142,15 +1142,15 @@ export class Emulator {
 
     if (fee > body.fee())
       throw new Error(
-        `Insufficient transaction fee. Supplied: ${body.fee()}, Required: ${fee}`
+        `Insufficient transaction fee. Supplied: ${body.fee()}, Required: ${fee}`,
       );
 
     netValue = V.sub(netValue, new Value(body.fee() + (body.donation() ?? 0n)));
     if (!V.empty(netValue))
       throw new Error(
         `Value not conserved. Leftover Value: ${netValue.coin()}, ${Array.from(
-          netValue.multiasset()?.entries() ?? []
-        )}`
+          netValue.multiasset()?.entries() ?? [],
+        )}`,
       );
 
     this.acceptTransaction(tx);
@@ -1169,9 +1169,9 @@ export class Emulator {
           (output, i) =>
             new TransactionUnspentOutput(
               new TransactionInput(txId, BigInt(i)),
-              output!
-            )
-        )
+              output!,
+            ),
+        ),
       ),
     };
 
@@ -1210,7 +1210,7 @@ export class Emulator {
       const rewardAccount = this.rewardAccount(core.stakeCredential);
       if (this.accounts.has(rewardAccount)) {
         throw new Error(
-          `Stake key with reward address ${rewardAccount} is already registered.`
+          `Stake key with reward address ${rewardAccount} is already registered.`,
         );
       }
       const deposit = isLegacyStakeCertificate(core)
@@ -1231,7 +1231,7 @@ export class Emulator {
       const rewardAccount = this.rewardAccount(core.stakeCredential);
       if (!this.accounts.has(rewardAccount)) {
         throw new Error(
-          `Stake key with reward address ${rewardAccount} is not registered.`
+          `Stake key with reward address ${rewardAccount} is not registered.`,
         );
       }
       const deposit = isLegacyStakeCertificate(core)
@@ -1263,14 +1263,14 @@ export class Emulator {
         }
         const providedDeposit = certificateDeposit(core);
         const expectedDeposit = BigInt(
-          this.params.delegateRepresentativeDeposit ?? 0
+          this.params.delegateRepresentativeDeposit ?? 0,
         );
         const expiryEpoch = nextDrepExpiryEpoch(this.params, this.clock.epoch);
 
         if (!existing) {
           if (providedDeposit !== expectedDeposit) {
             throw new Error(
-              `DRep deposit must equal ${expectedDeposit} for new registrations`
+              `DRep deposit must equal ${expectedDeposit} for new registrations`,
             );
           }
           this.dreps[keyHash] = {
@@ -1322,7 +1322,7 @@ export class Emulator {
         const coldHash = core.coldCredential.hash;
         if (!findCommitteeMemberByColdHash(this.cc.members, coldHash)) {
           throw new Error(
-            "Committee cold credential not found for hot authorization"
+            "Committee cold credential not found for hot authorization",
           );
         }
         this.ccHotCredentials[coldHash] = core.hotCredential;
@@ -1330,7 +1330,7 @@ export class Emulator {
       }
       case CertificateType.ResignCommitteeCold: {
         this.cc.members = this.cc.members.filter(
-          (m) => m.coldCredential.hash !== core.coldCredential.hash
+          (m) => m.coldCredential.hash !== core.coldCredential.hash,
         );
         delete this.ccHotCredentials[core.coldCredential.hash];
         break;
@@ -1349,7 +1349,7 @@ export class Emulator {
   }
 
   private getAccount(
-    accountAddr: CredentialCore | RewardAccount
+    accountAddr: CredentialCore | RewardAccount,
   ): RegisteredAccount {
     if (typeof accountAddr === "object" && "type" in accountAddr) {
       accountAddr = this.rewardAccount(accountAddr);
@@ -1357,7 +1357,7 @@ export class Emulator {
     const res = this.accounts.get(accountAddr);
     if (!res)
       throw new Error(
-        `Account with reward address ${accountAddr} is not registered.`
+        `Account with reward address ${accountAddr} is not registered.`,
       );
     return res;
   }
@@ -1368,7 +1368,7 @@ export class Emulator {
 
   private increaseProposalDepositStake(
     rewardAccount: RewardAccount,
-    amount: bigint
+    amount: bigint,
   ): void {
     const current = this.proposalDepositsByAccount.get(rewardAccount) ?? 0n;
     this.proposalDepositsByAccount.set(rewardAccount, current + amount);
@@ -1380,7 +1380,7 @@ export class Emulator {
 
   private decreaseProposalDepositStake(
     rewardAccount: RewardAccount,
-    amount: bigint
+    amount: bigint,
   ): void {
     const current = this.proposalDepositsByAccount.get(rewardAccount) ?? 0n;
     if (current < amount) {
@@ -1411,7 +1411,7 @@ export class Emulator {
     committee: Committee,
     {
       hotCredentials,
-    }: { hotCredentials?: Record<string, CredentialCore | undefined> } = {}
+    }: { hotCredentials?: Record<string, CredentialCore | undefined> } = {},
   ): void {
     this.cc = committee;
     this.ccHotCredentials = {};
@@ -1438,7 +1438,7 @@ export class Emulator {
    */
   public setCommitteeHotCredential(
     coldCredentialHash: Hash28ByteBase16 | string,
-    credential?: CredentialCore
+    credential?: CredentialCore,
   ): void {
     const hash =
       typeof coldCredentialHash === "string"
@@ -1446,7 +1446,7 @@ export class Emulator {
         : coldCredentialHash;
     if (!findCommitteeMemberByColdHash(this.cc.members, hash)) {
       throw new Error(
-        "Committee cold credential not found for hot credential assignment"
+        "Committee cold credential not found for hot credential assignment",
       );
     }
     this.ccHotCredentials[hash] = credential;
@@ -1459,7 +1459,7 @@ export class Emulator {
    * @returns {CredentialCore | undefined} The active hot credential, if registered.
    */
   public getCommitteeHotCredential(
-    coldCredentialHash: Hash28ByteBase16 | string
+    coldCredentialHash: Hash28ByteBase16 | string,
   ): CredentialCore | undefined {
     const hash =
       typeof coldCredentialHash === "string"
@@ -1475,7 +1475,7 @@ export class Emulator {
    * @returns {ProposalStatus | undefined} Current status if available.
    */
   public getGovernanceProposalStatus(
-    actionId: GovernanceActionId | SerialisedGovId
+    actionId: GovernanceActionId | SerialisedGovId,
   ): ProposalStatus | undefined {
     const key =
       typeof actionId === "string" ? actionId : serialiseGovId(actionId);
@@ -1505,28 +1505,28 @@ export class Emulator {
 
   private isValidCommitteeHotCredential(credential: CredentialCore): boolean {
     const hotEntry = Object.entries(this.ccHotCredentials).find(
-      ([, hot]) => hot?.hash === credential.hash
+      ([, hot]) => hot?.hash === credential.hash,
     );
     if (!hotEntry) {
       return false;
     }
     const member = findCommitteeMemberByColdHash(
       this.cc.members,
-      Hash28ByteBase16(hotEntry[0])
+      Hash28ByteBase16(hotEntry[0]),
     );
     return Boolean(
-      member && committeeMemberTermActive(member, this.clock.epoch)
+      member && committeeMemberTermActive(member, this.clock.epoch),
     );
   }
 
   private onEpochBoundary(): void {
     this.govTrace(
-      `Epoch ${this.clock.epoch} boundary. feePot=${this.feePot} depositPot=${this.depositPot} treasury=${this.treasury}`
+      `Epoch ${this.clock.epoch} boundary. feePot=${this.feePot} depositPot=${this.depositPot} treasury=${this.treasury}`,
     );
     if (this.feePot > 0n) {
       const treasuryShare = this.getCurrentTreasuryFeeShare();
       this.govTrace(
-        `Distribute fees treasury=${treasuryShare}, stakers=${this.feePot - treasuryShare}`
+        `Distribute fees treasury=${treasuryShare}, stakers=${this.feePot - treasuryShare}`,
       );
       // TODO (?): Handle stake rewards distribution
       this.treasury += treasuryShare;
@@ -1574,7 +1574,7 @@ export class Emulator {
           const proposal = this.#proposals[key];
           if (!proposal) {
             throw new Error(
-              `Vote references unknown GovernanceActionId ${key}`
+              `Vote references unknown GovernanceActionId ${key}`,
             );
           }
           this.assertBootstrapVoteAllowed(voterObj, proposal.procedure.kind());
@@ -1612,7 +1612,7 @@ export class Emulator {
     const expectedDeposit = BigInt(this.params.governanceActionDeposit ?? 0);
     if (deposit !== expectedDeposit) {
       throw new Error(
-        `Invalid governance deposit: supplied ${procedure.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`
+        `Invalid governance deposit: supplied ${procedure.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`,
       );
     }
 
@@ -1623,7 +1623,7 @@ export class Emulator {
 
     if (!this.accounts.has(rewardAccount)) {
       throw new Error(
-        `Proposal reward account ${rewardAccount} is not registered`
+        `Proposal reward account ${rewardAccount} is not registered`,
       );
     }
 
@@ -1647,7 +1647,7 @@ export class Emulator {
       votes: new Map(),
     };
     this.govTrace(
-      `Registered proposal ${key} kind=${kind} expiry=${currentEpoch + lifetime}`
+      `Registered proposal ${key} kind=${kind} expiry=${currentEpoch + lifetime}`,
     );
   }
 
@@ -1663,7 +1663,7 @@ export class Emulator {
       return;
     }
     throw new Error(
-      `Governance action ${GovernanceActionKind[kind]} not allowed during bootstrap`
+      `Governance action ${GovernanceActionKind[kind]} not allowed during bootstrap`,
     );
   }
 
@@ -1679,13 +1679,13 @@ export class Emulator {
         break;
     }
     throw new Error(
-      `Vote from ${VoterKind[voter.kind()]} not allowed during bootstrap`
+      `Vote from ${VoterKind[voter.kind()]} not allowed during bootstrap`,
     );
   }
 
   private validateGovernanceAction(
     procedure: ProposalProcedure,
-    currentEpoch: number
+    currentEpoch: number,
   ): void {
     const kind = procedure.kind();
     switch (kind) {
@@ -1696,11 +1696,11 @@ export class Emulator {
         }
         const update = action.toCore().protocolParamUpdate;
         const hasChange = Object.values(update).some(
-          (value) => value !== undefined && value !== null
+          (value) => value !== undefined && value !== null,
         );
         if (!hasChange) {
           throw new Error(
-            "Parameter change action must alter at least one parameter"
+            "Parameter change action must alter at least one parameter",
           );
         }
         const policyHash = action.policyHash();
@@ -1708,12 +1708,12 @@ export class Emulator {
         if (expectedPolicy) {
           if (!policyHash || policyHash !== expectedPolicy) {
             throw new Error(
-              "Parameter change policy hash must reference current proposal policy"
+              "Parameter change policy hash must reference current proposal policy",
             );
           }
         } else if (policyHash) {
           throw new Error(
-            "Parameter change policy hash must match current proposal policy"
+            "Parameter change policy hash must match current proposal policy",
           );
         }
         break;
@@ -1727,7 +1727,7 @@ export class Emulator {
           }
           if (!this.accounts.has(rewardAccount)) {
             throw new Error(
-              `Treasury withdrawal references unknown reward account ${rewardAccount}`
+              `Treasury withdrawal references unknown reward account ${rewardAccount}`,
             );
           }
         }
@@ -1737,12 +1737,12 @@ export class Emulator {
         const action = procedure.getUpdateCommittee();
         if (!action) throw new Error("Malformed committee update action");
         const removals = new Set(
-          Array.from(action.membersToBeRemoved()).map((cred) => cred.hash)
+          Array.from(action.membersToBeRemoved()).map((cred) => cred.hash),
         );
         for (const [credential, expiry] of action.membersToBeAdded()) {
           if (removals.has(credential.hash)) {
             throw new Error(
-              "Committee update cannot add and remove the same credential"
+              "Committee update cannot add and remove the same credential",
             );
           }
           if (Number(expiry) <= currentEpoch) {
@@ -1754,7 +1754,7 @@ export class Emulator {
             Number(expiry) > currentEpoch + maxTerm
           ) {
             throw new Error(
-              "Committee member term exceeds maximum allowable duration"
+              "Committee member term exceeds maximum allowable duration",
             );
           }
         }
@@ -1786,7 +1786,7 @@ export class Emulator {
   }
 
   private extractPrevActionId(
-    procedure: ProposalProcedure
+    procedure: ProposalProcedure,
   ): GovernanceActionId | undefined {
     switch (procedure.kind()) {
       case GovernanceActionKind.ParameterChange:
@@ -1806,7 +1806,7 @@ export class Emulator {
 
   private ensurePrevActionLink(
     kind: GovernanceActionKind,
-    prevActionId?: GovernanceActionId
+    prevActionId?: GovernanceActionId,
   ): void {
     if (
       kind === GovernanceActionKind.Info ||
@@ -1818,13 +1818,13 @@ export class Emulator {
     if (expected) {
       if (!prevActionId) {
         throw new Error(
-          `Governance action ${GovernanceActionKind[kind]} must reference last enacted action`
+          `Governance action ${GovernanceActionKind[kind]} must reference last enacted action`,
         );
       }
       const serialised = serialiseGovId(prevActionId.toCore());
       if (serialised !== expected) {
         throw new Error(
-          `Governance action ${GovernanceActionKind[kind]} must reference ${expected}, received ${serialised}`
+          `Governance action ${GovernanceActionKind[kind]} must reference ${expected}, received ${serialised}`,
         );
       }
       return;
@@ -1833,7 +1833,7 @@ export class Emulator {
       const serialised = serialiseGovId(prevActionId.toCore());
       if (!(serialised in this.#proposals)) {
         throw new Error(
-          `Governance action ${GovernanceActionKind[kind]} references unknown action ${serialised}`
+          `Governance action ${GovernanceActionKind[kind]} references unknown action ${serialised}`,
         );
       }
     }
@@ -1843,7 +1843,7 @@ export class Emulator {
     voter: Voter,
     proposal: GovProposal,
     vote: Vote,
-    currentEpoch: number
+    currentEpoch: number,
   ): void {
     if (proposal.status !== ProposalStatus.Active) {
       throw new Error("Cannot vote on inactive governance action");
@@ -1894,8 +1894,8 @@ export class Emulator {
   getCurrentTreasuryFeeShare(): bigint {
     return BigInt(
       Math.floor(
-        Number(this.feePot) * parseFloat(this.params.treasuryExpansion)
-      )
+        Number(this.feePot) * parseFloat(this.params.treasuryExpansion),
+      ),
     );
   }
 
@@ -1912,20 +1912,20 @@ export class Emulator {
     this.snapshots[this.clock.epoch] = snapshot;
     const drepTotal = Object.values(snapshot.drepDelegation).reduce(
       (a, b) => a + b,
-      0n
+      0n,
     );
     const spoTotal = Object.values(snapshot.spoDelegation).reduce(
       (a, b) => a + b,
-      0n
+      0n,
     );
     this.govTrace(
-      `Snapshot epoch=${this.clock.epoch}: drepTotal=${drepTotal} spoTotal=${spoTotal} drepKeys=${Object.keys(snapshot.drepDelegation).length} spoKeys=${Object.keys(snapshot.spoDelegation).length}`
+      `Snapshot epoch=${this.clock.epoch}: drepTotal=${drepTotal} spoTotal=${spoTotal} drepKeys=${Object.keys(snapshot.drepDelegation).length} spoKeys=${Object.keys(snapshot.spoDelegation).length}`,
     );
   }
 
   private computeGovernanceTallies(
     proposal: GovProposal,
-    snapshot: StakeSnapshot
+    snapshot: StakeSnapshot,
   ): { tallies: Tallies; activeCcMembers: bigint } {
     const drepVotes = new Map<string, Vote>();
     const spoVotes = new Map<PoolId, Vote>();
@@ -1975,14 +1975,14 @@ export class Emulator {
       const vote = this.resolveStakePoolVote(
         PoolId(poolId),
         spoVotes,
-        actionKind
+        actionKind,
       );
       if (vote === Vote.yes) tallies.spo.yes += stake;
       else if (vote === Vote.no) tallies.spo.no += stake;
     }
 
     const activeMembers = this.cc.members.filter((member) =>
-      committeeMemberTermActive(member, this.clock.epoch)
+      committeeMemberTermActive(member, this.clock.epoch),
     );
     for (const member of activeMembers) {
       const hot = this.ccHotCredentials[member.coldCredential.hash];
@@ -2005,7 +2005,7 @@ export class Emulator {
   private resolveStakePoolVote(
     poolId: PoolId,
     spoVotes: Map<PoolId, Vote>,
-    actionKind: GovernanceActionKind
+    actionKind: GovernanceActionKind,
   ): Vote {
     const explicitVote = spoVotes.get(poolId);
     if (explicitVote !== undefined) {
@@ -2016,7 +2016,7 @@ export class Emulator {
 
   private defaultStakePoolVote(
     poolId: PoolId,
-    actionKind: GovernanceActionKind
+    actionKind: GovernanceActionKind,
   ): Vote {
     if (this.bootstrapMode) {
       return Vote.abstain;
@@ -2081,7 +2081,7 @@ export class Emulator {
         !isDelayingAction(kind)
       ) {
         this.govTrace(
-          `Proposal ${actionId} delayed until epoch ${this.delayingActionBarrierUntil}`
+          `Proposal ${actionId} delayed until epoch ${this.delayingActionBarrierUntil}`,
         );
         continue;
       }
@@ -2095,17 +2095,17 @@ export class Emulator {
 
       const { tallies, activeCcMembers } = this.computeGovernanceTallies(
         proposal,
-        snapshot
+        snapshot,
       );
 
       this.govTrace(
-        `Tallies ${actionId}: drep(y=${tallies.drep.yes},n=${tallies.drep.no}) spo(y=${tallies.spo.yes},n=${tallies.spo.no}) cc(y=${tallies.cc.yes},n=${tallies.cc.no})`
+        `Tallies ${actionId}: drep(y=${tallies.drep.yes},n=${tallies.drep.no}) spo(y=${tallies.spo.yes},n=${tallies.spo.no}) cc(y=${tallies.cc.yes},n=${tallies.cc.no})`,
       );
 
       const isRatified = this.checkRatificationThresholds(
         proposal,
         tallies,
-        activeCcMembers
+        activeCcMembers,
       );
 
       if (isRatified) {
@@ -2155,7 +2155,7 @@ export class Emulator {
         delayingActionTriggered = true;
         this.delayingActionBarrierUntil = currentEpoch + 1;
         this.govTrace(
-          `Delaying subsequent governance actions until epoch ${this.delayingActionBarrierUntil}`
+          `Delaying subsequent governance actions until epoch ${this.delayingActionBarrierUntil}`,
         );
       }
     }
@@ -2190,7 +2190,7 @@ export class Emulator {
       !this.params.stakePoolVotingThresholds
     ) {
       throw new Error(
-        "Trying to enact governance action without full conway parameters"
+        "Trying to enact governance action without full conway parameters",
       );
     }
     const dRepThresh = this.params.delegateRepresentativeVotingThresholds;
@@ -2218,7 +2218,7 @@ export class Emulator {
             "EconomicGroup",
             "TechnicalGroup",
             "GovernanceGroup",
-          ].includes(group)
+          ].includes(group),
         ) as Array<
           | "NetworkGroup"
           | "EconomicGroup"
@@ -2227,7 +2227,7 @@ export class Emulator {
         >;
         if (drepGroups.length === 0) {
           throw new Error(
-            "Parameter change must impact at least one parameter group"
+            "Parameter change must impact at least one parameter group",
           );
         }
         const drepFraction = fractionMax(
@@ -2242,17 +2242,17 @@ export class Emulator {
               case "GovernanceGroup":
                 return dRepThresh.ppGovernanceGroup;
             }
-          })
+          }),
         );
         const spoFraction = groups.has("SecurityGroup")
           ? spoThresh.securityRelevantParamVotingThreshold
           : undefined;
         this.govTrace(
           `Thresholds ParamChange drep=${JSON.stringify(
-            drepFraction
+            drepFraction,
           )} spo=${JSON.stringify(spoFraction)} groups=${JSON.stringify(
-            Array.from(groups)
-          )}`
+            Array.from(groups),
+          )}`,
         );
         return {
           drep: drepFraction,
@@ -2286,7 +2286,7 @@ export class Emulator {
   private checkRatificationThresholds(
     proposal: GovProposal,
     tallies: Tallies,
-    activeCcMembers: bigint
+    activeCcMembers: bigint,
   ): boolean {
     const kind = proposal.procedure.kind();
     if (this.bootstrapMode) {
@@ -2304,7 +2304,7 @@ export class Emulator {
       !this.canRatifyTreasuryWithdrawal(proposal)
     ) {
       this.govTrace(
-        "Treasury withdrawal cannot be ratified: insufficient treasury balance"
+        "Treasury withdrawal cannot be ratified: insufficient treasury balance",
       );
       return false;
     }
@@ -2343,14 +2343,14 @@ export class Emulator {
 
     const pass = drepPass && spoPass && ccPass;
     this.govTrace(
-      `Check kind=${kind} drepPass=${drepPass} spoPass=${spoPass} ccPass=${ccPass} (ccMembers=${ccMembers}) => pass=${pass}`
+      `Check kind=${kind} drepPass=${drepPass} spoPass=${spoPass} ccPass=${ccPass} (ccMembers=${ccMembers}) => pass=${pass}`,
     );
     return pass;
   }
 
   private applyGovernanceEffect(
     actionId: SerialisedGovId,
-    proposal: GovProposal
+    proposal: GovProposal,
   ): boolean {
     const actionKind = proposal.procedure.kind();
 
@@ -2361,7 +2361,7 @@ export class Emulator {
           const updates = paramChange.toCore().protocolParamUpdate;
           if (updates.minFeeRefScriptCostPerByte) {
             this.params.minFeeRefScriptCostPerByte = Number(
-              updates.minFeeRefScriptCostPerByte
+              updates.minFeeRefScriptCostPerByte,
             );
             delete updates.minFeeRefScriptCostPerByte;
           }
@@ -2387,20 +2387,20 @@ export class Emulator {
           proposal.procedure.getTreasuryWithdrawalsAction();
         if (treasuryAction) {
           const withdrawals = Array.from(
-            treasuryAction.withdrawals().entries()
+            treasuryAction.withdrawals().entries(),
           );
           const total = withdrawals.reduce(
             (sum, [, amount]) => sum + amount,
-            0n
+            0n,
           );
           if (total > this.treasury) {
             this.govTrace(
-              `Enactment blocked for ${actionId}: treasury shortfall ${total - this.treasury}`
+              `Enactment blocked for ${actionId}: treasury shortfall ${total - this.treasury}`,
             );
             return false;
           }
           this.govTrace(
-            `Enacting treasury withdrawal total=${total} treasuryBefore=${this.treasury} recipients=${withdrawals.length}`
+            `Enacting treasury withdrawal total=${total} treasuryBefore=${this.treasury} recipients=${withdrawals.length}`,
           );
           this.treasury -= total;
           for (const [rewardAccount, amount] of withdrawals) {
@@ -2418,11 +2418,11 @@ export class Emulator {
           const update = committeeUpdate.toCore();
           const membersToRemove = new Set(
             Array.from(update.membersToBeRemoved.values()).map(
-              (cred) => cred.hash
-            )
+              (cred) => cred.hash,
+            ),
           );
           this.cc.members = this.cc.members.filter(
-            (member) => !membersToRemove.has(member.coldCredential.hash)
+            (member) => !membersToRemove.has(member.coldCredential.hash),
           );
           for (const hash of membersToRemove) {
             delete this.ccHotCredentials[hash];
@@ -2462,7 +2462,7 @@ export class Emulator {
       this.lastEnactedActionByKind[actionKind] = actionId;
     }
     this.govTrace(
-      `Enacted action ${actionId} (${GovernanceActionKind[actionKind]})`
+      `Enacted action ${actionId} (${GovernanceActionKind[actionKind]})`,
     );
     return true;
   }
@@ -2474,7 +2474,7 @@ export class Emulator {
       this.depositPot >= deposit ? this.depositPot - deposit : 0n;
     this.decreaseProposalDepositStake(
       proposal.procedure.rewardAccount(),
-      deposit
+      deposit,
     );
   }
 }

@@ -30,7 +30,7 @@ export const deserialiseInput = (input: SerialisedInput): TransactionInput => {
 };
 
 export const serialiseGovId = (
-  id: GovernanceActionId | ReturnType<GovernanceActionId["toCore"]>
+  id: GovernanceActionId | ReturnType<GovernanceActionId["toCore"]>,
 ): SerialisedGovId => {
   if ("toCore" in id) {
     id = id.toCore();
@@ -44,14 +44,14 @@ export type CertificateWithDeposit = CertificateCore & {
 };
 
 export const hasDeposit = (
-  core: CertificateCore
+  core: CertificateCore,
 ): core is CertificateWithDeposit => "deposit" in core;
 
 export const certificateDeposit = (core: CertificateCore): bigint =>
   hasDeposit(core) ? BigInt(core.deposit ?? 0) : 0n;
 
 export const isLegacyStakeCertificate = (
-  cert: CertificateCore
+  cert: CertificateCore,
 ): cert is LegacyStakeCertificate => {
   return (
     cert.__typename === CertificateType.StakeRegistration ||
@@ -67,7 +67,7 @@ export const fractionMax = (...fractions: Fraction[]) => {
         ? fraction
         : max;
     },
-    { numerator: 0, denominator: 1 }
+    { numerator: 0, denominator: 1 },
   );
 };
 
@@ -82,7 +82,7 @@ export const toPoolIdKey = (hash: Ed25519KeyHashHex): PoolId | null => {
 export const fractionAtLeast = (
   yes: bigint,
   no: bigint,
-  thresh?: Fraction
+  thresh?: Fraction,
 ): boolean => {
   if (!thresh) return true;
   const total = yes + no;
