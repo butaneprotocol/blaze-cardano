@@ -7,7 +7,7 @@ import {
 import type { Ed25519KeyHashHex } from "@blaze-cardano/core";
 import type {
   CertificateCore,
-  Fraction,
+  Cardano,
   GovernanceActionId,
 } from "@blaze-cardano/core";
 import { type SerialisedGovId, type SerialisedInput } from "./types";
@@ -59,7 +59,7 @@ export const isLegacyStakeCertificate = (
   );
 };
 
-export const fractionMax = (...fractions: Fraction[]) => {
+export const fractionMax = (...fractions: Cardano.Fraction[]) => {
   return fractions.reduce(
     (max, fraction) => {
       return fraction.numerator / fraction.denominator >
@@ -82,7 +82,7 @@ export const toPoolIdKey = (hash: Ed25519KeyHashHex): PoolId | null => {
 export const fractionAtLeast = (
   yes: bigint,
   no: bigint,
-  thresh?: Fraction,
+  thresh?: Cardano.Fraction,
 ): boolean => {
   if (!thresh) return true;
   const total = yes + no;
