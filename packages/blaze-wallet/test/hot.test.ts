@@ -2,30 +2,43 @@ import type { Provider } from "@blaze-cardano/query";
 import { HotWallet } from "../src";
 import * as Core from "@blaze-cardano/core";
 
-const mockProvider: Provider = jest.fn() as any;
+const mockProvider: Provider = { network: Core.NetworkId.Mainnet } as any;
 
 const expectedAddress =
   "addr1qxttdu6d96klw8xvme7ctwuv0jg7xns0vm35ksv4l722aupyayzk39uascqj78hynwh3ax5w8ch5n9062k0vpnj3dlps3a8a9a";
+// stolen from https://github.com/vergl4s/ethereum-mnemonic-utils/blob/fe222052dc800a4e02fd98b48f5e4b106f9733f4/tests.py#L23
+const mnemonic =
+  "legal winner thank year wave sausage worth useful legal winner thank yellow";
+const entropy = Core.mnemonicToEntropy(mnemonic, Core.wordlist);
+const privateKey = Core.Bip32PrivateKey.fromBip39Entropy(
+  Buffer.from(entropy),
+  "",
+);
+
+let wallet: HotWallet;
+beforeAll(async () => {
+  wallet = await HotWallet.fromMasterkey(
+    privateKey.hex(),
+    mockProvider,
+    Core.NetworkId.Mainnet,
+  );
+});
 
 describe("HotWallet", () => {
-  let wallet: HotWallet;
-  beforeAll(async () => {
-    // stolen from https://github.com/vergl4s/ethereum-mnemonic-utils/blob/fe222052dc800a4e02fd98b48f5e4b106f9733f4/tests.py#L23
-    const mnemonic =
-      "legal winner thank year wave sausage worth useful legal winner thank yellow";
-    const entropy = Core.mnemonicToEntropy(mnemonic, Core.wordlist);
-    const privateKey = Core.Bip32PrivateKey.fromBip39Entropy(
-      Buffer.from(entropy),
-      "",
-    );
-    wallet = await HotWallet.fromMasterkey(
-      privateKey.hex(),
-      mockProvider,
-      Core.NetworkId.Mainnet,
-    );
-  });
   it("constructs correctly with payment and stake key", () => {
     expect(wallet.address.toBech32().toString()).toBe(expectedAddress);
+  });
+
+  it("should throw an error when network ids don't match", async () => {
+    expect(
+      HotWallet.fromMasterkey(
+        privateKey.hex(),
+        mockProvider,
+        Core.NetworkId.Testnet,
+      ),
+    ).rejects.toThrow(
+      "The networkId does not match the id in the supplied provider. Please ensure the provider is using the same network ID. This will be removed in the future.",
+    );
   });
 
   it("correctly signs transaction", async () => {
