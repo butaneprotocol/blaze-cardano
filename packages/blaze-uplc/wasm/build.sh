@@ -1,5 +1,5 @@
 rm -rf pkg ../dist/wasm ../dist/wasm/pkg-node ../dist/wasm/pkg-web ../dist/wasm/pkg-bundler
-mkdir ../dist/wasm
+mkdir -p ../dist/wasm
 
 wasm-pack build --target nodejs
 rm pkg/.gitignore

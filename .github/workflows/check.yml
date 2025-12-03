@@ -26,7 +26,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           cache: "pnpm"
-          # 22.5.0 is bugged, will make "latest" again after fixed
+          node-version: "latest"
 
       - name: 🛠️ Install dependencies
         run: pnpm install --frozen-lockfile

@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/sdk",
-  "version": "0.2.43",
+  "version": "0.2.44",
   "description": "Blaze cardano sdk library",
   "exports": {
     ".": {
@@ -26,7 +26,7 @@
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
     "eslint": "^8.57.0",
-    "tsdown": "^0.15.7",
+    "tsdown": "^0.15.9",
     "typescript": "^5.3.3"
   },
   "publishConfig": {

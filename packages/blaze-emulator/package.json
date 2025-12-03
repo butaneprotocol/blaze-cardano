@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/emulator",
-  "version": "0.3.34",
+  "version": "0.3.35",
   "description": "Blaze cardano emulator library",
   "exports": {
     ".": {
@@ -39,7 +39,7 @@
     "tinybench": "^5.1.0",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
-    "tsdown": "^0.15.7",
+    "tsdown": "^0.15.9",
     "typescript": "^5.3.3"
   },
   "publishConfig": {

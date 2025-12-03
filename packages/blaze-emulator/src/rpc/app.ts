@@ -1,6 +1,8 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
-import { type EmulatorOptions, Emulator } from "../emulator";
+import { Emulator } from "../emulator";
+import { type EmulatorOptions } from "../types";
+import type { Context } from "hono";
 import { makeValue } from "@blaze-cardano/sdk";
 import {
   serializeState,
@@ -23,7 +25,7 @@ import {
 
 const bigIntSchema = z
   .union([z.string(), z.number(), z.bigint()])
-  .transform((value) => {
+  .transform((value: string | number | bigint) => {
     if (typeof value === "bigint") return value;
     if (typeof value === "number") return BigInt(value);
     return BigInt(value);
@@ -55,7 +57,12 @@ const advanceSchema = z
     toUnix: z.number().int().nonnegative().optional(),
   })
   .refine(
-    (input) =>
+    (input: {
+      blocks?: number;
+      epochs?: number;
+      toSlot?: number;
+      toUnix?: number;
+    }) =>
       input.blocks ||
       input.epochs ||
       input.toSlot !== undefined ||
@@ -198,6 +205,15 @@ const drepsResponse = z
   )
   .openapi("DRepList");
 
+const parseJson = async <T>(c: Context, schema: z.ZodSchema<T>): Promise<T> =>
+  schema.parse(await c.req.json());
+
+const parseQuery = <T>(c: Context, schema: z.ZodSchema<T>): T =>
+  schema.parse(c.req.query());
+
+const parseParams = <T>(c: Context, schema: z.ZodSchema<T>): T =>
+  schema.parse(c.req.param());
+
 const proposalStatusResponse = z
   .object({
     status: z.string(),
@@ -263,10 +279,20 @@ const stateSnapshotSchema = z
   .catchall(z.unknown())
   .openapi("StateSnapshot");
 
+type AppEnv = {
+  Variables: Record<string, unknown>;
+  Bindings: Record<string, unknown>;
+  Validated: {
+    json: unknown;
+    query: unknown;
+    param: unknown;
+  };
+};
+
 let emulator = new Emulator([]);
 const scriptRegistry = new Map<string, Script>();
 
-const app = new OpenAPIHono();
+const app = new OpenAPIHono<AppEnv>();
 
 const toErrorPayload = (error: unknown) => ({
   error:
@@ -312,18 +338,26 @@ const serializeCredentialType = (
 const serializeCommittee = () => {
   const committee = getGovernanceState(emulator).committee;
   return {
-    members: committee.members.map((member) => ({
-      coldCredentialHash: member.coldCredentialHash.toString(),
-      epoch: member.epoch,
-    })),
+    members: committee.members.map(
+      (member: { coldCredentialHash: string | Hash28ByteBase16; epoch: number }) => ({
+        coldCredentialHash: member.coldCredentialHash.toString(),
+        epoch: member.epoch,
+      }),
+    ),
     quorumThreshold: committee.quorumThreshold,
-    hotCredentials: committee.hotCredentials.map((credential) => ({
-      coldCredentialHash: credential.coldCredentialHash.toString(),
-      hotCredentialHash: credential.hotCredentialHash
-        ? credential.hotCredentialHash.toString()
-        : null,
-      credentialType: serializeCredentialType(credential.credentialType),
-    })),
+    hotCredentials: committee.hotCredentials.map(
+      (credential: {
+        coldCredentialHash: string | Hash28ByteBase16;
+        hotCredentialHash?: Hash28ByteBase16 | null;
+        credentialType?: CredentialType | null;
+      }) => ({
+        coldCredentialHash: credential.coldCredentialHash.toString(),
+        hotCredentialHash: credential.hotCredentialHash
+          ? credential.hotCredentialHash.toString()
+          : null,
+        credentialType: serializeCredentialType(credential.credentialType),
+      }),
+    ),
   };
 };
 
@@ -360,7 +394,7 @@ app.openapi(
       },
     },
   }),
-  (c) =>
+  (c: Context) =>
     c.json(
       {
         status: "ok",
@@ -384,7 +418,7 @@ app.openapi(
       },
     },
   }),
-  (c) => {
+  async (c: Context) => {
     emulator.startEventLoop();
     return c.json({ running: true }, 200);
   },
@@ -404,7 +438,7 @@ app.openapi(
       },
     },
   }),
-  (c) => {
+  async (c: Context) => {
     emulator.stopEventLoop();
     return c.json({ running: false }, 200);
   },
@@ -424,7 +458,7 @@ app.openapi(
       },
     },
   }),
-  (c) =>
+  (c: Context) =>
     c.json(
       {
         slot: emulator.clock.slot,
@@ -458,8 +492,8 @@ app.openapi(
       },
     },
   }),
-  async (c) => {
-    const body = c.req.valid("json");
+  async (c: Context) => {
+    const body = await parseJson(c, resetSchema);
     const options: EmulatorOptions = {};
     if (body.protocolParams) {
       options.params = body.protocolParams;
@@ -472,7 +506,7 @@ app.openapi(
       };
     }
     if (body.treasury !== undefined) {
-      options.treasury = body.treasury;
+      options.treasury = BigInt(body.treasury);
     }
     emulator = new Emulator([], options);
     scriptRegistry.clear();
@@ -513,8 +547,8 @@ app.openapi(
       },
     },
   }),
-  async (c) => {
-    const body = c.req.valid("json");
+  async (c: Context) => {
+    const body = await parseJson(c, advanceSchema);
     try {
       if (body.toSlot !== undefined) {
         emulator.stepForwardToSlot(body.toSlot);
@@ -572,10 +606,10 @@ app.openapi(
       },
     },
   }),
-  async (c) => {
-    const { label, lovelace } = c.req.valid("json");
+  async (c: Context) => {
+    const { label, lovelace } = await parseJson(c, registerSchema);
     try {
-      const value = lovelace !== undefined ? makeValue(lovelace) : undefined;
+      const value = lovelace !== undefined ? makeValue(BigInt(lovelace)) : undefined;
       const address = await emulator.register(label, value);
       return c.json({ address: address.toBech32() }, 200);
     } catch (error) {
@@ -611,10 +645,10 @@ app.openapi(
       },
     },
   }),
-  async (c) => {
-    const { label, lovelace } = c.req.valid("json");
+  async (c: Context) => {
+    const { label, lovelace } = await parseJson(c, registerSchema);
     try {
-      const value = lovelace !== undefined ? makeValue(lovelace) : undefined;
+      const value = lovelace !== undefined ? makeValue(BigInt(lovelace)) : undefined;
       await emulator.fund(label, value);
       return c.json({ ok: true }, 200);
     } catch (error) {
@@ -646,8 +680,8 @@ app.openapi(
       },
     },
   }),
-  async (c) => {
-    const { label } = c.req.valid("param");
+  async (c: Context) => {
+    const { label } = parseParams(c, labelParamSchema);
     if (!emulator.mockedWallets.has(label)) {
       return c.json({ error: { message: "wallet not found" } }, 404);
     }
@@ -670,7 +704,7 @@ app.openapi(
       },
     },
   }),
-  async (c) => {
+  async (c: Context) => {
     const wallets = await listWallets(emulator);
     return c.json(wallets, 200);
   },
@@ -697,8 +731,8 @@ app.openapi(
       },
     },
   }),
-  async (c) => {
-    const { label } = c.req.valid("param");
+  async (c: Context) => {
+    const { label } = parseParams(c, labelParamSchema);
     if (!emulator.mockedWallets.has(label)) {
       return c.json({ error: { message: "wallet not found" } }, 404);
     }
@@ -726,7 +760,7 @@ app.openapi(
       },
     },
   }),
-  (c) => c.json(emulator.utxos().map(toUtxoSnapshot), 200),
+  (c: Context) => c.json(emulator.utxos().map(toUtxoSnapshot), 200),
 );
 
 app.openapi(
@@ -760,8 +794,8 @@ app.openapi(
       },
     },
   }),
-  (c) => {
-    const { cbor } = c.req.valid("json");
+  async (c: Context) => {
+    const { cbor } = await parseJson(c, transactionPayload);
     try {
       const script = Script.fromCbor(HexBlob(normaliseHex(cbor)));
       emulator.publishScript(script);
@@ -800,8 +834,8 @@ app.openapi(
       },
     },
   }),
-  (c) => {
-    const { hash } = c.req.valid("param");
+  (c: Context) => {
+    const { hash } = parseParams(c, hashParamSchema);
     const script = scriptRegistry.get(hash);
     if (!script) {
       return c.json({ error: { message: "script not found" } }, 404);
@@ -840,8 +874,8 @@ app.openapi(
       },
     },
   }),
-  async (c) => {
-    const { cbor } = c.req.valid("json");
+  async (c: Context) => {
+    const { cbor } = await parseJson(c, scriptPayload);
     try {
       const tx = Transaction.fromCbor(TxCBOR(normaliseHex(cbor)));
       const txId = await emulator.submitTransaction(tx);
@@ -869,8 +903,8 @@ app.openapi(
       },
     },
   }),
-  async (c) => {
-    const { include } = c.req.valid("query");
+  async (c: Context) => {
+    const { include } = parseQuery(c, includeQuerySchema);
     const includes = parseIncludeQuery(include);
     const snapshot = await serializeState(emulator, {
       includeWallets: includes.has("wallets"),
@@ -906,12 +940,12 @@ app.openapi(
       },
     },
   }),
-  (c) => {
-    const { quorumThreshold, members } = c.req.valid("json");
+  async (c: Context) => {
+    const { quorumThreshold, members } = await parseJson(c, committeeSchema);
     try {
       emulator.setCommitteeState({
         quorumThreshold,
-        members: members.map((member) => ({
+        members: (members ?? []).map((member: { coldCredentialHash: string; epoch: number }) => ({
           coldCredential: {
             type: CredentialType.KeyHash,
             hash: Hash28ByteBase16(member.coldCredentialHash),
@@ -940,7 +974,7 @@ app.openapi(
       },
     },
   }),
-  (c) => c.json(serializeCommittee(), 200),
+  (c: Context) => c.json(serializeCommittee(), 200),
 );
 
 app.openapi(
@@ -968,9 +1002,9 @@ app.openapi(
       },
     },
   }),
-  (c) => {
+  async (c: Context) => {
     const { coldCredentialHash, credentialType, hotCredentialHash } =
-      c.req.valid("json");
+      await parseJson(c, hotCredentialSchema);
     try {
       const credential =
         hotCredentialHash == null
@@ -1020,8 +1054,8 @@ app.openapi(
       },
     },
   }),
-  (c) => {
-    const { id } = c.req.valid("param");
+  (c: Context) => {
+    const { id } = parseParams(c, idParamSchema);
     try {
       const actionId = parseGovernanceActionId(id);
       const status = emulator.getGovernanceProposalStatus(actionId);
@@ -1064,8 +1098,8 @@ app.openapi(
       },
     },
   }),
-  (c) => {
-    const { id } = c.req.valid("param");
+  (c: Context) => {
+    const { id } = parseParams(c, idParamSchema);
     try {
       const actionId = parseGovernanceActionId(id);
       const tallies = emulator.getTallies(actionId);
@@ -1093,7 +1127,7 @@ app.openapi(
       },
     },
   }),
-  (c) =>
+  (c: Context) =>
     c.json(
       Object.entries(emulator.dreps).map(([hash, state]) => ({
         hash,
@@ -1107,7 +1141,7 @@ app.openapi(
 
 app.get("/ui", swaggerUI({ url: "/doc" }));
 
-app.doc("/doc", (c) => ({
+app.doc("/doc", (c: Context) => ({
   openapi: "3.1.0",
   info: {
     title: "Blaze Emulator RPC",

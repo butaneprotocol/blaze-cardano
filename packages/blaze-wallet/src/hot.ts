@@ -128,10 +128,17 @@ export class HotWallet implements Wallet {
   static async fromMasterkey(
     masterkey: Bip32PrivateKeyHex,
     provider: Provider,
-    networkId: NetworkId = NetworkId.Testnet,
+    /** @deprecated Defaults to the provider's network ID. */
+    networkId: NetworkId = provider.network,
     addressType: AddressType = AddressType.BasePaymentKeyStakeKey,
   ): Promise<HotWallet> {
     const rootKey = Bip32PrivateKey.fromHex(masterkey);
+
+    if (provider.network !== networkId) {
+      throw new Error(
+        "The networkId does not match the id in the supplied provider. Please ensure the provider is using the same network ID. This will be removed in the future.",
+      );
+    }
 
     const { address, paymentKey, stakePaymentKey, publicKey } =
       await this.generateAccountAddressFromMasterkey(

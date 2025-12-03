@@ -14,3 +14,18 @@ validator script(_param1: Int, _param2: ByteArray) {
     fail
   }
 }
+
+validator script_no_params() {
+  spend(
+    _datum: Option<List<Int>>,
+    _redeemer: Int,
+    utxo: OutputReference,
+    self: Transaction,
+  ) {
+    True
+  }
+
+  else(_) {
+    fail
+  }
+}
