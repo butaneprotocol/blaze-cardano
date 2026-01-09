@@ -1,0 +1,162 @@
+/* eslint-disable */
+// @ts-nocheck
+import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";
+import { type Script } from "@blaze-cardano/core";
+import { Type, Exact, TPlutusData } from "@blaze-cardano/data";
+import { type PlutusData } from "@blaze-cardano/core";
+type Data = PlutusData;
+type Int = bigint;
+type ByteArray = string;
+const PolicyId = Type.String();
+type OutputReference = { output_index: bigint; transaction_id: string };
+
+const Contracts = Type.Module({
+  GenericType$cardano$transaction$OutputReference: Type.Object({
+    action: Type.Object({
+      transaction_id: Type.String(),
+      output_index: Type.BigInt(),
+    }, { ctor: 0n }),
+  }, { ctor: 0n }),
+});
+
+export const GenericType$cardano$transaction$OutputReference = Contracts.Import("GenericType$cardano$transaction$OutputReference");
+export type GenericType$cardano$transaction$OutputReference = Exact<typeof GenericType$cardano$transaction$OutputReference>;
+
+export class AlwaysTrueWithGenericScriptSpend {
+  public Script: Script
+  constructor(
+    _param1: Int,
+    _param2: ByteArray,
+    _param3: GenericType$cardano$transaction$OutputReference,
+    trace?: boolean = false,
+  ) {
+    this.Script = cborToScript(
+      applyParamsToScript(
+        trace
+          ?
+          "58b301010022229800aba4aba2aba1aab9eaab9dab9cab9a9bad0049bae0034888888888c96600264653001300a00198051805800cc0280092225980099b8748008c02cdd500144c8cc896600200d009804c026264944dd6803402501218070009807180780098061baa0028b2012180500098039baa00b8a4d153300549011856616c696461746f722072657475726e65642066616c7365001365640102a6600892010e5f72656465656d65723a20496e74001601"
+          :
+          "586701010022229800aba2aba1aab9eaab9dab9a9bad0049bae003488888896600264646644b30013370e900118041baa0028994c004c02c00660166018003375a601600891125118049baa0028b200e300830090013008002300800130053754011149a26cac80181",
+        Type.Tuple([
+          Type.BigInt(),
+          Type.String(),
+          GenericType$cardano$transaction$OutputReference,
+        ]),
+        [
+          _param1,
+          _param2,
+          _param3,
+        ],
+      ),
+      "PlutusV3"
+    );
+  }
+}
+export class AlwaysTrueWithGenericScriptElse {
+  public Script: Script
+  constructor(
+    _param1: Int,
+    _param2: ByteArray,
+    _param3: GenericType$cardano$transaction$OutputReference,
+    trace?: boolean = false,
+  ) {
+    this.Script = cborToScript(
+      applyParamsToScript(
+        trace
+          ?
+          "58b301010022229800aba4aba2aba1aab9eaab9dab9cab9a9bad0049bae0034888888888c96600264653001300a00198051805800cc0280092225980099b8748008c02cdd500144c8cc896600200d009804c026264944dd6803402501218070009807180780098061baa0028b2012180500098039baa00b8a4d153300549011856616c696461746f722072657475726e65642066616c7365001365640102a6600892010e5f72656465656d65723a20496e74001601"
+          :
+          "586701010022229800aba2aba1aab9eaab9dab9a9bad0049bae003488888896600264646644b30013370e900118041baa0028994c004c02c00660166018003375a601600891125118049baa0028b200e300830090013008002300800130053754011149a26cac80181",
+        Type.Tuple([
+          Type.BigInt(),
+          Type.String(),
+          GenericType$cardano$transaction$OutputReference,
+        ]),
+        [
+          _param1,
+          _param2,
+          _param3,
+        ],
+      ),
+      "PlutusV3"
+    );
+  }
+}
+export class AlwaysTrueWithGenericScriptNoParamsSpend {
+  public Script: Script
+  constructor(
+    trace?: boolean = false,
+  ) {
+    this.Script = cborToScript(
+      trace
+        ?
+        "58a901010029800aba4aba2aba1aab9eaab9dab9cab9a48888888c96600264653001300800198041804800cc0200092225980099b8748008c024dd500144c8cc896600200d009804c026264944dd6803402501018060009806180680098051baa0028b200e180400098029baa0098a4d15330034911856616c696461746f722072657475726e65642066616c7365001365640082a6600492010e5f72656465656d65723a20496e74001601"
+        :
+        "585d01010029800aba2aba1aab9eaab9dab9a4888896600264646644b30013370e900118031baa0028994c004c02400660126014003375a601200891125118039baa0028b200a30063007001300600230060013003375400d149a26cac8009",
+      "PlutusV3"
+    );
+  }
+}
+export class AlwaysTrueWithGenericScriptNoParamsElse {
+  public Script: Script
+  constructor(
+    trace?: boolean = false,
+  ) {
+    this.Script = cborToScript(
+      trace
+        ?
+        "58a901010029800aba4aba2aba1aab9eaab9dab9cab9a48888888c96600264653001300800198041804800cc0200092225980099b8748008c024dd500144c8cc896600200d009804c026264944dd6803402501018060009806180680098051baa0028b200e180400098029baa0098a4d15330034911856616c696461746f722072657475726e65642066616c7365001365640082a6600492010e5f72656465656d65723a20496e74001601"
+        :
+        "585d01010029800aba2aba1aab9eaab9dab9a4888896600264646644b30013370e900118031baa0028994c004c02400660126014003375a601200891125118039baa0028b200a30063007001300600230060013003375400d149a26cac8009",
+      "PlutusV3"
+    );
+  }
+}
+export class NestedSometimesTrueScriptSpend {
+  public Script: Script
+  constructor(
+    param: Int,
+    trace?: boolean = false,
+  ) {
+    this.Script = cborToScript(
+      applyParamsToScript(
+        trace
+          ?
+          "58ae010100229800aba4aba2aba1aab9eaab9dab9cab9a9bad002488888888c96600264653001300900198049805000cc0240092225980099b8748008c028dd500144c8cc896600200d009804c026266e20028dd6803402501118068009806980700098059baa0028b2010180480098031baa00a8a4d15330044911856616c696461746f722072657475726e65642066616c73650013656400c2a6600692010d72656465656d65723a20496e74001601"
+          :
+          "5862010100229800aba2aba1aab9eaab9dab9a9bad00248888896600264646644b30013370e900118039baa002899199119b88008375a601800c60140026014601600260106ea800a2c8030c01cc020004c01c008c01c004c010dd5003c52689b2b20041",
+        Type.Tuple([
+          Type.BigInt(),
+        ]),
+        [
+          param,
+        ],
+      ),
+      "PlutusV3"
+    );
+  }
+}
+export class NestedSometimesTrueScriptElse {
+  public Script: Script
+  constructor(
+    param: Int,
+    trace?: boolean = false,
+  ) {
+    this.Script = cborToScript(
+      applyParamsToScript(
+        trace
+          ?
+          "58ae010100229800aba4aba2aba1aab9eaab9dab9cab9a9bad002488888888c96600264653001300900198049805000cc0240092225980099b8748008c028dd500144c8cc896600200d009804c026266e20028dd6803402501118068009806980700098059baa0028b2010180480098031baa00a8a4d15330044911856616c696461746f722072657475726e65642066616c73650013656400c2a6600692010d72656465656d65723a20496e74001601"
+          :
+          "5862010100229800aba2aba1aab9eaab9dab9a9bad00248888896600264646644b30013370e900118039baa002899199119b88008375a601800c60140026014601600260106ea800a2c8030c01cc020004c01c008c01c004c010dd5003c52689b2b20041",
+        Type.Tuple([
+          Type.BigInt(),
+        ]),
+        [
+          param,
+        ],
+      ),
+      "PlutusV3"
+    );
+  }
+}
