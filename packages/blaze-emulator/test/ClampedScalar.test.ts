@@ -23,10 +23,7 @@ describe("Emulator Key Generation", () => {
       const emulator = new Emulator([]);
 
       // Register two wallets - this triggers getOrAddWallet() which generates keys
-      await emulator.register(
-        `sender-${i}`,
-        makeValue(10_000_000_000n),
-      );
+      await emulator.register(`sender-${i}`, makeValue(10_000_000_000n));
       const receiver = await emulator.register(`receiver-${i}`);
 
       // Use the emulator's as() method to create a transaction

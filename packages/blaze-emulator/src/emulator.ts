@@ -114,7 +114,6 @@ import {
   serialiseVoter,
 } from "./governance";
 
-
 /**
  * Clamp a scalar according to Ed25519 requirements for BIP32-Ed25519.
  *
