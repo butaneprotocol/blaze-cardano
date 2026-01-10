@@ -76,6 +76,7 @@ import {
   removeUtxoFromLedger,
 } from "./utxo";
 import { EmulatorProvider } from "./provider";
+
 import {
   DREP_KIND_ABSTAIN,
   DREP_KIND_NO_CONFIDENCE,
@@ -112,6 +113,33 @@ import {
   serialiseDrepCredential,
   serialiseVoter,
 } from "./governance";
+
+
+/**
+ * Clamp a scalar according to Ed25519 requirements for BIP32-Ed25519.
+ *
+ * For extended Ed25519 keys (used by @cardano-sdk/crypto), the scalar must be
+ * "clamped" to be valid:
+ * - Bits 0, 1, 2 must be 0 (divisible by cofactor 8)
+ * - Bit 255 must be 0
+ * - Bit 254 must be 1
+ *
+ * When using libsodium's _noclamp signing functions (as the SDK does for
+ * extended keys), unclamped scalars produce signatures that don't verify
+ * correctly against the derived public key.
+ *
+ * @param bytes - The raw bytes to clamp (at least 32 bytes, typically 96 for Bip32 keys)
+ * @returns The clamped bytes (mutates in place and returns the same array)
+ */
+function clampScalar(bytes: Uint8Array): Uint8Array {
+  // Clear bits 0, 1, 2 of first byte (ensure divisible by cofactor 8)
+  bytes[0] = bytes[0]! & 248; // 248 = 0b11111000
+
+  // Clear bit 7 (255), set bit 6 (254) of byte 31
+  bytes[31] = (bytes[31]! & 63) | 64; // 63 = 0b00111111, 64 = 0b01000000
+
+  return bytes;
+}
 
 /**
  * The Emulator class is used to simulate the behavior of a ledger.
@@ -263,8 +291,8 @@ export class Emulator {
   private async getOrAddWallet(label: string): Promise<Wallet> {
     if (!this.mockedWallets.has(label)) {
       const provider = new EmulatorProvider(this);
-      const entropy = randomBytes(96);
-      const masterkey = Bip32PrivateKey.fromBytes(new Uint8Array(entropy));
+      const entropy = clampScalar(new Uint8Array(randomBytes(96)));
+      const masterkey = Bip32PrivateKey.fromBytes(entropy);
       const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
       this.mockedWallets.set(label, wallet);
     }
