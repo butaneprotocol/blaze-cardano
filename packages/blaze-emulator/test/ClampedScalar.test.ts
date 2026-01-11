@@ -1,6 +1,9 @@
 import { Emulator } from "../src";
 import { makeValue } from "@blaze-cardano/tx";
 import { signAndSubmit } from "./util";
+import type { Provider } from "@blaze-cardano/query";
+import type { HotWallet } from "@blaze-cardano/wallet";
+import type { Blaze } from "@blaze-cardano/sdk";
 
 /**
  * This test verifies that the emulator's key generation produces valid keys
@@ -36,7 +39,10 @@ describe("Emulator Key Generation", () => {
         // This will fail if the signature doesn't verify
         // Before the fix, this would intermittently throw:
         // "Invalid vkey in witness set with hash ..."
-        const txId = await signAndSubmit(tx, blaze);
+        const txId = await signAndSubmit(
+          tx,
+          blaze as Blaze<Provider, HotWallet>,
+        );
         emulator.awaitTransactionConfirmation(txId);
       });
     }
@@ -65,7 +71,10 @@ describe("Emulator Key Generation", () => {
           .payLovelace(recipient, 1_000_000n)
           .complete();
 
-        const txId = await signAndSubmit(tx, blaze);
+        const txId = await signAndSubmit(
+          tx,
+          blaze as Blaze<Provider, HotWallet>,
+        );
         emulator.awaitTransactionConfirmation(txId);
       });
     }
@@ -86,7 +95,10 @@ describe("Emulator Key Generation", () => {
           .complete();
 
         // All signatures should verify successfully
-        const txId = await signAndSubmit(tx, blaze);
+        const txId = await signAndSubmit(
+          tx,
+          blaze as Blaze<Provider, HotWallet>,
+        );
         emulator.awaitTransactionConfirmation(txId);
       });
     }
