@@ -28,6 +28,38 @@ describe("Blueprint", () => {
     expect(alwaysTrueElse.Script.hash()).toBeDefined();
     expect(alwaysTrueElse.Script.asPlutusV3()?.rawBytes()).toBeDefined();
   });
+
+  it("Should generate the correct generic types", async () => {
+    /**
+     * Checking type generation is a bit limited here, so we use workarounds.
+     * Ideally, we would migrate to Bun and use their type assertions:
+     * @link https://bun.com/docs/test/writing-tests#type-testing
+     *
+     * For now, we rely on compile errors being thrown.
+     */
+
+    // Type test: ensure the third parameter type has correct structure
+    type ThirdParam = ConstructorParameters<
+      typeof AlwaysTrueWithGenericScriptSpend
+    >[2];
+
+    // This should compile if types are correct
+    const validParam: ThirdParam = {
+      action: {
+        output_index: 5n,
+        transaction_id: "0".repeat(64),
+      },
+    };
+
+    // Verify type structure at runtime
+    expect(validParam).toHaveProperty("action");
+    expect(validParam.action).toHaveProperty("output_index");
+    expect(validParam.action).toHaveProperty("transaction_id");
+
+    // Ensure the object can be used to construct the script
+    const script = new AlwaysTrueWithGenericScriptSpend(1n, "test", validParam);
+    expect(script).toBeDefined();
+  });
 });
 
 describe("Blueprint no params", () => {
