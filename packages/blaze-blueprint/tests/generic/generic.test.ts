@@ -37,7 +37,7 @@ describe("Blueprint no params", () => {
     expect(alwaysTrueNoParamsSpend).toBeDefined();
     expect(alwaysTrueNoParamsSpend.Script.hash()).toBeDefined();
     expect(
-      alwaysTrueNoParamsSpend.Script.asPlutusV3()?.rawBytes()
+      alwaysTrueNoParamsSpend.Script.asPlutusV3()?.rawBytes(),
     ).toBeDefined();
   });
 });
