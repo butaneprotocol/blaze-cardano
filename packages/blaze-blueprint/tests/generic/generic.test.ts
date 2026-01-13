@@ -21,7 +21,9 @@ describe("Generated code", () => {
     // Should NOT contain $ in type names (old naming convention)
     expect(generatedCode).not.toMatch(/GenericType\$[a-zA-Z]/);
     // Should NOT contain full module paths in names
-    expect(generatedCode).not.toContain("GenericType_cardano_transaction_OutputReference");
+    expect(generatedCode).not.toContain(
+      "GenericType_cardano_transaction_OutputReference",
+    );
   });
 
   it("should handle module names with underscores correctly", () => {
