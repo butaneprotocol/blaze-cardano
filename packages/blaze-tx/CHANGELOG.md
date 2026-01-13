@@ -1,5 +1,17 @@
 # @blaze-cardano/tx
 
+## 0.14.0
+
+### Minor Changes
+
+- b15acba: Governance tx building and emulation
+
+### Patch Changes
+
+- Updated dependencies [b15acba]
+  - @blaze-cardano/core@0.7.1
+  - @blaze-cardano/vm@0.2.2
+
 ## 0.13.4
 
 ### Patch Changes
