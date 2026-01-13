@@ -144,11 +144,18 @@ class Generator {
     return fullName.split("#/definitions/")[1]!;
   }
 
+  public normalizeTypeName(fullDefinitionName: string): string {
+    const parts = fullDefinitionName.split("/");
+    // Handle generic types: "module/GenericType$param1/param2/..." -> "GenericType$param1$param2$..."
+    if (parts.length > 1 && parts[1]?.includes("$")) {
+      return parts.slice(1).join("$").replace(/~/g, "_");
+    }
+    // Regular types: just use the last part
+    return parts[parts.length - 1]!;
+  }
+
   public typeName(declaration: { $ref: string }): string {
-    const name = this.definitionName(declaration);
-    const parts = name.split("/");
-    const type = parts[parts.length - 1]!;
-    return type;
+    return this.normalizeTypeName(this.definitionName(declaration));
   }
 
   public writeModule(definitions: Record<string, Annotated<Schema>>) {
@@ -162,8 +169,7 @@ class Generator {
       if (name.startsWith("List$")) {
         continue;
       }
-      const parts = name.split("/");
-      const normalizedName = parts[parts.length - 1];
+      const normalizedName = this.normalizeTypeName(name);
       types.push(normalizedName);
       this.buildLine(`${normalizedName}: `);
       this.writeTypeboxType(definition, definitions);
@@ -455,7 +461,8 @@ class Generator {
           ...stack,
         ]);
       } else {
-        this.buildLine(`Type.Ref("${definition.title}")`);
+        const normalizedName = this.normalizeTypeName(resolvedName);
+        this.buildLine(`Type.Ref("${normalizedName}")`);
       }
     } else {
       this.buildLine("Type.Unsafe<PlutusData>(Type.Any())");
