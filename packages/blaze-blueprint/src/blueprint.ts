@@ -356,11 +356,13 @@ class Generator {
       | Annotated<Constructor>,
     definitions: Record<string, Annotated<Schema>>,
     stack: string[] = [],
+    options: { isMapKey?: boolean } = {},
   ) {
     if ("dataType" in schema) {
       switch (schema.dataType) {
         case "integer": {
-          this.buildLine(`Type.BigInt()`);
+          // Map keys must be number (not BigInt) since JS object keys can't be BigInt
+          this.buildLine(options.isMapKey ? `Type.Number()` : `Type.BigInt()`);
           break;
         }
         case "bytes": {
@@ -405,9 +407,12 @@ class Generator {
         case "map": {
           this.finishLine(`Type.Record(`);
           this.indent();
-          this.writeTypeboxType(schema.keys, definitions);
+          // Map keys must use Number instead of BigInt for integer types
+          this.writeTypeboxType(schema.keys, definitions, stack, {
+            isMapKey: true,
+          });
           this.finishLine(",");
-          this.writeTypeboxType(schema.values, definitions);
+          this.writeTypeboxType(schema.values, definitions, stack);
           this.finishLine(",");
           this.outdent();
           this.buildLine(")");
@@ -482,10 +487,13 @@ class Generator {
         throw new Error(`Definition not found for ${resolvedName}`);
       }
       if (this.isStandardType(resolvedName)) {
-        this.writeTypeboxType(definition, definitions, [
-          resolvedName,
-          ...stack,
-        ]);
+        // Pass through options (e.g., isMapKey) when resolving $ref
+        this.writeTypeboxType(
+          definition,
+          definitions,
+          [resolvedName, ...stack],
+          options,
+        );
       } else {
         const normalizedName = this.normalizeTypeName(resolvedName);
         this.buildLine(`Type.Ref("${normalizedName}")`);
