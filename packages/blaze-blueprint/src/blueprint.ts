@@ -76,19 +76,18 @@ class Generator {
     this.line = "";
   }
 
-  public writeImports(useSdk: boolean, plutusData: boolean) {
+  public writeImports(useSdk: boolean) {
     this.writeLine(`/* eslint-disable */`);
     this.writeLine(`// @ts-nocheck`);
     if (useSdk) {
       this.writeLine(
         `import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk"`,
       );
+      this.writeLine(
+        `import { Type, Exact, TPlutusData } from "@blaze-cardano/data";`,
+      );
       this.writeLine(`type Script = Core.Script;`);
       this.writeLine(`const Script = Core.Script;`);
-      if (plutusData) {
-        this.writeLine(`type PlutusData = Core.PlutusData;`);
-        this.writeLine(`const PlutusData = Core.PlutusData;`);
-      }
     } else {
       this.writeLine(
         `import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`,
@@ -97,15 +96,10 @@ class Generator {
       this.writeLine(
         `import { Type, Exact, TPlutusData } from "@blaze-cardano/data";`,
       );
-      if (plutusData) {
-        this.writeLine(
-          `import { type PlutusData } from "@blaze-cardano/core";`,
-        );
-      }
     }
 
     // Map Plutus types to TS types.
-    this.writeLine(`type Data = PlutusData;`);
+    this.writeLine(`type Data = Exact<typeof TPlutusData>;`);
     this.writeLine(`type Int = bigint;`);
     this.writeLine(`type ByteArray = string;`);
     this.writeLine(`const PolicyId = Type.String();`);
@@ -388,7 +382,7 @@ class Generator {
           break;
         }
         case undefined: {
-          this.buildLine("Type.Unsafe<PlutusData>(Type.Any())");
+          this.buildLine("TPlutusData");
         }
       }
     } else if ("anyOf" in schema) {
@@ -465,7 +459,7 @@ class Generator {
         this.buildLine(`Type.Ref("${normalizedName}")`);
       }
     } else {
-      this.buildLine("Type.Unsafe<PlutusData>(Type.Any())");
+      this.buildLine("TPlutusData");
     }
   }
 
@@ -560,7 +554,7 @@ export async function generateBlueprint({
 
   const generator = new Generator();
 
-  generator.writeImports(useSdk, true);
+  generator.writeImports(useSdk);
   generator.writeLine();
   generator.writeModule(definitions);
   generator.writeLine();
