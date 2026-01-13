@@ -4,6 +4,7 @@
   "description": "Blaze cardano emulator library",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     }
@@ -19,7 +20,7 @@
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
     "test": "jest",
-    "build:types": "tsc -p tsconfig.docs.json",
+    "build:types": "npx tsc -p tsconfig.docs.json",
     "api:extract": "api-extractor run --local --verbose",
     "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
     "api:prepare": "pnpm build:types && pnpm api:extract && pnpm api:md"
