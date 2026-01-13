@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.7.1
+
+### Patch Changes
+
+- b15acba: Governance tx building and emulation
+
 ## 0.7.0
 
 ### Minor Changes

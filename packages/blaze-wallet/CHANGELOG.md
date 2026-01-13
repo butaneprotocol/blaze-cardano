@@ -1,5 +1,18 @@
 # @blaze-cardano/wallet
 
+## 0.5.0
+
+### Minor Changes
+
+- b5b2733: Updates the HotWallet.fromMasterKey method to default to the provider network, and throw an error if it does not match the optional parameter type.
+
+### Patch Changes
+
+- Updated dependencies [b15acba]
+  - @blaze-cardano/tx@0.14.0
+  - @blaze-cardano/core@0.7.1
+  - @blaze-cardano/query@0.5.4
+
 ## 0.4.14
 
 ### Patch Changes

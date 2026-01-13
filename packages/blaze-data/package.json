@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/data",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "Plutus Data parsing and serialization",
   "exports": {
     ".": {
