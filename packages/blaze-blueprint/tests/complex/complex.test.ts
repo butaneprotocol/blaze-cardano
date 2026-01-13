@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import {
   OneshotOneshotSpend,
   TreasuryTreasuryPublish,
@@ -33,6 +34,14 @@ const mockPermissions: TreasuryConfiguration["permissions"] = {
     },
   },
 };
+
+describe("Generated code", () => {
+  it("should not contain Type.Unsafe<PlutusData> to avoid TS2742 declaration emit errors", () => {
+    const generatedCode = fs.readFileSync("./plutus.ts", "utf-8");
+    expect(generatedCode).not.toContain("Type.Unsafe<PlutusData>");
+    expect(generatedCode).toContain("type Data = Exact<typeof TPlutusData>");
+  });
+});
 
 describe("Blueprint", () => {
   describe("TreasuryTreasuryPublish", () => {
