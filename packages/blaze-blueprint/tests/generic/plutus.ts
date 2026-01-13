@@ -3,15 +3,14 @@
 import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";
 import { type Script } from "@blaze-cardano/core";
 import { Type, Exact, TPlutusData } from "@blaze-cardano/data";
-import { type PlutusData } from "@blaze-cardano/core";
-type Data = PlutusData;
+type Data = Exact<typeof TPlutusData>;
 type Int = bigint;
 type ByteArray = string;
 const PolicyId = Type.String();
 type OutputReference = { output_index: bigint; transaction_id: string };
 
 const Contracts = Type.Module({
-  GenericType$cardano$transaction$OutputReference: Type.Object({
+  GenericType_OutputReference: Type.Object({
     action: Type.Object({
       transaction_id: Type.String(),
       output_index: Type.BigInt(),
@@ -19,15 +18,15 @@ const Contracts = Type.Module({
   }, { ctor: 0n }),
 });
 
-export const GenericType$cardano$transaction$OutputReference = Contracts.Import("GenericType$cardano$transaction$OutputReference");
-export type GenericType$cardano$transaction$OutputReference = Exact<typeof GenericType$cardano$transaction$OutputReference>;
+export const GenericType_OutputReference = Contracts.Import("GenericType_OutputReference");
+export type GenericType_OutputReference = Exact<typeof GenericType_OutputReference>;
 
 export class AlwaysTrueWithGenericScriptSpend {
   public Script: Script
   constructor(
     _param1: Int,
     _param2: ByteArray,
-    _param3: GenericType$cardano$transaction$OutputReference,
+    _param3: GenericType_OutputReference,
     trace?: boolean = false,
   ) {
     this.Script = cborToScript(
@@ -40,7 +39,7 @@ export class AlwaysTrueWithGenericScriptSpend {
         Type.Tuple([
           Type.BigInt(),
           Type.String(),
-          GenericType$cardano$transaction$OutputReference,
+          GenericType_OutputReference,
         ]),
         [
           _param1,
@@ -57,7 +56,7 @@ export class AlwaysTrueWithGenericScriptElse {
   constructor(
     _param1: Int,
     _param2: ByteArray,
-    _param3: GenericType$cardano$transaction$OutputReference,
+    _param3: GenericType_OutputReference,
     trace?: boolean = false,
   ) {
     this.Script = cborToScript(
@@ -70,7 +69,7 @@ export class AlwaysTrueWithGenericScriptElse {
         Type.Tuple([
           Type.BigInt(),
           Type.String(),
-          GenericType$cardano$transaction$OutputReference,
+          GenericType_OutputReference,
         ]),
         [
           _param1,

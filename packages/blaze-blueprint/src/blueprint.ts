@@ -140,12 +140,44 @@ class Generator {
 
   public normalizeTypeName(fullDefinitionName: string): string {
     const parts = fullDefinitionName.split("/");
-    // Handle generic types: "module/GenericType$param1/param2/..." -> "GenericType$param1$param2$..."
-    if (parts.length > 1 && parts[1]?.includes("$")) {
-      return parts.slice(1).join("$").replace(/~/g, "_");
+
+    // Find the part containing "$" (indicates generic type instantiation)
+    // e.g., "v0_3/types/SignedPayload$v0_3/types/ProtocolRedeemer"
+    // e.g., "Tuple$aiken/crypto/VerificationKey_sundae/cose/COSESign1"
+    const genericPartIndex = parts.findIndex((part) => part.includes("$"));
+
+    if (genericPartIndex !== -1) {
+      // Extract: "SignedPayload$v0_3" -> genericName="SignedPayload", rest="v0_3"
+      const genericPart = parts[genericPartIndex]!;
+      const dollarIndex = genericPart.indexOf("$");
+      const genericName = genericPart.substring(0, dollarIndex);
+
+      // Reconstruct the full type parameter path after the "$"
+      // e.g., "v0_3/types/ProtocolRedeemer" or "aiken/crypto/VerificationKey_sundae/cose/COSESign1"
+      const remainingPath = [
+        genericPart.substring(dollarIndex + 1),
+        ...parts.slice(genericPartIndex + 1),
+      ].join("/");
+
+      // Multiple type params are separated by "_" followed by a module path (lowercase letter).
+      // This distinguishes from underscores in module names like "v0_3" (followed by number).
+      // e.g., "aiken/crypto/VerificationKey_sundae/cose/COSESign1"
+      //       -> ["aiken/crypto/VerificationKey", "sundae/cose/COSESign1"]
+      // But "v0_3/types/ExtraProtocolRedeemer" stays as single param (no split at "v0_3")
+      const typeParamPaths = remainingPath.split(/_(?=[a-z])/);
+
+      // Extract the last segment (type name) from each parameter path
+      const typeParamNames = typeParamPaths.map((paramPath) => {
+        const segments = paramPath.split("/");
+        return segments[segments.length - 1]!;
+      });
+
+      // Return combined name: "GenericName_TypeParam1_TypeParam2_..."
+      return `${genericName}_${typeParamNames.join("_")}`.replace(/~/g, "_");
     }
+
     // Regular types: just use the last part
-    return parts[parts.length - 1]!;
+    return parts[parts.length - 1]!.replace(/~/g, "_");
   }
 
   public typeName(declaration: { $ref: string }): string {

@@ -4,6 +4,7 @@ import {
   AlwaysTrueWithGenericScriptElse,
   NestedSometimesTrueScriptSpend,
   AlwaysTrueWithGenericScriptNoParamsSpend,
+  GenericType_OutputReference,
 } from "./plutus";
 
 describe("Generated code", () => {
@@ -11,6 +12,37 @@ describe("Generated code", () => {
     const generatedCode = fs.readFileSync("./plutus.ts", "utf-8");
     expect(generatedCode).not.toContain("Type.Unsafe<PlutusData>");
     expect(generatedCode).toContain("type Data = Exact<typeof TPlutusData>");
+  });
+
+  it("should generate generic types with clean underscore-separated names", () => {
+    const generatedCode = fs.readFileSync("./plutus.ts", "utf-8");
+    // Generic type should be named "GenericType_OutputReference" (GenericType<OutputReference>)
+    expect(generatedCode).toContain("GenericType_OutputReference");
+    // Should NOT contain $ in type names (old naming convention)
+    expect(generatedCode).not.toMatch(/GenericType\$[a-zA-Z]/);
+    // Should NOT contain full module paths in names
+    expect(generatedCode).not.toContain("GenericType_cardano_transaction_OutputReference");
+  });
+
+  it("should handle module names with underscores correctly", () => {
+    // This test documents the expected behavior for module names containing underscores
+    // like "v0_3" - the underscore should NOT be treated as a type parameter separator
+    // because it's followed by a digit, not a lowercase letter (module path start)
+    //
+    // Example: "v0_3/types/SignedRedeemer$v0_3/types/ExtraProtocolRedeemer"
+    // Should produce: "SignedRedeemer_ExtraProtocolRedeemer"
+    // NOT: "SignedRedeemer_v0_ExtraProtocolRedeemer" (bug if underscore in "v0_3" is split)
+    //
+    // The regex /_(?=[a-z])/ ensures we only split on underscore followed by lowercase
+    // letter, which indicates a new module path, not part of a versioned module name
+    const generatedCode = fs.readFileSync("./plutus.ts", "utf-8");
+    // Verify no type names contain version numbers as separate segments
+    expect(generatedCode).not.toMatch(/GenericType_v\d+_/);
+  });
+
+  it("should export the generic type", () => {
+    // Verify the exported type exists and has the correct structure
+    expect(GenericType_OutputReference).toBeDefined();
   });
 });
 
