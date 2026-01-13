@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.8.0
+
+### Minor Changes
+
+- e956e2c: Generics in plutus.json files were not being translated into correct types via Blueprint. This updates the blueprint generation logic to correctly format generics in the output.
+
 ## 0.7.2
 
 ### Patch Changes

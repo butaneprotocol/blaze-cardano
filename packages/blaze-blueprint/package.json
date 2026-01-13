@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/blueprint",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "description": "CIP-57 implementation and generator",
   "exports": {
     ".": {
@@ -21,6 +21,7 @@
     "test": "pnpm test:simple && pnpm test:complex",
     "test:simple": "cd tests/simple && tsx blueprint_generate.ts && jest simple.test.ts",
     "test:complex": "cd tests/complex && tsx blueprint_generate.ts && jest complex.test.ts",
+    "test:generic": "cd tests/generic && tsx blueprint_generate.ts && jest generic.test.ts",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
     "cli": "node dist/cli.js",
     "build:types": "tsc -p tsconfig.docs.json",
