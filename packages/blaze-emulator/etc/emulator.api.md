@@ -5,11 +5,27 @@
 ```ts
 
 import { Address } from '@blaze-cardano/core';
+import { AnchorCore } from '@blaze-cardano/core';
 import type { AssetId } from '@blaze-cardano/core';
 import { Blaze } from '@blaze-cardano/sdk';
+import type { Cardano } from '@blaze-cardano/core';
+import type { CertificateCore } from '@blaze-cardano/core';
+import { CertificateType } from '@blaze-cardano/core';
+import { Committee } from '@blaze-cardano/core';
+import { CommitteeMember } from '@blaze-cardano/core';
+import { ConstitutionCore } from '@blaze-cardano/core';
+import { CredentialCore } from '@blaze-cardano/core';
 import { DatumHash } from '@blaze-cardano/core';
+import { DRep } from '@blaze-cardano/core';
+import { Ed25519KeyHashHex } from '@blaze-cardano/core';
 import { Evaluator } from '@blaze-cardano/core';
+import { GovernanceActionId } from '@blaze-cardano/core';
+import { Hash28ByteBase16 } from '@blaze-cardano/core';
+import { HexBlob } from '@blaze-cardano/core';
 import { PlutusData } from '@blaze-cardano/core';
+import { PoolId } from '@blaze-cardano/core';
+import { PoolParameters } from '@blaze-cardano/core';
+import { ProposalProcedure } from '@blaze-cardano/core';
 import { ProtocolParameters } from '@blaze-cardano/core';
 import { Provider } from '@blaze-cardano/sdk';
 import { Provider as Provider_2 } from '@blaze-cardano/query';
@@ -25,63 +41,136 @@ import { TransactionOutput } from '@blaze-cardano/core';
 import { TransactionUnspentOutput } from '@blaze-cardano/core';
 import { TxBuilder } from '@blaze-cardano/tx';
 import { Value } from '@blaze-cardano/core';
+import { Vote } from '@blaze-cardano/core';
+import { Voter } from '@blaze-cardano/core';
 import { Wallet } from '@blaze-cardano/sdk';
+
+// @public (undocumented)
+export const buildStakeSnapshot: (accounts: Map<RewardAccount, RegisteredAccount>) => StakeSnapshot;
+
+// @public (undocumented)
+export const certificateDeposit: (core: CertificateCore) => bigint;
+
+// @public (undocumented)
+export type CertificateWithDeposit = CertificateCore & {
+    deposit?: number | bigint;
+};
+
+// @public (undocumented)
+export const committeeMemberTermActive: (member: CommitteeMember, currentEpoch: number) => boolean;
+
+// @public (undocumented)
+export const deserialiseInput: (input: SerialisedInput) => TransactionInput;
+
+// @public (undocumented)
+export const DREP_KIND_ABSTAIN = 2;
+
+// @public (undocumented)
+export const DREP_KIND_NO_CONFIDENCE = 3;
+
+// @public (undocumented)
+export interface DRepState {
+    // (undocumented)
+    anchor?: AnchorCore;
+    // (undocumented)
+    credential: CredentialCore;
+    // (undocumented)
+    deposit: bigint;
+    // (undocumented)
+    expiryEpoch?: number;
+    // (undocumented)
+    isRegistered: boolean;
+}
+
+// @public (undocumented)
+export const ECONOMIC_GROUP_FIELDS: Readonly<Set<string>>;
 
 // @public
 export class Emulator {
-    constructor(genesisOutputs: TransactionOutput[], params?: ProtocolParameters, { evaluator, slotConfig }?: EmulatorOptions);
-    accounts: Map<RewardAccount, bigint>;
+    constructor(genesisOutputs: TransactionOutput[], { evaluator, slotConfig, trace: traceGovernance, slotsPerEpoch, params, treasury, cc, ccHotCredentials, }?: EmulatorOptions);
+    accounts: Map<RewardAccount, RegisteredAccount>;
     // (undocumented)
+    activePools: Record<PoolId, PoolParameters>;
     addressOf(label: string): Promise<Address>;
     addUtxo(utxo: TransactionUnspentOutput): void;
-    // (undocumented)
     as<T = void>(label: string, callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>): Promise<T>;
-    // (undocumented)
     awaitTransactionConfirmation(txId: TransactionId): void;
+    // (undocumented)
+    bootstrapMode: boolean;
+    // (undocumented)
+    cc: Committee;
     clock: LedgerTimer;
+    // (undocumented)
+    constitution: ConstitutionCore;
     datumHashes: Record<DatumHash, PlutusData>;
+    // (undocumented)
+    depositPot: bigint;
+    // (undocumented)
+    dreps: Record<Hash28ByteBase16, DRepState>;
+    // (undocumented)
+    enactQueue: EnactQueueItem[];
     evaluator: Evaluator;
-    eventLoop?: NodeJS.Timeout;
-    // (undocumented)
+    eventLoop?: ReturnType<typeof setInterval>;
     expectScriptFailure(tx: TxBuilder, pattern?: RegExp): Promise<void>;
-    // (undocumented)
     expectValidMultisignedTransaction(signers: string[], tx: TxBuilder): Promise<void>;
-    // (undocumented)
     expectValidTransaction(blaze: Blaze<Provider, Wallet>, tx: TxBuilder): Promise<void>;
     // (undocumented)
+    feePot: bigint;
     fund(label: string, value?: Value, datum?: PlutusData): Promise<void>;
+    getCommitteeHotCredential(coldCredentialHash: Hash28ByteBase16 | string): CredentialCore | undefined;
+    getCurrentTreasuryFeeShare(): bigint;
+    getGovernanceProposalStatus(actionId: GovernanceActionId | SerialisedGovId): ProposalStatus | undefined;
     getOutput(inp: TransactionInput): TransactionOutput | undefined;
+    getTallies(actionId: GovernanceActionId | SerialisedGovId): {
+        tallies: Tallies;
+        activeCcMembers: bigint;
+    } | undefined;
     // (undocumented)
+    isKnownStakePool(keyHash: Ed25519KeyHashHex): boolean;
     lookupScript(script: Script): TransactionUnspentOutput;
     mockedWallets: Map<string, Wallet>;
     params: ProtocolParameters;
-    // (undocumented)
     publishScript(script: Script): Promise<void>;
-    // (undocumented)
     register(label: string, value?: Value, datum?: PlutusData): Promise<Address>;
     removeUtxo(inp: TransactionInput): void;
-    // (undocumented)
+    setCommitteeHotCredential(coldCredentialHash: Hash28ByteBase16 | string, credential?: CredentialCore): void;
+    setCommitteeState(committee: Committee, { hotCredentials, }?: {
+        hotCredentials?: Record<string, CredentialCore | undefined>;
+    }): void;
     slotToUnix(slot: Slot | number | bigint): number;
+    // (undocumented)
+    snapshots: Record<number, StakeSnapshot>;
     startEventLoop(): void;
-    // (undocumented)
     stepForwardBlock(): void;
-    // (undocumented)
+    stepForwardToNextEpoch(): void;
     stepForwardToSlot(slot: number | bigint): void;
-    // (undocumented)
     stepForwardToUnix(unix: number | bigint): void;
     stopEventLoop(): void;
     submitTransaction(tx: Transaction): Promise<TransactionId>;
     // (undocumented)
-    unixToSlot(unix_millis: bigint | number): Slot;
+    treasury: bigint;
+    unixToSlot(unixMillis: bigint | number): Slot;
     utxos(): TransactionUnspentOutput[];
 }
 
 // @public (undocumented)
 export interface EmulatorOptions {
     // (undocumented)
+    cc?: Committee;
+    // (undocumented)
+    ccHotCredentials?: Record<string, CredentialCore | undefined>;
+    // (undocumented)
     evaluator?: Evaluator;
     // (undocumented)
+    params?: ProtocolParameters;
+    // (undocumented)
     slotConfig?: SlotConfig;
+    // (undocumented)
+    slotsPerEpoch?: number;
+    // (undocumented)
+    trace?: boolean;
+    // (undocumented)
+    treasury?: bigint;
 }
 
 // @public
@@ -110,18 +199,174 @@ export class EmulatorProvider extends Provider_2 {
 }
 
 // @public (undocumented)
+export interface EnactQueueItem {
+    // (undocumented)
+    actionId: SerialisedGovId;
+    // (undocumented)
+    enactAtEpoch: number;
+}
+
+// @public (undocumented)
+export const findCommitteeMemberByColdHash: (members: CommitteeMember[], hash: Hash28ByteBase16) => CommitteeMember | undefined;
+
+// @public (undocumented)
+export const fractionAtLeast: (yes: bigint, no: bigint, thresh?: Cardano.Fraction) => boolean;
+
+// @public (undocumented)
+export const fractionMax: (...fractions: Cardano.Fraction[]) => Cardano.Fraction;
+
+// @public (undocumented)
+export const GOVERNANCE_GROUP_FIELDS: Readonly<Set<string>>;
+
+// @public (undocumented)
+export interface GovProposal {
+    // (undocumented)
+    deposit: bigint;
+    // (undocumented)
+    expiryEpoch: number;
+    // (undocumented)
+    procedure: ProposalProcedure;
+    // (undocumented)
+    status: ProposalStatus;
+    // (undocumented)
+    submittedEpoch: number;
+    // (undocumented)
+    votes: ProposalVoteMap;
+}
+
+// @public (undocumented)
+export const hasDeposit: (core: CertificateCore) => core is CertificateWithDeposit;
+
+// @public (undocumented)
+export const identifyParameterGroups: (update: Record<string, unknown>) => Set<"NetworkGroup" | "EconomicGroup" | "TechnicalGroup" | "GovernanceGroup" | "SecurityGroup">;
+
+// @public (undocumented)
+export const isDelayingAction: (kind: number) => boolean;
+
+// @public (undocumented)
+export const isKnownStakePool: (activePools: Record<PoolId, PoolParameters>, poolId: PoolId) => boolean;
+
+// Warning: (ae-forgotten-export) The symbol "LegacyStakeCertificate" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export const isLegacyStakeCertificate: (cert: CertificateCore) => cert is LegacyStakeCertificate;
+
+// @public (undocumented)
+export const isParameterUpdatePresent: (update: Record<string, unknown>, field: string) => boolean;
+
+// @public
 export class LedgerTimer {
-    constructor(slotConfig?: SlotConfig);
+    constructor(slotConfig?: SlotConfig, slotsPerEpoch?: number);
     // (undocumented)
     block: number;
+    // (undocumented)
+    epoch: number;
     // (undocumented)
     slot: number;
     // (undocumented)
     slotLength: number;
     // (undocumented)
+    slotsPerEpoch: number;
+    // (undocumented)
     time: number;
     // (undocumented)
+    zeroSlot: number;
+    // (undocumented)
     zeroTime: number;
+}
+
+// @public (undocumented)
+export const NETWORK_GROUP_FIELDS: Readonly<Set<string>>;
+
+// @public (undocumented)
+export const nextDrepExpiryEpoch: (params: ProtocolParameters, currentEpoch: number) => number | undefined;
+
+// @public (undocumented)
+export enum ProposalStatus {
+    // (undocumented)
+    Active = "Active",
+    // (undocumented)
+    Enacted = "Enacted",
+    // (undocumented)
+    Expired = "Expired",
+    // (undocumented)
+    Ratified = "Ratified",
+    // (undocumented)
+    Rejected = "Rejected"
+}
+
+// @public (undocumented)
+export type ProposalVoteMap = Map<string, VoteRecord>;
+
+// @public (undocumented)
+export interface RegisteredAccount {
+    // (undocumented)
+    balance: bigint;
+    // (undocumented)
+    drep?: DRep;
+    // (undocumented)
+    poolId?: PoolId;
+}
+
+// @public (undocumented)
+export const SECURITY_GROUP_FIELDS: Readonly<Set<string>>;
+
+// @public (undocumented)
+export type SerialisedGovId = `${TransactionId}:${bigint}`;
+
+// @public (undocumented)
+export type SerialisedInput = `${TransactionId}:${bigint}`;
+
+// @public (undocumented)
+export const serialiseDrepCredential: (cred: CredentialCore) => string;
+
+// @public (undocumented)
+export const serialiseGovId: (id: GovernanceActionId | ReturnType<GovernanceActionId["toCore"]>) => SerialisedGovId;
+
+// @public (undocumented)
+export const serialiseInput: (input: TransactionInput) => SerialisedInput;
+
+// @public (undocumented)
+export const serialiseVoter: (voter: Voter) => string;
+
+// @public (undocumented)
+export type SerializedDRep = HexBlob;
+
+// @public (undocumented)
+export interface StakeSnapshot {
+    // (undocumented)
+    drepDelegation: Record<SerializedDRep, bigint>;
+    // (undocumented)
+    spoDelegation: Record<PoolId, bigint>;
+}
+
+// @public (undocumented)
+export type Tallies = Record<"drep" | "spo" | "cc", Tally>;
+
+// @public (undocumented)
+export interface Tally {
+    // (undocumented)
+    no: bigint;
+    // (undocumented)
+    yes: bigint;
+}
+
+// @public (undocumented)
+export const TECHNICAL_GROUP_FIELDS: Readonly<Set<string>>;
+
+// @public (undocumented)
+export const toPoolIdKey: (hash: Ed25519KeyHashHex) => PoolId | null;
+
+// @public (undocumented)
+export interface VoteRecord {
+    // (undocumented)
+    anchor?: AnchorCore;
+    // (undocumented)
+    epoch: number;
+    // (undocumented)
+    vote: Vote;
+    // (undocumented)
+    voter: Voter;
 }
 
 // (No @packageDocumentation comment for this package)

@@ -44,3 +44,6 @@ jobs:
 
       - name: 🧪 Run test
         run: pnpm test
+
+      - name: 📙 Run Docs
+        run: pnpm docs:prepare

@@ -1,5 +1,11 @@
 # @blaze-cardano/blueprint
 
+## 0.8.1
+
+### Patch Changes
+
+- e401c32: Add PolicyId type to blueprint generation
+
 ## 0.8.0
 
 ### Minor Changes

@@ -4,6 +4,7 @@
   "description": "Blaze cardano ogmios library",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     }

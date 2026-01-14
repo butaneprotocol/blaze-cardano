@@ -1,9 +1,10 @@
 {
   "name": "@blaze-cardano/emulator",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Blaze cardano emulator library",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     }
