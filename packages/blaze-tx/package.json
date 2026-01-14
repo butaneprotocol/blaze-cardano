@@ -4,10 +4,12 @@
   "description": "Blaze cardano transaction building library",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./value": {
+      "types": "./dist/value.d.ts",
       "import": "./dist/value.mjs",
       "require": "./dist/value.js"
     }

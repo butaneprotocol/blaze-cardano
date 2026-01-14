@@ -6,10 +6,11 @@
 
 import * as bip39 from '@scure/bip39';
 import * as C from '@cardano-sdk/core';
-import type { Cardano } from '@cardano-sdk/core';
+import { Cardano } from '@cardano-sdk/core';
 import * as Crypto from '@cardano-sdk/crypto';
 import { HexBlob } from '@cardano-sdk/util';
 import { OpaqueString } from '@cardano-sdk/util';
+import { Serialization } from '@cardano-sdk/core';
 import { typedHex } from '@cardano-sdk/util';
 import { wordlist } from '@scure/bip39/wordlists/english';
 
@@ -45,6 +46,15 @@ function after(slot: Slot): NativeScript;
 
 // @public (undocumented)
 function allOf(...addresses: NativeScript[]): NativeScript;
+
+// @public (undocumented)
+export const Anchor: typeof C.Serialization.Anchor;
+
+// @public (undocumented)
+export type Anchor = C.Serialization.Anchor;
+
+// @public (undocumented)
+export type AnchorCore = C.Cardano.Anchor;
 
 // @public (undocumented)
 function anyOf(...addresses: NativeScript[]): NativeScript;
@@ -105,6 +115,8 @@ export function blake2b_224(data: HexBlob): Hash28ByteBase16;
 // @public
 export function blake2b_256(data: HexBlob): Hash32ByteBase16;
 
+export { Cardano }
+
 // @public (undocumented)
 export const CborReader: typeof C.Serialization.CborReader;
 
@@ -138,10 +150,28 @@ export const Certificate: typeof C.Serialization.Certificate;
 export type Certificate = C.Serialization.Certificate;
 
 // @public (undocumented)
+export type CertificateCore = C.Cardano.Certificate;
+
+// @public (undocumented)
 export const CertificateType: typeof C.Cardano.CertificateType;
 
 // @public (undocumented)
 export type CertificateType = C.Cardano.CertificateType;
+
+// @public (undocumented)
+export type Committee = C.Cardano.Committee;
+
+// @public (undocumented)
+export type CommitteeMember = C.Cardano.CommitteeMember;
+
+// @public (undocumented)
+export const Constitution: typeof C.Serialization.Constitution;
+
+// @public (undocumented)
+export type Constitution = C.Serialization.Constitution;
+
+// @public (undocumented)
+export type ConstitutionCore = C.Cardano.Constitution;
 
 // @public (undocumented)
 export const ConstrPlutusData: typeof C.Serialization.ConstrPlutusData;
@@ -197,8 +227,20 @@ export type DatumHash = Crypto.Hash32ByteBase16;
 // @public (undocumented)
 export const DatumKind: typeof C.Serialization.DatumKind;
 
+// @public (undocumented)
+export type DelegateRepresentative = C.Cardano.DelegateRepresentative;
+
+// @public (undocumented)
+export type DelegateRepresentativeThresholds = C.Cardano.DelegateRepresentativeThresholds;
+
 // @public
 export function derivePublicKey(privateKey: Ed25519PrivateNormalKeyHex | Ed25519PrivateExtendedKeyHex): Ed25519PublicKeyHex;
+
+// @public (undocumented)
+export const DRep: typeof C.Serialization.DRep;
+
+// @public (undocumented)
+export type DRep = C.Serialization.DRep;
 
 // @public (undocumented)
 export const Ed25519KeyHashHex: (value: string) => Crypto.Ed25519KeyHashHex;
@@ -252,6 +294,12 @@ export type Ed25519SignatureHex = Crypto.Ed25519SignatureHex;
 export const entropyToMnemonic: typeof bip39.entropyToMnemonic;
 
 // @public (undocumented)
+export type EpochNo = C.Cardano.EpochNo;
+
+// @public (undocumented)
+export const EpochNo: (value: number) => C.Cardano.EpochNo;
+
+// @public (undocumented)
 export type Evaluator = (tx: Transaction, additionalUtxos: TransactionUnspentOutput[]) => Promise<Redeemers>;
 
 // @public (undocumented)
@@ -259,6 +307,9 @@ export type ExUnits = C.Serialization.ExUnits;
 
 // @public (undocumented)
 export const ExUnits: typeof C.Serialization.ExUnits;
+
+// @public (undocumented)
+export type Fraction = C.Cardano.Fraction;
 
 // @public
 export function fromHex(hexString: string): Uint8Array;
@@ -271,6 +322,21 @@ export const getBurnAddress: (network: NetworkId) => C.Cardano.Address;
 
 // @public
 export function getPaymentAddress(address: Address): PaymentAddress;
+
+// @public (undocumented)
+export type GovernanceAction = C.Cardano.GovernanceAction;
+
+// @public (undocumented)
+export const GovernanceActionId: typeof C.Serialization.GovernanceActionId;
+
+// @public (undocumented)
+export type GovernanceActionId = C.Serialization.GovernanceActionId;
+
+// @public (undocumented)
+export const GovernanceActionKind: typeof C.Serialization.GovernanceActionKind;
+
+// @public (undocumented)
+export type GovernanceActionKind = C.Serialization.GovernanceActionKind;
 
 // @public
 export const hardCodedProtocolParams: ProtocolParameters;
@@ -303,6 +369,49 @@ export type Hash32ByteBase16 = Crypto.Hash32ByteBase16;
 export function HashAsPubKeyHex(hash: Hash28ByteBase16): Ed25519PublicKeyHex;
 
 export { HexBlob }
+
+// @public (undocumented)
+export const isCertType: <K extends keyof {
+    AuthorizeCommitteeHotCertificate: C.Cardano.AuthorizeCommitteeHotCertificate;
+    GenesisKeyDelegationCertificate: C.Cardano.GenesisKeyDelegationCertificate;
+    MirCertificate: C.Cardano.MirCertificate;
+    PoolRegistrationCertificate: C.Cardano.PoolRegistrationCertificate;
+    PoolRetirementCertificate: C.Cardano.PoolRetirementCertificate;
+    RegisterDelegateRepresentativeCertificate: C.Cardano.RegisterDelegateRepresentativeCertificate;
+    RegistrationCertificate: C.Cardano.NewStakeAddressCertificate;
+    ResignCommitteeColdCertificate: C.Cardano.ResignCommitteeColdCertificate;
+    StakeDelegationCertificate: C.Cardano.StakeDelegationCertificate;
+    StakeDeregistrationCertificate: C.Cardano.StakeAddressCertificate;
+    StakeRegistrationCertificate: C.Cardano.StakeAddressCertificate;
+    StakeRegistrationDelegateCertificate: C.Cardano.StakeRegistrationDelegationCertificate;
+    StakeVoteDelegationCertificate: C.Cardano.StakeVoteDelegationCertificate;
+    StakeVoteRegistrationDelegateCertificate: C.Cardano.StakeVoteRegistrationDelegationCertificate;
+    UnregisterDelegateRepresentativeCertificate: C.Cardano.UnRegisterDelegateRepresentativeCertificate;
+    UnRegistrationCertificate: C.Cardano.NewStakeAddressCertificate;
+    UpdateDelegateRepresentativeCertificate: C.Cardano.UpdateDelegateRepresentativeCertificate;
+    VoteDelegationCertificate: C.Cardano.VoteDelegationCertificate;
+    VoteRegistrationDelegateCertificate: C.Cardano.VoteRegistrationDelegationCertificate;
+}>(certificate: C.Cardano.Certificate, certificateTypes: readonly K[]) => certificate is {
+    AuthorizeCommitteeHotCertificate: C.Cardano.AuthorizeCommitteeHotCertificate;
+    GenesisKeyDelegationCertificate: C.Cardano.GenesisKeyDelegationCertificate;
+    MirCertificate: C.Cardano.MirCertificate;
+    PoolRegistrationCertificate: C.Cardano.PoolRegistrationCertificate;
+    PoolRetirementCertificate: C.Cardano.PoolRetirementCertificate;
+    RegisterDelegateRepresentativeCertificate: C.Cardano.RegisterDelegateRepresentativeCertificate;
+    RegistrationCertificate: C.Cardano.NewStakeAddressCertificate;
+    ResignCommitteeColdCertificate: C.Cardano.ResignCommitteeColdCertificate;
+    StakeDelegationCertificate: C.Cardano.StakeDelegationCertificate;
+    StakeDeregistrationCertificate: C.Cardano.StakeAddressCertificate;
+    StakeRegistrationCertificate: C.Cardano.StakeAddressCertificate;
+    StakeRegistrationDelegateCertificate: C.Cardano.StakeRegistrationDelegationCertificate;
+    StakeVoteDelegationCertificate: C.Cardano.StakeVoteDelegationCertificate;
+    StakeVoteRegistrationDelegateCertificate: C.Cardano.StakeVoteRegistrationDelegationCertificate;
+    UnregisterDelegateRepresentativeCertificate: C.Cardano.UnRegisterDelegateRepresentativeCertificate;
+    UnRegistrationCertificate: C.Cardano.NewStakeAddressCertificate;
+    UpdateDelegateRepresentativeCertificate: C.Cardano.UpdateDelegateRepresentativeCertificate;
+    VoteDelegationCertificate: C.Cardano.VoteDelegationCertificate;
+    VoteRegistrationDelegateCertificate: C.Cardano.VoteRegistrationDelegationCertificate;
+}[K];
 
 // @public (undocumented)
 function justAddress(address: string, networkId: NetworkId): NativeScript;
@@ -444,27 +553,60 @@ export const PoolId: {
 export type PoolId = OpaqueString<"PoolId">;
 
 // @public (undocumented)
+export type PoolParameters = C.Cardano.PoolParameters;
+
+// @public (undocumented)
+export const PoolRegistration: typeof C.Serialization.PoolRegistration;
+
+// @public (undocumented)
+export type PoolRegistration = C.Serialization.PoolRegistration;
+
+// @public (undocumented)
+export const PoolRetirement: typeof C.Serialization.PoolRetirement;
+
+// @public (undocumented)
+export type PoolRetirement = C.Serialization.PoolRetirement;
+
+// @public (undocumented)
+export type PoolVotingThresholds = C.Cardano.PoolVotingThresholds;
+
+// @public (undocumented)
 export type Prettier = PlutusData | string | number | boolean | null;
 
 // @public (undocumented)
 export function prettify(data: Prettier, indent?: string): string;
 
+// @public (undocumented)
+export const ProposalProcedure: typeof C.Serialization.ProposalProcedure;
+
+// @public (undocumented)
+export type ProposalProcedure = C.Serialization.ProposalProcedure;
+
 // @public
 export interface ProtocolParameters {
     coinsPerUtxoByte: number;
     collateralPercentage: number;
+    constitutionalCommitteeMaxTermLength?: number;
+    constitutionalCommitteeMinSize?: number;
     costModels: Cardano.CostModels;
+    delegateRepresentativeDeposit?: number;
+    delegateRepresentativeMaxIdleTime?: number;
+    delegateRepresentativeVotingThresholds?: Cardano.DelegateRepresentativeThresholds;
     desiredNumberOfPools: number;
+    governanceActionDeposit?: number;
+    governanceActionLifetime?: number;
     maxBlockBodySize: number;
     maxBlockHeaderSize: number;
     maxCollateralInputs: number;
     maxExecutionUnitsPerBlock: Cardano.ExUnits;
     maxExecutionUnitsPerTransaction: Cardano.ExUnits;
+    maxReferenceScriptsSize?: number;
     maxTxSize: number;
     maxValueSize: number;
     minFeeCoefficient: number;
     minFeeConstant: number;
     minFeeReferenceScripts?: MinFeeReferenceScripts;
+    minFeeRefScriptCostPerByte?: number;
     minPoolCost: number;
     monetaryExpansion: string;
     poolDeposit: number | null;
@@ -473,6 +615,7 @@ export interface ProtocolParameters {
     prices: Cardano.Prices;
     protocolVersion: Cardano.ProtocolVersion;
     stakeKeyDeposit: number;
+    stakePoolVotingThresholds?: Cardano.PoolVotingThresholds;
     treasuryExpansion: string;
 }
 
@@ -499,6 +642,15 @@ export const RedeemerTag: typeof C.Serialization.RedeemerTag;
 
 // @public (undocumented)
 export type RedeemerTag = C.Serialization.RedeemerTag;
+
+// @public (undocumented)
+export const RegAndDeregCertificateTypes: readonly [C.Cardano.CertificateType.StakeRegistration, C.Cardano.CertificateType.Registration, C.Cardano.CertificateType.VoteRegistrationDelegation, C.Cardano.CertificateType.StakeRegistrationDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation, C.Cardano.CertificateType.Unregistration, C.Cardano.CertificateType.StakeDeregistration];
+
+// @public (undocumented)
+export const RegisterDelegateRepresentative: typeof C.Serialization.RegisterDelegateRepresentative;
+
+// @public (undocumented)
+export type RegisterDelegateRepresentative = C.Serialization.RegisterDelegateRepresentative;
 
 // @public (undocumented)
 export const RewardAccount: {
@@ -553,6 +705,8 @@ export type ScriptPubkey = C.Serialization.ScriptPubkey;
 // @public (undocumented)
 export type SelectionPhase = "wide" | "deep" | "final";
 
+export { Serialization }
+
 // @public
 export const setInConwayEra: (value: boolean) => false;
 
@@ -601,6 +755,12 @@ export interface SlotConfig {
 }
 
 // @public (undocumented)
+export type StakeAddressCertificate = C.Cardano.StakeAddressCertificate;
+
+// @public (undocumented)
+export const StakeCredentialCertificateTypes: readonly [C.Cardano.CertificateType.StakeRegistration, C.Cardano.CertificateType.Registration, C.Cardano.CertificateType.VoteRegistrationDelegation, C.Cardano.CertificateType.StakeRegistrationDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation, C.Cardano.CertificateType.Unregistration, C.Cardano.CertificateType.StakeDeregistration, C.Cardano.CertificateType.StakeDelegation, C.Cardano.CertificateType.StakeVoteDelegation, C.Cardano.CertificateType.StakeRegistrationDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation, C.Cardano.CertificateType.VoteDelegation];
+
+// @public (undocumented)
 export const StakeDelegation: typeof C.Serialization.StakeDelegation;
 
 // @public (undocumented)
@@ -608,6 +768,9 @@ export type StakeDelegation = C.Serialization.StakeDelegation;
 
 // @public (undocumented)
 export type StakeDelegationCertificate = C.Cardano.StakeDelegationCertificate;
+
+// @public (undocumented)
+export const StakeDelegationCertificateTypes: readonly [C.Cardano.CertificateType.StakeDelegation, C.Cardano.CertificateType.StakeVoteDelegation, C.Cardano.CertificateType.StakeRegistrationDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation];
 
 // @public (undocumented)
 export const StakeDeregistration: typeof C.Serialization.StakeDeregistration;
@@ -620,6 +783,9 @@ export const StakeRegistration: typeof C.Serialization.StakeRegistration;
 
 // @public (undocumented)
 export type StakeRegistration = C.Serialization.StakeRegistration;
+
+// @public (undocumented)
+export const StakeRegistrationCertificateTypes: readonly [C.Cardano.CertificateType.StakeRegistration, C.Cardano.CertificateType.Registration, C.Cardano.CertificateType.VoteRegistrationDelegation, C.Cardano.CertificateType.StakeRegistrationDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation];
 
 // @public (undocumented)
 export const TimelockExpiry: typeof C.Serialization.TimelockExpiry;
@@ -709,6 +875,18 @@ export type TxCBOR = C.Serialization.TxCBOR;
 export { typedHex }
 
 // @public (undocumented)
+export const UnregisterDelegateRepresentative: typeof C.Serialization.UnregisterDelegateRepresentative;
+
+// @public (undocumented)
+export type UnregisterDelegateRepresentative = C.Serialization.UnregisterDelegateRepresentative;
+
+// @public (undocumented)
+export const UpdateDelegateRepresentative: typeof C.Serialization.UpdateDelegateRepresentative;
+
+// @public (undocumented)
+export type UpdateDelegateRepresentative = C.Serialization.UpdateDelegateRepresentative;
+
+// @public (undocumented)
 export class UTxOSelectionError extends Error {
     constructor(phase: SelectionPhase, dearth: Value, availableInputs?: TransactionUnspentOutput[] | undefined, selectedInputs?: TransactionUnspentOutput[] | undefined, bestStep?: [bigint | number, Value, number] | undefined);
     // (undocumented)
@@ -734,6 +912,45 @@ export const VkeyWitness: typeof C.Serialization.VkeyWitness;
 
 // @public (undocumented)
 export type VkeyWitness = C.Serialization.VkeyWitness;
+
+// @public (undocumented)
+export const Vote: typeof C.Cardano.Vote;
+
+// @public (undocumented)
+export type Vote = C.Cardano.Vote;
+
+// @public (undocumented)
+export const VoteDelegation: typeof C.Serialization.VoteDelegation;
+
+// @public (undocumented)
+export type VoteDelegation = C.Serialization.VoteDelegation;
+
+// @public (undocumented)
+export const VoteDelegationCredentialCertificateTypes: readonly [C.Cardano.CertificateType.VoteDelegation, C.Cardano.CertificateType.VoteRegistrationDelegation, C.Cardano.CertificateType.StakeVoteDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation];
+
+// @public (undocumented)
+export const Voter: typeof C.Serialization.Voter;
+
+// @public (undocumented)
+export type Voter = C.Serialization.Voter;
+
+// @public (undocumented)
+export type VoterCore = C.Cardano.Voter;
+
+// @public (undocumented)
+export const VoterKind: typeof C.Serialization.VoterKind;
+
+// @public (undocumented)
+export const VotingProcedure: typeof C.Serialization.VotingProcedure;
+
+// @public (undocumented)
+export type VotingProcedure = C.Serialization.VotingProcedure;
+
+// @public (undocumented)
+export const VotingProcedures: typeof C.Serialization.VotingProcedures;
+
+// @public (undocumented)
+export type VotingProcedures = C.Serialization.VotingProcedures;
 
 export { wordlist }
 
