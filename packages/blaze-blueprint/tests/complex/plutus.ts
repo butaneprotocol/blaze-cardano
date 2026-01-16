@@ -3,8 +3,7 @@
 import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";
 import { type Script } from "@blaze-cardano/core";
 import { Type, Exact, TPlutusData } from "@blaze-cardano/data";
-import { type PlutusData } from "@blaze-cardano/core";
-type Data = PlutusData;
+type Data = Exact<typeof TPlutusData>;
 type Int = bigint;
 type ByteArray = string;
 const PolicyId = Type.String();

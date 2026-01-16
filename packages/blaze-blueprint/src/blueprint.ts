@@ -29,7 +29,7 @@ type Parameter = {
   schema: Declaration<Schema>;
 };
 
-class Generator {
+export class Generator {
   buffer: string[] = [];
   line: string = "";
   indentLevel = 0;
@@ -76,19 +76,18 @@ class Generator {
     this.line = "";
   }
 
-  public writeImports(useSdk: boolean, plutusData: boolean) {
+  public writeImports(useSdk: boolean) {
     this.writeLine(`/* eslint-disable */`);
     this.writeLine(`// @ts-nocheck`);
     if (useSdk) {
       this.writeLine(
         `import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk"`,
       );
+      this.writeLine(
+        `import { Type, Exact, TPlutusData } from "@blaze-cardano/data";`,
+      );
       this.writeLine(`type Script = Core.Script;`);
       this.writeLine(`const Script = Core.Script;`);
-      if (plutusData) {
-        this.writeLine(`type PlutusData = Core.PlutusData;`);
-        this.writeLine(`const PlutusData = Core.PlutusData;`);
-      }
     } else {
       this.writeLine(
         `import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`,
@@ -97,15 +96,10 @@ class Generator {
       this.writeLine(
         `import { Type, Exact, TPlutusData } from "@blaze-cardano/data";`,
       );
-      if (plutusData) {
-        this.writeLine(
-          `import { type PlutusData } from "@blaze-cardano/core";`,
-        );
-      }
     }
 
     // Map Plutus types to TS types.
-    this.writeLine(`type Data = PlutusData;`);
+    this.writeLine(`type Data = Exact<typeof TPlutusData>;`);
     this.writeLine(`type Int = bigint;`);
     this.writeLine(`type ByteArray = string;`);
     this.writeLine(`const PolicyId = Type.String();`);
@@ -144,18 +138,170 @@ class Generator {
     return fullName.split("#/definitions/")[1]!;
   }
 
-  public normalizeTypeName(fullDefinitionName: string): string {
-    const parts = fullDefinitionName.split("/");
-    // Handle generic types: "module/GenericType$param1/param2/..." -> "GenericType$param1$param2$..."
-    if (parts.length > 1 && parts[1]?.includes("$")) {
-      return parts.slice(1).join("$").replace(/~/g, "_");
+  /**
+   * Extracts type parameter names from the schema definition structure.
+   * This is more reliable than parsing the definition name string.
+   *
+   * @param schema - The schema definition that may contain type parameter info
+   * @returns Array of type parameter names, or null if not extractable from schema
+   */
+  private extractTypeParamsFromSchema(
+    schema: Annotated<Schema> | undefined,
+  ): string[] | null {
+    if (!schema || !("dataType" in schema)) {
+      return null;
     }
-    // Regular types: just use the last part
-    return parts[parts.length - 1]!;
+
+    // Tuple types: items is an array of $ref to each type param
+    // e.g., "Tuple$aiken/crypto/VerificationKey_sundae/cose/COSESign1"
+    if (schema.dataType === "list" && Array.isArray(schema.items)) {
+      const typeParams: string[] = [];
+      for (const item of schema.items) {
+        if ("$ref" in item) {
+          const paramName = this.definitionName(item);
+          const lastSegment = paramName.split("/").pop()!;
+          typeParams.push(lastSegment.replace(/~/g, "_"));
+        }
+      }
+      if (typeParams.length > 0) {
+        return typeParams;
+      }
+    }
+
+    // Map/Pairs types: keys and values contain the type params
+    // e.g., "Pairs$Int_Int" has keys=$ref:Int and values=$ref:Int
+    if (
+      schema.dataType === "map" &&
+      "keys" in schema &&
+      "values" in schema &&
+      schema.keys &&
+      schema.values
+    ) {
+      const typeParams: string[] = [];
+      if ("$ref" in schema.keys) {
+        const keyName = this.definitionName(schema.keys);
+        const lastSegment = keyName.split("/").pop()!;
+        typeParams.push(lastSegment.replace(/~/g, "_"));
+      }
+      if ("$ref" in schema.values) {
+        const valueName = this.definitionName(schema.values);
+        const lastSegment = valueName.split("/").pop()!;
+        typeParams.push(lastSegment.replace(/~/g, "_"));
+      }
+      if (typeParams.length > 0) {
+        return typeParams;
+      }
+    }
+
+    // List types: items is a single $ref to the type param
+    // e.g., "List$Int" has items=$ref:Int
+    if (
+      schema.dataType === "list" &&
+      !Array.isArray(schema.items) &&
+      schema.items &&
+      "$ref" in schema.items &&
+      typeof schema.items.$ref === "string"
+    ) {
+      const paramName = this.definitionName(schema.items as { $ref: string });
+      const lastSegment = paramName.split("/").pop()!;
+      return [lastSegment.replace(/~/g, "_")];
+    }
+
+    return null;
   }
 
-  public typeName(declaration: { $ref: string }): string {
-    return this.normalizeTypeName(this.definitionName(declaration));
+  /**
+   * Extracts the generic type name (the part before $) from a definition name.
+   *
+   * @param fullDefinitionName - The full definition name (e.g., "Tuple$aiken/crypto/Key")
+   * @returns The generic type name, or null if not a generic type
+   */
+  private extractGenericBaseName(fullDefinitionName: string): string | null {
+    const parts = fullDefinitionName.split("/");
+    const genericPartIndex = parts.findIndex((part) => part.includes("$"));
+
+    if (genericPartIndex === -1) {
+      return null;
+    }
+
+    const genericPart = parts[genericPartIndex]!;
+    const dollarIndex = genericPart.indexOf("$");
+    return genericPart.substring(0, dollarIndex);
+  }
+
+  /**
+   * Normalizes a full definition name into a valid TypeScript identifier.
+   * Handles generic types by extracting type parameters from the schema when available,
+   * falling back to parsing the definition name string.
+   *
+   * @param fullDefinitionName - The full definition name from plutus.json
+   * @param schema - Optional schema definition to extract type params from structure
+   * @returns A normalized TypeScript-safe type name
+   */
+  public normalizeTypeName(
+    fullDefinitionName: string,
+    schema?: Annotated<Schema>,
+  ): string {
+    const parts = fullDefinitionName.split("/");
+
+    // Find the part containing "$" (indicates generic type instantiation)
+    // e.g., "v0_3/types/SignedPayload$v0_3/types/ProtocolRedeemer"
+    // e.g., "Tuple$aiken/crypto/VerificationKey_sundae/cose/COSESign1"
+    const genericBaseName = this.extractGenericBaseName(fullDefinitionName);
+
+    if (genericBaseName !== null) {
+      // Try to extract type params from schema structure first (more reliable)
+      const schemaTypeParams = this.extractTypeParamsFromSchema(schema);
+
+      if (schemaTypeParams !== null && schemaTypeParams.length > 0) {
+        return `${genericBaseName}_${schemaTypeParams.join("_")}`;
+      }
+
+      // Fallback: parse type params from the definition name string
+      // This is less reliable for module names with underscores like "module_name"
+      const genericPartIndex = parts.findIndex((part) => part.includes("$"));
+      const genericPart = parts[genericPartIndex]!;
+      const dollarIndex = genericPart.indexOf("$");
+
+      // Reconstruct the full type parameter path after the "$"
+      // e.g., "v0_3/types/ProtocolRedeemer" or "aiken/crypto/VerificationKey_sundae/cose/COSESign1"
+      const remainingPath = [
+        genericPart.substring(dollarIndex + 1),
+        ...parts.slice(genericPartIndex + 1),
+      ].join("/");
+
+      // Multiple type params are separated by "_" followed by a module path (lowercase letter).
+      // This distinguishes from underscores in module names like "v0_3" (followed by number).
+      // e.g., "aiken/crypto/VerificationKey_sundae/cose/COSESign1"
+      //       -> ["aiken/crypto/VerificationKey", "sundae/cose/COSESign1"]
+      // But "v0_3/types/ExtraProtocolRedeemer" stays as single param (no split at "v0_3")
+      // WARNING: This heuristic will incorrectly split module names like "module_name"
+      const typeParamPaths = remainingPath.split(/_(?=[a-z])/);
+
+      // Extract the last segment (type name) from each parameter path
+      const typeParamNames = typeParamPaths.map((paramPath) => {
+        const segments = paramPath.split("/");
+        return segments[segments.length - 1]!;
+      });
+
+      // Return combined name: "GenericName_TypeParam1_TypeParam2_..."
+      return `${genericBaseName}_${typeParamNames.join("_")}`.replace(
+        /~/g,
+        "_",
+      );
+    }
+
+    // Regular types: just use the last part
+    return parts[parts.length - 1]!.replace(/~/g, "_");
+  }
+
+  public typeName(
+    declaration: { $ref: string },
+    definitions?: Record<string, Annotated<Schema>>,
+  ): string {
+    const defName = this.definitionName(declaration);
+    const schema = definitions?.[defName];
+    return this.normalizeTypeName(defName, schema);
   }
 
   public writeModule(definitions: Record<string, Annotated<Schema>>) {
@@ -169,7 +315,7 @@ class Generator {
       if (name.startsWith("List$")) {
         continue;
       }
-      const normalizedName = this.normalizeTypeName(name);
+      const normalizedName = this.normalizeTypeName(name, definition);
       types.push(normalizedName);
       this.buildLine(`${normalizedName}: `);
       this.writeTypeboxType(definition, definitions);
@@ -246,7 +392,7 @@ class Generator {
         for (const param of params) {
           this.buildLine(`${Generator.snakeToCamel(param.title)}: `);
           if ("$ref" in param.schema) {
-            const typeName = this.typeName(param.schema);
+            const typeName = this.typeName(param.schema, blueprint.definitions);
             this.buildLine(typeName);
           } else {
             console.log("???", param);
@@ -285,7 +431,7 @@ class Generator {
         this.indent();
         for (const param of params) {
           if ("$ref" in param.schema) {
-            const typeName = this.typeName(param.schema);
+            const typeName = this.typeName(param.schema, blueprint.definitions);
             if (this.isStandardType(typeName)) {
               this.writeTypeboxType(param.schema, blueprint.definitions);
             } else {
@@ -330,11 +476,13 @@ class Generator {
       | Annotated<Constructor>,
     definitions: Record<string, Annotated<Schema>>,
     stack: string[] = [],
+    options: { isMapKey?: boolean } = {},
   ) {
     if ("dataType" in schema) {
       switch (schema.dataType) {
         case "integer": {
-          this.buildLine(`Type.BigInt()`);
+          // Map keys must be number (not BigInt) since JS object keys can't be BigInt
+          this.buildLine(options.isMapKey ? `Type.Number()` : `Type.BigInt()`);
           break;
         }
         case "bytes": {
@@ -379,16 +527,19 @@ class Generator {
         case "map": {
           this.finishLine(`Type.Record(`);
           this.indent();
-          this.writeTypeboxType(schema.keys, definitions);
+          // Map keys must use Number instead of BigInt for integer types
+          this.writeTypeboxType(schema.keys, definitions, stack, {
+            isMapKey: true,
+          });
           this.finishLine(",");
-          this.writeTypeboxType(schema.values, definitions);
+          this.writeTypeboxType(schema.values, definitions, stack);
           this.finishLine(",");
           this.outdent();
           this.buildLine(")");
           break;
         }
         case undefined: {
-          this.buildLine("Type.Unsafe<PlutusData>(Type.Any())");
+          this.buildLine("TPlutusData");
         }
       }
     } else if ("anyOf" in schema) {
@@ -456,16 +607,19 @@ class Generator {
         throw new Error(`Definition not found for ${resolvedName}`);
       }
       if (this.isStandardType(resolvedName)) {
-        this.writeTypeboxType(definition, definitions, [
-          resolvedName,
-          ...stack,
-        ]);
+        // Pass through options (e.g., isMapKey) when resolving $ref
+        this.writeTypeboxType(
+          definition,
+          definitions,
+          [resolvedName, ...stack],
+          options,
+        );
       } else {
-        const normalizedName = this.normalizeTypeName(resolvedName);
+        const normalizedName = this.normalizeTypeName(resolvedName, definition);
         this.buildLine(`Type.Ref("${normalizedName}")`);
       }
     } else {
-      this.buildLine("Type.Unsafe<PlutusData>(Type.Any())");
+      this.buildLine("TPlutusData");
     }
   }
 
@@ -560,7 +714,7 @@ export async function generateBlueprint({
 
   const generator = new Generator();
 
-  generator.writeImports(useSdk, true);
+  generator.writeImports(useSdk);
   generator.writeLine();
   generator.writeModule(definitions);
   generator.writeLine();

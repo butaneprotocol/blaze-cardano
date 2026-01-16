@@ -19,7 +19,7 @@
     "dev": "tsdown src/index.ts --format esm,cjs --watch --dts",
     "dev:cli": "tsdown src/index.ts src/cli.ts --format esm,cjs --watch --dts",
     "lint": "eslint .",
-    "test": "pnpm test:simple && pnpm test:complex",
+    "test": "pnpm test:simple && pnpm test:complex && pnpm test:generic",
     "test:simple": "cd tests/simple && tsx blueprint_generate.ts && jest simple.test.ts",
     "test:complex": "cd tests/complex && tsx blueprint_generate.ts && jest complex.test.ts",
     "test:generic": "cd tests/generic && tsx blueprint_generate.ts && jest generic.test.ts",

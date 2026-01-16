@@ -1,9 +1,18 @@
+import * as fs from "fs";
 import {
   AlwaysTrueScriptSpend,
   AlwaysTrueScriptElse,
   NestedSometimesTrueScriptSpend,
   AlwaysTrueScriptNoParamsSpend,
 } from "./plutus";
+
+describe("Generated code", () => {
+  it("should not contain Type.Unsafe<PlutusData> to avoid TS2742 declaration emit errors", () => {
+    const generatedCode = fs.readFileSync("./plutus.ts", "utf-8");
+    expect(generatedCode).not.toContain("Type.Unsafe<PlutusData>");
+    expect(generatedCode).toContain("type Data = Exact<typeof TPlutusData>");
+  });
+});
 
 describe("Blueprint", () => {
   it("Should be able to construct script", async () => {
