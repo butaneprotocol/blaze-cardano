@@ -43,8 +43,8 @@ export async function signData(
   const toSign = builder.make_data_to_sign().to_bytes();
   8;
 
-  const publicKey = await privateKey.toPublic();
-  const signedSigStruc = await privateKey.sign(HexBlob(toHex(toSign)));
+  const publicKey = privateKey.toPublic();
+  const signedSigStruc = privateKey.sign(HexBlob(toHex(toSign)));
   const coseSign1 = builder.build(signedSigStruc.bytes());
 
   const key = COSEKey.new(
