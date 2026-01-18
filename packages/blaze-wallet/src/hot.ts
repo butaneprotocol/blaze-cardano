@@ -17,7 +17,7 @@ import {
   HexBlob,
   Bip32PrivateKey,
   NetworkId,
-  Hash28ByteBase16,
+  initCrypto,
 } from "@blaze-cardano/core";
 import type { Provider } from "@blaze-cardano/query";
 import type { Wallet, CIP30DataSignature } from "./types";
@@ -82,24 +82,23 @@ export class HotWallet implements Wallet {
       );
     }
 
-    const accountKey = await masterkey.derive([
+    await initCrypto();
+    const accountKey = masterkey.derive([
       this.harden(1852),
       this.harden(1815),
       this.harden(0),
     ]);
 
     // 1852H/1815H/0H/0/0
-    const paymentKey = await accountKey.derive([0, 0]);
-    const stakePaymentKey = await accountKey.derive([2, 0]);
+    const paymentKey = accountKey.derive([0, 0]);
+    const stakePaymentKey = accountKey.derive([2, 0]);
 
     const address = new Address({
       type: addressType,
       networkId: networkId,
       paymentPart: {
         type: CredentialType.KeyHash,
-        hash: Hash28ByteBase16.fromEd25519KeyHashHex(
-          (await (await paymentKey.toPublic()).toRawKey().hash()).hex(),
-        ),
+        hash: paymentKey.toPublic().toRawKey().hash().hex(),
       },
       delegationPart:
         addressType === AddressType.EnterpriseKey
@@ -107,13 +106,12 @@ export class HotWallet implements Wallet {
           : {
               type: CredentialType.KeyHash,
               // 1852H/1815H/0H/2/0
-              hash: Hash28ByteBase16.fromEd25519KeyHashHex(
-                (
-                  await (await (await accountKey.derive([2, 0])).toPublic())
-                    .toRawKey()
-                    .hash()
-                ).hex(),
-              ),
+              hash: accountKey
+                .derive([2, 0])
+                .toPublic()
+                .toRawKey()
+                .hash()
+                .hex(),
             },
     });
 
@@ -121,7 +119,7 @@ export class HotWallet implements Wallet {
       address,
       paymentKey,
       stakePaymentKey,
-      publicKey: await paymentKey.toPublic(),
+      publicKey: paymentKey.toPublic(),
     };
   }
 
@@ -236,9 +234,7 @@ export class HotWallet implements Wallet {
       );
     }
 
-    const signature = await this.signingKey
-      .toRawKey()
-      .sign(HexBlob(tx.getId()));
+    const signature = this.signingKey.toRawKey().sign(HexBlob(tx.getId()));
 
     const tws = new TransactionWitnessSet();
 
@@ -255,12 +251,10 @@ export class HotWallet implements Wallet {
           "signTx: Signing with stake key requested but no stake key is available",
         );
       }
-      const stakeSignature = await this.stakeSigningKey
+      const stakeSignature = this.stakeSigningKey
         .toRawKey()
         .sign(HexBlob(tx.getId()));
-      const stakePublicKey = (await this.stakeSigningKey.toPublic())
-        .toRawKey()
-        .hex();
+      const stakePublicKey = this.stakeSigningKey.toPublic().toRawKey().hex();
       const stakeVkw = new VkeyWitness(stakePublicKey, stakeSignature.hex());
 
       vkeys.push(stakeVkw.toCore());
@@ -281,10 +275,10 @@ export class HotWallet implements Wallet {
     payload: string,
   ): Promise<CIP30DataSignature> {
     const paymentKey = address.getProps().paymentPart;
-    const signingPublic = await this.signingKey.toPublic();
-    const stakeSigningPublic = await this.stakeSigningKey?.toPublic();
-    const signingKeyHash = await signingPublic.toRawKey().hash();
-    const stakeSigningKeyHash = await stakeSigningPublic?.toRawKey().hash();
+    const signingPublic = this.signingKey.toPublic();
+    const stakeSigningPublic = this.stakeSigningKey?.toPublic();
+    const signingKeyHash = signingPublic.toRawKey().hash();
+    const stakeSigningKeyHash = stakeSigningPublic?.toRawKey().hash();
     if (!paymentKey)
       throw new Error("signData: Address does not have a payment key");
     const signingKeyMap: Record<string, Bip32PrivateKey> = {};

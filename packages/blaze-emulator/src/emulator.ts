@@ -53,6 +53,7 @@ import {
   hardCodedProtocolParams,
   isCertType,
   DatumKind,
+  initCrypto,
 } from "@blaze-cardano/core";
 import {
   Blaze,
@@ -665,6 +666,8 @@ export class Emulator {
    * @throws {Error} If witness validation, collateral checks, validity intervals, or governance constraints fail.
    */
   async submitTransaction(tx: Transaction): Promise<TransactionId> {
+    await initCrypto();
+
     const body = tx.body();
     const witnessSet = tx.witnessSet();
 
@@ -682,23 +685,19 @@ export class Emulator {
     const consumed: Set<Hash28ByteBase16 | Hash32ByteBase16> = new Set();
 
     // Vkey witnesses are valid
-    const vkeyHashes = new Set(
-      await Promise.all(
-        witnessSet
-          .vkeys()!
-          .values()
-          .map(async (vkey) => {
-            const key = Ed25519PublicKey.fromHex(vkey.vkey());
-            const keyHash = await key.hash();
-            const sig = Ed25519Signature.fromHex(vkey.signature());
-            if (!key.verify(sig, HexBlob(txId))) {
-              throw new Error(
-                `Invalid vkey in witness set with hash ${keyHash}`,
-              );
-            }
-            return Hash28ByteBase16.fromEd25519KeyHashHex(keyHash.hex());
-          }),
-      ),
+    const vkeyHashes = new Set<Hash28ByteBase16>(
+      witnessSet
+        .vkeys()!
+        .values()
+        .map((vkey) => {
+          const key = Ed25519PublicKey.fromHex(vkey.vkey());
+          const keyHash = key.hash();
+          const sig = Ed25519Signature.fromHex(vkey.signature());
+          if (!key.verify(sig, HexBlob(txId))) {
+            throw new Error(`Invalid vkey in witness set with hash ${keyHash}`);
+          }
+          return keyHash.hex();
+        }),
     );
 
     // TODO: bootstrap addresses validation
@@ -927,7 +926,7 @@ export class Emulator {
       .requiredSigners()
       ?.values()
       .forEach((hash) => {
-        consumeVkey(Hash28ByteBase16.fromEd25519KeyHashHex(hash.value()));
+        consumeVkey(hash.value());
       });
 
     // Validity interval contains the current slot range and is formed correctly
@@ -1039,7 +1038,7 @@ export class Emulator {
           }
           case VoterKind.StakePoolKeyHash: {
             const keyHash = vs.toStakingPoolKeyHash()!;
-            consumeVkey(Hash28ByteBase16.fromEd25519KeyHashHex(keyHash));
+            consumeVkey(keyHash);
             break;
           }
         }

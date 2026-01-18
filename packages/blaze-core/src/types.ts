@@ -1,4 +1,4 @@
-import { type OpaqueString, typedHex } from "@cardano-sdk/util";
+import { type HexBlob, type OpaqueString, typedHex } from "@cardano-sdk/util";
 import * as C from "@cardano-sdk/core";
 import * as Crypto from "@cardano-sdk/crypto";
 
@@ -106,17 +106,19 @@ export type Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
 export const Ed25519PrivateKey = Crypto.Ed25519PrivateKey;
 export type Ed25519PrivateKey = Crypto.Ed25519PrivateKey;
 
-export type Ed25519PrivateNormalKeyHex = OpaqueString<"Ed25519PrivateKeyHex">;
+export type Ed25519PrivateNormalKeyHex = OpaqueString<"Ed25519PrivateKeyHex"> &
+  HexBlob;
 export const Ed25519PrivateNormalKeyHex = (
   value: string,
 ): Ed25519PrivateNormalKeyHex => typedHex(value, 64);
 
-export type Ed25519PrivateExtendedKeyHex = OpaqueString<"Ed25519PrivateKeyHex">;
+export type Ed25519PrivateExtendedKeyHex =
+  OpaqueString<"Ed25519PrivateKeyHex"> & HexBlob;
 export const Ed25519PrivateExtendedKeyHex = (
   value: string,
 ): Ed25519PrivateExtendedKeyHex => typedHex(value, 128);
 
-export type Bip32PrivateKeyHex = OpaqueString<"Bip32PrivateKeyHex">;
+export type Bip32PrivateKeyHex = OpaqueString<"Bip32PrivateKeyHex"> & HexBlob;
 export const Bip32PrivateKeyHex = (value: string): Bip32PrivateKeyHex =>
   typedHex(value, 192);
 

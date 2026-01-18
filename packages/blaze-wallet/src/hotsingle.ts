@@ -12,6 +12,7 @@ import {
   CborSet,
   Ed25519SignatureHex,
   derivePublicKey,
+  initCrypto,
 } from "@blaze-cardano/core";
 import type {
   RewardAddress,
@@ -194,6 +195,7 @@ export class HotSingleWallet implements Wallet {
     address: Address,
     payload: string,
   ): Promise<CIP30DataSignature> {
+    await initCrypto();
     const paymentKey = address.getProps().paymentPart;
     const paymentSigningKey = Ed25519PrivateKey.fromNormalHex(
       this.paymentSigningKey,
@@ -201,10 +203,10 @@ export class HotSingleWallet implements Wallet {
     const stakeSigningKey =
       this.stakeSigningKey &&
       Ed25519PrivateKey.fromNormalHex(this.stakeSigningKey);
-    const signingPublic = await paymentSigningKey.toPublic();
-    const stakeSigningPublic = await stakeSigningKey?.toPublic();
-    const signingKeyHash = await signingPublic.hash();
-    const stakeSigningKeyHash = await stakeSigningPublic?.hash();
+    const signingPublic = paymentSigningKey.toPublic();
+    const stakeSigningPublic = stakeSigningKey?.toPublic();
+    const signingKeyHash = signingPublic.hash();
+    const stakeSigningKeyHash = stakeSigningPublic?.hash();
     if (!paymentKey)
       throw new Error("signData: Address does not have a payment key");
 
