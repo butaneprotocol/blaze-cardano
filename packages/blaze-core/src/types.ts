@@ -86,6 +86,12 @@ export type ScriptHash = Crypto.Hash28ByteBase16;
 export const Address = C.Cardano.Address;
 export type Address = C.Cardano.Address;
 
+export const isRewardAccount = (
+  bech: PaymentAddress | RewardAccount,
+): bech is RewardAccount => {
+  return C.Cardano.isRewardAccount(bech);
+};
+
 export const RewardAddress = C.Cardano.RewardAddress;
 export type RewardAddress = C.Cardano.RewardAddress;
 
