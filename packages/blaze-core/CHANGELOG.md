@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.8.0
+
+### Minor Changes
+
+- acb75c3: Updates the cardano-sdk dependencies to latest
+
 ## 0.7.1
 
 ### Patch Changes
