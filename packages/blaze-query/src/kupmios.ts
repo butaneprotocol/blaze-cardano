@@ -26,6 +26,7 @@ import {
   PlutusV2Script,
   PlutusV3Script,
   NetworkId,
+  RedeemerTag,
 } from "@blaze-cardano/core";
 import { purposeToTag, Provider } from "./provider";
 import type { Unwrapped } from "@blaze-cardano/ogmios";
@@ -417,7 +418,10 @@ export class Kupmios extends Provider {
               (x: Redeemer) =>
                 Number(x.index()) === redeemerData.validator.index &&
                 // TODO: RedeemerPurpose enum's indexes are still inconsistent. They are not the same as RedeemerTag values.
-                x.tag() === purposeToTag[redeemerData.validator.purpose],
+                (x.tag() === purposeToTag[redeemerData.validator.purpose] ||
+                  // Ogmios returns "withdraw" but RedeemerPurpose enum uses "withdrawal"
+                  (redeemerData.validator.purpose === "withdraw" &&
+                    x.tag() === RedeemerTag.Reward)),
             );
 
             if (!redeemer) {
