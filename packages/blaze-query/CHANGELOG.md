@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.5.6
+
+### Patch Changes
+
+- e22d8c3: handle Ogmios 'withdraw' vs 'withdrawal' purpose mismatch
+
 ## 0.5.5
 
 ### Patch Changes
