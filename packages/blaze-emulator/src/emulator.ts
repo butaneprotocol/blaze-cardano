@@ -229,6 +229,23 @@ export class Emulator {
   private delayingActionBarrierUntil?: number;
   private govTraceEnabled: boolean = false;
 
+  /**
+   * Set of trusted key hashes that bypass signature verification.
+   * Useful for testing scenarios where you need to simulate external signers.
+   */
+  trustedKeyHashes: Set<Ed25519KeyHashHex> = new Set();
+
+  /**
+   * Add a trusted key hash that will bypass signature verification.
+   * This is useful for testing scenarios where you need to simulate
+   * signatures from external parties (e.g., fee managers, admins).
+   *
+   * @param keyHash - The key hash to trust
+   */
+  addTrustedKeyHash(keyHash: Ed25519KeyHashHex): void {
+    this.trustedKeyHashes.add(keyHash);
+  }
+
   private govTrace(...args: unknown[]) {
     if (this.govTraceEnabled) console.debug("[GOV]", ...args);
   }
@@ -283,9 +300,42 @@ export class Emulator {
           zeroTime: this.clock.time,
           slotLength: this.clock.slotLength,
         },
+        true, // Enable debug output
       );
     this.addUtxo = this.addUtxo.bind(this);
     this.removeUtxo = this.removeUtxo.bind(this);
+  }
+
+  /**
+   * Creates a new Emulator instance from an array of TransactionUnspentOutput.
+   *
+   * Unlike the constructor which assigns genesis transaction IDs, this method
+   * preserves the original transaction IDs from the provided UTxOs. This is
+   * useful for loading real chain data for testing.
+   *
+   * @param {TransactionUnspentOutput[]} utxos - UTxOs to populate the ledger with.
+   * @param {EmulatorOptions} [options] - Optional emulator configuration.
+   * @returns {Emulator} A new Emulator instance with the provided UTxOs.
+   *
+   * @example
+   * ```typescript
+   * import { parseUtxoJson, Emulator } from "@blaze-cardano/emulator";
+   * import { readFileSync } from "fs";
+   *
+   * const utxoJson = JSON.parse(readFileSync("utxo.json", "utf-8"));
+   * const utxos = parseUtxoJson(utxoJson);
+   * const emulator = Emulator.fromUtxos(utxos);
+   * ```
+   */
+  static fromUtxos(
+    utxos: TransactionUnspentOutput[],
+    options?: EmulatorOptions,
+  ): Emulator {
+    const emulator = new Emulator([], options);
+    for (const utxo of utxos) {
+      emulator.addUtxo(utxo);
+    }
+    return emulator;
   }
 
   private async getOrAddWallet(label: string): Promise<Wallet> {
@@ -692,7 +742,8 @@ export class Emulator {
         .map((vkey) => {
           const key = Ed25519PublicKey.fromHex(vkey.vkey());
           const keyHash = key.hash();
-          const sig = Ed25519Signature.fromHex(vkey.signature());
+          const sigHex = vkey.signature();
+          const sig = Ed25519Signature.fromHex(sigHex);
           if (!key.verify(sig, HexBlob(txId))) {
             throw new Error(`Invalid vkey in witness set with hash ${keyHash}`);
           }
@@ -734,6 +785,11 @@ export class Emulator {
     const redeemers = witnessSet.redeemers()?.values() ?? [];
 
     const consumeVkey = (hash: Hash28ByteBase16) => {
+      // Allow trusted key hashes to bypass signature verification
+      if (this.trustedKeyHashes.has(hash as Ed25519KeyHashHex)) {
+        consumed.add(hash);
+        return;
+      }
       if (!vkeyHashes.has(hash))
         throw new Error(`Vkey (hash ${hash}) not found in witness set.`);
       consumed.add(hash);

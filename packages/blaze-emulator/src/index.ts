@@ -5,3 +5,4 @@ export * from "./constants";
 export * from "./ledger-timer";
 export * from "./utils";
 export * from "./governance";
+export * from "./utxo-json";
