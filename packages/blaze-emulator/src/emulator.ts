@@ -736,9 +736,7 @@ export class Emulator {
 
     // Vkey witnesses are valid
     const vkeyHashes = new Set<Hash28ByteBase16>(
-      witnessSet
-        .vkeys()!
-        .values()
+      (witnessSet.vkeys()?.values() ?? [])
         .map((vkey) => {
           const key = Ed25519PublicKey.fromHex(vkey.vkey());
           const keyHash = key.hash();
