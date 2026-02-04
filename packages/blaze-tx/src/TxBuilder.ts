@@ -39,6 +39,7 @@ import {
   Redeemers,
   Redeemer,
   RedeemerPurpose,
+  ExUnits,
   Address,
   Ed25519PublicKeyHex,
   Credential,
@@ -1950,6 +1951,220 @@ export class TxBuilder {
     // Return the fully constructed transaction.
     const finalWitnessSet = this.buildFinalWitnessSet([]);
     return new Transaction(this.body, finalWitnessSet, this.auxiliaryData);
+  }
+
+  /**
+   * Force-completes the transaction, ignoring any script execution failures.
+   * This is useful for debugging - you can get the final transaction bytes
+   * to analyze with external tools even when scripts fail.
+   *
+   * WARNING: The resulting transaction will likely be invalid if scripts failed.
+   * Execution units will be set to placeholder values (10B CPU, 10M memory).
+   *
+   * @param params - Optional parameters for coin selection.
+   * @returns The completed transaction (may be invalid).
+   */
+  async forceComplete(
+    params: UseCoinSelectionArgs = { useCoinSelection: true },
+  ): Promise<{ tx: Transaction; evaluationError?: Error }> {
+    const { useCoinSelection = true } = params;
+    let evaluationError: Error | undefined;
+
+    // Execute pre-complete hooks
+    if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
+      for (const hook of this.preCompleteHooks) {
+        await hook(this);
+      }
+    }
+    // Ensure a change address has been set before proceeding.
+    if (!this.changeAddress) {
+      throw new Error(
+        "Cannot complete transaction without setting change address",
+      );
+    }
+    if (this.networkId === undefined) {
+      throw new Error(
+        "Cannot complete transaction without setting a network id",
+      );
+    }
+
+    let iterations = 0;
+    let lastFee = 0n;
+    while (iterations < 10) {
+      this.trace(`[forceComplete] Starting iteration ${iterations}`);
+      iterations += 1;
+      const inputs = [...this.body.inputs().values()];
+      const witnessSet = this.buildPlaceholderWitnessSet();
+
+      // Verify and set the auxiliary data
+      const auxiliaryData = this.auxiliaryData;
+      if (auxiliaryData) {
+        const auxiliaryDataHash = getAuxiliaryDataHash(auxiliaryData);
+        if (auxiliaryDataHash != this.body.auxiliaryDataHash()) {
+          throw new Error(
+            "TxBuilder forceComplete: auxiliary data somehow didn't match auxiliary data hash",
+          );
+        }
+      } else {
+        if (this.body.auxiliaryDataHash() != undefined) {
+          throw new Error(
+            "TxBuilder forceComplete: auxiliary data somehow didn't match auxiliary data hash",
+          );
+        }
+      }
+
+      // Try to evaluate scripts, but continue on failure with placeholder budgets
+      if (
+        this.redeemers.size() > 0 &&
+        this.body.inputs().size() > 0 &&
+        this.body.outputs().length > 0
+      ) {
+        const tx = new Transaction(this.body, witnessSet, this.auxiliaryData);
+
+        try {
+          this.trace(`[forceComplete] Evaluating transaction CBOR: ${tx.toCbor()}`);
+          await this.evaluate(tx);
+        } catch (e) {
+          this.trace(
+            `[forceComplete] Script evaluation failed, continuing with placeholder budgets: ${e}`,
+          );
+          evaluationError = e instanceof Error ? e : new Error(String(e));
+          // Set placeholder execution units for all redeemers
+          // Using large values to ensure the tx can be submitted for debugging
+          const placeholderExUnits = ExUnits.fromCore({
+            memory: 10_000_000,  // 10M memory units
+            steps: 10_000_000_000n,  // 10B CPU steps
+          });
+          for (const redeemer of this.redeemers.values()) {
+            redeemer.setExUnits(placeholderExUnits);
+          }
+        }
+      }
+
+      this.calculateFees();
+      this.trace(`[forceComplete] Fee calculated to be ${this.fee.toString()}`);
+
+      const scriptDataHash = this.getScriptDataHash(witnessSet);
+      if (scriptDataHash) {
+        this.body.setScriptDataHash(scriptDataHash);
+      }
+
+      let spareInputs: TransactionUnspentOutput[] = [];
+      let allScriptInputs = true;
+      for (const utxo of this.utxos.values()) {
+        allScriptInputs =
+          utxo.output().address().getProps().paymentPart?.type !==
+          CredentialType.KeyHash;
+        if (!allScriptInputs) {
+          break;
+        }
+      }
+      for (const utxo of this.utxos.values()) {
+        let hasInput = false;
+        for (const input of inputs) {
+          if (isEqualInput(input, utxo.input())) {
+            hasInput = true;
+            break;
+          }
+        }
+        if (
+          !hasInput &&
+          (utxo.output().address().getProps().paymentPart?.type !==
+            CredentialType.ScriptHash ||
+            allScriptInputs)
+        ) {
+          spareInputs.push(utxo);
+        }
+      }
+
+      let surplusAndDeficits = this.getAssetSurplus();
+      const deficit = value.negatives(surplusAndDeficits);
+
+      if (deficit.coin() < 0n) {
+        const recoveredAmount = this.recoverLovelaceFromChangeOutput(
+          -deficit.coin(),
+        );
+        deficit.setCoin(deficit.coin() + recoveredAmount);
+        surplusAndDeficits.setCoin(surplusAndDeficits.coin() + recoveredAmount);
+      }
+
+      this.prepareCollateral({ useCoinSelection });
+
+      if (!value.empty(surplusAndDeficits)) {
+        if (useCoinSelection && !value.empty(deficit)) {
+          const selectionResult = this.coinSelector(
+            spareInputs,
+            value.negate(deficit),
+          );
+          spareInputs = selectionResult.leftoverInputs;
+          if (selectionResult.selectedInputs.length > 0) {
+            for (const input of selectionResult.selectedInputs) {
+              this.addInput(input);
+            }
+          } else {
+            if (this.body.inputs().size() == 0) {
+              if (!spareInputs[0]) {
+                throw new Error(
+                  "No spare inputs available to add to the transaction",
+                );
+              }
+              const [inputWithLeastMultiAssets] = spareInputs.reduce(
+                ([minInput, minMultiAssetCount], currentInput) => {
+                  const currentMultiAssetCount = value.assetTypes(
+                    currentInput.output().amount(),
+                  );
+                  return currentMultiAssetCount < minMultiAssetCount
+                    ? [currentInput, minMultiAssetCount]
+                    : [minInput, value.assetTypes(minInput.output().amount())];
+                },
+                [
+                  spareInputs[0],
+                  value.assetTypes(spareInputs[0].output().amount()),
+                ],
+              );
+              this.addInput(inputWithLeastMultiAssets);
+              spareInputs = spareInputs.filter(
+                (input) => input !== inputWithLeastMultiAssets,
+              );
+            }
+          }
+          if (this.body.inputs().values().length == 0) {
+            throw new Error(
+              "TxBuilder: resolved empty input set, cannot construct transaction!",
+            );
+          }
+          surplusAndDeficits = value.merge(
+            surplusAndDeficits,
+            selectionResult.selectedValue,
+          );
+          if (!value.empty(value.negatives(surplusAndDeficits))) {
+            throw new Error(
+              "Unreachable! CoinSelection failed to satisfy the goal.",
+            );
+          }
+        }
+        this.adjustChangeOutput(surplusAndDeficits);
+      } else if (this.body.inputs().size() === 0) {
+        if (spareInputs.length === 0) {
+          throw new Error(
+            "A transaction must have at least one input, but there are no available spare inputs to add.",
+          );
+        }
+        this.addInput(spareInputs[0]!);
+      }
+
+      if (lastFee === this.fee) {
+        break;
+      }
+      lastFee = BigInt(this.fee);
+    }
+
+    this.trace("[forceComplete] Transaction building complete");
+    const finalWitnessSet = this.buildFinalWitnessSet([]);
+    return {
+      tx: new Transaction(this.body, finalWitnessSet, this.auxiliaryData),
+      evaluationError,
+    };
   }
 
   /**

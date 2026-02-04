@@ -28,9 +28,8 @@ export class EmulatorProvider extends Provider {
    */
   private emulator: Emulator;
 
-  constructor(emulator: Emulator) {
-    // TODO: dedicated emulator environment?
-    super(NetworkId.Testnet, "unknown");
+  constructor(emulator: Emulator, networkId: NetworkId = NetworkId.Testnet) {
+    super(networkId, "unknown");
     this.emulator = emulator;
   }
 
