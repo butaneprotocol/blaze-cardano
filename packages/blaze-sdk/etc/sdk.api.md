@@ -7,7 +7,6 @@
 import * as bip39 from '@scure/bip39';
 import * as C from '@cardano-sdk/core';
 import { Cardano } from '@cardano-sdk/core';
-import * as _cardano_sdk_util0 from '@cardano-sdk/util';
 import * as Crypto from '@cardano-sdk/crypto';
 import { Exact } from '@blaze-cardano/data';
 import { HexBlob } from '@cardano-sdk/util';
@@ -56,7 +55,7 @@ type AnchorCore = C.Cardano.Anchor;
 export function applyParams(hex: HexBlob, ...params: PlutusData[]): HexBlob;
 
 // @public
-export function applyParamsToScript<T$1 extends TArray>(plutusScript: string, type: T$1, params: Exact<T$1>): HexBlob;
+export function applyParamsToScript<T extends TArray>(plutusScript: string, type: T, params: Exact<T>): HexBlob;
 
 // @public
 export const assertLockAddress: (address: Address) => never | void;
@@ -103,7 +102,7 @@ const Bip32PrivateKey: typeof Crypto.Bip32PrivateKey;
 type Bip32PrivateKey = Crypto.Bip32PrivateKey;
 
 // @public (undocumented)
-type Bip32PrivateKeyHex = OpaqueString<"Bip32PrivateKeyHex">;
+type Bip32PrivateKeyHex = OpaqueString<"Bip32PrivateKeyHex"> & HexBlob;
 
 // @public (undocumented)
 const Bip32PrivateKeyHex: (value: string) => Bip32PrivateKeyHex;
@@ -323,7 +322,7 @@ export interface CIP30Interface {
 
 // @public (undocumented)
 export namespace CoinSelector {
-        { hvfSelector, micahsSelector };
+    export { hvfSelector, micahsSelector };
 }
 
 // @public
@@ -526,7 +525,9 @@ declare namespace Core {
         getBurnAddress,
         getPaymentAddress,
         hardCodedProtocolParams,
+        initCrypto,
         isCertType,
+        isRewardAccount,
         mnemonicToEntropy,
         prettify,
         setInConwayEra,
@@ -578,7 +579,7 @@ type Datum = PlutusData | DatumHash;
 // @public (undocumented)
 const DatumHash: {
     (value: string): Crypto.Hash32ByteBase16;
-    fromHexBlob<T>(value: _cardano_sdk_util0.HexBlob): T;
+    fromHexBlob<T>(value: HexBlob): T;
 };
 
 // @public (undocumented)
@@ -609,7 +610,7 @@ const Ed25519KeyHashHex: (value: string) => Crypto.Ed25519KeyHashHex;
 type Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
 
 // @public (undocumented)
-type Ed25519PrivateExtendedKeyHex = OpaqueString<"Ed25519PrivateKeyHex">;
+type Ed25519PrivateExtendedKeyHex = OpaqueString<"Ed25519PrivateKeyHex"> & HexBlob;
 
 // @public (undocumented)
 const Ed25519PrivateExtendedKeyHex: (value: string) => Ed25519PrivateExtendedKeyHex;
@@ -621,7 +622,7 @@ const Ed25519PrivateKey: typeof Crypto.Ed25519PrivateKey;
 type Ed25519PrivateKey = Crypto.Ed25519PrivateKey;
 
 // @public (undocumented)
-type Ed25519PrivateNormalKeyHex = OpaqueString<"Ed25519PrivateKeyHex">;
+type Ed25519PrivateNormalKeyHex = OpaqueString<"Ed25519PrivateKeyHex"> & HexBlob;
 
 // @public (undocumented)
 const Ed25519PrivateNormalKeyHex: (value: string) => Ed25519PrivateNormalKeyHex;
@@ -633,7 +634,10 @@ const Ed25519PublicKey: typeof Crypto.Ed25519PublicKey;
 type Ed25519PublicKey = Crypto.Ed25519PublicKey;
 
 // @public (undocumented)
-const Ed25519PublicKeyHex: (value: string) => Crypto.Ed25519PublicKeyHex;
+const Ed25519PublicKeyHex: {
+    (value: string): Crypto.Ed25519PublicKeyHex;
+    fromBip32PublicKey(bip32PublicKey: Crypto.Bip32PublicKeyHex): Crypto.Ed25519PublicKeyHex;
+};
 
 // @public (undocumented)
 type Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
@@ -714,13 +718,10 @@ const hardCodedProtocolParams: ProtocolParameters;
 const Hash: typeof C.Serialization.Hash;
 
 // @public (undocumented)
-type Hash<T$1 extends string> = C.Serialization.Hash<T$1>;
+type Hash<T extends string> = C.Serialization.Hash<T>;
 
 // @public (undocumented)
-const Hash28ByteBase16: {
-    (value: string): Crypto.Hash28ByteBase16;
-    fromEd25519KeyHashHex(value: Crypto.Ed25519KeyHashHex): Crypto.Hash28ByteBase16;
-};
+const Hash28ByteBase16: (value: string) => Crypto.Hash28ByteBase16;
 
 // @public (undocumented)
 type Hash28ByteBase16 = Crypto.Hash28ByteBase16;
@@ -728,7 +729,7 @@ type Hash28ByteBase16 = Crypto.Hash28ByteBase16;
 // @public (undocumented)
 const Hash32ByteBase16: {
     (value: string): Crypto.Hash32ByteBase16;
-    fromHexBlob<T>(value: _cardano_sdk_util0.HexBlob): T;
+    fromHexBlob<T>(value: HexBlob): T;
 };
 
 // @public (undocumented)
@@ -788,6 +789,9 @@ export class HotWallet implements Wallet {
 }
 
 // @public
+function initCrypto(): Promise<void>;
+
+// @public
 export const insertSorted: (arr: string[], el: string) => number;
 
 // @public (undocumented)
@@ -841,6 +845,9 @@ export const isEqualOutput: (self: TransactionOutput, that: TransactionOutput) =
 
 // @public
 export const isEqualUTxO: (self: TransactionUnspentOutput, that: TransactionUnspentOutput) => boolean;
+
+// @public (undocumented)
+const isRewardAccount: (bech: PaymentAddress | RewardAccount) => bech is RewardAccount;
 
 // @public (undocumented)
 export class Kupmios extends Provider {
@@ -916,7 +923,7 @@ type NativeScript = C.Serialization.NativeScript;
 
 // @public (undocumented)
 namespace nativescript_d_exports {
-        { address, after, allOf, anyOf, atLeastNOfK, before, justAddress };
+    export { address, after, allOf, anyOf, atLeastNOfK, before, justAddress };
 }
 
 // @public (undocumented)
@@ -1303,7 +1310,7 @@ type TransactionBody = C.Serialization.TransactionBody;
 // @public (undocumented)
 const TransactionId: {
     (value: string): C.Cardano.TransactionId;
-    fromHexBlob(value: _cardano_sdk_util0.HexBlob): C.Cardano.TransactionId;
+    fromHexBlob(value: HexBlob): C.Cardano.TransactionId;
 };
 
 // @public (undocumented)
@@ -1484,7 +1491,7 @@ class UTxOSelectionError extends Error {
 
 // @public (undocumented)
 export namespace Value {
-        { assetTypes, assets, empty, intersect, makeValue, merge, negate, negatives, positives, sub, sum, zero };
+    export { assetTypes, assets, empty, intersect, makeValue, merge, negate, negatives, positives, sub, sum, zero };
 }
 
 // @public (undocumented)

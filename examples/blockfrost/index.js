@@ -1,5 +1,5 @@
 // Run example from project top level with the following commands:
-// $ pnpm install && pnpm build
+// $ bun install && bun run build
 // $ BLOCKFROST_PROJECT_ID="..." bun run examples/blockfrost/index.js
 import * as readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";

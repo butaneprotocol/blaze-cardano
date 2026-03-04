@@ -1,17 +1,17 @@
 {
   "name": "@blaze-cardano/eslint-config",
   "version": "0.0.2",
-  "main": "index.js",
-  "scripts": {
-    "clean": "rm -rf .turbo && rm -rf node_modules"
-  },
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.7.1",
-    "@typescript-eslint/parser": "^7.7.1",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-config-turbo": "^2.5.9-canary.5"
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-config-turbo": "^2.8.13"
   },
+  "main": "index.js",
   "publishConfig": {
     "access": "public"
+  },
+  "scripts": {
+    "clean": "rm -rf .turbo && rm -rf node_modules"
   }
 }

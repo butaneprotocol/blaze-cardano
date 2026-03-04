@@ -41,7 +41,6 @@ export async function signData(
   const headers = Headers.new(protectedSerialized, unprotectedHeaders);
   const builder = COSESign1Builder.new(headers, fromHex(payload), false);
   const toSign = builder.make_data_to_sign().to_bytes();
-  8;
 
   const publicKey = privateKey.toPublic();
   const signedSigStruc = privateKey.sign(HexBlob(toHex(toSign)));

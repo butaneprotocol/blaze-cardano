@@ -1600,7 +1600,7 @@ export class TxBuilder {
               this.params.coinsPerUtxoByte,
               this.params.maxValueSize,
             );
-          } catch (_e) {
+          } catch {
             return false;
           }
 

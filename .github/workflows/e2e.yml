@@ -33,24 +33,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: 📦 Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.10"
 
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          cache: "pnpm"
           node-version: "latest"
 
+      - name: ♻️ Cache Bun install
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-install-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-install-${{ runner.os }}-
+
+      - name: ♻️ Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-
+
       - name: 🛠️ Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: 🎁 Run build
-        run: pnpm build
+        run: bun run build
         env:
           NODE_ENV: production
 
       - name: Run e2e tests
-        run: cd packages/e2e && pnpm test
-        # env:
-        #   NODE_ENV: production
+        run: cd packages/e2e && bun run test
