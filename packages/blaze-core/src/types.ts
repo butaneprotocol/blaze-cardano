@@ -359,6 +359,7 @@ export const DatumKind = C.Serialization.DatumKind;
 export type Evaluator = (
   tx: Transaction,
   additionalUtxos: TransactionUnspentOutput[],
+  scriptSubstitutions?: Map<string, Script>,
 ) => Promise<Redeemers>;
 
 export const AuxiliaryData = C.Serialization.AuxiliaryData;

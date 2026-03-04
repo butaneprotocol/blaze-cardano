@@ -168,6 +168,7 @@ export class TxBuilder {
   private fee: bigint = 0n; // The fee for the transaction.
   private additionalSigners = 0;
   private evaluator?: Evaluator;
+  private scriptSubstitutions: Map<ScriptHash, Script> = new Map();
 
   private consumedDelegationHashes: Hash28ByteBase16[] = [];
   private consumedMintHashes: Hash28ByteBase16[] = [];
@@ -294,6 +295,22 @@ export class TxBuilder {
     if (override || !this.evaluator) {
       this.evaluator = evaluator;
     }
+    return this;
+  }
+
+  /**
+   * Sets script substitutions for evaluation. During script evaluation, the substitute
+   * scripts will be used in place of the original scripts (identified by hash), while
+   * the transaction structure remains unchanged.
+   *
+   * This is useful for A/B testing scripts, providing trace-enabled scripts for debugging,
+   * or testing script upgrades against existing transactions.
+   *
+   * @param {Map<ScriptHash, Script>} subs - A map from original script hashes to substitute scripts.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  useScriptSubstitutions(subs: Map<ScriptHash, Script>): TxBuilder {
+    this.scriptSubstitutions = subs;
     return this;
   }
 
@@ -855,7 +872,8 @@ export class TxBuilder {
     );
     // todo: filter utxoscope to only include inputs, reference inputs, collateral inputs, not excess junk
 
-    const redeemers = await this.evaluator!(draft_tx, allUtxos);
+    const subs = this.scriptSubstitutions.size > 0 ? this.scriptSubstitutions : undefined;
+    const redeemers = await this.evaluator!(draft_tx, allUtxos, subs);
     let fee = 0;
     // Iterate over the results from the UPLC evaluator.
     for (const redeemer of redeemers.values()) {

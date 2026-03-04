@@ -12,10 +12,14 @@ categories = ["algorithms"]
 crate-type = ["cdylib"]
 
 [dependencies]
-uplc = "1.1.19"
+uplc = { path = "/home/pi/proj/aiken/crates/uplc" }
 wasm-bindgen = "0.2.93"
 js-sys = "0.3.70"
 wee_alloc = "0.4.5"
+pallas-addresses = "0.33.0"
+pallas-codec = "0.33.0"
+pallas-primitives = "0.33.0"
+pallas-traverse = "0.33.0"
 # required for wasm usage of getrandom
 getrandom = { version = "0.2", features = ["js"] }
 
