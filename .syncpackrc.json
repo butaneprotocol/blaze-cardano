@@ -1,0 +1,20 @@
+{
+  "semverGroups": [
+    {
+      "label": "Use ^ for dependencies",
+      "packages": ["**"],
+      "dependencies": ["**"],
+      "dependencyTypes": ["dev", "prod", "peer"],
+      "range": "^"
+    }
+  ],
+  "versionGroups": [
+    {
+      "label": "Use workspace protocol for internal packages",
+      "packages": ["**"],
+      "dependencies": ["@blaze-cardano/**"],
+      "dependencyTypes": ["dev", "prod"],
+      "pinVersion": "workspace:*"
+    }
+  ]
+}

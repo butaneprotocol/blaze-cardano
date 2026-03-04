@@ -1,7 +1,19 @@
 {
   "name": "@blaze-cardano/ogmios",
-  "version": "0.0.7",
   "description": "Blaze cardano ogmios library",
+  "version": "0.0.7",
+  "dependencies": {
+    "@cardano-ogmios/schema": "^6.6.1",
+    "isomorphic-ws": "^5.0.0"
+  },
+  "devDependencies": {
+    "@blaze-cardano/eslint-config": "workspace:*",
+    "@blaze-cardano/tsconfig": "workspace:*",
+    "eslint": "^8.57.1",
+    "ts-node": "^10.9.2",
+    "tsdown": "^0.15.9",
+    "typescript": "^5.7.3"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -9,33 +21,22 @@
       "require": "./dist/index.js"
     }
   },
-  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
-  "scripts": {
-    "build": "tsdown src/index.ts --format esm,cjs --dts --external rxjs",
-    "dev": "tsdown src/index.ts --format esm,cjs --watch --dts --external rxjs",
-    "lint": "eslint \"src/**/*.ts*\"",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "build:types": "tsc -p tsconfig.docs.json",
-    "api:extract": "api-extractor run --local --verbose",
-    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
-    "api:prepare": "pnpm build:types && pnpm api:extract && pnpm api:md"
-  },
-  "devDependencies": {
-    "@blaze-cardano/eslint-config": "workspace:*",
-    "@blaze-cardano/tsconfig": "workspace:*",
-    "eslint": "^8.57.0",
-    "ts-node": "^10.9.2",
-    "tsdown": "^0.15.9",
-    "typescript": "^5.3.3"
-  },
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "@cardano-ogmios/schema": "^6.6.1",
-    "isomorphic-ws": "^5.0.0"
-  }
+  "scripts": {
+    "api:extract": "api-extractor run --local --verbose",
+    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
+    "api:prepare": "bun run build:types && bun run api:extract && bun run api:md",
+    "build": "tsdown src/index.ts --format esm,cjs --dts --external rxjs",
+    "build:types": "tsc -p tsconfig.docs.json",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "dev": "tsdown src/index.ts --format esm,cjs --watch --dts --external rxjs",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "types": "./dist/index.d.ts"
 }

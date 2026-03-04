@@ -101,6 +101,21 @@ A list of projects, apps, websites, repositories, which depend on this library i
 - [Rocket](https://rocket.store)
 - [SundaeSwap](https://sundae.fi/)
 
+### Dependency Management
+
+This monorepo uses [syncpack](https://syncpack.dev) to keep dependency versions consistent across all packages.
+
+```bash
+# Check for version mismatches and policy violations
+bunx syncpack lint
+
+# Auto-fix version mismatches (aligns to highest semver, enforces workspace protocol, etc.)
+bunx syncpack fix
+
+# Sort and format all package.json files
+bunx syncpack format
+```
+
 ### Contributing
 
 Please see [contributing.md](./CONTRIBUTING.md)

@@ -1,11 +1,11 @@
 {
   "name": "@blaze-cardano/jest-config",
   "version": "0.0.1",
+  "devDependencies": {
+    "ts-jest": "^29.4.1"
+  },
   "license": "MIT",
   "publishConfig": {
     "access": "public"
-  },
-  "devDependencies": {
-    "ts-jest": "^29.1.1"
   }
 }
