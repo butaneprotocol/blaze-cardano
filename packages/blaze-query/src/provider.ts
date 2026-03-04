@@ -210,4 +210,6 @@ export const purposeToTag: { [key: string]: number } = {
   [RedeemerPurpose.withdrawal]: RedeemerTag.Reward,
   [RedeemerPurpose.vote]: RedeemerTag.Voting,
   [RedeemerPurpose.propose]: RedeemerTag.Proposing,
+  // Ogmios uses "withdraw" instead of "withdrawal" in evaluation results
+  withdraw: RedeemerTag.Reward,
 };

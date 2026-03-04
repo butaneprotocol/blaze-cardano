@@ -44,15 +44,18 @@ export class Blockfrost extends Provider {
 
   constructor(params: {
     network: NetworkName;
-    projectId: string;
+    projectId?: string;
+    url?: string;
     withScriptRefCaching?: boolean;
   }) {
-    const { network, projectId, withScriptRefCaching = true } = params;
+    const { network, projectId = "", url, withScriptRefCaching = true } = params;
     super(
       network == "cardano-mainnet" ? NetworkId.Mainnet : NetworkId.Testnet,
       network,
     );
-    this.url = `https://${network}.blockfrost.io/api/v0/`;
+    const baseUrl = url ?? `https://${network}.blockfrost.io/api/v0/`;
+    // Normalize: strip trailing slash to avoid double-slash when queries start with /
+    this.url = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
     this.projectId = projectId;
     this.scriptCache = new Map<string, Script>();
     this.withScriptRefCaching = withScriptRefCaching;
@@ -71,7 +74,7 @@ export class Blockfrost extends Provider {
    * @returns A Promise that resolves to a ProtocolParameters object.
    */
   async getParameters(): Promise<ProtocolParameters> {
-    const query = "epochs/latest/parameters";
+    const query = "/epochs/latest/parameters";
     const json = await fetch(`${this.url}${query}`, {
       headers: this.headers(),
     }).then((resp) => resp.json());
@@ -86,13 +89,36 @@ export class Blockfrost extends Provider {
     if ("message" in response) {
       throw new Error(`getParameters: Blockfrost threw "${response.message}"`);
     }
-    // Build cost models
+    // Build cost models from either cost_models_raw (numeric arrays, standard
+    // Blockfrost) or cost_models (named/indexed keys, yaci-store compatible APIs).
+    // When converting from named keys, ordering is critical: the ledger hashes
+    // cost model values in a canonical order, and PPViewHashesDontMatch results
+    // from any misordering.
     const costModels: CostModels = new Map();
-    for (const [key, value] of Object.entries(response.cost_models_raw)) {
-      costModels.set(
-        fromBlockfrostLanguageVersion(key as BlockfrostLanguageVersions),
-        value,
-      );
+    const rawModels = response.cost_models_raw ?? response.cost_models;
+    if (rawModels) {
+      for (const [key, value] of Object.entries(rawModels)) {
+        let arr: number[];
+        if (Array.isArray(value)) {
+          // cost_models_raw format: already a correctly-ordered array
+          arr = value;
+        } else {
+          // Named-key object format: sort keys to canonical ledger order.
+          // PV2 uses zero-padded numeric keys ("000"-"184") → sort numerically.
+          // PV1/PV3 use descriptive names → sort lexicographically (ASCII).
+          const obj = value as Record<string, number>;
+          const keys = Object.keys(obj);
+          const isNumeric = keys.length > 0 && keys.every((k) => /^\d+$/.test(k));
+          const sorted = isNumeric
+            ? keys.sort((a, b) => Number(a) - Number(b))
+            : keys.sort();
+          arr = sorted.map((k) => obj[k]!);
+        }
+        costModels.set(
+          fromBlockfrostLanguageVersion(key as BlockfrostLanguageVersions),
+          arr,
+        );
+      }
     }
 
     return {
@@ -181,13 +207,18 @@ export class Blockfrost extends Provider {
         throw new Error("getUnspentOutputs: Could not parse response json");
       }
 
-      const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
-
-      if ("message" in response) {
-        throw new Error(
-          `getUnspentOutputs: Blockfrost threw "${response.message}" for query: ${query}`,
-        );
+      // Some Blockfrost-compatible APIs (e.g. yaci-store) may return {} or
+      // a non-array for empty/pending results. Treat non-array as empty.
+      if (!Array.isArray(json)) {
+        if (typeof json === "object" && "message" in json) {
+          throw new Error(
+            `getUnspentOutputs: Blockfrost threw "${(json as any).message}" for query: ${query}`,
+          );
+        }
+        break;
       }
+
+      const response = json as BlockfrostUTxO[];
 
       for (const blockfrostUTxO of response) {
         if (!filter || filter(blockfrostUTxO)) {
@@ -252,13 +283,16 @@ export class Blockfrost extends Provider {
         );
       }
 
-      const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
-
-      if ("message" in response) {
-        throw new Error(
-          `getUnspentOutputsWithAsset: Blockfrost threw "${response.message}"`,
-        );
+      if (!Array.isArray(json)) {
+        if (typeof json === "object" && "message" in json) {
+          throw new Error(
+            `getUnspentOutputsWithAsset: Blockfrost threw "${(json as any).message}"`,
+          );
+        }
+        break;
       }
+
+      const response = json as BlockfrostUTxO[];
 
       for (const blockfrostUTxO of response) {
         results.add(await buildTxUnspentOutput(blockfrostUTxO));
@@ -593,7 +627,7 @@ export class Blockfrost extends Provider {
 
       if (!redeemer) {
         throw new Error(
-          "evaluateTransaction: Blockfrost endpoint had extraneous redeemer data",
+          `evaluateTransaction: Blockfrost endpoint had extraneous redeemer data (pointer=${redeemerPointer} purpose=${purpose} index=${index})`,
         );
       }
       // Manually set exUnits for redeemer
@@ -782,7 +816,7 @@ export interface BlockfrostProtocolParametersResponse {
   min_pool_cost: number;
   nonce: string;
   cost_models: Record<BlockfrostLanguageVersions, { [key: string]: number }>;
-  cost_models_raw: Record<BlockfrostLanguageVersions, number[]>;
+  cost_models_raw?: Record<BlockfrostLanguageVersions, number[]>;
   price_mem: string;
   price_step: string;
   max_tx_ex_mem: number;
