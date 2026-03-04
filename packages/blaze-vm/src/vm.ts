@@ -1,6 +1,7 @@
 import type {
   Evaluator,
   ProtocolParameters,
+  Script,
   SlotConfig,
   Transaction,
   TransactionUnspentOutput,
@@ -17,6 +18,26 @@ import {
 import * as U from "@blaze-cardano/uplc/wasm";
 
 /**
+ * Extracts the raw script bytes from a Script object.
+ * Returns the inner flat-encoded UPLC bytes (not CBOR-wrapped).
+ */
+function getScriptRawBytes(script: Script): Uint8Array {
+  const lang = script.language();
+  let rawHex: string | undefined;
+  if (lang === 1) {
+    rawHex = script.asPlutusV1()?.rawBytes();
+  } else if (lang === 2) {
+    rawHex = script.asPlutusV2()?.rawBytes();
+  } else if (lang === 3) {
+    rawHex = script.asPlutusV3()?.rawBytes();
+  }
+  if (!rawHex) {
+    throw new Error(`Cannot extract raw bytes from script with language ${lang}`);
+  }
+  return fromHex(rawHex);
+}
+
+/**
  * This function returns an evaluator function that can be used to evaluate a transaction.
  * The evaluator function uses the UPLC (Untyped Plutus Core) evaluator to simulate the execution of scripts.
  * @param params - The protocol parameters.
@@ -30,33 +51,80 @@ export function makeUplcEvaluator(
   overEstimateSteps: number,
   overEstimateMem: number,
   slotConfig: SlotConfig = SLOT_CONFIG_NETWORK.Mainnet,
+  debug: boolean = false,
 ): Evaluator {
   return (
     draft_tx: Transaction,
     allUtxos: TransactionUnspentOutput[],
+    scriptSubstitutions?: Map<string, Script>,
   ): Promise<Redeemers> => {
-    // Simulate the execution of scripts using the UPLC (Untyped Plutus Core) evaluator.
-    const uplcResults = U.eval_phase_two_raw(
-      fromHex(draft_tx.toCbor()), // Convert the draft transaction to CBOR and hex format.
-      allUtxos.map((x) => fromHex(x.input().toCbor())), // Convert all input UTXOs to CBOR and hex format.
-      allUtxos.map((x) => fromHex(x.output().toCbor())), // Convert all output UTXOs to CBOR and hex format.
-      fromHex(Costmdls.fromCore(params.costModels).toCbor()), // Convert the cost models to hex format.
-      BigInt(
-        Math.floor(
-          params.maxExecutionUnitsPerTransaction.steps /
-            (overEstimateSteps ?? 1),
-        ),
-      ), // Calculate the estimated max execution steps.
-      BigInt(
-        Math.floor(
-          params.maxExecutionUnitsPerTransaction.memory /
-            (overEstimateMem ?? 1),
-        ),
-      ), // Calculate the estimated max memory.
-      BigInt(slotConfig.zeroTime), // Network-specific zero time for slot calculation.
-      BigInt(slotConfig.zeroSlot), // Network-specific zero slot.
-      slotConfig.slotLength, // Network-specific slot length.
+    // Debug: print what we're passing to the evaluator
+    if (debug) {
+    }
+
+    const txBytes = fromHex(draft_tx.toCbor());
+    const inputRefs = allUtxos.map((x) => fromHex(x.input().toCbor()));
+    const outputBytes = allUtxos.map((x) => fromHex(x.output().toCbor()));
+    const costMdlsBytes = fromHex(Costmdls.fromCore(params.costModels).toCbor());
+    const cpuBudget = BigInt(
+      Math.floor(
+        params.maxExecutionUnitsPerTransaction.steps /
+          (overEstimateSteps ?? 1),
+      ),
     );
+    const memBudget = BigInt(
+      Math.floor(
+        params.maxExecutionUnitsPerTransaction.memory /
+          (overEstimateMem ?? 1),
+      ),
+    );
+    const zeroTime = BigInt(slotConfig.zeroTime);
+    const zeroSlot = BigInt(slotConfig.zeroSlot);
+    const slotLength = slotConfig.slotLength;
+
+    let uplcResults;
+
+    if (scriptSubstitutions && scriptSubstitutions.size > 0) {
+      // Build parallel arrays for the override
+      const overrideHashes: Uint8Array[] = [];
+      const overrideBytes: Uint8Array[] = [];
+      const overrideLangs: number[] = [];
+
+      for (const [hash, script] of scriptSubstitutions) {
+        overrideHashes.push(fromHex(hash));
+        overrideBytes.push(getScriptRawBytes(script));
+        overrideLangs.push(script.language());
+        console.log(`[vm override] hash=${hash} lang=${script.language()} bytes=${getScriptRawBytes(script).length}`);
+      }
+
+      uplcResults = U.eval_phase_two_raw_with_override(
+        txBytes,
+        inputRefs,
+        outputBytes,
+        costMdlsBytes,
+        cpuBudget,
+        memBudget,
+        zeroTime,
+        zeroSlot,
+        slotLength,
+        overrideHashes,
+        overrideBytes,
+        new Uint8Array(overrideLangs),
+      );
+    } else {
+      // No overrides — use the original function
+      uplcResults = U.eval_phase_two_raw(
+        txBytes,
+        inputRefs,
+        outputBytes,
+        costMdlsBytes,
+        cpuBudget,
+        memBudget,
+        zeroTime,
+        zeroSlot,
+        slotLength,
+      );
+    }
 
     const redeemerValues: Redeemer[] = []; // Initialize an array to hold the updated redeemers.
 

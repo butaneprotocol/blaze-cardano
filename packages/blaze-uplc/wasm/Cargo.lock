@@ -929,6 +929,10 @@ version = "0.2.0"
 dependencies = [
  "getrandom",
  "js-sys",
+ "pallas-addresses",
+ "pallas-codec",
+ "pallas-primitives",
+ "pallas-traverse",
  "uplc",
  "wasm-bindgen",
  "wee_alloc",
