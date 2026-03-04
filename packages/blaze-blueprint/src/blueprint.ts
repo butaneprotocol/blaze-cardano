@@ -247,6 +247,20 @@ export class Generator {
     // Find the part containing "$" (indicates generic type instantiation)
     // e.g., "v0_3/types/SignedPayload$v0_3/types/ProtocolRedeemer"
     // e.g., "Tuple$aiken/crypto/VerificationKey_sundae/cose/COSESign1"
+    // Handle Aiken's angle-bracket tuple/generic syntax: Tuple<<types/AssetClass,Int>>
+    // These don't use "$" but rather "<<" and ">>" with comma-separated type params.
+    const angleBracketMatch = fullDefinitionName.match(/^(\w+)<<(.+)>>$/);
+    if (angleBracketMatch) {
+      const baseName = angleBracketMatch[1]!;
+      const innerParams = angleBracketMatch[2]!;
+      // Split on comma to get individual type params, then take last path segment
+      const typeParamNames = innerParams.split(",").map((param) => {
+        const segments = param.trim().split("/");
+        return segments[segments.length - 1]!.replace(/~/g, "_");
+      });
+      return `${baseName}_${typeParamNames.join("_")}`;
+    }
+
     const genericBaseName = this.extractGenericBaseName(fullDefinitionName);
 
     if (genericBaseName !== null) {
