@@ -83,6 +83,8 @@ import type {
   SelectionResult,
   CoinSelectionFunc,
   UseCoinSelectionArgs,
+  DeferredRedeemer,
+  RedeemerContext,
 } from "./types";
 import {
   calculateMinAda,
@@ -179,6 +181,7 @@ export class TxBuilder {
   private feePadding: bigint = 0n; // A padding to add onto the fee; use only in emergencies, and open a ticket so we can fix the fee calculation please!
   private coinSelector: CoinSelectionFunc = micahsSelector;
   private _burnAddress?: Address;
+  private deferredRedeemers: Map<string, DeferredRedeemer> = new Map();
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -450,7 +453,7 @@ export class TxBuilder {
    */
   addInput(
     utxo: TransactionUnspentOutput,
-    redeemer?: PlutusData,
+    redeemer?: PlutusData | DeferredRedeemer,
     unhashDatum?: PlutusData,
   ): TxBuilder {
     // Retrieve the current inputs from the transaction body for manipulation.
@@ -515,11 +518,18 @@ export class TxBuilder {
         }
       }
       // Prepare and add the redeemer to the transaction, including execution units estimation.
+      let redeemerData: PlutusData;
+      if (typeof redeemer === "function") {
+        this.deferredRedeemers.set(`spend:${oref}`, redeemer);
+        redeemerData = PlutusData.newInteger(0n);
+      } else {
+        redeemerData = redeemer;
+      }
       redeemers.push(
         Redeemer.fromCore({
           index: insertIdx,
           purpose: RedeemerPurpose["spend"],
-          data: redeemer.toCore(),
+          data: redeemerData.toCore(),
           executionUnits: {
             memory: this.params.maxExecutionUnitsPerTransaction.memory,
             steps: this.params.maxExecutionUnitsPerTransaction.steps,
@@ -586,7 +596,7 @@ export class TxBuilder {
   addMint(
     policy: PolicyId,
     assets: Map<AssetName, bigint>,
-    redeemer?: PlutusData,
+    redeemer?: PlutusData | DeferredRedeemer,
   ) {
     const insertIdx = insertSorted(
       this.consumedMintHashes,
@@ -623,11 +633,18 @@ export class TxBuilder {
       }
       // Create and add a new redeemer for the minting action, specifying execution units.
       // Note: Execution units are placeholders and are replaced with actual values during the evaluation phase.
+      let redeemerData: PlutusData;
+      if (typeof redeemer === "function") {
+        this.deferredRedeemers.set(`mint:${PolicyIdToHash(policy)}`, redeemer);
+        redeemerData = PlutusData.newInteger(0n);
+      } else {
+        redeemerData = redeemer;
+      }
       redeemers.push(
         Redeemer.fromCore({
           index: insertIdx,
           purpose: RedeemerPurpose["mint"], // Specify the purpose of the redeemer as minting.
-          data: redeemer.toCore(), // Convert the provided PlutusData redeemer to its core representation.
+          data: redeemerData.toCore(), // Convert the provided PlutusData redeemer to its core representation.
           executionUnits: {
             memory: this.params.maxExecutionUnitsPerTransaction.memory, // Placeholder memory units, replace with actual estimation.
             steps: this.params.maxExecutionUnitsPerTransaction.steps, // Placeholder step units, replace with actual estimation.
@@ -888,6 +905,105 @@ export class TxBuilder {
     this.redeemers = redeemers; // Update the transaction's redeemers with the new set.
 
     return BigInt(Math.ceil(fee)); // Return the total fee, rounded up to the nearest whole number.
+  }
+
+  /**
+   * Resolves all deferred redeemers by calling their functions with the current
+   * transaction context. Called at the start of each complete()/forceComplete()
+   * loop iteration so redeemers have correct sorted indices before evaluation.
+   */
+  private resolveDeferredRedeemers(): void {
+    if (this.deferredRedeemers.size === 0) return;
+
+    // Build sorted spend inputs from the body (same canonical sort as consumedSpendInputs)
+    const bodyInputs = [...this.body.inputs().values()];
+    const sortedSpendInputs = bodyInputs.sort((a, b) => {
+      const aKey = a.transactionId() + a.index().toString();
+      const bKey = b.transactionId() + b.index().toString();
+      return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
+    });
+
+    // Build sorted mints from consumedMintHashes + body mint map
+    const mint = this.body.mint();
+    const sortedMints = this.consumedMintHashes.map((hash) => {
+      const assets = new Map<string, bigint>();
+      if (mint) {
+        for (const [assetId, amount] of mint.entries()) {
+          if (PolicyIdToHash(AssetId.getPolicyId(assetId)) === hash) {
+            assets.set(AssetId.getAssetName(assetId), amount);
+          }
+        }
+      }
+      return { policyId: hash, assets };
+    });
+
+    // Build sorted withdrawals from consumedWithdrawalHashes + body withdrawals
+    const withdrawals = this.body.withdrawals();
+    const sortedWithdrawals: Array<{
+      rewardAccount: RewardAccount;
+      amount: bigint;
+    }> = [];
+    if (withdrawals) {
+      const byHash = new Map<
+        string,
+        { rewardAccount: RewardAccount; amount: bigint }
+      >();
+      for (const [account, amount] of withdrawals.entries()) {
+        const hash =
+          Address.fromBech32(account).getProps().paymentPart?.hash;
+        if (hash) byHash.set(hash, { rewardAccount: account, amount });
+      }
+      for (const hash of this.consumedWithdrawalHashes) {
+        const entry = byHash.get(hash);
+        if (entry) sortedWithdrawals.push(entry);
+      }
+    }
+
+    const fee = this.fee;
+
+    // Resolve each deferred redeemer by mapping tag+index → identity → function
+    for (const redeemer of this.redeemers.values()) {
+      const idx = Number(redeemer.index());
+      let identity: string | undefined;
+
+      switch (redeemer.tag()) {
+        case RedeemerTag.Spend: {
+          const input = sortedSpendInputs[idx];
+          if (input) {
+            identity = `spend:${input.transactionId()}${input.index().toString()}`;
+          }
+          break;
+        }
+        case RedeemerTag.Mint: {
+          const hash = this.consumedMintHashes[idx];
+          if (hash) {
+            identity = `mint:${hash}`;
+          }
+          break;
+        }
+        case RedeemerTag.Reward: {
+          const hash = this.consumedWithdrawalHashes[idx];
+          if (hash) {
+            identity = `reward:${hash}`;
+          }
+          break;
+        }
+      }
+
+      if (identity) {
+        const deferredFn = this.deferredRedeemers.get(identity);
+        if (deferredFn) {
+          const context: RedeemerContext = {
+            sortedSpendInputs,
+            sortedMints,
+            sortedWithdrawals,
+            fee,
+            ownIndex: idx,
+          };
+          redeemer.setData(deferredFn(context));
+        }
+      }
+    }
   }
 
   /**
@@ -1745,6 +1861,11 @@ export class TxBuilder {
     while (iterations < 10) {
       this.trace(`Starting iteration ${iterations}`);
       iterations += 1;
+
+      // Resolve deferred redeemers before building witness set,
+      // so they have correct sorted indices for size estimation and script evaluation.
+      this.resolveDeferredRedeemers();
+
       // Gather all inputs from the transaction body.
       const inputs = [...this.body.inputs().values()];
 
@@ -2011,6 +2132,10 @@ export class TxBuilder {
     while (iterations < 10) {
       this.trace(`[forceComplete] Starting iteration ${iterations}`);
       iterations += 1;
+
+      // Resolve deferred redeemers before building witness set.
+      this.resolveDeferredRedeemers();
+
       const inputs = [...this.body.inputs().values()];
       const witnessSet = this.buildPlaceholderWitnessSet();
 
@@ -2645,7 +2770,7 @@ export class TxBuilder {
   addWithdrawal(
     address: RewardAccount,
     amount: bigint,
-    redeemer?: PlutusData,
+    redeemer?: PlutusData | DeferredRedeemer,
   ): TxBuilder {
     const withdrawalHash =
       Address.fromBech32(address).getProps().paymentPart?.hash;
@@ -2684,11 +2809,18 @@ export class TxBuilder {
         }
       }
       // Add the redeemer to the list of redeemers with execution units based on transaction parameters.
+      let redeemerData: PlutusData;
+      if (typeof redeemer === "function") {
+        this.deferredRedeemers.set(`reward:${withdrawalHash}`, redeemer);
+        redeemerData = PlutusData.newInteger(0n);
+      } else {
+        redeemerData = redeemer;
+      }
       redeemers.push(
         Redeemer.fromCore({
           index: insertIdx,
-          purpose: RedeemerPurpose["withdrawal"], // TODO: Confirm the purpose of the redeemer.
-          data: redeemer.toCore(),
+          purpose: RedeemerPurpose["withdrawal"],
+          data: redeemerData.toCore(),
           executionUnits: {
             memory: this.params.maxExecutionUnitsPerTransaction.memory,
             steps: this.params.maxExecutionUnitsPerTransaction.steps,
