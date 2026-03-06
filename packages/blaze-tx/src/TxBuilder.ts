@@ -2051,7 +2051,7 @@ export class TxBuilder {
           // Using large values to ensure the tx can be submitted for debugging
           const placeholderExUnits = ExUnits.fromCore({
             memory: 10_000_000,  // 10M memory units
-            steps: 10_000_000_000n,  // 10B CPU steps
+            steps: 10_000_000_000,  // 10B CPU steps
           });
           for (const redeemer of this.redeemers.values()) {
             redeemer.setExUnits(placeholderExUnits);
