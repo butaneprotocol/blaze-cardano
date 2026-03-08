@@ -1,4 +1,4 @@
-import type { DeBruijn, DefaultFunction, ExBudget, Term } from "../types";
+import type { Constant, DeBruijn, DefaultFunction, ExBudget, Term } from "../types";
 import {
   defaultFunctionArity,
   defaultFunctionForceCount,
@@ -14,13 +14,10 @@ import type { BuiltinCostModel } from "./costing";
 import { evalBuiltinCost } from "./costing";
 import { DEFAULT_BUILTIN_COSTS } from "./costs";
 import { computeArgSizes } from "./exmem";
+import { EvaluationError } from "./error";
+import { callBuiltinImpl } from "./builtins";
 
-export class EvaluationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "EvaluationError";
-  }
-}
+export { EvaluationError } from "./error";
 
 // --- Step kinds (indices into unbudgetedSteps) ---
 
@@ -296,24 +293,33 @@ export class CekMachine {
       }
 
       case "frame_cases": {
+        let tag: number;
+        let fields: Value[];
         if (value.tag === "constr") {
-          const tag = value.index;
-          if (tag < 0 || tag >= ctx.branches.length) {
-            throw new EvaluationError(
-              `case: constructor tag ${tag} out of range (${ctx.branches.length} branches)`,
-            );
-          }
-          const newCtx = transferArgStack(value.fields, ctx.ctx);
-          return {
-            tag: "compute",
-            ctx: newCtx,
-            env: ctx.env,
-            term: ctx.branches[tag]!,
-          };
+          tag = value.index;
+          fields = value.fields;
+        } else if (value.tag === "constant") {
+          ({ tag, fields } = constantToConstr(
+            value.value,
+            ctx.branches.length,
+          ));
+        } else {
+          throw new EvaluationError(
+            `case: expected constr or constant value, got ${value.tag}`,
+          );
         }
-        throw new EvaluationError(
-          `case: expected constr value, got ${value.tag}`,
-        );
+        if (tag < 0 || tag >= ctx.branches.length) {
+          throw new EvaluationError(
+            `case: constructor tag ${tag} out of range (${ctx.branches.length} branches)`,
+          );
+        }
+        const newCtx = transferArgStack(fields, ctx.ctx);
+        return {
+          tag: "compute",
+          ctx: newCtx,
+          env: ctx.env,
+          term: ctx.branches[tag]!,
+        };
       }
     }
   }
@@ -410,7 +416,7 @@ export class CekMachine {
       cpu: this.budget.cpu - cost.cpu,
       mem: this.budget.mem - cost.mem,
     };
-    throw new EvaluationError(`builtin not implemented: ${func}`);
+    return callBuiltinImpl(func, args);
   }
 }
 
@@ -420,3 +426,71 @@ type MachineState =
   | { tag: "compute"; ctx: Context; env: Env; term: Term<DeBruijn> }
   | { tag: "return"; ctx: Context; value: Value }
   | { tag: "done"; term: Term<DeBruijn> };
+
+// --- Constant case decomposition (UPLC 1.1.0) ---
+
+function constantToConstr(
+  c: Constant,
+  numBranches: number,
+): { tag: number; fields: Value[] } {
+  switch (c.type) {
+    case "integer": {
+      const n = c.value;
+      if (n < 0n) {
+        throw new EvaluationError("case: negative integer tag");
+      }
+      if (n > BigInt(Number.MAX_SAFE_INTEGER)) {
+        throw new EvaluationError("case: integer tag too large");
+      }
+      return { tag: Number(n), fields: [] };
+    }
+    case "bool":
+      if (numBranches > 2) {
+        throw new EvaluationError(
+          `case: bool expects at most 2 branches, got ${numBranches}`,
+        );
+      }
+      return { tag: c.value ? 1 : 0, fields: [] };
+    case "unit":
+      if (numBranches > 1) {
+        throw new EvaluationError(
+          `case: unit expects at most 1 branch, got ${numBranches}`,
+        );
+      }
+      return { tag: 0, fields: [] };
+    case "pair":
+      if (numBranches > 1) {
+        throw new EvaluationError(
+          `case: pair expects at most 1 branch, got ${numBranches}`,
+        );
+      }
+      return {
+        tag: 0,
+        fields: [
+          { tag: "constant", value: c.first },
+          { tag: "constant", value: c.second },
+        ],
+      };
+    case "list":
+      if (numBranches > 2) {
+        throw new EvaluationError(
+          `case: list expects at most 2 branches, got ${numBranches}`,
+        );
+      }
+      if (c.values.length === 0) {
+        return { tag: 1, fields: [] };
+      }
+      return {
+        tag: 0,
+        fields: [
+          { tag: "constant", value: c.values[0]! },
+          {
+            tag: "constant",
+            value: { type: "list", values: c.values.slice(1) },
+          },
+        ],
+      };
+    default:
+      throw new EvaluationError(`case: cannot case on constant of type ${c.type}`);
+  }
+}

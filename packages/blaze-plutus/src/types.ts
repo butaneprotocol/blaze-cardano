@@ -226,7 +226,7 @@ export interface ExBudget {
 }
 
 export function unlimitedBudget(): ExBudget {
-  return { cpu: 10_000_000_000_000_000, mem: 10_000_000_000_000_000 };
+  return { cpu: Number.MAX_SAFE_INTEGER, mem: Number.MAX_SAFE_INTEGER };
 }
 
 export function zeroBudget(): ExBudget {
