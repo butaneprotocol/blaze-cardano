@@ -6,7 +6,7 @@ import type {
   Term,
   Version,
   Constant,
-  BuiltinFunction,
+  DefaultFunction,
   PlutusData,
 } from "./types";
 
@@ -318,7 +318,7 @@ class Parser {
     this.advance();
     this.expect("rparen");
 
-    return { tag: "builtin", function: name as BuiltinFunction };
+    return { tag: "builtin", function: name as DefaultFunction };
   }
 
   private parseConstr(): Term<Name> {

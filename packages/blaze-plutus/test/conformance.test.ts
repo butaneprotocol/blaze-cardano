@@ -2,8 +2,9 @@ import * as fs from "fs";
 import * as path from "path";
 import { parse, ParseError } from "../src/parse";
 import { nameToDeBruijn } from "../src/convert";
-import { CekMachine } from "../src/machine";
+import { CekMachine } from "../src/cek";
 import { prettyPrint } from "../src/pretty";
+import { unlimitedBudget } from "../src/types";
 
 const CONFORMANCE_DIR = path.resolve(__dirname, "../conformance/tests");
 
@@ -82,10 +83,11 @@ function runTest(tc: TestCase): void {
   }
 
   // Step 3: Evaluate
-  const machine = new CekMachine();
+  const initialBudget = unlimitedBudget();
+  const machine = new CekMachine(initialBudget);
   let result;
   try {
-    result = machine.run(dProgram);
+    result = machine.run(dProgram.term);
   } catch (err) {
     if (expectEvalFailure) {
       return; // PASS — expected evaluation failure
@@ -108,7 +110,11 @@ function runTest(tc: TestCase): void {
   expect(prettyResult).toBe(prettyExpectedTerm);
 
   // Step 6: Compare budget
-  const consumed = machine.consumedBudget;
+  const remaining = machine.remainingBudget;
+  const consumed = {
+    cpu: initialBudget.cpu - remaining.cpu,
+    mem: initialBudget.mem - remaining.mem,
+  };
   const actualBudget = `({cpu: ${consumed.cpu}\n| mem: ${consumed.mem}})`;
   const trimmedExpectedBudget = budgetExpected.trim();
 
