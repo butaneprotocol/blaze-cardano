@@ -28,7 +28,11 @@ function discoverTests(dir: string): TestCase[] {
       const fullPath = path.join(currentDir, entry.name);
       if (entry.isDirectory()) {
         walk(fullPath);
-      } else if (entry.isFile() && entry.name.endsWith(".uplc") && !entry.name.endsWith(".expected")) {
+      } else if (
+        entry.isFile() &&
+        entry.name.endsWith(".uplc") &&
+        !entry.name.endsWith(".expected")
+      ) {
         const uplcPath = fullPath;
         const expectedPath = fullPath + ".expected";
         const budgetPath = fullPath + ".budget.expected";
@@ -65,7 +69,9 @@ function runTest(tc: TestCase): void {
   }
 
   if (expectParseError) {
-    throw new Error(`Expected parse error but parsing succeeded: ${tc.uplcPath}`);
+    throw new Error(
+      `Expected parse error but parsing succeeded: ${tc.uplcPath}`,
+    );
   }
 
   // Step 2: Convert name→DeBruijn
@@ -96,7 +102,9 @@ function runTest(tc: TestCase): void {
   }
 
   if (expectEvalFailure) {
-    throw new Error(`Expected evaluation failure but succeeded: ${tc.uplcPath}`);
+    throw new Error(
+      `Expected evaluation failure but succeeded: ${tc.uplcPath}`,
+    );
   }
 
   // Step 4: Parse and convert expected output

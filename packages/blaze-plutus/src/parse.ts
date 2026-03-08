@@ -871,21 +871,17 @@ function keyToBytes(key: string): Uint8Array {
   return bytes;
 }
 
-const MAX_CONSTR_TAG = 0xFFFF_FFFF_FFFF_FFFFn; // 2^64 - 1
+const MAX_CONSTR_TAG = 0xffff_ffff_ffff_ffffn; // 2^64 - 1
 
 function parseConstrTag(value: string, position: number): number {
   let n: bigint;
   try {
     n = BigInt(value);
   } catch {
-    throw new ParseError(
-      `invalid constr tag ${value} at position ${position}`,
-    );
+    throw new ParseError(`invalid constr tag ${value} at position ${position}`);
   }
   if (n < 0n || n > MAX_CONSTR_TAG) {
-    throw new ParseError(
-      `invalid constr tag ${value} at position ${position}`,
-    );
+    throw new ParseError(`invalid constr tag ${value} at position ${position}`);
   }
   return Number(n);
 }

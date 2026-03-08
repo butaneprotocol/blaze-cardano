@@ -126,11 +126,7 @@ export class CekMachine {
     this.unbudgetedSteps[STEP_COUNT] = 0;
   }
 
-  private compute(
-    ctx: Context,
-    env: Env,
-    term: Term<DeBruijn>,
-  ): MachineState {
+  private compute(ctx: Context, env: Env, term: Term<DeBruijn>): MachineState {
     switch (term.tag) {
       case "var": {
         this.stepAndMaybeSpend(STEP_VAR);
@@ -322,11 +318,7 @@ export class CekMachine {
     }
   }
 
-  private applyEvaluate(
-    ctx: Context,
-    fun: Value,
-    arg: Value,
-  ): MachineState {
+  private applyEvaluate(ctx: Context, fun: Value, arg: Value): MachineState {
     switch (fun.tag) {
       case "lambda":
         return {

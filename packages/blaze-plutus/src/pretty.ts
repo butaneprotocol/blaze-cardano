@@ -17,9 +17,7 @@ export function prettyPrint(term: Term<DeBruijn>): string {
       return `(constr ${term.index}${fields})`;
     }
     case "case": {
-      const branches = term.branches
-        .map((b) => ` ${prettyPrint(b)}`)
-        .join("");
+      const branches = term.branches.map((b) => ` ${prettyPrint(b)}`).join("");
       return `(case ${prettyPrint(term.constr)}${branches})`;
     }
     case "constant":
@@ -132,9 +130,7 @@ function printConstant(constant: Constant): string {
       return `data (${printPlutusData(constant.value)})`;
     case "list": {
       const elemType =
-        constant.values.length > 0
-          ? inferType(constant.values[0]!)
-          : "integer";
+        constant.values.length > 0 ? inferType(constant.values[0]!) : "integer";
       const items = constant.values
         .map((v) => printConstantInner(v))
         .join(", ");
