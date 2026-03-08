@@ -14,7 +14,7 @@
     },
     "@blaze-cardano/uplc#build:wasm": {},
     "test:e2e": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build"],
       "cache": false
     },
     "dev": {
@@ -25,10 +25,10 @@
       "cache": false
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["build"]
     },
     "api:prepare": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build"],
       "outputs": ["docs/api/**", "etc/**"]
     }
   }
