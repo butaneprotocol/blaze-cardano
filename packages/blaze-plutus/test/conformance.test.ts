@@ -37,8 +37,8 @@ function discoverTests(dir: string): TestCase[] {
         const expectedPath = fullPath + ".expected";
         const budgetPath = fullPath + ".budget.expected";
 
-        // Test name is the leaf folder name
-        const testName = path.basename(currentDir);
+        // Test name is the path from conformance/tests/ to the leaf folder
+        const testName = path.relative(dir, currentDir);
 
         tests.push({ name: testName, uplcPath, expectedPath, budgetPath });
       }
