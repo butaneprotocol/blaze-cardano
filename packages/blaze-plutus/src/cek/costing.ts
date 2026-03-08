@@ -114,7 +114,13 @@ export type TwoArgCost =
       constant: number;
       model: TwoVariableQuadratic;
     }
-  | { tag: "with_interaction"; c00: number; c10: number; c01: number; c11: number };
+  | {
+      tag: "with_interaction";
+      c00: number;
+      c10: number;
+      c01: number;
+      c11: number;
+    };
 
 function evalTwoArg(model: TwoArgCost, x: number, y: number): number {
   switch (model.tag) {
@@ -144,13 +150,9 @@ function evalTwoArg(model: TwoArgCost, x: number, y: number): number {
     case "quadratic_in_y":
       return quadraticCost(model.model, y);
     case "const_above_diagonal":
-      return x < y
-        ? model.constant
-        : twoVarQuadraticCost(model.model, x, y);
+      return x < y ? model.constant : twoVarQuadraticCost(model.model, x, y);
     case "const_below_diagonal":
-      return x > y
-        ? model.constant
-        : twoVarQuadraticCost(model.model, x, y);
+      return x > y ? model.constant : twoVarQuadraticCost(model.model, x, y);
     case "with_interaction":
       return satAdd(
         satAdd(model.c00, satMul(model.c10, x)),

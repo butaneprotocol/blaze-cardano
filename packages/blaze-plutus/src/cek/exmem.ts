@@ -117,8 +117,7 @@ export function valueMaxDepth(v: LedgerValue): number {
   for (const entry of v.entries) {
     if (entry.tokens.length > maxInner) maxInner = entry.tokens.length;
   }
-  const logOuter =
-    outerSize > 0 ? Math.floor(Math.log2(outerSize)) + 1 : 0;
+  const logOuter = outerSize > 0 ? Math.floor(Math.log2(outerSize)) + 1 : 0;
   const logInner = maxInner > 0 ? Math.floor(Math.log2(maxInner)) + 1 : 0;
   return logOuter + logInner;
 }
@@ -371,7 +370,11 @@ export function computeArgSizes(
 
     // writeBits: (bs, list, list)
     case "writeBits":
-      return [bsSize(args[0]!), listSizeFromArg(args[1]!), listSizeFromArg(args[2]!)];
+      return [
+        bsSize(args[0]!),
+        listSizeFromArg(args[1]!),
+        listSizeFromArg(args[2]!),
+      ];
 
     // expModInteger: (int, int, int)
     case "expModInteger":
@@ -383,7 +386,11 @@ export function computeArgSizes(
 
     // lookupCoin: (bs, bs, valueMaxDepth)
     case "lookupCoin":
-      return [bsSize(args[0]!), bsSize(args[1]!), valueMaxDepthFromArg(args[2]!)];
+      return [
+        bsSize(args[0]!),
+        bsSize(args[1]!),
+        valueMaxDepthFromArg(args[2]!),
+      ];
 
     // unionValue: (value, value)
     case "unionValue":

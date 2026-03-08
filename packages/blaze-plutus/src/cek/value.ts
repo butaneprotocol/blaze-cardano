@@ -2,12 +2,7 @@ import type { Constant, DeBruijn, DefaultFunction, Term } from "../types";
 
 // --- CEK Value types ---
 
-export type Value =
-  | VConstant
-  | VLambda
-  | VDelay
-  | VBuiltin
-  | VConstr;
+export type Value = VConstant | VLambda | VDelay | VBuiltin | VConstr;
 
 export interface VConstant {
   readonly tag: "constant";
