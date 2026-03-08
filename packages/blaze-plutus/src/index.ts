@@ -37,11 +37,11 @@ export type {
   PlutusDataInteger,
   PlutusDataByteString,
   ExBudget,
-  BuiltinFunction,
+  DefaultFunction,
 } from "./types";
 export { unlimitedBudget, zeroBudget } from "./types";
 
 export { parse, ParseError } from "./parse";
 export { nameToDeBruijn, ConvertError } from "./convert";
-export { CekMachine, EvaluationError } from "./machine";
+export { CekMachine, EvaluationError } from "./cek";
 export { prettyPrint } from "./pretty";
