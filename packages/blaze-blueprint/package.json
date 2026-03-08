@@ -2,7 +2,7 @@
   "name": "@blaze-cardano/blueprint",
   "description": "CIP-57 implementation and generator",
   "version": "0.8.2",
-  "bin": "./dist/cli.js",
+  "bin": "./dist/cli.cjs",
   "devDependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/data": "workspace:*",
@@ -24,10 +24,14 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    }
+      "require": "./dist/index.cjs"
+    },
+    "./cli": {
+      "import": "./dist/cli.mjs",
+      "require": "./dist/cli.cjs"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
@@ -39,12 +43,12 @@
     "api:extract": "api-extractor run --local --verbose",
     "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
     "api:prepare": "bun run build:types && bun run api:extract && bun run api:md",
-    "build": "tsdown src/index.ts src/cli.ts --format esm,cjs --dts",
+    "build": "tsdown",
     "build:types": "tsc -p tsconfig.docs.json",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "cli": "node dist/cli.js",
-    "dev": "tsdown src/index.ts --format esm,cjs --watch --dts",
-    "dev:cli": "tsdown src/index.ts src/cli.ts --format esm,cjs --watch --dts",
+    "cli": "node dist/cli.cjs",
+    "dev": "tsdown --watch",
+    "dev:cli": "tsdown --watch",
     "lint": "eslint .",
     "test": "bun run test:simple && bun run test:complex && bun run test:generic",
     "test:complex": "cd tests/complex && tsx blueprint_generate.ts && jest complex.test.ts",
@@ -52,5 +56,11 @@
     "test:simple": "cd tests/simple && tsx blueprint_generate.ts && jest simple.test.ts",
     "typecheck": "tsc --noEmit"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.cts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "inlinedDependencies": {
+    "commander": "12.1.0",
+    "@commander-js/extra-typings": "12.1.0"
+  }
 }

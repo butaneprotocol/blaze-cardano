@@ -22,10 +22,10 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    }
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
@@ -37,12 +37,14 @@
     "api:extract": "api-extractor run --local --verbose",
     "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
     "api:prepare": "bun run build:types && bun run api:extract && bun run api:md",
-    "build": "tsdown src/index.ts --format esm,cjs --dts",
+    "build": "tsdown",
     "build:types": "tsc -p tsconfig.docs.json",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "dev": "tsdown src/index.ts --format esm,cjs --watch --dts",
+    "dev": "tsdown --watch",
     "lint": "eslint \"src/**/*.ts*\"",
     "typecheck": "tsc --noEmit"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.cts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs"
 }

@@ -7,7 +7,7 @@
     },
     "lint": {},
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["build"]
     },
     "@blaze-cardano/uplc#build": {
       "dependsOn": ["build:wasm"]
