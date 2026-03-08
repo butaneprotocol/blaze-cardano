@@ -30,6 +30,8 @@
   "files": [
     "dist"
   ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
   "publishConfig": {
     "access": "public"
   },
@@ -44,7 +46,5 @@
     "lint": "eslint \"src/**/*.ts*\"",
     "typecheck": "tsc --noEmit"
   },
-  "types": "./dist/index.d.cts",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs"
+  "types": "./dist/index.d.cts"
 }

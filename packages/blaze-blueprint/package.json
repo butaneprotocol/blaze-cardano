@@ -36,6 +36,12 @@
   "files": [
     "dist"
   ],
+  "inlinedDependencies": {
+    "commander": "12.1.0",
+    "@commander-js/extra-typings": "12.1.0"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
   "publishConfig": {
     "access": "public"
   },
@@ -56,11 +62,5 @@
     "test:simple": "cd tests/simple && tsx blueprint_generate.ts && jest simple.test.ts",
     "typecheck": "tsc --noEmit"
   },
-  "types": "./dist/index.d.cts",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "inlinedDependencies": {
-    "commander": "12.1.0",
-    "@commander-js/extra-typings": "12.1.0"
-  }
+  "types": "./dist/index.d.cts"
 }

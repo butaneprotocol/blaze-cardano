@@ -32,6 +32,11 @@
   "files": [
     "dist"
   ],
+  "inlinedDependencies": {
+    "@sinclair/typebox": "0.34.48"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
   "publishConfig": {
     "access": "public"
   },
@@ -49,10 +54,5 @@
     "test:watch": "jest --watch",
     "typecheck": "tsc --noEmit"
   },
-  "types": "./dist/index.d.cts",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "inlinedDependencies": {
-    "@sinclair/typebox": "0.34.48"
-  }
+  "types": "./dist/index.d.cts"
 }
