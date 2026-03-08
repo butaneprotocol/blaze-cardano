@@ -1,4 +1,4 @@
-import type { DeBruijn, ExBudget, Term } from "../types";
+import type { DeBruijn, DefaultFunction, ExBudget, Term } from "../types";
 import {
   defaultFunctionArity,
   defaultFunctionForceCount,
@@ -10,6 +10,10 @@ import type { Env } from "./value";
 import type { Context } from "./context";
 import { transferArgStack } from "./context";
 import { dischargeValue } from "./discharge";
+import type { BuiltinCostModel } from "./costing";
+import { evalBuiltinCost } from "./costing";
+import { DEFAULT_BUILTIN_COSTS } from "./costs";
+import { computeArgSizes } from "./exmem";
 
 export class EvaluationError extends Error {
   constructor(message: string) {
@@ -52,14 +56,19 @@ const STARTUP_COST: ExBudget = { cpu: 100n, mem: 100n };
 export class CekMachine {
   private budget: ExBudget;
   private unbudgetedSteps: Uint32Array;
+  private builtinCosts: Record<DefaultFunction, BuiltinCostModel>;
 
-  constructor(initialBudget?: ExBudget) {
+  constructor(
+    initialBudget?: ExBudget,
+    builtinCosts?: Record<DefaultFunction, BuiltinCostModel>,
+  ) {
     const initial = initialBudget ?? unlimitedBudget();
     this.budget = {
       cpu: initial.cpu - STARTUP_COST.cpu,
       mem: initial.mem - STARTUP_COST.mem,
     };
     this.unbudgetedSteps = new Uint32Array(STEP_COUNT + 1);
+    this.builtinCosts = builtinCosts ?? DEFAULT_BUILTIN_COSTS;
   }
 
   get remainingBudget(): ExBudget {
@@ -401,11 +410,15 @@ export class CekMachine {
     }
   }
 
-  private callBuiltin(
-    _func: string,
-    _args: Value[],
-  ): Value {
-    throw new EvaluationError(`builtin not implemented: ${_func}`);
+  private callBuiltin(func: DefaultFunction, args: Value[]): Value {
+    const sizes = computeArgSizes(func, args);
+    const model = this.builtinCosts[func];
+    const cost = evalBuiltinCost(model, sizes);
+    this.budget = {
+      cpu: this.budget.cpu - BigInt(cost.cpu),
+      mem: this.budget.mem - BigInt(cost.mem),
+    };
+    throw new EvaluationError(`builtin not implemented: ${func}`);
   }
 }
 
