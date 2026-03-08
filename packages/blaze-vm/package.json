@@ -11,7 +11,7 @@
     "@blaze-cardano/jest-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
     "eslint": "^8.57.1",
-    "tsdown": "^0.15.9",
+    "tsdown": "^0.21.0",
     "typescript": "^5.7.3"
   },
   "exports": {
@@ -31,7 +31,7 @@
     "api:extract": "api-extractor run --local --verbose",
     "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
     "api:prepare": "bun run build:types && bun run api:extract && bun run api:md",
-    "build": "tsdown src/index.ts src/value.ts --format esm,cjs --dts --external rxjs",
+    "build": "tsdown src/index.ts --format esm,cjs --dts --external rxjs",
     "build:types": "tsc -p tsconfig.docs.json",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
     "dev": "tsdown src/index.ts --format esm,cjs --watch --dts --external rxjs",
