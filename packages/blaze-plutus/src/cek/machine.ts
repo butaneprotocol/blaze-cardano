@@ -40,18 +40,18 @@ const SLIPPAGE = 200;
 // --- Machine costs: ExBudget per step kind ---
 
 const MACHINE_COSTS: ExBudget[] = [
-  /* constant */ { cpu: 16000n, mem: 100n },
-  /* var      */ { cpu: 16000n, mem: 100n },
-  /* lambda   */ { cpu: 16000n, mem: 100n },
-  /* apply    */ { cpu: 16000n, mem: 100n },
-  /* delay    */ { cpu: 16000n, mem: 100n },
-  /* force    */ { cpu: 16000n, mem: 100n },
-  /* builtin  */ { cpu: 16000n, mem: 100n },
-  /* constr   */ { cpu: 16000n, mem: 100n },
-  /* case     */ { cpu: 16000n, mem: 100n },
+  /* constant */ { cpu: 16000, mem: 100 },
+  /* var      */ { cpu: 16000, mem: 100 },
+  /* lambda   */ { cpu: 16000, mem: 100 },
+  /* apply    */ { cpu: 16000, mem: 100 },
+  /* delay    */ { cpu: 16000, mem: 100 },
+  /* force    */ { cpu: 16000, mem: 100 },
+  /* builtin  */ { cpu: 16000, mem: 100 },
+  /* constr   */ { cpu: 16000, mem: 100 },
+  /* case     */ { cpu: 16000, mem: 100 },
 ];
 
-const STARTUP_COST: ExBudget = { cpu: 100n, mem: 100n };
+const STARTUP_COST: ExBudget = { cpu: 100, mem: 100 };
 
 export class CekMachine {
   private budget: ExBudget;
@@ -108,14 +108,14 @@ export class CekMachine {
   }
 
   private spendUnbudgetedSteps(): void {
-    let cpu = 0n;
-    let mem = 0n;
+    let cpu = 0;
+    let mem = 0;
     for (let i = 0; i < STEP_COUNT; i++) {
       const count = this.unbudgetedSteps[i]!;
       if (count > 0) {
         const cost = MACHINE_COSTS[i]!;
-        cpu += BigInt(count) * cost.cpu;
-        mem += BigInt(count) * cost.mem;
+        cpu += count * cost.cpu;
+        mem += count * cost.mem;
         this.unbudgetedSteps[i] = 0;
       }
     }
@@ -407,8 +407,8 @@ export class CekMachine {
     const model = this.builtinCosts[func];
     const cost = evalBuiltinCost(model, sizes);
     this.budget = {
-      cpu: this.budget.cpu - BigInt(cost.cpu),
-      mem: this.budget.mem - BigInt(cost.mem),
+      cpu: this.budget.cpu - cost.cpu,
+      mem: this.budget.mem - cost.mem,
     };
     throw new EvaluationError(`builtin not implemented: ${func}`);
   }

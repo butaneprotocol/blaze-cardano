@@ -221,16 +221,16 @@ export interface PlutusDataByteString {
 // --- ExBudget ---
 
 export interface ExBudget {
-  readonly cpu: bigint;
-  readonly mem: bigint;
+  readonly cpu: number;
+  readonly mem: number;
 }
 
 export function unlimitedBudget(): ExBudget {
-  return { cpu: BigInt("10000000000000000"), mem: BigInt("10000000000000000") };
+  return { cpu: 10_000_000_000_000_000, mem: 10_000_000_000_000_000 };
 }
 
 export function zeroBudget(): ExBudget {
-  return { cpu: 0n, mem: 0n };
+  return { cpu: 0, mem: 0 };
 }
 
 // --- DefaultFunction (string literal union) ---
