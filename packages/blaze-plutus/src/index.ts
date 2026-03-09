@@ -28,6 +28,7 @@ export type {
   Bls12_381G2ElementConstant,
   Bls12_381MlResultConstant,
   ValueConstant,
+  ArrayConstant,
   LedgerValue,
   CurrencyEntry,
   TokenEntry,

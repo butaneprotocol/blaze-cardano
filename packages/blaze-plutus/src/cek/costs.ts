@@ -738,17 +738,17 @@ export const DEFAULT_BUILTIN_COSTS: Record<DefaultFunction, BuiltinCostModel> =
       arity: "one",
       fun: {
         mem: { tag: "linear", model: { intercept: 2, slope: 22 } },
-        cpu: { tag: "linear", model: { intercept: 199604, slope: 39211 } },
+        cpu: { tag: "linear", model: { intercept: 1000, slope: 38159 } },
       },
     },
 
     unValueData: {
       arity: "one",
       fun: {
-        mem: { tag: "linear", model: { intercept: 11, slope: 1 } },
+        mem: { tag: "linear", model: { intercept: 1, slope: 11 } },
         cpu: {
           tag: "quadratic",
-          model: { coeff0: 1000, coeff1: 204904, coeff2: 1 },
+          model: { coeff0: 1000, coeff1: 95933, coeff2: 1 },
         },
       },
     },

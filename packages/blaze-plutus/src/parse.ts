@@ -453,10 +453,16 @@ class Parser {
       }
     }
 
-    if (this.is("list") || this.is("array")) {
+    if (this.is("list")) {
       this.advance();
       const elemType = this.parseTypeSpec();
       return { tag: "list", element: elemType };
+    }
+
+    if (this.is("array")) {
+      this.advance();
+      const elemType = this.parseTypeSpec();
+      return { tag: "array", element: elemType };
     }
 
     if (this.is("pair")) {
@@ -547,6 +553,19 @@ class Parser {
         }
         this.expect("rbracket");
         return { type: "list", itemType: typeSpec.element, values };
+      }
+
+      case "array": {
+        this.expect("lbracket");
+        const values: Constant[] = [];
+        while (!this.is("rbracket")) {
+          values.push(this.parseConstantValue(typeSpec.element));
+          if (!this.is("rbracket")) {
+            this.expect("comma");
+          }
+        }
+        this.expect("rbracket");
+        return { type: "array", itemType: typeSpec.element, values };
       }
 
       case "pair": {
