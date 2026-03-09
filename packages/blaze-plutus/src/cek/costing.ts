@@ -64,9 +64,15 @@ function twoVarQuadraticCost(
   const raw = satAdd(
     satAdd(
       satAdd(BigInt(q.coeff00), satMul(BigInt(q.coeff10), x)),
-      satAdd(satMul(BigInt(q.coeff01), y), satMul(BigInt(q.coeff20), satMul(x, x))),
+      satAdd(
+        satMul(BigInt(q.coeff01), y),
+        satMul(BigInt(q.coeff20), satMul(x, x)),
+      ),
     ),
-    satAdd(satMul(BigInt(q.coeff11), satMul(x, y)), satMul(BigInt(q.coeff02), satMul(y, y))),
+    satAdd(
+      satMul(BigInt(q.coeff11), satMul(x, y)),
+      satMul(BigInt(q.coeff02), satMul(y, y)),
+    ),
   );
   return bigMax(BigInt(q.minimum), raw);
 }
@@ -158,13 +164,20 @@ function evalTwoArg(model: TwoArgCost, x: bigint, y: bigint): bigint {
     case "quadratic_in_y":
       return quadraticCost(model.model, y);
     case "const_above_diagonal":
-      return x < y ? BigInt(model.constant) : twoVarQuadraticCost(model.model, x, y);
+      return x < y
+        ? BigInt(model.constant)
+        : twoVarQuadraticCost(model.model, x, y);
     case "const_below_diagonal":
-      return x > y ? BigInt(model.constant) : twoVarQuadraticCost(model.model, x, y);
+      return x > y
+        ? BigInt(model.constant)
+        : twoVarQuadraticCost(model.model, x, y);
     case "with_interaction":
       return satAdd(
         satAdd(BigInt(model.c00), satMul(BigInt(model.c10), x)),
-        satAdd(satMul(BigInt(model.c01), y), satMul(BigInt(model.c11), satMul(x, y))),
+        satAdd(
+          satMul(BigInt(model.c01), y),
+          satMul(BigInt(model.c11), satMul(x, y)),
+        ),
       );
   }
 }
@@ -209,7 +222,10 @@ function evalThreeArg(
     case "linear_in_y_and_z":
       return satAdd(
         BigInt(model.intercept),
-        satAdd(satMul(BigInt(model.slopeY), y), satMul(BigInt(model.slopeZ), z)),
+        satAdd(
+          satMul(BigInt(model.slopeY), y),
+          satMul(BigInt(model.slopeZ), z),
+        ),
       );
     case "linear_in_max_yz":
       return linearCost(model.model, bigMax(y, z));
@@ -217,7 +233,10 @@ function evalThreeArg(
       const yz = satMul(y, z);
       const base = satAdd(
         BigInt(model.coeff00),
-        satAdd(satMul(BigInt(model.coeff11), yz), satMul(BigInt(model.coeff12), satMul(yz, z))),
+        satAdd(
+          satMul(BigInt(model.coeff11), yz),
+          satMul(BigInt(model.coeff12), satMul(yz, z)),
+        ),
       );
       return x > z ? satAdd(base, base / 2n) : base;
     }

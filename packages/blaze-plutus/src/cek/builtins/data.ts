@@ -1,4 +1,9 @@
-import type { Constant, ConstantType, DefaultFunction, PlutusData } from "../../types";
+import type {
+  Constant,
+  ConstantType,
+  DefaultFunction,
+  PlutusData,
+} from "../../types";
 import type { Value } from "../value";
 import { EvaluationError } from "../error";
 import {
@@ -167,7 +172,9 @@ function bData(args: Value[]): Value {
 function unConstrData(args: Value[]): Value {
   const d = unwrapData(args[0]!);
   if (d.tag !== "constr") {
-    throw new EvaluationError(`unConstrData: expected constr data, got ${d.tag}`);
+    throw new EvaluationError(
+      `unConstrData: expected constr data, got ${d.tag}`,
+    );
   }
   return {
     tag: "constant",

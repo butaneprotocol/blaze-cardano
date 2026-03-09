@@ -44,7 +44,7 @@ function divideInteger(args: Value[]): Value {
   if (b === 0n) throw new EvaluationError("division by zero");
   const q = a / b;
   const r = a % b;
-  if (r !== 0n && (a < 0n) !== (b < 0n)) {
+  if (r !== 0n && a < 0n !== b < 0n) {
     return integerResult(q - 1n);
   }
   return integerResult(q);
@@ -55,7 +55,7 @@ function modInteger(args: Value[]): Value {
   const b = unwrapInteger(args[1]!);
   if (b === 0n) throw new EvaluationError("division by zero");
   const r = a % b;
-  if (r !== 0n && (a < 0n) !== (b < 0n)) {
+  if (r !== 0n && a < 0n !== b < 0n) {
     return integerResult(r + b);
   }
   return integerResult(r);
@@ -116,8 +116,7 @@ function modInverse(a: bigint, m: bigint): bigint {
   while (r !== 0n) {
     // floor division
     const q = old_r / r;
-    const adj_q =
-      old_r % r !== 0n && (old_r < 0n) !== (r < 0n) ? q - 1n : q;
+    const adj_q = old_r % r !== 0n && old_r < 0n !== r < 0n ? q - 1n : q;
 
     const temp_r = r;
     r = old_r - adj_q * r;
