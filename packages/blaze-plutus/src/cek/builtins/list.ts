@@ -54,9 +54,7 @@ function mkCons(args: Value[]): Value {
   // Type check: element type must match list's item type
   const elemType = typeOfConstant(elem);
   if (!constantTypeEquals(elemType, list.itemType)) {
-    throw new EvaluationError(
-      `mkCons: type mismatch`,
-    );
+    throw new EvaluationError(`mkCons: type mismatch`);
   }
 
   return {
@@ -71,7 +69,10 @@ function mkCons(args: Value[]): Value {
 
 function nullList(args: Value[]): Value {
   const list = unwrapListConstant(args[0]!);
-  return { tag: "constant", value: { type: "bool", value: list.values.length === 0 } };
+  return {
+    tag: "constant",
+    value: { type: "bool", value: list.values.length === 0 },
+  };
 }
 
 function chooseList(args: Value[]): Value {
@@ -82,7 +83,12 @@ function chooseList(args: Value[]): Value {
 function dropList(args: Value[]): Value {
   const n = unwrapInteger(args[0]!);
   const list = unwrapListConstant(args[1]!);
-  const drop = n < 0n ? 0 : n > BigInt(list.values.length) ? list.values.length : Number(n);
+  const drop =
+    n < 0n
+      ? 0
+      : n > BigInt(list.values.length)
+        ? list.values.length
+        : Number(n);
   return {
     tag: "constant",
     value: {

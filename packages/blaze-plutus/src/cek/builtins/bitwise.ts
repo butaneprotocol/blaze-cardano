@@ -295,9 +295,7 @@ function integerToByteString(args: Value[]): Value {
   const input = unwrapInteger(args[2]!);
 
   if (input < 0n) {
-    throw new EvaluationError(
-      "integerToByteString: negative integer",
-    );
+    throw new EvaluationError("integerToByteString: negative integer");
   }
   if (size < 0n) {
     throw new EvaluationError("integerToByteString: negative size");
@@ -323,7 +321,9 @@ function integerToByteString(args: Value[]): Value {
 
   if (requestedSize === 0) {
     // Unbounded — minimal representation
-    if (significantBytes.length > INTEGER_TO_BYTE_STRING_MAXIMUM_OUTPUT_LENGTH) {
+    if (
+      significantBytes.length > INTEGER_TO_BYTE_STRING_MAXIMUM_OUTPUT_LENGTH
+    ) {
       throw new EvaluationError(
         "integerToByteString: output exceeds 8192 bytes",
       );

@@ -1,4 +1,10 @@
-import type { Constant, DeBruijn, DefaultFunction, ExBudget, Term } from "../types";
+import type {
+  Constant,
+  DeBruijn,
+  DefaultFunction,
+  ExBudget,
+  Term,
+} from "../types";
 import {
   defaultFunctionArity,
   defaultFunctionForceCount,
@@ -486,11 +492,17 @@ function constantToConstr(
           { tag: "constant", value: c.values[0]! },
           {
             tag: "constant",
-            value: { type: "list", itemType: c.itemType, values: c.values.slice(1) },
+            value: {
+              type: "list",
+              itemType: c.itemType,
+              values: c.values.slice(1),
+            },
           },
         ],
       };
     default:
-      throw new EvaluationError(`case: cannot case on constant of type ${c.type}`);
+      throw new EvaluationError(
+        `case: cannot case on constant of type ${c.type}`,
+      );
   }
 }

@@ -1,4 +1,10 @@
-import type { Constant, ConstantType, DeBruijn, PlutusData, Term } from "./types";
+import type {
+  Constant,
+  ConstantType,
+  DeBruijn,
+  PlutusData,
+  Term,
+} from "./types";
 
 export function prettyPrint(term: Term<DeBruijn>): string {
   switch (term.tag) {

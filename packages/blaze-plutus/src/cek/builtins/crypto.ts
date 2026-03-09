@@ -114,9 +114,7 @@ function verifyEcdsaSecp256k1Signature(args: Value[]): Value {
   // Verify using compact 64-byte signature format
   try {
     const ecdsaSig = new secp256k1.Signature(r, s);
-    return boolResult(
-      secp256k1.verify(ecdsaSig.toBytes("compact"), msg, pk),
-    );
+    return boolResult(secp256k1.verify(ecdsaSig.toBytes("compact"), msg, pk));
   } catch {
     return boolResult(false);
   }
