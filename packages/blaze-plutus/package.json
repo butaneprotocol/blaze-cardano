@@ -2,6 +2,10 @@
   "name": "@blaze-cardano/plutus",
   "description": "Pure TypeScript UPLC implementation (parser, name→DeBruijn, CEK machine, budgeting)",
   "version": "0.0.1",
+  "dependencies": {
+    "@noble/curves": "^1.8.1",
+    "@noble/hashes": "^1.7.1"
+  },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/jest-config": "workspace:*",
@@ -37,9 +41,5 @@
     "test": "jest",
     "typecheck": "tsc --noEmit"
   },
-  "types": "./dist/index.d.cts",
-  "dependencies": {
-    "@noble/hashes": "^1.7.1",
-    "@noble/curves": "^1.8.1"
-  }
+  "types": "./dist/index.d.cts"
 }
