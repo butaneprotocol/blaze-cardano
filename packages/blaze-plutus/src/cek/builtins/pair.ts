@@ -1,8 +1,7 @@
 import type { DefaultFunction } from "../../types";
 import type { Value } from "../value";
 import { EvaluationError } from "../error";
-
-type BuiltinFn = (args: Value[]) => Value;
+import type { BuiltinFn } from "./helpers";
 
 // --- Builtins ---
 

@@ -1,6 +1,7 @@
 import type { Value } from "../value";
 import type { DefaultFunction } from "../../types";
 import { EvaluationError } from "../error";
+import type { BuiltinFn } from "./helpers";
 import * as arithmetic from "./arithmetic";
 import * as bytestring from "./bytestring";
 import * as string_ from "./string";
@@ -8,8 +9,7 @@ import * as data_ from "./data";
 import * as list_ from "./list";
 import * as pair_ from "./pair";
 import * as control_ from "./control";
-
-type BuiltinFn = (args: Value[]) => Value;
+import * as crypto_ from "./crypto";
 
 const BUILTINS: Partial<Record<DefaultFunction, BuiltinFn>> = {
   ...arithmetic.builtins,
@@ -19,6 +19,7 @@ const BUILTINS: Partial<Record<DefaultFunction, BuiltinFn>> = {
   ...list_.builtins,
   ...pair_.builtins,
   ...control_.builtins,
+  ...crypto_.builtins,
 };
 
 export function callBuiltinImpl(func: DefaultFunction, args: Value[]): Value {

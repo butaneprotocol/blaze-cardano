@@ -1,8 +1,12 @@
 import type { Constant, ConstantType, DefaultFunction, PlutusData } from "../../types";
 import type { Value } from "../value";
 import { EvaluationError } from "../error";
-
-type BuiltinFn = (args: Value[]) => Value;
+import {
+  type BuiltinFn,
+  unwrapByteString,
+  unwrapInteger,
+  boolResult,
+} from "./helpers";
 
 // --- Common type constants ---
 
@@ -14,7 +18,7 @@ const T_PAIR_DATA_DATA: ConstantType = {
   first: T_DATA,
   second: T_DATA,
 };
-// --- Unwrap helpers ---
+// --- Module-specific unwrap helpers ---
 
 function unwrapData(val: Value): PlutusData {
   if (val.tag === "constant" && val.value.type === "data") {
@@ -25,30 +29,12 @@ function unwrapData(val: Value): PlutusData {
   );
 }
 
-function unwrapInteger(val: Value): bigint {
-  if (val.tag === "constant" && val.value.type === "integer") {
-    return val.value.value;
-  }
-  throw new EvaluationError(
-    `expected integer constant, got ${val.tag === "constant" ? val.value.type : val.tag}`,
-  );
-}
-
 function unwrapList(val: Value): ReadonlyArray<Constant> {
   if (val.tag === "constant" && val.value.type === "list") {
     return val.value.values;
   }
   throw new EvaluationError(
     `expected list constant, got ${val.tag === "constant" ? val.value.type : val.tag}`,
-  );
-}
-
-function unwrapByteString(val: Value): Uint8Array {
-  if (val.tag === "constant" && val.value.type === "bytestring") {
-    return val.value.value;
-  }
-  throw new EvaluationError(
-    `expected bytestring constant, got ${val.tag === "constant" ? val.value.type : val.tag}`,
   );
 }
 
@@ -65,10 +51,6 @@ function unwrapUnit(val: Value): void {
 
 function dataResult(d: PlutusData): Value {
   return { tag: "constant", value: { type: "data", value: d } };
-}
-
-function boolResult(b: boolean): Value {
-  return { tag: "constant", value: { type: "bool", value: b } };
 }
 
 // --- Deep equality for PlutusData ---

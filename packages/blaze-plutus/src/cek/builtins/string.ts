@@ -1,10 +1,14 @@
 import type { DefaultFunction } from "../../types";
 import type { Value } from "../value";
 import { EvaluationError } from "../error";
+import {
+  type BuiltinFn,
+  unwrapByteString,
+  byteStringResult,
+  boolResult,
+} from "./helpers";
 
-type BuiltinFn = (args: Value[]) => Value;
-
-// --- Unwrap helpers ---
+// --- Module-specific helpers ---
 
 function unwrapString(val: Value): string {
   if (val.tag === "constant" && val.value.type === "string") {
@@ -15,27 +19,8 @@ function unwrapString(val: Value): string {
   );
 }
 
-function unwrapByteString(val: Value): Uint8Array {
-  if (val.tag === "constant" && val.value.type === "bytestring") {
-    return val.value.value;
-  }
-  throw new EvaluationError(
-    `expected bytestring constant, got ${val.tag === "constant" ? val.value.type : val.tag}`,
-  );
-}
-
-// --- Result builders ---
-
 function stringResult(s: string): Value {
   return { tag: "constant", value: { type: "string", value: s } };
-}
-
-function byteStringResult(bs: Uint8Array): Value {
-  return { tag: "constant", value: { type: "bytestring", value: bs } };
-}
-
-function boolResult(b: boolean): Value {
-  return { tag: "constant", value: { type: "bool", value: b } };
 }
 
 // --- Builtins ---
