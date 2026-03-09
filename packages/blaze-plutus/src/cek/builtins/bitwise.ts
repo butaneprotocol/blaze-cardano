@@ -81,11 +81,10 @@ function shiftByteString(args: Value[]): Value {
   const totalBits = bs.length * 8;
 
   // Clamp to safe range — if |shift| >= totalBits, result is all zeros
-  let shift: number;
   if (shiftAmount > BigInt(totalBits) || shiftAmount < BigInt(-totalBits)) {
     return byteStringResult(new Uint8Array(bs.length));
   }
-  shift = Number(shiftAmount);
+  const shift = Number(shiftAmount);
 
   if (shift === 0) {
     return byteStringResult(Uint8Array.from(bs));
@@ -133,7 +132,7 @@ function rotateByteString(args: Value[]): Value {
   const totalBits = BigInt(bs.length * 8);
 
   // Normalize rotation to [0, totalBits)
-  let normalized = ((rotAmount % totalBits) + totalBits) % totalBits;
+  const normalized = ((rotAmount % totalBits) + totalBits) % totalBits;
   if (normalized === 0n) return byteStringResult(Uint8Array.from(bs));
 
   const shift = Number(normalized);
