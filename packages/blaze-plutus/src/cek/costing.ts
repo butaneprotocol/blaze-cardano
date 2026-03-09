@@ -2,16 +2,24 @@
 // Implements the cost model algebra used to calculate execution budgets.
 // Ported from plutuz/src/cek/costing.zig.
 
-const MAX_SAFE = Number.MAX_SAFE_INTEGER;
+import { I64_MAX } from "../types";
 
-function satAdd(a: number, b: number): number {
+function satAdd(a: bigint, b: bigint): bigint {
   const r = a + b;
-  return r > MAX_SAFE ? MAX_SAFE : r;
+  return r > I64_MAX ? I64_MAX : r;
 }
 
-function satMul(a: number, b: number): number {
+function satMul(a: bigint, b: bigint): bigint {
   const r = a * b;
-  return r > MAX_SAFE ? MAX_SAFE : r;
+  return r > I64_MAX ? I64_MAX : r;
+}
+
+function bigMax(a: bigint, b: bigint): bigint {
+  return a > b ? a : b;
+}
+
+function bigMin(a: bigint, b: bigint): bigint {
+  return a < b ? a : b;
 }
 
 // --- Primitive cost functions ---
@@ -21,8 +29,8 @@ export interface LinearSize {
   readonly slope: number;
 }
 
-function linearCost(l: LinearSize, x: number): number {
-  return satAdd(l.intercept, satMul(l.slope, x));
+function linearCost(l: LinearSize, x: bigint): bigint {
+  return satAdd(BigInt(l.intercept), satMul(BigInt(l.slope), x));
 }
 
 export interface OneVariableQuadratic {
@@ -31,10 +39,10 @@ export interface OneVariableQuadratic {
   readonly coeff2: number;
 }
 
-function quadraticCost(q: OneVariableQuadratic, x: number): number {
+function quadraticCost(q: OneVariableQuadratic, x: bigint): bigint {
   return satAdd(
-    satAdd(q.coeff0, satMul(q.coeff1, x)),
-    satMul(q.coeff2, satMul(x, x)),
+    satAdd(BigInt(q.coeff0), satMul(BigInt(q.coeff1), x)),
+    satMul(BigInt(q.coeff2), satMul(x, x)),
   );
 }
 
@@ -50,17 +58,17 @@ export interface TwoVariableQuadratic {
 
 function twoVarQuadraticCost(
   q: TwoVariableQuadratic,
-  x: number,
-  y: number,
-): number {
+  x: bigint,
+  y: bigint,
+): bigint {
   const raw = satAdd(
     satAdd(
-      satAdd(q.coeff00, satMul(q.coeff10, x)),
-      satAdd(satMul(q.coeff01, y), satMul(q.coeff20, satMul(x, x))),
+      satAdd(BigInt(q.coeff00), satMul(BigInt(q.coeff10), x)),
+      satAdd(satMul(BigInt(q.coeff01), y), satMul(BigInt(q.coeff20), satMul(x, x))),
     ),
-    satAdd(satMul(q.coeff11, satMul(x, y)), satMul(q.coeff02, satMul(y, y))),
+    satAdd(satMul(BigInt(q.coeff11), satMul(x, y)), satMul(BigInt(q.coeff02), satMul(y, y))),
   );
-  return Math.max(q.minimum, raw);
+  return bigMax(BigInt(q.minimum), raw);
 }
 
 // --- One-argument cost models ---
@@ -70,10 +78,10 @@ export type OneArgCost =
   | { tag: "linear"; model: LinearSize }
   | { tag: "quadratic"; model: OneVariableQuadratic };
 
-function evalOneArg(model: OneArgCost, x: number): number {
+function evalOneArg(model: OneArgCost, x: bigint): bigint {
   switch (model.tag) {
     case "constant":
-      return model.value;
+      return BigInt(model.value);
     case "linear":
       return linearCost(model.model, x);
     case "quadratic":
@@ -122,10 +130,10 @@ export type TwoArgCost =
       c11: number;
     };
 
-function evalTwoArg(model: TwoArgCost, x: number, y: number): number {
+function evalTwoArg(model: TwoArgCost, x: bigint, y: bigint): bigint {
   switch (model.tag) {
     case "constant":
-      return model.value;
+      return BigInt(model.value);
     case "linear_in_x":
       return linearCost(model.model, x);
     case "linear_in_y":
@@ -133,30 +141,30 @@ function evalTwoArg(model: TwoArgCost, x: number, y: number): number {
     case "added_sizes":
       return linearCost(model.model, satAdd(x, y));
     case "subtracted_sizes":
-      return Math.max(
-        model.minimum,
-        satAdd(model.intercept, satMul(model.slope, x - y)),
+      return bigMax(
+        BigInt(model.minimum),
+        satAdd(BigInt(model.intercept), satMul(BigInt(model.slope), x - y)),
       );
     case "multiplied_sizes":
       return linearCost(model.model, satMul(x, y));
     case "min_size":
-      return linearCost(model.model, Math.min(x, y));
+      return linearCost(model.model, bigMin(x, y));
     case "max_size":
-      return linearCost(model.model, Math.max(x, y));
+      return linearCost(model.model, bigMax(x, y));
     case "linear_on_diagonal":
       return x === y
-        ? satAdd(model.intercept, satMul(model.slope, x))
-        : model.constant;
+        ? satAdd(BigInt(model.intercept), satMul(BigInt(model.slope), x))
+        : BigInt(model.constant);
     case "quadratic_in_y":
       return quadraticCost(model.model, y);
     case "const_above_diagonal":
-      return x < y ? model.constant : twoVarQuadraticCost(model.model, x, y);
+      return x < y ? BigInt(model.constant) : twoVarQuadraticCost(model.model, x, y);
     case "const_below_diagonal":
-      return x > y ? model.constant : twoVarQuadraticCost(model.model, x, y);
+      return x > y ? BigInt(model.constant) : twoVarQuadraticCost(model.model, x, y);
     case "with_interaction":
       return satAdd(
-        satAdd(model.c00, satMul(model.c10, x)),
-        satAdd(satMul(model.c01, y), satMul(model.c11, satMul(x, y))),
+        satAdd(BigInt(model.c00), satMul(BigInt(model.c10), x)),
+        satAdd(satMul(BigInt(model.c01), y), satMul(BigInt(model.c11), satMul(x, y))),
       );
   }
 }
@@ -181,13 +189,13 @@ export type ThreeArgCost =
 
 function evalThreeArg(
   model: ThreeArgCost,
-  x: number,
-  y: number,
-  z: number,
-): number {
+  x: bigint,
+  y: bigint,
+  z: bigint,
+): bigint {
   switch (model.tag) {
     case "constant":
-      return model.value;
+      return BigInt(model.value);
     case "linear_in_x":
       return linearCost(model.model, x);
     case "linear_in_y":
@@ -197,21 +205,21 @@ function evalThreeArg(
     case "quadratic_in_z":
       return quadraticCost(model.model, z);
     case "literal_in_y_or_linear_in_z":
-      return Math.max(y, linearCost(model.model, z));
+      return bigMax(y, linearCost(model.model, z));
     case "linear_in_y_and_z":
       return satAdd(
-        model.intercept,
-        satAdd(satMul(model.slopeY, y), satMul(model.slopeZ, z)),
+        BigInt(model.intercept),
+        satAdd(satMul(BigInt(model.slopeY), y), satMul(BigInt(model.slopeZ), z)),
       );
     case "linear_in_max_yz":
-      return linearCost(model.model, Math.max(y, z));
+      return linearCost(model.model, bigMax(y, z));
     case "exp_mod": {
       const yz = satMul(y, z);
       const base = satAdd(
-        model.coeff00,
-        satAdd(satMul(model.coeff11, yz), satMul(model.coeff12, satMul(yz, z))),
+        BigInt(model.coeff00),
+        satAdd(satMul(BigInt(model.coeff11), yz), satMul(BigInt(model.coeff12), satMul(yz, z))),
       );
-      return x > z ? satAdd(base, Math.floor(base / 2)) : base;
+      return x > z ? satAdd(base, base / 2n) : base;
     }
   }
 }
@@ -220,8 +228,8 @@ function evalThreeArg(
 
 export type SixArgCost = { tag: "constant"; value: number };
 
-function evalSixArg(model: SixArgCost): number {
-  return model.value;
+function evalSixArg(model: SixArgCost): bigint {
+  return BigInt(model.value);
 }
 
 // --- CostingFun and BuiltinCostModel ---
@@ -239,8 +247,8 @@ export type BuiltinCostModel =
 
 export function evalBuiltinCost(
   model: BuiltinCostModel,
-  sizes: number[],
-): { cpu: number; mem: number } {
+  sizes: bigint[],
+): { cpu: bigint; mem: bigint } {
   switch (model.arity) {
     case "one":
       return {

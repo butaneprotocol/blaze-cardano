@@ -14,6 +14,7 @@ export type {
   ConstrTerm,
   CaseTerm,
   ErrorTerm,
+  ConstantType,
   Constant,
   IntegerConstant,
   ByteStringConstant,
@@ -39,7 +40,12 @@ export type {
   ExBudget,
   DefaultFunction,
 } from "./types";
-export { unlimitedBudget, zeroBudget } from "./types";
+export {
+  unlimitedBudget,
+  zeroBudget,
+  typeOfConstant,
+  constantTypeEquals,
+} from "./types";
 
 export { parse, ParseError } from "./parse";
 export { nameToDeBruijn, ConvertError } from "./convert";
