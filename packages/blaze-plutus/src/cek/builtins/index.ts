@@ -10,6 +10,7 @@ import * as list_ from "./list";
 import * as pair_ from "./pair";
 import * as control_ from "./control";
 import * as crypto_ from "./crypto";
+import * as bitwise_ from "./bitwise";
 
 const BUILTINS: Partial<Record<DefaultFunction, BuiltinFn>> = {
   ...arithmetic.builtins,
@@ -20,6 +21,7 @@ const BUILTINS: Partial<Record<DefaultFunction, BuiltinFn>> = {
   ...pair_.builtins,
   ...control_.builtins,
   ...crypto_.builtins,
+  ...bitwise_.builtins,
 };
 
 export function callBuiltinImpl(func: DefaultFunction, args: Value[]): Value {

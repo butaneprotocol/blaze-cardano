@@ -14,6 +14,15 @@ export function unwrapByteString(val: Value): Uint8Array {
   );
 }
 
+export function unwrapBool(val: Value): boolean {
+  if (val.tag === "constant" && val.value.type === "bool") {
+    return val.value.value;
+  }
+  throw new EvaluationError(
+    `expected bool constant, got ${val.tag === "constant" ? val.value.type : val.tag}`,
+  );
+}
+
 export function unwrapInteger(val: Value): bigint {
   if (val.tag === "constant" && val.value.type === "integer") {
     return val.value.value;
