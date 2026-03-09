@@ -2,10 +2,9 @@ import type { Constant, DefaultFunction, ListConstant } from "../../types";
 import { typeOfConstant, constantTypeEquals } from "../../types";
 import type { Value } from "../value";
 import { EvaluationError } from "../error";
+import { type BuiltinFn, unwrapInteger } from "./helpers";
 
-type BuiltinFn = (args: Value[]) => Value;
-
-// --- Unwrap helpers ---
+// --- Module-specific unwrap helpers ---
 
 function unwrapListConstant(val: Value): ListConstant {
   if (val.tag === "constant" && val.value.type === "list") {
@@ -21,15 +20,6 @@ function unwrapConstant(val: Value): Constant {
     return val.value;
   }
   throw new EvaluationError(`expected constant, got ${val.tag}`);
-}
-
-function unwrapInteger(val: Value): bigint {
-  if (val.tag === "constant" && val.value.type === "integer") {
-    return val.value.value;
-  }
-  throw new EvaluationError(
-    `expected integer constant, got ${val.tag === "constant" ? val.value.type : val.tag}`,
-  );
 }
 
 // --- Builtins ---

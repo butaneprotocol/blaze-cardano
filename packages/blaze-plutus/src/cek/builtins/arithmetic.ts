@@ -1,25 +1,12 @@
 import type { DefaultFunction } from "../../types";
 import type { Value } from "../value";
 import { EvaluationError } from "../error";
-
-type BuiltinFn = (args: Value[]) => Value;
-
-function unwrapInteger(val: Value): bigint {
-  if (val.tag === "constant" && val.value.type === "integer") {
-    return val.value.value;
-  }
-  throw new EvaluationError(
-    `expected integer constant, got ${val.tag === "constant" ? val.value.type : val.tag}`,
-  );
-}
-
-function integerResult(n: bigint): Value {
-  return { tag: "constant", value: { type: "integer", value: n } };
-}
-
-function boolResult(b: boolean): Value {
-  return { tag: "constant", value: { type: "bool", value: b } };
-}
+import {
+  type BuiltinFn,
+  unwrapInteger,
+  integerResult,
+  boolResult,
+} from "./helpers";
 
 // --- Simple arithmetic ---
 

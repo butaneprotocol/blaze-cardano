@@ -156,6 +156,10 @@
     "packages/blaze-plutus": {
       "name": "@blaze-cardano/plutus",
       "version": "0.0.1",
+      "dependencies": {
+        "@noble/curves": "^1.8.1",
+        "@noble/hashes": "^1.7.1",
+      },
       "devDependencies": {
         "@blaze-cardano/eslint-config": "workspace:*",
         "@blaze-cardano/jest-config": "workspace:*",
