@@ -9,6 +9,7 @@ import {
   defaultFunctionArity,
   defaultFunctionForceCount,
   unlimitedBudget,
+  I64_MAX,
 } from "../types";
 import type { Value } from "./value";
 import { extendEnv, lookupEnv } from "./value";
@@ -57,7 +58,10 @@ const MACHINE_COSTS: ExBudget[] = [
 const STARTUP_COST: ExBudget = { cpu: 100n, mem: 100n };
 
 export class CekMachine {
+  private static readonly I64_MIN = -9223372036854775808n;
+
   private budget: ExBudget;
+  private restricting: boolean;
   private unbudgetedSteps: Uint32Array;
   private builtinCosts: Record<DefaultFunction, BuiltinCostModel>;
 
@@ -66,10 +70,8 @@ export class CekMachine {
     builtinCosts?: Record<DefaultFunction, BuiltinCostModel>,
   ) {
     const initial = initialBudget ?? unlimitedBudget();
-    this.budget = {
-      cpu: initial.cpu - STARTUP_COST.cpu,
-      mem: initial.mem - STARTUP_COST.mem,
-    };
+    this.budget = { cpu: initial.cpu, mem: initial.mem };
+    this.restricting = initial.cpu !== I64_MAX || initial.mem !== I64_MAX;
     this.unbudgetedSteps = new Uint32Array(STEP_COUNT + 1);
     this.builtinCosts = builtinCosts ?? DEFAULT_BUILTIN_COSTS;
   }
@@ -80,6 +82,7 @@ export class CekMachine {
   }
 
   run(term: Term<DeBruijn>): Term<DeBruijn> {
+    this.spendBudget(STARTUP_COST);
     let state: MachineState = {
       tag: "compute",
       ctx: { tag: "no_frame" },
@@ -110,6 +113,17 @@ export class CekMachine {
     }
   }
 
+  private spendBudget(cost: ExBudget): void {
+    let cpu = this.budget.cpu - cost.cpu;
+    let mem = this.budget.mem - cost.mem;
+    if (cpu < CekMachine.I64_MIN) cpu = CekMachine.I64_MIN;
+    if (mem < CekMachine.I64_MIN) mem = CekMachine.I64_MIN;
+    this.budget = { cpu, mem };
+    if (this.restricting && (cpu < 0n || mem < 0n)) {
+      throw new EvaluationError("out of budget");
+    }
+  }
+
   private spendUnbudgetedSteps(): void {
     let cpu = 0n;
     let mem = 0n;
@@ -122,11 +136,8 @@ export class CekMachine {
         this.unbudgetedSteps[i] = 0;
       }
     }
-    this.budget = {
-      cpu: this.budget.cpu - cpu,
-      mem: this.budget.mem - mem,
-    };
     this.unbudgetedSteps[STEP_COUNT] = 0;
+    this.spendBudget({ cpu, mem });
   }
 
   private compute(ctx: Context, env: Env, term: Term<DeBruijn>): MachineState {
@@ -418,10 +429,7 @@ export class CekMachine {
     const sizes = computeArgSizes(func, args);
     const model = this.builtinCosts[func];
     const cost = evalBuiltinCost(model, sizes);
-    this.budget = {
-      cpu: this.budget.cpu - cost.cpu,
-      mem: this.budget.mem - cost.mem,
-    };
+    this.spendBudget(cost);
     return callBuiltinImpl(func, args);
   }
 }
