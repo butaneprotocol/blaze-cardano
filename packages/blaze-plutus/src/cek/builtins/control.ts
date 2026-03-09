@@ -1,18 +1,12 @@
 import type { DefaultFunction } from "../../types";
 import type { Value } from "../value";
 import { EvaluationError } from "../error";
-import type { BuiltinFn } from "./helpers";
+import { type BuiltinFn, unwrapBool } from "./helpers";
 
 // --- Builtins ---
 
 function ifThenElse(args: Value[]): Value {
-  const cond = args[0]!;
-  if (cond.tag !== "constant" || cond.value.type !== "bool") {
-    throw new EvaluationError(
-      `ifThenElse: expected bool constant, got ${cond.tag === "constant" ? cond.value.type : cond.tag}`,
-    );
-  }
-  return cond.value.value ? args[1]! : args[2]!;
+  return unwrapBool(args[0]!) ? args[1]! : args[2]!;
 }
 
 function chooseUnit(args: Value[]): Value {

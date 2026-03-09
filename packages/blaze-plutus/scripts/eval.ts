@@ -23,8 +23,8 @@ const result = machine.run(dProgram.term);
 const remaining = machine.remainingBudget;
 const output = {
   result: prettyPrint(result),
-  cpu: initialBudget.cpu - remaining.cpu,
-  mem: initialBudget.mem - remaining.mem,
+  cpu: (initialBudget.cpu - remaining.cpu).toString(),
+  mem: (initialBudget.mem - remaining.mem).toString(),
 };
 
 console.log(JSON.stringify(output, null, 2));
