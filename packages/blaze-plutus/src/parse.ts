@@ -1,3 +1,4 @@
+import { bls12_381 } from "@noble/curves/bls12-381";
 import { Lexer, ParseError } from "./lexer";
 import type { Token, TokenType } from "./lexer";
 import type {
@@ -596,6 +597,18 @@ class Parser {
             `bls12_381_G1_element must be 48 bytes, got ${bytes.length}`,
           );
         }
+        if ((bytes[0]! & 0x60) === 0x60) {
+          throw new ParseError(
+            `invalid bls12_381_G1_element at position ${this.previous.position}`,
+          );
+        }
+        try {
+          bls12_381.G1.ProjectivePoint.fromHex(bytes);
+        } catch {
+          throw new ParseError(
+            `invalid bls12_381_G1_element at position ${this.previous.position}`,
+          );
+        }
         return { type: "bls12_381_g1_element", value: bytes };
       }
 
@@ -610,6 +623,13 @@ class Parser {
         if (bytes.length !== 96) {
           throw new ParseError(
             `bls12_381_G2_element must be 96 bytes, got ${bytes.length}`,
+          );
+        }
+        try {
+          bls12_381.G2.ProjectivePoint.fromHex(bytes);
+        } catch {
+          throw new ParseError(
+            `invalid bls12_381_G2_element at position ${this.previous.position}`,
           );
         }
         return { type: "bls12_381_g2_element", value: bytes };
