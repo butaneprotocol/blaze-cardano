@@ -11,7 +11,9 @@ import {
   unwrapByteString,
   unwrapInteger,
   boolResult,
+  byteStringResult,
 } from "./helpers";
+import { encodePlutusData } from "../../cbor";
 
 // --- Common type constants ---
 
@@ -309,6 +311,14 @@ function mkNilPairData(args: Value[]): Value {
   };
 }
 
+// --- serialiseData ---
+
+function serialiseData(args: Value[]): Value {
+  const data = unwrapData(args[0]!);
+  const encoded = encodePlutusData(data);
+  return byteStringResult(encoded);
+}
+
 // --- Export dispatch record ---
 
 export const builtins: Partial<Record<DefaultFunction, BuiltinFn>> = {
@@ -327,4 +337,5 @@ export const builtins: Partial<Record<DefaultFunction, BuiltinFn>> = {
   mkPairData,
   mkNilData,
   mkNilPairData,
+  serialiseData,
 };

@@ -15,7 +15,8 @@
     "jest": "^29.7.0",
     "ts-jest": "^29.4.1",
     "tsdown": "^0.21.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
   },
   "exports": {
     ".": {
@@ -38,6 +39,7 @@
     "dev": "tsdown --watch",
     "download:conformance": "bash scripts/download-conformance.sh",
     "lint": "eslint .",
+    "bench": "vitest bench --run",
     "test": "jest",
     "typecheck": "tsc --noEmit"
   },

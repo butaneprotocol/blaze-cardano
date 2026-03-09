@@ -52,3 +52,5 @@ export { parse, ParseError } from "./parse";
 export { nameToDeBruijn, ConvertError } from "./convert";
 export { CekMachine, EvaluationError } from "./cek";
 export { prettyPrint } from "./pretty";
+export { decodeFlatDeBruijn, encodeFlatDeBruijn } from "./flat";
+export { encodePlutusData, decodePlutusData } from "./cbor";
