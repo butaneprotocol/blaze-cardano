@@ -37,18 +37,18 @@ const SLIPPAGE = 200;
 // --- Machine costs: ExBudget per step kind ---
 
 const MACHINE_COSTS: ExBudget[] = [
-  /* constant */ { cpu: 16000, mem: 100 },
-  /* var      */ { cpu: 16000, mem: 100 },
-  /* lambda   */ { cpu: 16000, mem: 100 },
-  /* apply    */ { cpu: 16000, mem: 100 },
-  /* delay    */ { cpu: 16000, mem: 100 },
-  /* force    */ { cpu: 16000, mem: 100 },
-  /* builtin  */ { cpu: 16000, mem: 100 },
-  /* constr   */ { cpu: 16000, mem: 100 },
-  /* case     */ { cpu: 16000, mem: 100 },
+  /* constant */ { cpu: 16000n, mem: 100n },
+  /* var      */ { cpu: 16000n, mem: 100n },
+  /* lambda   */ { cpu: 16000n, mem: 100n },
+  /* apply    */ { cpu: 16000n, mem: 100n },
+  /* delay    */ { cpu: 16000n, mem: 100n },
+  /* force    */ { cpu: 16000n, mem: 100n },
+  /* builtin  */ { cpu: 16000n, mem: 100n },
+  /* constr   */ { cpu: 16000n, mem: 100n },
+  /* case     */ { cpu: 16000n, mem: 100n },
 ];
 
-const STARTUP_COST: ExBudget = { cpu: 100, mem: 100 };
+const STARTUP_COST: ExBudget = { cpu: 100n, mem: 100n };
 
 export class CekMachine {
   private budget: ExBudget;
@@ -105,14 +105,14 @@ export class CekMachine {
   }
 
   private spendUnbudgetedSteps(): void {
-    let cpu = 0;
-    let mem = 0;
+    let cpu = 0n;
+    let mem = 0n;
     for (let i = 0; i < STEP_COUNT; i++) {
       const count = this.unbudgetedSteps[i]!;
       if (count > 0) {
         const cost = MACHINE_COSTS[i]!;
-        cpu += count * cost.cpu;
-        mem += count * cost.mem;
+        cpu += BigInt(count) * cost.cpu;
+        mem += BigInt(count) * cost.mem;
         this.unbudgetedSteps[i] = 0;
       }
     }
@@ -486,7 +486,7 @@ function constantToConstr(
           { tag: "constant", value: c.values[0]! },
           {
             tag: "constant",
-            value: { type: "list", values: c.values.slice(1) },
+            value: { type: "list", itemType: c.itemType, values: c.values.slice(1) },
           },
         ],
       };

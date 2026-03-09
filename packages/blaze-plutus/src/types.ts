@@ -91,6 +91,26 @@ export interface ErrorTerm {
   readonly tag: "error";
 }
 
+// --- Constant type annotation (recursive) ---
+
+export type ConstantType =
+  | { readonly tag: "integer" }
+  | { readonly tag: "bytestring" }
+  | { readonly tag: "string" }
+  | { readonly tag: "bool" }
+  | { readonly tag: "unit" }
+  | { readonly tag: "data" }
+  | { readonly tag: "bls12_381_G1_element" }
+  | { readonly tag: "bls12_381_G2_element" }
+  | { readonly tag: "bls12_381_ml_result" }
+  | { readonly tag: "value" }
+  | { readonly tag: "list"; readonly element: ConstantType }
+  | {
+      readonly tag: "pair";
+      readonly first: ConstantType;
+      readonly second: ConstantType;
+    };
+
 // --- Constant (discriminated union) ---
 
 export type Constant =
@@ -133,11 +153,14 @@ export interface UnitConstant {
 
 export interface ListConstant {
   readonly type: "list";
+  readonly itemType: ConstantType;
   readonly values: ReadonlyArray<Constant>;
 }
 
 export interface PairConstant {
   readonly type: "pair";
+  readonly fstType: ConstantType;
+  readonly sndType: ConstantType;
   readonly first: Constant;
   readonly second: Constant;
 }
@@ -218,19 +241,66 @@ export interface PlutusDataByteString {
   readonly value: Uint8Array;
 }
 
+// --- ConstantType helpers ---
+
+export function typeOfConstant(c: Constant): ConstantType {
+  switch (c.type) {
+    case "integer":
+      return { tag: "integer" };
+    case "bytestring":
+      return { tag: "bytestring" };
+    case "string":
+      return { tag: "string" };
+    case "bool":
+      return { tag: "bool" };
+    case "unit":
+      return { tag: "unit" };
+    case "data":
+      return { tag: "data" };
+    case "bls12_381_g1_element":
+      return { tag: "bls12_381_G1_element" };
+    case "bls12_381_g2_element":
+      return { tag: "bls12_381_G2_element" };
+    case "bls12_381_ml_result":
+      return { tag: "bls12_381_ml_result" };
+    case "value":
+      return { tag: "value" };
+    case "list":
+      return { tag: "list", element: c.itemType };
+    case "pair":
+      return { tag: "pair", first: c.fstType, second: c.sndType };
+  }
+}
+
+export function constantTypeEquals(a: ConstantType, b: ConstantType): boolean {
+  if (a.tag !== b.tag) return false;
+  if (a.tag === "list" && b.tag === "list") {
+    return constantTypeEquals(a.element, b.element);
+  }
+  if (a.tag === "pair" && b.tag === "pair") {
+    return (
+      constantTypeEquals(a.first, b.first) &&
+      constantTypeEquals(a.second, b.second)
+    );
+  }
+  return true;
+}
+
 // --- ExBudget ---
 
+export const I64_MAX = 9223372036854775807n;
+
 export interface ExBudget {
-  readonly cpu: number;
-  readonly mem: number;
+  readonly cpu: bigint;
+  readonly mem: bigint;
 }
 
 export function unlimitedBudget(): ExBudget {
-  return { cpu: Number.MAX_SAFE_INTEGER, mem: Number.MAX_SAFE_INTEGER };
+  return { cpu: I64_MAX, mem: I64_MAX };
 }
 
 export function zeroBudget(): ExBudget {
-  return { cpu: 0, mem: 0 };
+  return { cpu: 0n, mem: 0n };
 }
 
 // --- DefaultFunction (string literal union) ---
@@ -481,12 +551,12 @@ const DEFAULT_FUNCTION_FORCE_COUNTS: Record<DefaultFunction, number> = {
   trace: 1,
   fstPair: 2,
   sndPair: 2,
-  chooseList: 1,
+  chooseList: 2,
   mkCons: 1,
   headList: 1,
   tailList: 1,
   nullList: 1,
-  chooseData: 0,
+  chooseData: 1,
   constrData: 0,
   mapData: 0,
   listData: 0,

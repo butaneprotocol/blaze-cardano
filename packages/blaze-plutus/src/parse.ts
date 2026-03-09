@@ -6,6 +6,7 @@ import type {
   Term,
   Version,
   Constant,
+  ConstantType,
   DefaultFunction,
   PlutusData,
 } from "./types";
@@ -116,20 +117,8 @@ const BUILTIN_FUNCTIONS = new Set<string>([
   "scaleValue",
 ]);
 
-// Internal type representation for constant type annotations
-type TypeSpec =
-  | { tag: "integer" }
-  | { tag: "bytestring" }
-  | { tag: "string" }
-  | { tag: "bool" }
-  | { tag: "unit" }
-  | { tag: "data" }
-  | { tag: "bls12_381_G1_element" }
-  | { tag: "bls12_381_G2_element" }
-  | { tag: "bls12_381_ml_result" }
-  | { tag: "value" }
-  | { tag: "list"; element: TypeSpec }
-  | { tag: "pair"; first: TypeSpec; second: TypeSpec };
+// TypeSpec is ConstantType from types.ts
+type TypeSpec = ConstantType;
 
 // 2^127
 const VALUE_LIMIT = 1n << 127n;
@@ -557,7 +546,7 @@ class Parser {
           }
         }
         this.expect("rbracket");
-        return { type: "list", values };
+        return { type: "list", itemType: typeSpec.element, values };
       }
 
       case "pair": {
@@ -566,7 +555,13 @@ class Parser {
         this.expect("comma");
         const second = this.parseConstantValue(typeSpec.second);
         this.expect("rparen");
-        return { type: "pair", first, second };
+        return {
+          type: "pair",
+          fstType: typeSpec.first,
+          sndType: typeSpec.second,
+          first,
+          second,
+        };
       }
 
       case "bls12_381_G1_element": {

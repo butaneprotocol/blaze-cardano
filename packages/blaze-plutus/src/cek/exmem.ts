@@ -3,9 +3,8 @@
 // Ported from plutuz/src/cek/ex_mem.zig and builtins/builtins.zig:computeArgSizes.
 
 import type { DefaultFunction, LedgerValue, PlutusData } from "../types";
+import { I64_MAX } from "../types";
 import type { Value } from "./value";
-
-const MAX_SAFE = Number.MAX_SAFE_INTEGER;
 
 // --- Primitive size functions ---
 
@@ -73,10 +72,10 @@ export function sizeExMem(value: number): number {
   return Math.floor((value - 1) / 8) + 1;
 }
 
-export function integerCostedLiterally(n: bigint): number {
+export function integerCostedLiterally(n: bigint): bigint {
   const abs = n < 0n ? -n : n;
-  if (abs > BigInt(MAX_SAFE)) return MAX_SAFE;
-  return Number(abs);
+  if (abs > I64_MAX) return I64_MAX;
+  return abs;
 }
 
 export function dataNodeCount(d: PlutusData): number {
@@ -129,76 +128,76 @@ export const _ML_RESULT_EX_MEM = 72;
 
 // --- Size extraction helpers ---
 
-function intSize(val: Value): number {
+function intSize(val: Value): bigint {
   if (val.tag === "constant" && val.value.type === "integer") {
-    return integerExMem(val.value.value);
+    return BigInt(integerExMem(val.value.value));
   }
-  return 1;
+  return 1n;
 }
 
-function bsSize(val: Value): number {
+function bsSize(val: Value): bigint {
   if (val.tag === "constant" && val.value.type === "bytestring") {
-    return byteStringExMem(val.value.value);
+    return BigInt(byteStringExMem(val.value.value));
   }
-  return 0;
+  return 0n;
 }
 
-function strSize(val: Value): number {
+function strSize(val: Value): bigint {
   if (val.tag === "constant" && val.value.type === "string") {
-    return stringExMem(val.value.value);
+    return BigInt(stringExMem(val.value.value));
   }
-  return 0;
+  return 0n;
 }
 
-function dataSize(val: Value): number {
+function dataSize(val: Value): bigint {
   if (val.tag === "constant" && val.value.type === "data") {
-    return dataExMem(val.value.value);
+    return BigInt(dataExMem(val.value.value));
   }
-  return 4;
+  return 4n;
 }
 
-function valueSize(val: Value): number {
+function valueSize(val: Value): bigint {
   if (val.tag === "constant" && val.value.type === "value") {
-    return valueSizeExMem(val.value.value);
+    return BigInt(valueSizeExMem(val.value.value));
   }
-  return 0;
+  return 0n;
 }
 
-function listSizeFromArg(val: Value): number {
+function listSizeFromArg(val: Value): bigint {
   if (val.tag === "constant" && val.value.type === "list") {
-    return val.value.values.length;
+    return BigInt(val.value.values.length);
   }
-  return 0;
+  return 0n;
 }
 
-function sizeExMemFromArg(val: Value): number {
+function sizeExMemFromArg(val: Value): bigint {
   if (val.tag === "constant" && val.value.type === "integer") {
     const n = val.value.value;
-    if (n > BigInt(MAX_SAFE) || n < BigInt(-MAX_SAFE)) return 0;
-    return sizeExMem(Number(n));
+    if (n > I64_MAX || n < -I64_MAX) return 0n;
+    return BigInt(sizeExMem(Number(n)));
   }
-  return 0;
+  return 0n;
 }
 
-function intLiteralValue(val: Value): number {
+function intLiteralValue(val: Value): bigint {
   if (val.tag === "constant" && val.value.type === "integer") {
     return integerCostedLiterally(val.value.value);
   }
-  return 0;
+  return 0n;
 }
 
-function valueMaxDepthFromArg(val: Value): number {
+function valueMaxDepthFromArg(val: Value): bigint {
   if (val.tag === "constant" && val.value.type === "value") {
-    return valueMaxDepth(val.value.value);
+    return BigInt(valueMaxDepth(val.value.value));
   }
-  return 0;
+  return 0n;
 }
 
-function dataNodeCountFromArg(val: Value): number {
+function dataNodeCountFromArg(val: Value): bigint {
   if (val.tag === "constant" && val.value.type === "data") {
-    return dataNodeCount(val.value.value);
+    return BigInt(dataNodeCount(val.value.value));
   }
-  return 0;
+  return 0n;
 }
 
 // --- computeArgSizes: main dispatch ---
@@ -206,7 +205,7 @@ function dataNodeCountFromArg(val: Value): number {
 export function computeArgSizes(
   func: DefaultFunction,
   args: Value[],
-): number[] {
+): bigint[] {
   switch (func) {
     // 2-arg integer operations: (int, int)
     case "addInteger":
@@ -219,18 +218,18 @@ export function computeArgSizes(
     case "equalsInteger":
     case "lessThanInteger":
     case "lessThanEqualsInteger":
-      return [intSize(args[0]!), intSize(args[1]!), 0];
+      return [intSize(args[0]!), intSize(args[1]!), 0n];
 
     // 2-arg bytestring operations: (bs, bs)
     case "appendByteString":
     case "equalsByteString":
     case "lessThanByteString":
     case "lessThanEqualsByteString":
-      return [bsSize(args[0]!), bsSize(args[1]!), 0];
+      return [bsSize(args[0]!), bsSize(args[1]!), 0n];
 
     // (int, bs)
     case "consByteString":
-      return [intSize(args[0]!), bsSize(args[1]!), 0];
+      return [intSize(args[0]!), bsSize(args[1]!), 0n];
 
     // (int, int, bs) - slice
     case "sliceByteString":
@@ -247,25 +246,25 @@ export function computeArgSizes(
     case "complementByteString":
     case "countSetBits":
     case "findFirstSetBit":
-      return [bsSize(args[0]!), 0, 0];
+      return [bsSize(args[0]!), 0n, 0n];
 
     // (bs, int)
     case "indexByteString":
     case "readBit":
-      return [bsSize(args[0]!), intSize(args[1]!), 0];
+      return [bsSize(args[0]!), intSize(args[1]!), 0n];
 
     // (bs, IntegerCostedLiterally)
     case "shiftByteString":
     case "rotateByteString":
-      return [bsSize(args[0]!), intLiteralValue(args[1]!), 0];
+      return [bsSize(args[0]!), intLiteralValue(args[1]!), 0n];
 
     // dropList: (IntegerCostedLiterally, list)
     case "dropList":
-      return [intLiteralValue(args[0]!), listSizeFromArg(args[1]!), 0];
+      return [intLiteralValue(args[0]!), listSizeFromArg(args[1]!), 0n];
 
     // replicateByte: (sizeExMem, int)
     case "replicateByte":
-      return [sizeExMemFromArg(args[0]!), intSize(args[1]!), 0];
+      return [sizeExMemFromArg(args[0]!), intSize(args[1]!), 0n];
 
     // 3-arg signature verification: (bs, bs, bs)
     case "verifyEd25519Signature":
@@ -276,13 +275,13 @@ export function computeArgSizes(
     // 2-arg string operations: (str, str)
     case "appendString":
     case "equalsString":
-      return [strSize(args[0]!), strSize(args[1]!), 0];
+      return [strSize(args[0]!), strSize(args[1]!), 0n];
 
     // 1-arg string/bs
     case "encodeUtf8":
-      return [strSize(args[0]!), 0, 0];
+      return [strSize(args[0]!), 0n, 0n];
     case "decodeUtf8":
-      return [bsSize(args[0]!), 0, 0];
+      return [bsSize(args[0]!), 0n, 0n];
 
     // Constant cost builtins (sizes don't matter)
     case "ifThenElse":
@@ -324,49 +323,49 @@ export function computeArgSizes(
     case "bls12_381_finalVerify":
     case "lengthOfArray":
     case "indexArray":
-      return [0, 0, 0];
+      return [0n, 0n, 0n];
 
     // insertCoin: .one model, valueMaxDepth of value arg (args[3])
     case "insertCoin":
-      return [valueMaxDepthFromArg(args[3]!), 0, 0];
+      return [valueMaxDepthFromArg(args[3]!), 0n, 0n];
 
     // (data, data) - equalsData
     case "equalsData":
-      return [dataSize(args[0]!), dataSize(args[1]!), 0];
+      return [dataSize(args[0]!), dataSize(args[1]!), 0n];
 
     // 1-arg data
     case "serialiseData":
-      return [dataSize(args[0]!), 0, 0];
+      return [dataSize(args[0]!), 0n, 0n];
 
     // BLS scalar mul: (int, g1/g2)
     case "bls12_381_G1_scalarMul":
-      return [intSize(args[0]!), G1_EX_MEM, 0];
+      return [intSize(args[0]!), BigInt(G1_EX_MEM), 0n];
     case "bls12_381_G2_scalarMul":
-      return [intSize(args[0]!), G2_EX_MEM, 0];
+      return [intSize(args[0]!), BigInt(G2_EX_MEM), 0n];
 
     // BLS hash to group: (bs, bs)
     case "bls12_381_G1_hashToGroup":
     case "bls12_381_G2_hashToGroup":
-      return [bsSize(args[0]!), bsSize(args[1]!), 0];
+      return [bsSize(args[0]!), bsSize(args[1]!), 0n];
 
     // BLS multi scalar mul: (list, list)
     case "bls12_381_G1_multiScalarMul":
     case "bls12_381_G2_multiScalarMul":
-      return [listSizeFromArg(args[0]!), listSizeFromArg(args[1]!), 0];
+      return [listSizeFromArg(args[0]!), listSizeFromArg(args[1]!), 0n];
 
     // integerToByteString: (bool, sizeExMem, int)
     case "integerToByteString":
-      return [1, sizeExMemFromArg(args[1]!), intSize(args[2]!)];
+      return [1n, sizeExMemFromArg(args[1]!), intSize(args[2]!)];
 
     // byteStringToInteger: (bool, bs)
     case "byteStringToInteger":
-      return [1, bsSize(args[1]!), 0];
+      return [1n, bsSize(args[1]!), 0n];
 
     // 3-arg bitwise: (bool, bs, bs)
     case "andByteString":
     case "orByteString":
     case "xorByteString":
-      return [1, bsSize(args[1]!), bsSize(args[2]!)];
+      return [1n, bsSize(args[1]!), bsSize(args[2]!)];
 
     // writeBits: (bs, list, list)
     case "writeBits":
@@ -382,7 +381,7 @@ export function computeArgSizes(
 
     // listToArray: (list)
     case "listToArray":
-      return [listSizeFromArg(args[0]!), 0, 0];
+      return [listSizeFromArg(args[0]!), 0n, 0n];
 
     // lookupCoin: (bs, bs, valueMaxDepth)
     case "lookupCoin":
@@ -394,22 +393,22 @@ export function computeArgSizes(
 
     // unionValue: (value, value)
     case "unionValue":
-      return [valueSize(args[0]!), valueSize(args[1]!), 0];
+      return [valueSize(args[0]!), valueSize(args[1]!), 0n];
 
     // valueContains: (value, value)
     case "valueContains":
-      return [valueSize(args[0]!), valueSize(args[1]!), 0];
+      return [valueSize(args[0]!), valueSize(args[1]!), 0n];
 
     // valueData: (value)
     case "valueData":
-      return [valueSize(args[0]!), 0, 0];
+      return [valueSize(args[0]!), 0n, 0n];
 
     // unValueData: (dataNodeCount)
     case "unValueData":
-      return [dataNodeCountFromArg(args[0]!), 0, 0];
+      return [dataNodeCountFromArg(args[0]!), 0n, 0n];
 
     // scaleValue: (int, value)
     case "scaleValue":
-      return [intSize(args[0]!), valueSize(args[1]!), 0];
+      return [intSize(args[0]!), valueSize(args[1]!), 0n];
   }
 }

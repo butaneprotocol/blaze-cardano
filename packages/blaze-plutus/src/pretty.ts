@@ -1,4 +1,4 @@
-import type { Constant, DeBruijn, PlutusData, Term } from "./types";
+import type { Constant, ConstantType, DeBruijn, PlutusData, Term } from "./types";
 
 export function prettyPrint(term: Term<DeBruijn>): string {
   switch (term.tag) {
@@ -84,8 +84,8 @@ function escapeString(s: string): string {
   return out;
 }
 
-function inferType(constant: Constant): string {
-  switch (constant.type) {
+function printType(t: ConstantType): string {
+  switch (t.tag) {
     case "integer":
       return "integer";
     case "bytestring":
@@ -98,19 +98,18 @@ function inferType(constant: Constant): string {
       return "unit";
     case "data":
       return "data";
-    case "list":
-      if (constant.values.length === 0) return "(list integer)";
-      return `(list ${inferType(constant.values[0]!)})`;
-    case "pair":
-      return `(pair ${inferType(constant.first)} ${inferType(constant.second)})`;
-    case "bls12_381_g1_element":
+    case "bls12_381_G1_element":
       return "bls12_381_G1_element";
-    case "bls12_381_g2_element":
+    case "bls12_381_G2_element":
       return "bls12_381_G2_element";
     case "bls12_381_ml_result":
       return "bls12_381_mlresult";
     case "value":
       return "value";
+    case "list":
+      return `(list ${printType(t.element)})`;
+    case "pair":
+      return `(pair ${printType(t.first)} ${printType(t.second)})`;
   }
 }
 
@@ -129,16 +128,15 @@ function printConstant(constant: Constant): string {
     case "data":
       return `data (${printPlutusData(constant.value)})`;
     case "list": {
-      const elemType =
-        constant.values.length > 0 ? inferType(constant.values[0]!) : "integer";
+      const elemType = printType(constant.itemType);
       const items = constant.values
         .map((v) => printConstantInner(v))
         .join(", ");
       return `(list ${elemType}) [${items}]`;
     }
     case "pair": {
-      const fstType = inferType(constant.first);
-      const sndType = inferType(constant.second);
+      const fstType = printType(constant.fstType);
+      const sndType = printType(constant.sndType);
       return `(pair ${fstType} ${sndType}) (${printConstantInner(constant.first)}, ${printConstantInner(constant.second)})`;
     }
     case "bls12_381_g1_element":

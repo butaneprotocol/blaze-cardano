@@ -4,7 +4,7 @@ import { parse, ParseError } from "../src/parse";
 import { nameToDeBruijn } from "../src/convert";
 import { CekMachine } from "../src/cek";
 import { prettyPrint } from "../src/pretty";
-import { unlimitedBudget } from "../src/types";
+import { unlimitedBudget, I64_MAX } from "../src/types";
 
 const CONFORMANCE_DIR = path.resolve(__dirname, "../conformance/tests");
 
@@ -117,11 +117,13 @@ function runTest(tc: TestCase): void {
 
   expect(prettyResult).toBe(prettyExpectedTerm);
 
-  // Step 6: Compare budget
+  // Step 6: Compare budget (clamp consumed to I64_MAX on overflow, matching plutuz)
   const remaining = machine.remainingBudget;
+  const rawCpu = initialBudget.cpu - remaining.cpu;
+  const rawMem = initialBudget.mem - remaining.mem;
   const consumed = {
-    cpu: initialBudget.cpu - remaining.cpu,
-    mem: initialBudget.mem - remaining.mem,
+    cpu: rawCpu > I64_MAX ? I64_MAX : rawCpu,
+    mem: rawMem > I64_MAX ? I64_MAX : rawMem,
   };
   const actualBudget = `({cpu: ${consumed.cpu}\n| mem: ${consumed.mem}})`;
   const trimmedExpectedBudget = budgetExpected.trim();
