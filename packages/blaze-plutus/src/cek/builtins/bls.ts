@@ -57,15 +57,24 @@ function unwrapMlResult(val: Value): Uint8Array {
 // --- Result builders ---
 
 function g1Result(bytes: Uint8Array): Value {
-  return { tag: "constant", value: { type: "bls12_381_g1_element", value: bytes } };
+  return {
+    tag: "constant",
+    value: { type: "bls12_381_g1_element", value: bytes },
+  };
 }
 
 function g2Result(bytes: Uint8Array): Value {
-  return { tag: "constant", value: { type: "bls12_381_g2_element", value: bytes } };
+  return {
+    tag: "constant",
+    value: { type: "bls12_381_g2_element", value: bytes },
+  };
 }
 
 function mlResult(bytes: Uint8Array): Value {
-  return { tag: "constant", value: { type: "bls12_381_ml_result", value: bytes } };
+  return {
+    tag: "constant",
+    value: { type: "bls12_381_ml_result", value: bytes },
+  };
 }
 
 // --- Scalar reduction ---
@@ -165,7 +174,9 @@ function bls12_381_G1_multiScalarMul(args: Value[]): Value {
       );
     }
     scalars.push(reduceScalar(s));
-    const bytes = (pointList[i]! as { type: "bls12_381_g1_element"; value: Uint8Array }).value;
+    const bytes = (
+      pointList[i]! as { type: "bls12_381_g1_element"; value: Uint8Array }
+    ).value;
     points.push(G1Point.fromHex(bytes));
   }
 
@@ -262,7 +273,9 @@ function bls12_381_G2_multiScalarMul(args: Value[]): Value {
       );
     }
     scalars.push(reduceScalar(s));
-    const bytes = (pointList[i]! as { type: "bls12_381_g2_element"; value: Uint8Array }).value;
+    const bytes = (
+      pointList[i]! as { type: "bls12_381_g2_element"; value: Uint8Array }
+    ).value;
     points.push(G2Point.fromHex(bytes));
   }
 

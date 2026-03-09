@@ -265,10 +265,7 @@ function unionValue(args: Value[]): Value {
   let j = 0;
 
   while (i < v1.entries.length && j < v2.entries.length) {
-    const cmp = compareBytes(
-      v1.entries[i]!.currency,
-      v2.entries[j]!.currency,
-    );
+    const cmp = compareBytes(v1.entries[i]!.currency, v2.entries[j]!.currency);
     if (cmp < 0) {
       result.push(v1.entries[i]!);
       i++;
@@ -401,9 +398,7 @@ function unValueData(args: Value[]): Value {
   const d = unwrapData(args[0]!);
 
   if (d.tag !== "map") {
-    throw new EvaluationError(
-      `unValueData: expected map data, got ${d.tag}`,
-    );
+    throw new EvaluationError(`unValueData: expected map data, got ${d.tag}`);
   }
 
   const entries: CurrencyEntry[] = [];

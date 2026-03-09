@@ -144,9 +144,7 @@ function printConstant(constant: Constant): string {
     }
     case "array": {
       const elemType = printType(constant.itemType);
-      const items = constant.values
-        .map((v) => printConstantInner(v))
-        .join(",");
+      const items = constant.values.map((v) => printConstantInner(v)).join(",");
       return `(array ${elemType}) [${items}]`;
     }
     case "pair": {
