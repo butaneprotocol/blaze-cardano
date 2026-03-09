@@ -105,6 +105,7 @@ export type ConstantType =
   | { readonly tag: "bls12_381_ml_result" }
   | { readonly tag: "value" }
   | { readonly tag: "list"; readonly element: ConstantType }
+  | { readonly tag: "array"; readonly element: ConstantType }
   | {
       readonly tag: "pair";
       readonly first: ConstantType;
@@ -125,7 +126,8 @@ export type Constant =
   | Bls12_381G1ElementConstant
   | Bls12_381G2ElementConstant
   | Bls12_381MlResultConstant
-  | ValueConstant;
+  | ValueConstant
+  | ArrayConstant;
 
 export interface IntegerConstant {
   readonly type: "integer";
@@ -188,6 +190,12 @@ export interface Bls12_381MlResultConstant {
 export interface ValueConstant {
   readonly type: "value";
   readonly value: LedgerValue;
+}
+
+export interface ArrayConstant {
+  readonly type: "array";
+  readonly itemType: ConstantType;
+  readonly values: ReadonlyArray<Constant>;
 }
 
 // --- LedgerValue ---
@@ -267,6 +275,8 @@ export function typeOfConstant(c: Constant): ConstantType {
       return { tag: "value" };
     case "list":
       return { tag: "list", element: c.itemType };
+    case "array":
+      return { tag: "array", element: c.itemType };
     case "pair":
       return { tag: "pair", first: c.fstType, second: c.sndType };
   }
@@ -275,6 +285,9 @@ export function typeOfConstant(c: Constant): ConstantType {
 export function constantTypeEquals(a: ConstantType, b: ConstantType): boolean {
   if (a.tag !== b.tag) return false;
   if (a.tag === "list" && b.tag === "list") {
+    return constantTypeEquals(a.element, b.element);
+  }
+  if (a.tag === "array" && b.tag === "array") {
     return constantTypeEquals(a.element, b.element);
   }
   if (a.tag === "pair" && b.tag === "pair") {

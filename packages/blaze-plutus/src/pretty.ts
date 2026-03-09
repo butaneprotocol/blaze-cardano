@@ -114,6 +114,8 @@ function printType(t: ConstantType): string {
       return "value";
     case "list":
       return `(list ${printType(t.element)})`;
+    case "array":
+      return `(array ${printType(t.element)})`;
     case "pair":
       return `(pair ${printType(t.first)} ${printType(t.second)})`;
   }
@@ -139,6 +141,13 @@ function printConstant(constant: Constant): string {
         .map((v) => printConstantInner(v))
         .join(", ");
       return `(list ${elemType}) [${items}]`;
+    }
+    case "array": {
+      const elemType = printType(constant.itemType);
+      const items = constant.values
+        .map((v) => printConstantInner(v))
+        .join(",");
+      return `(array ${elemType}) [${items}]`;
     }
     case "pair": {
       const fstType = printType(constant.fstType);
