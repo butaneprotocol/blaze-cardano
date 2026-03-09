@@ -166,7 +166,7 @@ class FlatDecoder {
   word(): number {
     let result = 0;
     let shift = 0;
-    while (true) {
+    for (;;) {
       const b = this.bits8(8);
       result |= (b & 0x7f) << shift;
       if ((b & 0x80) === 0) break;
@@ -177,7 +177,7 @@ class FlatDecoder {
 
   bigWord(): bigint {
     const chunks: number[] = [];
-    while (true) {
+    for (;;) {
       const b = this.bits8(8);
       chunks.push(b & 0x7f);
       if ((b & 0x80) === 0) break;
@@ -202,7 +202,7 @@ class FlatDecoder {
   bytes(): Uint8Array {
     this.filler();
     const result: number[] = [];
-    while (true) {
+    for (;;) {
       if (this.pos >= this.buffer.length) throw new Error("flat: end of input");
       const chunkLen = this.buffer[this.pos]!;
       this.pos++;
@@ -439,7 +439,7 @@ class FlatEncoder {
 
   word(val: number): void {
     let v = val;
-    while (true) {
+    for (;;) {
       const chunk = v & 0x7f;
       v >>>= 7;
       if (v === 0) {

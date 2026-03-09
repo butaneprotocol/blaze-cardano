@@ -260,7 +260,7 @@ function decodeDataItem(state: CborState): PlutusData {
     case 2: {
       if (additional === 31) {
         const chunks: number[] = [];
-        while (true) {
+        for (;;) {
           const next = readByte(state);
           if (next === 0xff) break;
           const chunkMajor = next >> 5;
@@ -281,7 +281,7 @@ function decodeDataItem(state: CborState): PlutusData {
     case 4: {
       if (additional === 31) {
         const items: PlutusData[] = [];
-        while (true) {
+        for (;;) {
           if (state.pos >= state.data.length)
             throw new Error("CBOR: end of input");
           if (state.data[state.pos] === 0xff) {
@@ -377,7 +377,7 @@ function decodeArrayFields(state: CborState): PlutusData[] {
 
   if (additional === 31) {
     const items: PlutusData[] = [];
-    while (true) {
+    for (;;) {
       if (state.pos >= state.data.length) throw new Error("CBOR: end of input");
       if (state.data[state.pos] === 0xff) {
         state.pos++;
