@@ -34,12 +34,12 @@
     "access": "public"
   },
   "scripts": {
+    "bench": "vitest bench --run",
     "build": "tsdown",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
     "dev": "tsdown --watch",
     "download:conformance": "bash scripts/download-conformance.sh",
     "lint": "eslint .",
-    "bench": "vitest bench --run",
     "test": "jest",
     "typecheck": "tsc --noEmit"
   },
