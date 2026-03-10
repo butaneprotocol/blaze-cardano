@@ -1,7 +1,7 @@
 {
   "name": "@blaze-cardano/plutus",
   "description": "Pure TypeScript UPLC implementation (parser, name→DeBruijn, CEK machine, budgeting)",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "dependencies": {
     "@noble/curves": "^1.8.1",
     "@noble/hashes": "^1.7.1"
