@@ -872,12 +872,8 @@ describe("Transaction Building", () => {
       .setChangeAddress(testAddress)
       .addUnspentOutputs([scriptUtxo, walletUtxoA, walletUtxoB])
       .provideScript(alwaysTrueScript)
-      .spendHook(scriptUtxo, (body) => {
+      .spendHook(scriptUtxo, (_body, inputIndex) => {
         spendHookCalls += 1;
-        const inputIndex = body
-          .inputs()
-          .values()
-          .findIndex((input) => input.toCbor() === scriptUtxo.input().toCbor());
         return PlutusData.newInteger(BigInt(inputIndex));
       })
       .mintHook(

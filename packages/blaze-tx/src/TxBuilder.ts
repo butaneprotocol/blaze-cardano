@@ -132,12 +132,16 @@ constraints:
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
  */
 type RedeemerBodyHook = (body: TransactionBody) => PlutusData;
+type SpendRedeemerBodyHook = (
+  body: TransactionBody,
+  inputIndex: number,
+) => PlutusData;
 
 type TxBuilderRedeemerHook =
   | {
       kind: "spend";
       key: string;
-      resolver: RedeemerBodyHook;
+      resolver: SpendRedeemerBodyHook;
       lastCoordinate?: string;
     }
   | {
@@ -368,7 +372,23 @@ export class TxBuilder {
       );
       const previousCoordinate = hook.lastCoordinate ?? currentCoordinate;
       const previousRedeemer = existingByCoordinate.get(previousCoordinate);
-      const resolvedData = hook.resolver(this.body);
+      const resolvedData =
+        hook.kind === "spend"
+          ? (() => {
+              const inputs = [...this.body.inputs().values()];
+              const inputIndex = inputs.findIndex((input) => {
+                return (
+                  input.transactionId() + input.index().toString() === hook.key
+                );
+              });
+              if (inputIndex < 0) {
+                throw new Error(
+                  `refreshRedeemerHooks: Missing spend input ${hook.key} in transaction body.`,
+                );
+              }
+              return hook.resolver(this.body, inputIndex);
+            })()
+          : hook.resolver(this.body);
 
       if (hook.lastCoordinate && hook.lastCoordinate !== currentCoordinate) {
         changed = true;
@@ -636,13 +656,13 @@ export class TxBuilder {
    * This hook is re-evaluated during balancing so redeemer data can depend on finalized input ordering.
    *
    * @param {TransactionUnspentOutput} utxo - The UTxO to be consumed as an input.
-   * @param {(body: TransactionBody) => PlutusData} redeemerHook - A function that builds the spend redeemer from the current transaction body.
+   * @param {(body: TransactionBody, inputIndex: number) => PlutusData} redeemerHook - A function that builds the spend redeemer from the current transaction body and the current input index.
    * @param {PlutusData} [unhashDatum] - Optional datum for spending datum-hash outputs.
    * @returns {TxBuilder} The same transaction builder
    */
   spendHook(
     utxo: TransactionUnspentOutput,
-    redeemerHook: (body: TransactionBody) => PlutusData,
+    redeemerHook: (body: TransactionBody, inputIndex: number) => PlutusData,
     unhashDatum?: PlutusData,
   ): TxBuilder {
     return this.addInputInternal(utxo, { redeemerHook, unhashDatum });
@@ -652,7 +672,7 @@ export class TxBuilder {
     utxo: TransactionUnspentOutput,
     options: {
       redeemer?: PlutusData;
-      redeemerHook?: RedeemerBodyHook;
+      redeemerHook?: SpendRedeemerBodyHook;
       unhashDatum?: PlutusData;
     },
   ): TxBuilder {
