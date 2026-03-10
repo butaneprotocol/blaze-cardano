@@ -99,14 +99,11 @@ describe("Provider", () => {
       .then((r) => r.output().toCbor());
     expect(providerUtxo).toEqual(assetUtxo.toCbor());
 
-    try {
-      await provider.getUnspentOutputByNFT(AssetId("0".repeat(64)));
-      fail("Expected error to be thrown, but code executed successfully");
-    } catch (e) {
-      expect(e).toEqual(
-        "getUnspentOutputByNFT: emulated ledger had no UTxO with NFT",
-      );
-    }
+    await expect(
+      provider.getUnspentOutputByNFT(AssetId("0".repeat(64))),
+    ).rejects.toEqual(
+      "getUnspentOutputByNFT: emulated ledger had no UTxO with NFT",
+    );
   });
 
   test("resolveUnspentOutputs", async () => {
