@@ -12,6 +12,9 @@ import {
   PlutusData,
   PlutusV2Script,
   Script,
+  RedeemerTag,
+  PolicyId,
+  AssetName,
   TransactionId,
   TransactionInput,
   TransactionOutput,
@@ -820,5 +823,115 @@ describe("Transaction Building", () => {
 
     const txComplete = await tx.complete();
     expect(txComplete.body().collateral()?.values()[0]).toEqual(collateral);
+  });
+
+  it("should resolve spend/mint/withdraw hooks against the finalized tx body", async () => {
+    const testAddress = Address.fromBech32(
+      "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
+    );
+
+    const alwaysTrueScript = Script.newPlutusV2Script(
+      new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
+    );
+
+    const scriptCredential = Credential.fromCore({
+      hash: alwaysTrueScript.hash(),
+      type: CredentialType.ScriptHash,
+    });
+
+    const scriptUtxo = new TransactionUnspentOutput(
+      new TransactionInput(TransactionId("2".padStart(64, "0")), 0n),
+      new TransactionOutput(
+        addressFromCredential(NetworkId.Testnet, scriptCredential),
+        value.makeValue(12_000_000n),
+      ),
+    );
+    scriptUtxo.output().setDatum(Datum.newInlineData(Void()));
+
+    const walletUtxoA = new TransactionUnspentOutput(
+      new TransactionInput(TransactionId("3".padStart(64, "0")), 0n),
+      new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
+    );
+    const walletUtxoB = new TransactionUnspentOutput(
+      new TransactionInput(TransactionId("4".padStart(64, "0")), 0n),
+      new TransactionOutput(testAddress, value.makeValue(40_000_000n)),
+    );
+
+    const rewardAccount = RewardAccount.fromCredential(
+      scriptCredential.toCore(),
+      NetworkId.Testnet,
+    );
+
+    let spendHookCalls = 0;
+    let mintHookCalls = 0;
+    let withdrawHookCalls = 0;
+
+    const txComplete = await new TxBuilder(hardCodedProtocolParams)
+      .useEvaluator(makeUplcEvaluator(hardCodedProtocolParams, 1, 1))
+      .setNetworkId(NetworkId.Testnet)
+      .setChangeAddress(testAddress)
+      .addUnspentOutputs([scriptUtxo, walletUtxoA, walletUtxoB])
+      .provideScript(alwaysTrueScript)
+      .spendHook(scriptUtxo, (body) => {
+        spendHookCalls += 1;
+        const inputIndex = body
+          .inputs()
+          .values()
+          .findIndex((input) => input.toCbor() === scriptUtxo.input().toCbor());
+        return PlutusData.newInteger(BigInt(inputIndex));
+      })
+      .mintHook(
+        PolicyId(alwaysTrueScript.hash()),
+        new Map([[AssetName("01"), 1n]]),
+        (body) => {
+          mintHookCalls += 1;
+          return PlutusData.newInteger(BigInt(body.outputs().length));
+        },
+      )
+      .withdrawHook(rewardAccount, 1_000_000n, (body) => {
+        withdrawHookCalls += 1;
+        return PlutusData.newInteger(BigInt(body.withdrawals()?.size ?? 0));
+      })
+      .payLovelace(testAddress, 2_000_000n)
+      .complete();
+
+    expect(spendHookCalls).toBeGreaterThan(1);
+    expect(mintHookCalls).toBeGreaterThan(1);
+    expect(withdrawHookCalls).toBeGreaterThan(1);
+
+    const redeemers = txComplete.witnessSet().redeemers()?.values() ?? [];
+    const spendRedeemer = redeemers.find((redeemer) => {
+      return redeemer.tag() === RedeemerTag.Spend;
+    });
+    const mintRedeemer = redeemers.find((redeemer) => {
+      return redeemer.tag() === RedeemerTag.Mint;
+    });
+    const withdrawRedeemer = redeemers.find((redeemer) => {
+      return redeemer.tag() === RedeemerTag.Reward;
+    });
+
+    expect(spendRedeemer).toBeDefined();
+    expect(mintRedeemer).toBeDefined();
+    expect(withdrawRedeemer).toBeDefined();
+
+    const expectedSpendIndex = txComplete
+      .body()
+      .inputs()
+      .values()
+      .findIndex((input) => input.toCbor() === scriptUtxo.input().toCbor());
+
+    expect(PlutusData.fromCore(spendRedeemer!.toCore().data).toCbor()).toEqual(
+      PlutusData.newInteger(BigInt(expectedSpendIndex)).toCbor(),
+    );
+    expect(PlutusData.fromCore(mintRedeemer!.toCore().data).toCbor()).toEqual(
+      PlutusData.newInteger(BigInt(txComplete.body().outputs().length)).toCbor(),
+    );
+    expect(
+      PlutusData.fromCore(withdrawRedeemer!.toCore().data).toCbor(),
+    ).toEqual(
+      PlutusData.newInteger(
+        BigInt(txComplete.body().withdrawals()?.size ?? 0),
+      ).toCbor(),
+    );
   });
 });
