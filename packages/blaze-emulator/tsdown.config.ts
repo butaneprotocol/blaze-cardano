@@ -7,5 +7,6 @@ export default defineConfig({
   exports: true,
   deps: {
     neverBundle: [/^rxjs/],
+    onlyAllowBundle: ["@sinclair/typebox"],
   },
 });

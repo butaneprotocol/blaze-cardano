@@ -1,3 +1,4 @@
+import { describe, test, expect, beforeAll, beforeEach } from "vitest";
 import {
   type Bip32PrivateKeyHex,
   type Address,

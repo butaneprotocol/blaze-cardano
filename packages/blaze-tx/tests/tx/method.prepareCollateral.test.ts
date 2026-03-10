@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import {
   Address,
   Ed25519KeyHashHex,
@@ -432,7 +433,7 @@ describe("prepareCollateral method", () => {
       .addInput(positionUtxo, PlutusData.fromCbor(HexBlob("d87a80")));
 
     // Should throw an error that ther is not enough ADA to cover the minutxo value.
-    expect(tx.complete()).rejects.toThrowErrorMatchingSnapshot();
+    await expect(tx.complete()).rejects.toThrowErrorMatchingSnapshot();
   });
 
   it("should prepare collateral correctly when spending a script input", async () => {

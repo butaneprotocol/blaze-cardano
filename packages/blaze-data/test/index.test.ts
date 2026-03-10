@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { Type } from "@sinclair/typebox";
 import { parse, serialize } from "../src";
 import {

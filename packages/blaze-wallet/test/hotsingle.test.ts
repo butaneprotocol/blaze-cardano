@@ -1,9 +1,10 @@
+import { describe, it, expect, vi, beforeAll } from "vitest";
 import type { Provider } from "@blaze-cardano/query";
 import { HotSingleWallet } from "../src";
 import * as Core from "@blaze-cardano/core";
 import { toHex } from "@blaze-cardano/core";
 
-const mockProvider: Provider = jest.fn() as any;
+const mockProvider: Provider = vi.fn() as any;
 
 const expectedAddress =
   "addr1q9dkr76agvvj04n740a2zcq9w8rgl8xhhfwm9ds7vzdu7pjmv8a46sceylt8a2l659sq2uwx37wd0wjak2mpucymeurqhgrk09";

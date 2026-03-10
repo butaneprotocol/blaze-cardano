@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll } from "vitest";
 import type { Provider } from "@blaze-cardano/query";
 import { HotWallet } from "../src";
 import * as Core from "@blaze-cardano/core";
@@ -30,7 +31,7 @@ describe("HotWallet", () => {
   });
 
   it("should throw an error when network ids don't match", async () => {
-    expect(
+    await expect(
       HotWallet.fromMasterkey(
         privateKey.hex(),
         mockProvider,

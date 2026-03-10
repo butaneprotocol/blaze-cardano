@@ -1,3 +1,3 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Emulator Should not be able to spend if inputs/outputs are not balanced 1`] = `"Value not conserved. Leftover Value: -1342617, "`;
+exports[`Emulator > Should not be able to spend if inputs/outputs are not balanced 1`] = `[Error: Value not conserved. Leftover Value: -1342617, ]`;

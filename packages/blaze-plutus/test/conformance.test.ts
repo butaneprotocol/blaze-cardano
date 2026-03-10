@@ -1,3 +1,4 @@
+import { describe, it, test, expect } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
 import { parse, ParseError } from "../src/parse";

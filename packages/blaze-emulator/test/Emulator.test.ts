@@ -1,3 +1,4 @@
+import { describe, test, expect, beforeAll, beforeEach } from "vitest";
 import type { Bip32PrivateKeyHex, Address } from "@blaze-cardano/core";
 import {
   NetworkId,
@@ -87,7 +88,9 @@ describe("Emulator", () => {
         }),
       );
 
-      expect(emulator.expectValidTransaction(blaze, tx)).resolves.not.toThrow();
+      await expect(
+        emulator.expectValidTransaction(blaze, tx),
+      ).resolves.not.toThrow();
     });
   });
 
@@ -104,7 +107,7 @@ describe("Emulator", () => {
         .addRequiredSigner(
           Ed25519KeyHashHex(wallet4.getProps().paymentPart!.hash),
         );
-      expect(
+      await expect(
         emulator.expectValidMultisignedTransaction(["3", "4"], tx),
       ).resolves.not.toThrow();
     });
@@ -378,6 +381,8 @@ describe("Emulator", () => {
       )
       .complete({ useCoinSelection: false });
 
-    expect(signAndSubmit(tx, blaze)).rejects.toThrowErrorMatchingSnapshot();
+    await expect(
+      signAndSubmit(tx, blaze),
+    ).rejects.toThrowErrorMatchingSnapshot();
   });
 });
