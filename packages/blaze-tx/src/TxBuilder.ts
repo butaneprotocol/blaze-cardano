@@ -131,6 +131,32 @@ constraints:
 /**
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
  */
+type RedeemerBodyHook = (body: TransactionBody) => PlutusData;
+type SpendRedeemerBodyHook = (
+  body: TransactionBody,
+  inputIndex: number,
+) => PlutusData;
+
+type TxBuilderRedeemerHook =
+  | {
+      kind: "spend";
+      key: string;
+      resolver: SpendRedeemerBodyHook;
+      lastCoordinate?: string;
+    }
+  | {
+      kind: "mint";
+      key: Hash28ByteBase16;
+      resolver: RedeemerBodyHook;
+      lastCoordinate?: string;
+    }
+  | {
+      kind: "withdrawal";
+      key: Hash28ByteBase16;
+      resolver: RedeemerBodyHook;
+      lastCoordinate?: string;
+    };
+
 export class TxBuilder {
   readonly params: ProtocolParameters;
   private preCompleteHooks: ((tx: TxBuilder) => Promise<void>)[] = [];
@@ -173,6 +199,7 @@ export class TxBuilder {
   private consumedWithdrawalHashes: Hash28ByteBase16[] = [];
   private consumedDeregisterHashes: Hash28ByteBase16[] = [];
   private consumedSpendInputs: string[] = [];
+  private redeemerHooks: TxBuilderRedeemerHook[] = [];
   private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
   private feePadding: bigint = 0n; // A padding to add onto the fee; use only in emergencies, and open a ticket so we can fix the fee calculation please!
   private coinSelector: CoinSelectionFunc = micahsSelector;
@@ -240,6 +267,191 @@ export class TxBuilder {
   public enableTracing(enabled: boolean): TxBuilder {
     this.tracing = enabled;
     return this;
+  }
+
+  private redeemerExecutionUnits(redeemer?: Redeemer): {
+    memory: number;
+    steps: number;
+  } {
+    if (!redeemer) {
+      return {
+        memory: this.params.maxExecutionUnitsPerTransaction.memory,
+        steps: this.params.maxExecutionUnitsPerTransaction.steps,
+      };
+    }
+
+    const exUnits = redeemer.toCore().executionUnits;
+    return {
+      memory: exUnits.memory,
+      steps: exUnits.steps,
+    };
+  }
+
+  private redeemerCoordinate(tag: RedeemerTag, index: number): string {
+    return `${tag.toString()}:${index.toString()}`;
+  }
+
+  private resolveHookPosition(hook: TxBuilderRedeemerHook) {
+    switch (hook.kind) {
+      case "spend": {
+        const index = this.consumedSpendInputs.indexOf(hook.key);
+        if (index < 0) {
+          throw new Error(
+            `refreshRedeemerHooks: Missing spend input ${hook.key} in consumed list.`,
+          );
+        }
+        return {
+          tag: RedeemerTag.Spend,
+          purpose: RedeemerPurpose["spend"],
+          index,
+        };
+      }
+      case "mint": {
+        const index = this.consumedMintHashes.indexOf(hook.key);
+        if (index < 0) {
+          throw new Error(
+            `refreshRedeemerHooks: Missing mint policy ${hook.key} in consumed list.`,
+          );
+        }
+        return {
+          tag: RedeemerTag.Mint,
+          purpose: RedeemerPurpose["mint"],
+          index,
+        };
+      }
+      case "withdrawal": {
+        const index = this.consumedWithdrawalHashes.indexOf(hook.key);
+        if (index < 0) {
+          throw new Error(
+            `refreshRedeemerHooks: Missing withdrawal ${hook.key} in consumed list.`,
+          );
+        }
+        return {
+          tag: RedeemerTag.Reward,
+          purpose: RedeemerPurpose["withdrawal"],
+          index,
+        };
+      }
+    }
+  }
+
+  /**
+   * Rebuilds redeemers registered via spend/mint/withdraw hooks using the latest transaction body.
+   * Returns true when a hook redeemer coordinate or data changed.
+   */
+  private refreshRedeemerHooks(): boolean {
+    if (this.redeemerHooks.length === 0) {
+      return false;
+    }
+
+    const existingRedeemers = [...this.redeemers.values()];
+    const existingByCoordinate = new Map<string, Redeemer>();
+    for (const redeemer of existingRedeemers) {
+      const coord = this.redeemerCoordinate(
+        redeemer.tag(),
+        Number(redeemer.index()),
+      );
+      existingByCoordinate.set(coord, redeemer);
+    }
+
+    const priorHookCoordinates = new Set<string>();
+    for (const hook of this.redeemerHooks) {
+      if (hook.lastCoordinate) {
+        priorHookCoordinates.add(hook.lastCoordinate);
+      }
+    }
+
+    const replacements = new Map<string, Redeemer>();
+    let changed = false;
+
+    for (const hook of this.redeemerHooks) {
+      const position = this.resolveHookPosition(hook);
+      const currentCoordinate = this.redeemerCoordinate(
+        position.tag,
+        position.index,
+      );
+      const previousCoordinate = hook.lastCoordinate ?? currentCoordinate;
+      const previousRedeemer = existingByCoordinate.get(previousCoordinate);
+      const resolvedData =
+        hook.kind === "spend"
+          ? (() => {
+              const inputs = [...this.body.inputs().values()];
+              const inputIndex = inputs.findIndex((input) => {
+                return (
+                  input.transactionId() + input.index().toString() === hook.key
+                );
+              });
+              if (inputIndex < 0) {
+                throw new Error(
+                  `refreshRedeemerHooks: Missing spend input ${hook.key} in transaction body.`,
+                );
+              }
+              return hook.resolver(this.body, inputIndex);
+            })()
+          : hook.resolver(this.body);
+
+      if (hook.lastCoordinate && hook.lastCoordinate !== currentCoordinate) {
+        changed = true;
+      }
+
+      if (previousRedeemer) {
+        const previousData = PlutusData.fromCore(
+          previousRedeemer.toCore().data,
+        ).toCbor();
+        if (previousData !== resolvedData.toCbor()) {
+          changed = true;
+        }
+      } else {
+        changed = true;
+      }
+
+      replacements.set(
+        currentCoordinate,
+        Redeemer.fromCore({
+          index: position.index,
+          purpose: position.purpose,
+          data: resolvedData.toCore(),
+          executionUnits: this.redeemerExecutionUnits(previousRedeemer),
+        }),
+      );
+
+      hook.lastCoordinate = currentCoordinate;
+    }
+
+    const nextRedeemers: Redeemer[] = [];
+    const insertedCoordinates = new Set<string>();
+    for (const redeemer of existingRedeemers) {
+      const coord = this.redeemerCoordinate(
+        redeemer.tag(),
+        Number(redeemer.index()),
+      );
+
+      if (priorHookCoordinates.has(coord)) {
+        const replacement = replacements.get(coord);
+        if (replacement) {
+          nextRedeemers.push(replacement);
+          insertedCoordinates.add(coord);
+        }
+        continue;
+      }
+
+      if (replacements.has(coord)) {
+        nextRedeemers.push(replacements.get(coord)!);
+        insertedCoordinates.add(coord);
+        continue;
+      }
+
+      nextRedeemers.push(redeemer);
+    }
+
+    for (const [coord, redeemer] of replacements.entries()) {
+      if (!insertedCoordinates.has(coord)) {
+        nextRedeemers.push(redeemer);
+      }
+    }
+
+    this.redeemers.setValues(nextRedeemers);
+    return changed;
   }
 
   /**
@@ -435,6 +647,36 @@ export class TxBuilder {
     redeemer?: PlutusData,
     unhashDatum?: PlutusData,
   ): TxBuilder {
+    return this.addInputInternal(utxo, { redeemer, unhashDatum });
+  }
+
+  /**
+   * Adds a script input where redeemer data is produced from the latest transaction body.
+   *
+   * This hook is re-evaluated during balancing so redeemer data can depend on finalized input ordering.
+   *
+   * @param {TransactionUnspentOutput} utxo - The UTxO to be consumed as an input.
+   * @param {(body: TransactionBody, inputIndex: number) => PlutusData} redeemerHook - A function that builds the spend redeemer from the current transaction body and the current input index.
+   * @param {PlutusData} [unhashDatum] - Optional datum for spending datum-hash outputs.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  spendHook(
+    utxo: TransactionUnspentOutput,
+    redeemerHook: (body: TransactionBody, inputIndex: number) => PlutusData,
+    unhashDatum?: PlutusData,
+  ): TxBuilder {
+    return this.addInputInternal(utxo, { redeemerHook, unhashDatum });
+  }
+
+  private addInputInternal(
+    utxo: TransactionUnspentOutput,
+    options: {
+      redeemer?: PlutusData;
+      redeemerHook?: SpendRedeemerBodyHook;
+      unhashDatum?: PlutusData;
+    },
+  ): TxBuilder {
+    const { redeemer, redeemerHook, unhashDatum } = options;
     // Retrieve the current inputs from the transaction body for manipulation.
     const inputs = this.body.inputs();
     const values = [...inputs.values()];
@@ -466,6 +708,7 @@ export class TxBuilder {
         redeemer.setIndex(redeemer.index() + 1n);
       }
     }
+    this.redeemers.setValues(redeemers);
 
     // Process the redeemer and datum logic for Plutus script-locked UTxOs.
     const key = utxo.output().address().getProps().paymentPart;
@@ -473,7 +716,7 @@ export class TxBuilder {
       throw new Error("addInput: Somehow the UTxO payment key is missing!");
     }
 
-    if (redeemer !== undefined) {
+    if (redeemer !== undefined || redeemerHook !== undefined) {
       if (key.type == CredentialType.KeyHash) {
         throw new Error(
           "addInput: Cannot spend with redeemer for KeyHash credential!",
@@ -496,19 +739,29 @@ export class TxBuilder {
           this.plutusData.add(unhashDatum!);
         }
       }
-      // Prepare and add the redeemer to the transaction, including execution units estimation.
-      redeemers.push(
-        Redeemer.fromCore({
-          index: insertIdx,
-          purpose: RedeemerPurpose["spend"],
-          data: redeemer.toCore(),
-          executionUnits: {
-            memory: this.params.maxExecutionUnitsPerTransaction.memory,
-            steps: this.params.maxExecutionUnitsPerTransaction.steps,
-          },
-        }),
-      );
-      this.redeemers.setValues(redeemers);
+
+      if (redeemer) {
+        // Prepare and add the redeemer to the transaction, including execution units estimation.
+        redeemers.push(
+          Redeemer.fromCore({
+            index: insertIdx,
+            purpose: RedeemerPurpose["spend"],
+            data: redeemer.toCore(),
+            executionUnits: {
+              memory: this.params.maxExecutionUnitsPerTransaction.memory,
+              steps: this.params.maxExecutionUnitsPerTransaction.steps,
+            },
+          }),
+        );
+        this.redeemers.setValues(redeemers);
+      } else {
+        this.redeemerHooks.push({
+          kind: "spend",
+          key: oref,
+          resolver: redeemerHook!,
+        });
+        this.refreshRedeemerHooks();
+      }
     } else {
       // Handle the required scripts or witnesses for non-Plutus script-locked UTxOs.
       if (key.type == CredentialType.ScriptHash) {
@@ -570,9 +823,38 @@ export class TxBuilder {
     assets: Map<AssetName, bigint>,
     redeemer?: PlutusData,
   ) {
+    return this.addMintInternal(policy, assets, { redeemer });
+  }
+
+  /**
+   * Adds minting information where redeemer data is produced from the latest transaction body.
+   *
+   * @param {PolicyId} policy - The policy ID under which assets are minted.
+   * @param {Map<AssetName, bigint>} assets - A map of asset names to amounts being minted.
+   * @param {(body: TransactionBody) => PlutusData} redeemerHook - A function that builds the mint redeemer from the current transaction body.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  mintHook(
+    policy: PolicyId,
+    assets: Map<AssetName, bigint>,
+    redeemerHook: (body: TransactionBody) => PlutusData,
+  ): TxBuilder {
+    return this.addMintInternal(policy, assets, { redeemerHook });
+  }
+
+  private addMintInternal(
+    policy: PolicyId,
+    assets: Map<AssetName, bigint>,
+    options: {
+      redeemer?: PlutusData;
+      redeemerHook?: RedeemerBodyHook;
+    },
+  ): TxBuilder {
+    const { redeemer, redeemerHook } = options;
+    const policyHash = PolicyIdToHash(policy);
     const insertIdx = insertSorted(
       this.consumedMintHashes,
-      PolicyIdToHash(policy),
+      policyHash,
     );
     // Retrieve the current mint map from the transaction body, or initialize a new one if none exists.
     const mint: TokenMap = this.body.mint() ?? new Map();
@@ -590,9 +872,9 @@ export class TxBuilder {
     this.body.setMint(mint);
 
     // If a redeemer is provided, handle Plutus script requirements.
-    if (redeemer) {
+    if (redeemer || redeemerHook) {
       // Add the policy ID hash to the set of required Plutus scripts.
-      this.requiredPlutusScripts.add(PolicyIdToHash(policy));
+      this.requiredPlutusScripts.add(policyHash);
       // Retrieve the current list of redeemers and prepare to add a new one.
       const redeemers = [...this.redeemers.values()];
       for (const redeemer of redeemers) {
@@ -603,24 +885,34 @@ export class TxBuilder {
           redeemer.setIndex(redeemer.index() + 1n);
         }
       }
-      // Create and add a new redeemer for the minting action, specifying execution units.
-      // Note: Execution units are placeholders and are replaced with actual values during the evaluation phase.
-      redeemers.push(
-        Redeemer.fromCore({
-          index: insertIdx,
-          purpose: RedeemerPurpose["mint"], // Specify the purpose of the redeemer as minting.
-          data: redeemer.toCore(), // Convert the provided PlutusData redeemer to its core representation.
-          executionUnits: {
-            memory: this.params.maxExecutionUnitsPerTransaction.memory, // Placeholder memory units, replace with actual estimation.
-            steps: this.params.maxExecutionUnitsPerTransaction.steps, // Placeholder step units, replace with actual estimation.
-          },
-        }),
-      );
-      // Update the transaction's redeemers with the new list.
-      this.redeemers.setValues(redeemers);
+      if (redeemer) {
+        // Create and add a new redeemer for the minting action, specifying execution units.
+        // Note: Execution units are placeholders and are replaced with actual values during the evaluation phase.
+        redeemers.push(
+          Redeemer.fromCore({
+            index: insertIdx,
+            purpose: RedeemerPurpose["mint"], // Specify the purpose of the redeemer as minting.
+            data: redeemer.toCore(), // Convert the provided PlutusData redeemer to its core representation.
+            executionUnits: {
+              memory: this.params.maxExecutionUnitsPerTransaction.memory, // Placeholder memory units, replace with actual estimation.
+              steps: this.params.maxExecutionUnitsPerTransaction.steps, // Placeholder step units, replace with actual estimation.
+            },
+          }),
+        );
+        // Update the transaction's redeemers with the new list.
+        this.redeemers.setValues(redeemers);
+      } else {
+        this.redeemers.setValues(redeemers);
+        this.redeemerHooks.push({
+          kind: "mint",
+          key: policyHash,
+          resolver: redeemerHook!,
+        });
+        this.refreshRedeemerHooks();
+      }
     } else {
       // If no redeemer is provided, assume minting under a native script and add the policy ID hash to the required native scripts.
-      this.requiredNativeScripts.add(PolicyIdToHash(policy));
+      this.requiredNativeScripts.add(policyHash);
     }
     return this;
   }
@@ -1680,6 +1972,7 @@ export class TxBuilder {
    * @returns {string} The CBOR representation of the transaction
    * */
   toCbor(): string {
+    this.refreshRedeemerHooks();
     const tw = this.buildPlaceholderWitnessSet();
     return new Transaction(this.body, tw, this.auxiliaryData).toCbor();
   }
@@ -1726,6 +2019,7 @@ export class TxBuilder {
     while (iterations < 10) {
       this.trace(`Starting iteration ${iterations}`);
       iterations += 1;
+      this.refreshRedeemerHooks();
       // Gather all inputs from the transaction body.
       const inputs = [...this.body.inputs().values()];
 
@@ -1939,7 +2233,8 @@ export class TxBuilder {
         this.addInput(spareInputs[0]!);
       }
 
-      if (lastFee === this.fee) {
+      const hookChanged = this.refreshRedeemerHooks();
+      if (lastFee === this.fee && !hookChanged) {
         break;
       }
 
@@ -1947,6 +2242,7 @@ export class TxBuilder {
     }
 
     this.trace("Transaction succesfully balanced");
+    this.refreshRedeemerHooks();
     // Return the fully constructed transaction.
     const finalWitnessSet = this.buildFinalWitnessSet([]);
     return new Transaction(this.body, finalWitnessSet, this.auxiliaryData);
@@ -2414,6 +2710,34 @@ export class TxBuilder {
     amount: bigint,
     redeemer?: PlutusData,
   ): TxBuilder {
+    return this.addWithdrawalInternal(address, amount, { redeemer });
+  }
+
+  /**
+   * Adds a withdrawal where redeemer data is produced from the latest transaction body.
+   *
+   * @param {RewardAccount} address - The reward account from which to withdraw.
+   * @param {bigint} amount - The amount of ADA to withdraw.
+   * @param {(body: TransactionBody) => PlutusData} redeemerHook - A function that builds the withdrawal redeemer from the current transaction body.
+   * @returns {TxBuilder} The same transaction builder
+   */
+  withdrawHook(
+    address: RewardAccount,
+    amount: bigint,
+    redeemerHook: (body: TransactionBody) => PlutusData,
+  ): TxBuilder {
+    return this.addWithdrawalInternal(address, amount, { redeemerHook });
+  }
+
+  private addWithdrawalInternal(
+    address: RewardAccount,
+    amount: bigint,
+    options: {
+      redeemer?: PlutusData;
+      redeemerHook?: RedeemerBodyHook;
+    },
+  ): TxBuilder {
+    const { redeemer, redeemerHook } = options;
     const withdrawalHash =
       Address.fromBech32(address).getProps().paymentPart?.hash;
     if (!withdrawalHash) {
@@ -2439,7 +2763,7 @@ export class TxBuilder {
     // Update the transaction body with the new or updated withdrawals map.
     this.body.setWithdrawals(withdrawals);
     // If a redeemer is provided, process it for script validation.
-    if (redeemer) {
+    if (redeemer || redeemerHook) {
       this.requiredPlutusScripts.add(withdrawalHash);
       const redeemers = [...this.redeemers.values()];
       for (const redeemer of redeemers) {
@@ -2450,20 +2774,30 @@ export class TxBuilder {
           redeemer.setIndex(redeemer.index() + 1n);
         }
       }
-      // Add the redeemer to the list of redeemers with execution units based on transaction parameters.
-      redeemers.push(
-        Redeemer.fromCore({
-          index: insertIdx,
-          purpose: RedeemerPurpose["withdrawal"], // TODO: Confirm the purpose of the redeemer.
-          data: redeemer.toCore(),
-          executionUnits: {
-            memory: this.params.maxExecutionUnitsPerTransaction.memory,
-            steps: this.params.maxExecutionUnitsPerTransaction.steps,
-          },
-        }),
-      );
-      // Update the transaction with the new list of redeemers.
-      this.redeemers.setValues(redeemers);
+      if (redeemer) {
+        // Add the redeemer to the list of redeemers with execution units based on transaction parameters.
+        redeemers.push(
+          Redeemer.fromCore({
+            index: insertIdx,
+            purpose: RedeemerPurpose["withdrawal"], // TODO: Confirm the purpose of the redeemer.
+            data: redeemer.toCore(),
+            executionUnits: {
+              memory: this.params.maxExecutionUnitsPerTransaction.memory,
+              steps: this.params.maxExecutionUnitsPerTransaction.steps,
+            },
+          }),
+        );
+        // Update the transaction with the new list of redeemers.
+        this.redeemers.setValues(redeemers);
+      } else {
+        this.redeemers.setValues(redeemers);
+        this.redeemerHooks.push({
+          kind: "withdrawal",
+          key: withdrawalHash,
+          resolver: redeemerHook!,
+        });
+        this.refreshRedeemerHooks();
+      }
     } else {
       // If no redeemer is provided, process the address for required scripts or witnesses.
       const key = Address.fromBech32(address).getProps().paymentPart;
