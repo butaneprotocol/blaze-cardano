@@ -13,3 +13,4 @@ packages/*/etc/*.api.json
 packages/*/temp
 docs/types
 docs/.docusaurus
+AGENTS.md
