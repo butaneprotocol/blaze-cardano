@@ -1,6 +1,11 @@
-import { type HexBlob, type OpaqueString, typedHex } from "@cardano-sdk/util";
-import * as C from "@cardano-sdk/core";
-import * as Crypto from "@cardano-sdk/crypto";
+import {
+  type HexBlob,
+  typedHex,
+} from "../vendor/cardano-js-sdk/deps/util.js";
+import * as C from "../vendor/cardano-js-sdk/index.js";
+import * as Crypto from "../vendor/cardano-js-sdk/deps/crypto.js";
+
+type OpaqueString<_T extends PropertyKey> = string;
 
 export const Slot = C.Cardano.Slot;
 export type Slot = C.Cardano.Slot;
