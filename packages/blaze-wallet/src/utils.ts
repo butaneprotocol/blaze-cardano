@@ -1,18 +1,20 @@
 import {
+  type CborWriter,
   type Ed25519PrivateKey,
   fromHex,
   toHex,
   HexBlob,
-  Serialization,
 } from "@blaze-cardano/core";
+import { getCryptoFunctions } from "./crypto";
 import { type CIP30DataSignature } from "./types";
 
-const {
-  CborWriter,
-} = Serialization;
+type CreateCborWriter = () => CborWriter;
 
-function buildProtectedHeaders(address: Uint8Array): Uint8Array {
-  const writer = new CborWriter();
+function buildProtectedHeaders(
+  createCborWriter: CreateCborWriter,
+  address: Uint8Array,
+): Uint8Array {
+  const writer = createCborWriter();
   writer.writeStartMap(2);
   writer.writeInt(1);
   writer.writeInt(-8);
@@ -22,10 +24,11 @@ function buildProtectedHeaders(address: Uint8Array): Uint8Array {
 }
 
 function buildSigStructure(
+  createCborWriter: CreateCborWriter,
   protectedHeaders: Uint8Array,
   payload: Uint8Array,
 ): Uint8Array {
-  const writer = new CborWriter();
+  const writer = createCborWriter();
   writer.writeStartArray(4);
   writer.writeTextString("Signature1");
   writer.writeByteString(protectedHeaders);
@@ -35,11 +38,12 @@ function buildSigStructure(
 }
 
 function buildCoseSign1(
+  createCborWriter: CreateCborWriter,
   protectedHeaders: Uint8Array,
   payload: Uint8Array,
   signature: Uint8Array,
 ): Uint8Array {
-  const writer = new CborWriter();
+  const writer = createCborWriter();
   writer.writeStartArray(4);
   writer.writeByteString(protectedHeaders);
   writer.writeStartMap(1);
@@ -50,8 +54,11 @@ function buildCoseSign1(
   return writer.encode();
 }
 
-function buildCoseKey(publicKey: Uint8Array): Uint8Array {
-  const writer = new CborWriter();
+function buildCoseKey(
+  createCborWriter: CreateCborWriter,
+  publicKey: Uint8Array,
+): Uint8Array {
+  const writer = createCborWriter();
   writer.writeStartMap(4);
   writer.writeInt(1);
   writer.writeInt(1);
@@ -69,15 +76,27 @@ export async function signData(
   payload: string,
   privateKey: Ed25519PrivateKey,
 ): Promise<CIP30DataSignature> {
+  const cryptoFunctions = await getCryptoFunctions();
   const addressBytes = fromHex(addressHex);
   const payloadBytes = fromHex(payload);
-  const protectedHeaders = buildProtectedHeaders(addressBytes);
-  const toSign = buildSigStructure(protectedHeaders, payloadBytes);
+  const protectedHeaders = buildProtectedHeaders(
+    cryptoFunctions.createCborWriter,
+    addressBytes,
+  );
+  const toSign = buildSigStructure(
+    cryptoFunctions.createCborWriter,
+    protectedHeaders,
+    payloadBytes,
+  );
   const publicKey = privateKey.toPublic();
-  const signedSigStruc = privateKey.sign(HexBlob(toHex(toSign)));
-  const signature = signedSigStruc.bytes();
-  const coseSign1 = buildCoseSign1(protectedHeaders, payloadBytes, signature);
-  const key = buildCoseKey(publicKey.bytes());
+  const signature = cryptoFunctions.signEd25519(privateKey, toSign);
+  const coseSign1 = buildCoseSign1(
+    cryptoFunctions.createCborWriter,
+    protectedHeaders,
+    payloadBytes,
+    signature,
+  );
+  const key = buildCoseKey(cryptoFunctions.createCborWriter, publicKey.bytes());
 
   return {
     signature: HexBlob(toHex(coseSign1)),
