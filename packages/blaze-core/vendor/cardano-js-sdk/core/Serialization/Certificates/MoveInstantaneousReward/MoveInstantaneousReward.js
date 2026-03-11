@@ -12,7 +12,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var _MoveInstantaneousReward_toOtherPot, _MoveInstantaneousReward_toStakeCreds, _MoveInstantaneousReward_kind, _MoveInstantaneousReward_originalBytes;
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
 import { CertificateKind } from '../CertificateKind.js';
-import { HexBlob, InvalidArgumentError, InvalidStateError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError, InvalidStateError } from "../../../../deps/util.js";
 import { MirCertificateKind } from '../../../Cardano/types/Certificate.js';
 import { MoveInstantaneousRewardToOtherPot } from './MoveInstantaneousRewardToOtherPot.js';
 import { MoveInstantaneousRewardToStakeCreds } from './MoveInstantaneousRewardToStakeCreds.js';

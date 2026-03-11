@@ -1,6 +1,6 @@
 import * as BaseEncoding from '@scure/base';
-import * as Crypto from '@cardano-sdk/crypto';
-import { HexBlob, typedBech32, typedHex } from '@cardano-sdk/util';
+import * as Crypto from "../../../../deps/crypto.js";
+import { HexBlob, typedBech32, typedHex } from "../../../../deps/util.js";
 const MAX_BECH32_LENGTH_LIMIT = 1023;
 export const PoolId = (value) => typedBech32(value, 'pool', 45);
 PoolId.fromKeyHash = (value) => HexBlob.toTypedBech32('pool', value);

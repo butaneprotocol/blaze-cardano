@@ -1,5 +1,5 @@
 import { CredentialType, RewardAccount } from '../Address/index.js';
-import { isNotNil } from '@cardano-sdk/util';
+import { isNotNil } from "../../../deps/util.js";
 export var CertificateType;
 (function (CertificateType) {
     CertificateType["StakeRegistration"] = "StakeRegistrationCertificate";

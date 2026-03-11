@@ -12,7 +12,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _Update_epoch, _Update_updates, _Update_originalBytes;
 import { CborReader, CborWriter } from '../CBOR/index.js';
 import { EpochNo } from '../../Cardano/types/Block.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 import { ProposedProtocolParameterUpdates } from './ProposedProtocolParameterUpdates.js';
 const UPDATE_ARRAY_SIZE = 2;
 export class Update {

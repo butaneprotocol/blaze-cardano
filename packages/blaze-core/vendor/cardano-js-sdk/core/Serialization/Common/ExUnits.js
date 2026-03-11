@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _ExUnits_mem, _ExUnits_steps, _ExUnits_originalBytes;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../../deps/util.js";
 const EX_UNITS_ARRAY_SIZE = 2;
 export class ExUnits {
     constructor(mem, steps) {

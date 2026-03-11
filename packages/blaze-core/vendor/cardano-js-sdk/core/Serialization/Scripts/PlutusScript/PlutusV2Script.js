@@ -10,9 +10,9 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _PlutusV2Script_compiledByteCode, _PlutusV2Script_originalBytes;
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../../deps/crypto.js";
 import { CborReader, CborWriter } from '../../CBOR/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../../deps/util.js";
 import { PlutusLanguageVersion, ScriptType } from '../../../Cardano/types/Script.js';
 const HASH_LENGTH_IN_BYTES = 28;
 export class PlutusV2Script {

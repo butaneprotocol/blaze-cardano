@@ -12,7 +12,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _VotingProcedure_vote, _VotingProcedure_anchor, _VotingProcedure_originalBytes;
 import { Anchor } from '../../Common/Anchor.js';
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../../deps/util.js";
 import { hexToBytes } from '../../../util/misc/index.js';
 const EMBEDDED_GROUP_SIZE = 2;
 export class VotingProcedure {

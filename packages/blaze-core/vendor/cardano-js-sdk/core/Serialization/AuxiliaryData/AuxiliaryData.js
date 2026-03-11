@@ -12,7 +12,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var _AuxiliaryData_instances, _a, _AuxiliaryData_metadata, _AuxiliaryData_nativeScripts, _AuxiliaryData_plutusV1Scripts, _AuxiliaryData_plutusV2Scripts, _AuxiliaryData_plutusV3Scripts, _AuxiliaryData_originalBytes, _AuxiliaryData_getMapSize, _AuxiliaryData_getCoreScripts, _AuxiliaryData_getCddlScripts;
 import { CborReader, CborReaderState, CborWriter } from '../CBOR/index.js';
 import { GeneralTransactionMetadata } from './TransactionMetadata/GeneralTransactionMetadata.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 import { NativeScript, PlutusV1Script, PlutusV2Script, PlutusV3Script } from '../Scripts/index.js';
 import { PlutusLanguageVersion, ScriptType } from '../../Cardano/types/Script.js';
 import { SerializationError, SerializationFailure } from '../../errors.js';

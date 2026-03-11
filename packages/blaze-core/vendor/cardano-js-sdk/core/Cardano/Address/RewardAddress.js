@@ -11,8 +11,8 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _RewardAddress_type, _RewardAddress_networkId, _RewardAddress_paymentPart;
 import { Address, AddressType, CredentialType } from './Address.js';
-import { Hash28ByteBase16 } from '@cardano-sdk/crypto';
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { Hash28ByteBase16 } from "../../../deps/crypto.js";
+import { InvalidArgumentError } from "../../../deps/util.js";
 export class RewardAddress {
     constructor(props) {
         _RewardAddress_type.set(this, void 0);

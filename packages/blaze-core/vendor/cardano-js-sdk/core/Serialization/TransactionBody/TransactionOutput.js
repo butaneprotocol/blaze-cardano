@@ -13,7 +13,7 @@ var _TransactionOutput_instances, _TransactionOutput_address, _TransactionOutput
 import { Address } from '../../Cardano/Address/index.js';
 import { CborReader, CborReaderState, CborTag, CborWriter } from '../CBOR/index.js';
 import { Datum, DatumKind } from '../Common/Datum.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 import { PlutusData } from '../PlutusData/index.js';
 import { Script } from '../Scripts/index.js';
 import { Value } from './Value.js';

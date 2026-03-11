@@ -12,7 +12,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _MoveInstantaneousRewardToOtherPot_pot, _MoveInstantaneousRewardToOtherPot_amount, _MoveInstantaneousRewardToOtherPot_originalBytes;
 import { CborReader, CborWriter } from '../../CBOR/index.js';
 import { CertificateType, MirCertificateKind, MirCertificatePot } from '../../../Cardano/types/Certificate.js';
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../../../deps/util.js";
 const EMBEDDED_GROUP_SIZE = 2;
 export class MoveInstantaneousRewardToOtherPot {
     constructor(pot, amount) {

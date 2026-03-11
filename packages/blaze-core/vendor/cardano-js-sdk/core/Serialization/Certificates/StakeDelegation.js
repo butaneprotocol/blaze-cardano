@@ -10,11 +10,11 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _StakeDelegation_credential, _StakeDelegation_poolKeyHash, _StakeDelegation_originalBytes;
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../deps/crypto.js";
 import { CborReader, CborWriter } from '../CBOR/index.js';
 import { CertificateKind } from './CertificateKind.js';
 import { CertificateType } from '../../Cardano/types/Certificate.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 import { PoolId } from '../../Cardano/types/StakePool/index.js';
 const EMBEDDED_GROUP_SIZE = 3;
 const CREDENTIAL_SIZE = 2;

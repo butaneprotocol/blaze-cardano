@@ -14,7 +14,7 @@ import { Address, RewardAddress } from '../../../Cardano/Address/index.js';
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
 import { GovernanceActionKind } from './GovernanceActionKind.js';
 import { GovernanceActionType } from '../../../Cardano/types/Governance.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../../deps/util.js";
 import { SerializationError, SerializationFailure } from '../../../errors.js';
 import { hexToBytes } from '../../../util/misc/index.js';
 const EMBEDDED_GROUP_SIZE = 3;

@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _TransactionInput_id, _TransactionInput_index, _TransactionInput_originalBytes;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 const TRANSACTION_INPUT_ARRAY_SIZE = 2;
 export class TransactionInput {
     constructor(id, index) {

@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _CborSet_values, _CborSet_originalBytes;
 import { CborReader, CborReaderState, CborTag, CborWriter } from '../CBOR/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../deps/util.js";
 import { inConwayEra } from '../../util/conwayEra.js';
 export class CborSet {
     constructor(values) {

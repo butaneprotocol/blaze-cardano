@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _TransactionUnspentOutput_input, _TransactionUnspentOutput_output, _TransactionUnspentOutput_originalBytes;
 import { CborReader, CborWriter } from './CBOR/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../deps/util.js";
 import { TransactionInput, TransactionOutput } from './TransactionBody/index.js';
 import { hexToBytes } from '../util/misc/index.js';
 const TRANSACTION_UNSPENT_OUTPUT_ARRAY_SIZE = 2;

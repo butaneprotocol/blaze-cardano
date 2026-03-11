@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _PoolVotingThresholds_motionNoConfidence, _PoolVotingThresholds_committeeNormal, _PoolVotingThresholds_committeeNoConfidence, _PoolVotingThresholds_hardForkInitiation, _PoolVotingThresholds_securityRelevantParam, _PoolVotingThresholds_originalBytes;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 import { UnitInterval } from '../Common/index.js';
 const POOL_VOTING_THRESHOLDS_SIZE = 5;
 export class PoolVotingThresholds {

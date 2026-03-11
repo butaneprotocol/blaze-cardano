@@ -11,7 +11,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 };
 var _TransactionMetadatum_map, _TransactionMetadatum_list, _TransactionMetadatum_integer, _TransactionMetadatum_bytes, _TransactionMetadatum_text, _TransactionMetadatum_kind, _TransactionMetadatum_originalBytes;
 import { CborReader, CborReaderState, CborTag, CborWriter } from '../../CBOR/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../../deps/util.js";
 import { MetadatumList } from './MetadatumList.js';
 import { MetadatumMap } from './MetadatumMap.js';
 import { NotImplementedError, SerializationError, SerializationFailure } from '../../../errors.js';

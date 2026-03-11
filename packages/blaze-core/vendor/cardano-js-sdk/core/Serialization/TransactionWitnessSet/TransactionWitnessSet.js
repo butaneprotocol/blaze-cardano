@@ -13,7 +13,7 @@ var _TransactionWitnessSet_instances, _a, _TransactionWitnessSet_vkeywitnesses, 
 import { BootstrapWitness } from './BootstrapWitness.js';
 import { CborReader, CborReaderState, CborWriter } from '../CBOR/index.js';
 import { CborSet } from '../Common/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../deps/util.js";
 import { NativeScript, PlutusV1Script, PlutusV2Script, PlutusV3Script } from '../Scripts/index.js';
 import { PlutusData } from '../PlutusData/PlutusData.js';
 import { PlutusLanguageVersion, ScriptType } from '../../Cardano/types/Script.js';

@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _Hash_value;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../deps/util.js";
 export class Hash {
     constructor(value) {
         _Hash_value.set(this, void 0);

@@ -10,9 +10,9 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _ProposedProtocolParameterUpdates_proposedUpdates, _ProposedProtocolParameterUpdates_originalBytes;
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../deps/crypto.js";
 import { CborReader, CborReaderState, CborWriter } from '../CBOR/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../deps/util.js";
 import { ProtocolParamUpdate } from './ProtocolParamUpdate.js';
 export class ProposedProtocolParameterUpdates {
     constructor(proposedUpdates) {

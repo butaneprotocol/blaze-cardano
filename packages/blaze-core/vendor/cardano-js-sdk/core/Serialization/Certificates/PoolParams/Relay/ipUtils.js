@@ -1,5 +1,5 @@
 import { Address4, Address6 } from 'ip-address';
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../../../../deps/util.js";
 export const ipV4StringToByteArray = (address) => {
     if (!Address4.isValid(address))
         throw new InvalidArgumentError('address', `Invalid IP V4 string: ${address}`);

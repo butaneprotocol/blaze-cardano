@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _ExUnitPrices_memPrice, _ExUnitPrices_stepsPrice, _ExUnitPrices_originalBytes;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 import { UnitInterval } from '../Common/index.js';
 import Fraction from 'fraction.js';
 const EX_UNITS_PRICES_ARRAY_SIZE = 2;

@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _ConstrPlutusData_alternative, _ConstrPlutusData_data;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../deps/util.js";
 import { PlutusList } from './PlutusList.js';
 import { hexToBytes } from '../../util/misc/index.js';
 const GENERAL_FORM_TAG = 102n;

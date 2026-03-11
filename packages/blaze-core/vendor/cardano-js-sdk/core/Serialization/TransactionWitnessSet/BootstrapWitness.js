@@ -10,7 +10,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _BootstrapWitness_vkey, _BootstrapWitness_signature, _BootstrapWitness_chainCode, _BootstrapWitness_attributes, _BootstrapWitness_originalBytes;
-import { Base64Blob, HexBlob, InvalidArgumentError, InvalidStateError } from '@cardano-sdk/util';
+import { Base64Blob, HexBlob, InvalidArgumentError, InvalidStateError } from "../../../deps/util.js";
 import { CborReader, CborWriter } from '../CBOR/index.js';
 import { hexToBytes } from '../../util/misc/index.js';
 const BOOTSTRAP_WITNESS_ARRAY_SIZE = 4;

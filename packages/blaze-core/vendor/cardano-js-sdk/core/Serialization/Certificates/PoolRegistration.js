@@ -13,7 +13,7 @@ var _PoolRegistration_params, _PoolRegistration_originalBytes;
 import { CborReader, CborWriter } from '../CBOR/index.js';
 import { CertificateKind } from './CertificateKind.js';
 import { CertificateType } from '../../Cardano/types/Certificate.js';
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../../deps/util.js";
 import { PoolParams } from './PoolParams/index.js';
 const EMBEDDED_GROUP_SIZE = PoolParams.subgroupCount + 1;
 export class PoolRegistration {

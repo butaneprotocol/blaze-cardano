@@ -11,7 +11,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 };
 var _Script_nativeScript, _Script_plutusV1, _Script_plutusV2, _Script_plutusV3, _Script_language, _Script_originalBytes;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { HexBlob, InvalidStateError } from '@cardano-sdk/util';
+import { HexBlob, InvalidStateError } from "../../../deps/util.js";
 import { NativeScript } from './NativeScript/index.js';
 import { PlutusLanguageVersion, isNativeScript } from '../../Cardano/types/Script.js';
 import { PlutusV1Script, PlutusV2Script, PlutusV3Script } from './PlutusScript/index.js';

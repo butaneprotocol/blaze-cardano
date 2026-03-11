@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _GovernanceActionId_id, _GovernanceActionId_index, _GovernanceActionId_originalBytes;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 const EMBEDDED_GROUP_SIZE = 2;
 export class GovernanceActionId {
     constructor(id, index) {

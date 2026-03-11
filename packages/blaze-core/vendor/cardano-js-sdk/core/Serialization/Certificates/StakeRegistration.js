@@ -10,11 +10,11 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _StakeRegistration_credential, _StakeRegistration_originalBytes;
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../deps/crypto.js";
 import { CborReader, CborWriter } from '../CBOR/index.js';
 import { CertificateKind } from './CertificateKind.js';
 import { CertificateType } from '../../Cardano/types/Certificate.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 const EMBEDDED_GROUP_SIZE = 2;
 export class StakeRegistration {
     constructor(credential) {

@@ -5,7 +5,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _PlutusList_array;
 import { CborReader, CborReaderState, CborWriter } from '../CBOR/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../deps/util.js";
 import { PlutusData } from './PlutusData.js';
 import { bytesToHex, hexToBytes } from '../../util/misc/index.js';
 export class PlutusList {

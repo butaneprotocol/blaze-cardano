@@ -11,10 +11,10 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 };
 var _PlutusData_map, _PlutusData_list, _PlutusData_integer, _PlutusData_bytes, _PlutusData_constr, _PlutusData_kind, _PlutusData_originalBytes;
 import * as CardanoUtil from '../../Cardano/util/plutusDataUtils.js';
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../deps/crypto.js";
 import { CborReader, CborReaderState, CborTag, CborWriter } from '../CBOR/index.js';
 import { ConstrPlutusData } from './ConstrPlutusData.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../deps/util.js";
 import { NotImplementedError } from '../../errors.js';
 import { PlutusDataKind } from './PlutusDataKind.js';
 import { PlutusList } from './PlutusList.js';

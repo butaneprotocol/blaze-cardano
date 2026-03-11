@@ -12,7 +12,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _Voter_kind, _Voter_credential, _Voter_originalBytes;
 import { CborReader, CborWriter } from '../../CBOR/index.js';
 import { CredentialType } from '../../../Cardano/Address/index.js';
-import { HexBlob, InvalidArgumentError, InvalidStateError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError, InvalidStateError } from "../../../../deps/util.js";
 import { VoterKind } from './VoterKind.js';
 import { VoterType } from '../../../Cardano/types/Governance.js';
 const EMBEDDED_GROUP_SIZE = 2;

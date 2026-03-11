@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _SingleHostAddr_port, _SingleHostAddr_ipV4, _SingleHostAddr_ipV6, _SingleHostAddr_originalBytes;
 import { CborReader, CborReaderState, CborWriter } from '../../../CBOR/index.js';
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../../../../deps/util.js";
 import { byteArrayToIPv6String, byteArrayToIpV4String, ipV4StringToByteArray, ipV6StringToByteArray } from './ipUtils.js';
 const EMBEDDED_GROUP_SIZE = 4;
 const SINGLE_HOST_ADDR_RELAY_ID = 0;

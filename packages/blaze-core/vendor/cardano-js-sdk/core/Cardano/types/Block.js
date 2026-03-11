@@ -1,6 +1,6 @@
 import * as BaseEncoding from '@scure/base';
-import * as Crypto from '@cardano-sdk/crypto';
-import { InvalidStringError, typedBech32 } from '@cardano-sdk/util';
+import * as Crypto from "../../../deps/crypto.js";
+import { InvalidStringError, typedBech32 } from "../../../deps/util.js";
 import { PoolId } from './StakePool/primitives.js';
 export const BlockSize = (value) => value;
 export const BlockNo = (value) => value;

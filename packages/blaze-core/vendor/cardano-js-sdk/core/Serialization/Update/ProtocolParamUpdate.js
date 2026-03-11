@@ -16,7 +16,7 @@ import { DrepVotingThresholds } from './DrepVotingThresholds.js';
 import { EpochNo } from '../../Cardano/types/Block.js';
 import { ExUnitPrices } from './ExUnitPrices.js';
 import { ExUnits, ProtocolVersion, UnitInterval } from '../Common/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../deps/util.js";
 import { PoolVotingThresholds } from './PoolVotingThresholds.js';
 export class ProtocolParamUpdate {
     constructor() {

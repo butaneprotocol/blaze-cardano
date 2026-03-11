@@ -1,6 +1,6 @@
 import * as BaseEncoding from '@scure/base';
-import { Bip32PublicKeyHex } from '@cardano-sdk/crypto';
-import { InvalidStringError, assertIsBech32WithPrefix } from '@cardano-sdk/util';
+import { Bip32PublicKeyHex } from "../../../deps/crypto.js";
+import { InvalidStringError, assertIsBech32WithPrefix } from "../../../deps/util.js";
 const MAX_BECH32_LENGTH_LIMIT = 1023;
 const bip32PublicKeyPrefix = 'acct_shared_xvk';
 export const Cip1854ExtendedAccountPublicKey = (value) => {

@@ -16,7 +16,7 @@ import { CborReader, CborWriter } from '../../CBOR/index.js';
 import { GovernanceActionKind } from './GovernanceActionKind.js';
 import { GovernanceActionType } from '../../../Cardano/types/Governance.js';
 import { HardForkInitiationAction } from './HardForkInitiationAction.js';
-import { HexBlob, InvalidStateError } from '@cardano-sdk/util';
+import { HexBlob, InvalidStateError } from "../../../../deps/util.js";
 import { InfoAction } from './InfoAction.js';
 import { NewConstitution } from './NewConstitution.js';
 import { NoConfidence } from './NoConfidence.js';

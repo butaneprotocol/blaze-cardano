@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _SingleHostName_port, _SingleHostName_dnsName, _SingleHostName_originalBytes;
 import { CborReader, CborReaderState, CborWriter } from '../../../CBOR/index.js';
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../../../../deps/util.js";
 const EMBEDDED_GROUP_SIZE = 3;
 const SINGLE_HOST_NAME_RELAY_ID = 1;
 const MAX_DNS_SIZE_STR_LENGTH = 64;

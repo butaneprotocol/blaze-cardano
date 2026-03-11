@@ -1,6 +1,6 @@
 import { Address, AddressType } from './Address.js';
 import { DRepID } from './DRepID.js';
-import { HexBlob, InvalidStringError, assertIsBech32WithPrefix, assertIsHexString } from '@cardano-sdk/util';
+import { HexBlob, InvalidStringError, assertIsBech32WithPrefix, assertIsHexString } from "../../../deps/util.js";
 export const isRewardAccount = (address) => {
     try {
         assertIsBech32WithPrefix(address, ['stake', 'stake_test']);

@@ -1,7 +1,7 @@
 import * as Address from '../../Cardano/Address/index.js';
 import * as Cardano from '../../Cardano/types/index.js';
-import { BigIntMath } from '@cardano-sdk/util';
-import { Ed25519KeyHashHex } from '@cardano-sdk/crypto';
+import { BigIntMath } from "../../../deps/util.js";
+import { Ed25519KeyHashHex } from "../../../deps/crypto.js";
 const stakeCredentialInRewardAccounts = (stakeCredential, rewardAccounts) => {
     if (rewardAccounts.length === 0)
         return true;

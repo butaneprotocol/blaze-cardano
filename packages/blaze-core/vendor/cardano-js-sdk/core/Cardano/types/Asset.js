@@ -1,5 +1,5 @@
-import * as Crypto from '@cardano-sdk/crypto';
-import { HexBlob, InvalidStringError, assertIsHexString, typedBech32 } from '@cardano-sdk/util';
+import * as Crypto from "../../../deps/crypto.js";
+import { HexBlob, InvalidStringError, assertIsHexString, typedBech32 } from "../../../deps/util.js";
 import { TextDecoder } from 'web-encoding';
 export const AssetName = (value) => {
     if (value.length > 0) {

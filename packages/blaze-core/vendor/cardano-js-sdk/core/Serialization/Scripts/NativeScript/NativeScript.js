@@ -10,9 +10,9 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
 var _NativeScript_scriptAll, _NativeScript_scriptAny, _NativeScript_scripNOfK, _NativeScript_scriptPubKey, _NativeScript_timelockExpiry, _NativeScript_timelockStart, _NativeScript_kind, _NativeScript_originalBytes;
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../../deps/crypto.js";
 import { CborReader } from '../../CBOR/index.js';
-import { InvalidStateError } from '@cardano-sdk/util';
+import { InvalidStateError } from "../../../../deps/util.js";
 import { NativeScriptKind } from '../../../Cardano/types/Script.js';
 import { ScriptAll } from './ScriptAll.js';
 import { ScriptAny } from './ScriptAny.js';

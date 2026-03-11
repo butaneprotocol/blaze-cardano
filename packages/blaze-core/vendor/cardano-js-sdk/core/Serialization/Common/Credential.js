@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _Credential_value;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 import { hexToBytes } from '../../util/misc/index.js';
 const CREDENTIAL_ARRAY_SIZE = 2;
 export class Credential {

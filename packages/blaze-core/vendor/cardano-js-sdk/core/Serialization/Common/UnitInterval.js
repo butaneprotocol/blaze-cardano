@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _UnitInterval_numerator, _UnitInterval_denominator, _UnitInterval_originalBytes;
 import { CborReader, CborTag, CborWriter } from '../CBOR/index.js';
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../../deps/util.js";
 import Fraction from 'fraction.js';
 const UNIT_INTERVAL_ARRAY_SIZE = 2;
 export class UnitInterval {

@@ -1,4 +1,4 @@
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../deps/util.js";
 export const asMetadatumMap = (metadatum) => {
     if (metadatum instanceof Map) {
         return metadatum;

@@ -11,7 +11,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 };
 var _PlutusMap_map, _PlutusMap_useIndefiniteEncoding;
 import { CborReader, CborReaderState, CborWriter } from '../CBOR/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../deps/util.js";
 import { PlutusData } from './PlutusData.js';
 import { PlutusList } from './PlutusList.js';
 import { bytesToHex, hexToBytes } from '../../util/misc/index.js';

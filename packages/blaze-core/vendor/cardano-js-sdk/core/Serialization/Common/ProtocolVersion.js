@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _ProtocolVersion_major, _ProtocolVersion_minor, _ProtocolVersion_originalBytes;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../../deps/util.js";
 const PROTOCOL_VERSION_ARRAY_SIZE = 2;
 export class ProtocolVersion {
     constructor(major, minor) {

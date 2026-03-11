@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _Committee_quorumThreshold, _Committee_committeeColdCredentials, _Committee_originalBytes;
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
-import { HexBlob, InvalidArgumentError, InvalidStateError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError, InvalidStateError } from "../../../../deps/util.js";
 import { UnitInterval } from '../../Common/index.js';
 import { hexToBytes } from '../../../util/misc/index.js';
 const COMMITTEE_ARRAY_SIZE = 2;

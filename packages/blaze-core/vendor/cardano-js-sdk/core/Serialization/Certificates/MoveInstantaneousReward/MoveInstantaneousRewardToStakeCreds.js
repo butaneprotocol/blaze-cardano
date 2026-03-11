@@ -10,10 +10,10 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _MoveInstantaneousRewardToStakeCreds_pot, _MoveInstantaneousRewardToStakeCreds_credentials, _MoveInstantaneousRewardToStakeCreds_originalBytes;
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../../deps/crypto.js";
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
 import { CertificateType, MirCertificateKind, MirCertificatePot } from '../../../Cardano/types/Certificate.js';
-import { HexBlob, InvalidArgumentError, InvalidStateError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError, InvalidStateError } from "../../../../deps/util.js";
 const EMBEDDED_GROUP_SIZE = 2;
 export class MoveInstantaneousRewardToStakeCreds {
     constructor(pot, credentials) {

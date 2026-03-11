@@ -12,7 +12,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var _VotingProcedures_procedures, _VotingProcedures_originalBytes;
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
 import { GovernanceActionId } from '../../Common/GovernanceActionId.js';
-import { HexBlob, InvalidArgumentError, InvalidStateError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError, InvalidStateError } from "../../../../deps/util.js";
 import { Voter } from './Voter.js';
 import { VotingProcedure } from './VotingProcedure.js';
 import { hexToBytes } from '../../../util/misc/index.js';

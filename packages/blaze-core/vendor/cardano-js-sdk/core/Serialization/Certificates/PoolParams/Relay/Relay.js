@@ -11,7 +11,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 };
 var _Relay_singleHostAddr, _Relay_singleHostName, _Relay_multiHostName, _Relay_kind, _Relay_originalBytes;
 import { CborReader } from '../../../CBOR/index.js';
-import { InvalidStateError } from '@cardano-sdk/util';
+import { InvalidStateError } from "../../../../../deps/util.js";
 import { MultiHostName } from './MultiHostName.js';
 import { SingleHostAddr } from './SingleHostAddr.js';
 import { SingleHostName } from './SingleHostName.js';

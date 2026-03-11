@@ -1,7 +1,7 @@
 import * as BaseEncoding from '@scure/base';
 import { Address, AddressType, CredentialType } from './Address.js';
-import { Hash28ByteBase16 } from '@cardano-sdk/crypto';
-import { typedBech32 } from '@cardano-sdk/util';
+import { Hash28ByteBase16 } from "../../../deps/crypto.js";
+import { typedBech32 } from "../../../deps/util.js";
 const MAX_BECH32_LENGTH_LIMIT = 1023;
 const CIP_105_DREP_ID_LENGTH = 28;
 const CIP_129_DREP_ID_LENGTH = 29;

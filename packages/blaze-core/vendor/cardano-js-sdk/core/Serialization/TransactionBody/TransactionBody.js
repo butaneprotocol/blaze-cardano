@@ -10,12 +10,12 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _TransactionBody_instances, _TransactionBody_inputs, _TransactionBody_outputs, _TransactionBody_fee, _TransactionBody_ttl, _TransactionBody_certs, _TransactionBody_withdrawals, _TransactionBody_update, _TransactionBody_auxiliaryDataHash, _TransactionBody_validityStartInterval, _TransactionBody_mint, _TransactionBody_scriptDataHash, _TransactionBody_collateral, _TransactionBody_requiredSigners, _TransactionBody_networkId, _TransactionBody_collateralReturn, _TransactionBody_totalCollateral, _TransactionBody_referenceInputs, _TransactionBody_votingProcedures, _TransactionBody_proposalProcedures, _TransactionBody_currentTreasuryValue, _TransactionBody_donation, _TransactionBody_originalBytes, _TransactionBody_getMapSize;
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../deps/crypto.js";
 import { Address, RewardAddress } from '../../Cardano/Address/index.js';
 import { CborReader, CborReaderState, CborTag, CborWriter } from '../CBOR/index.js';
 import { CborSet, Hash } from '../Common/index.js';
 import { Certificate } from '../Certificates/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../deps/util.js";
 import { ProposalProcedure } from './ProposalProcedure/index.js';
 import { SerializationError, SerializationFailure } from '../../errors.js';
 import { Slot } from '../../Cardano/types/Block.js';

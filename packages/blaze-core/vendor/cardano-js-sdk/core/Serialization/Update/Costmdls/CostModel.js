@@ -10,7 +10,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _CostModel_instances, _CostModel_language, _CostModel_costs, _CostModel_isOperationValid;
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../../../deps/util.js";
 import { PlutusLanguageVersion } from '../../../Cardano/types/Script.js';
 export class CostModel {
     constructor(language, costs) {

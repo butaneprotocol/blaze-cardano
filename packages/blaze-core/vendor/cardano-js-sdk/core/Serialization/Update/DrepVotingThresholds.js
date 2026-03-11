@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _DrepVotingThresholds_motionNoConfidence, _DrepVotingThresholds_committeeNormal, _DrepVotingThresholds_committeeNoConfidence, _DrepVotingThresholds_updateConstitution, _DrepVotingThresholds_hardForkInitiation, _DrepVotingThresholds_ppNetworkGroup, _DrepVotingThresholds_ppEconomicGroup, _DrepVotingThresholds_ppTechnicalGroup, _DrepVotingThresholds_ppGovernanceGroup, _DrepVotingThresholds_treasuryWithdrawal, _DrepVotingThresholds_originalBytes;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 import { UnitInterval } from '../Common/index.js';
 const EX_DREP_VOTING_THRESHOLDS_SIZE = 10;
 export class DrepVotingThresholds {

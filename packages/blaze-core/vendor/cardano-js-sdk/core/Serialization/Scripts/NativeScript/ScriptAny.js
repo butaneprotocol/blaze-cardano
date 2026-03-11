@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _ScriptAny_nativeScripts, _ScriptAny_originalBytes;
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../../deps/util.js";
 import { NativeScript } from './NativeScript.js';
 import { NativeScriptKind, ScriptType } from '../../../Cardano/types/Script.js';
 const EMBEDDED_GROUP_SIZE = 2;

@@ -10,11 +10,11 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _PoolParams_operator, _PoolParams_vrfKeyHash, _PoolParams_pledge, _PoolParams_cost, _PoolParams_margin, _PoolParams_rewardAccount, _PoolParams_poolOwners, _PoolParams_relays, _PoolParams_poolMetadata, _PoolParams_originalBytes;
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../../deps/crypto.js";
 import { Address } from '../../../Cardano/Address/Address.js';
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
 import { CborSet, Hash } from '../../Common/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../../deps/util.js";
 import { PoolId, VrfVkHex } from '../../../Cardano/types/StakePool/index.js';
 import { PoolMetadata } from './PoolMetadata.js';
 import { Relay } from './Relay/index.js';

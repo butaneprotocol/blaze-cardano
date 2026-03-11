@@ -12,8 +12,8 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _ByronAddress_type, _ByronAddress_content;
 import { Address, AddressType } from './Address.js';
 import { CborReader, CborReaderState, CborTag, CborWriter } from '../../Serialization/index.js';
-import { Hash28ByteBase16 } from '@cardano-sdk/crypto';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { Hash28ByteBase16 } from "../../../deps/crypto.js";
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 import { crc32 } from '@foxglove/crc';
 export var ByronAddressType;
 (function (ByronAddressType) {

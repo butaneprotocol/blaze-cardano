@@ -10,11 +10,11 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _DRep_credential, _DRep_kind, _DRep_originalBytes;
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../../deps/crypto.js";
 import { CborReader, CborWriter } from '../../CBOR/index.js';
 import { CredentialType } from '../../../Cardano/Address/Address.js';
 import { DRepKind } from './DRepKind.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../../deps/util.js";
 import { isDRepAlwaysAbstain, isDRepAlwaysNoConfidence } from '../../../Cardano/types/Governance.js';
 export class DRep {
     constructor(kind, credential) {

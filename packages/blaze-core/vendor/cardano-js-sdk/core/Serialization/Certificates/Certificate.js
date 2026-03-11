@@ -15,7 +15,7 @@ import { CborReader } from '../CBOR/index.js';
 import { CertificateKind } from './CertificateKind.js';
 import { CertificateType } from '../../Cardano/types/Certificate.js';
 import { GenesisKeyDelegation } from './GenesisKeyDelegation.js';
-import { InvalidStateError } from '@cardano-sdk/util';
+import { InvalidStateError } from "../../../deps/util.js";
 import { MoveInstantaneousReward } from './MoveInstantaneousReward/index.js';
 import { PoolRegistration } from './PoolRegistration.js';
 import { PoolRetirement } from './PoolRetirement.js';

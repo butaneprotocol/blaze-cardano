@@ -10,10 +10,10 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _Redeemer_tag, _Redeemer_index, _Redeemer_data, _Redeemer_exUnits, _Redeemer_originalBytes;
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../../deps/crypto.js";
 import { CborReader, CborWriter } from '../../CBOR/index.js';
 import { ExUnits } from '../../Common/index.js';
-import { HexBlob, InvalidArgumentError, InvalidStateError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError, InvalidStateError } from "../../../../deps/util.js";
 import { PlutusData } from '../../PlutusData/index.js';
 import { RedeemerPurpose } from '../../../Cardano/types/Transaction.js';
 import { RedeemerTag } from './RedeemerTag.js';

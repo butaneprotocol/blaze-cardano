@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _Value_coin, _Value_multiasset, _Value_originalBytes;
 import { CborReader, CborReaderState, CborWriter } from '../CBOR/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 import { multiAssetsToTokenMap, sortCanonically, tokenMapToMultiAsset } from './Utils.js';
 const VALUE_ARRAY_SIZE = 2;
 export class Value {

@@ -1,4 +1,4 @@
-import { Percent } from '@cardano-sdk/util';
+import { Percent } from "../../../deps/util.js";
 const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
 export const estimateStakePoolAPY = (rewardsHistory) => {
     if (rewardsHistory.length === 0)

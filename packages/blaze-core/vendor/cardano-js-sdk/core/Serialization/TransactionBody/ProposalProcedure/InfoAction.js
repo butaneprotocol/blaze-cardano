@@ -13,7 +13,7 @@ var _InfoAction_originalBytes;
 import { CborReader, CborWriter } from '../../CBOR/index.js';
 import { GovernanceActionKind } from './GovernanceActionKind.js';
 import { GovernanceActionType } from '../../../Cardano/types/Governance.js';
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../../../deps/util.js";
 const EMBEDDED_GROUP_SIZE = 1;
 export class InfoAction {
     constructor() {

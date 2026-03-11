@@ -14,7 +14,7 @@ import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
 import { GovernanceActionId } from '../../Common/GovernanceActionId.js';
 import { GovernanceActionKind } from './GovernanceActionKind.js';
 import { GovernanceActionType } from '../../../Cardano/types/Governance.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../../deps/util.js";
 import { ProtocolParamUpdate } from '../../Update/index.js';
 import { hexToBytes } from '../../../util/misc/index.js';
 const EMBEDDED_GROUP_SIZE = 4;

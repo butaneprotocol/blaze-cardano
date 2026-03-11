@@ -1,4 +1,4 @@
-import { ComposableError, formatErrorMessage } from '@cardano-sdk/util';
+import { ComposableError, formatErrorMessage } from "../deps/util.js";
 import { CustomError } from 'ts-custom-error';
 export var ProviderFailure;
 (function (ProviderFailure) {

@@ -12,7 +12,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _Constitution_anchor, _Constitution_scriptHash, _Constitution_originalBytes;
 import { Anchor } from '../../Common/Anchor.js';
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../../deps/util.js";
 import { hexToBytes } from '../../../util/misc/index.js';
 const CONSTITUTION_ARRAY_SIZE = 2;
 export class Constitution {

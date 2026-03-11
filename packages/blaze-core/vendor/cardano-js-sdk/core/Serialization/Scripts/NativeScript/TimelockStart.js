@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _TimelockStart_slot, _TimelockStart_originalBytes;
 import { CborReader, CborWriter } from '../../CBOR/index.js';
-import { InvalidArgumentError } from '@cardano-sdk/util';
+import { InvalidArgumentError } from "../../../../deps/util.js";
 import { NativeScriptKind, ScriptType } from '../../../Cardano/types/Script.js';
 import { Slot } from '../../../Cardano/types/Block.js';
 const EMBEDDED_GROUP_SIZE = 2;

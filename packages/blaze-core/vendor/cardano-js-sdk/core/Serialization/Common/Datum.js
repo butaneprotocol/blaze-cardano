@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _Datum_datumKind, _Datum_dataHash, _Datum_inlineData, _Datum_originalBytes;
 import { CborReader, CborWriter } from '../CBOR/index.js';
-import { HexBlob, InvalidArgumentError, InvalidStateError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError, InvalidStateError } from "../../../deps/util.js";
 import { PlutusData } from '../PlutusData/index.js';
 const DATUM_ARRAY_SIZE = 2;
 export const isDatumHash = (datum) => datum !== null && typeof datum === 'string';

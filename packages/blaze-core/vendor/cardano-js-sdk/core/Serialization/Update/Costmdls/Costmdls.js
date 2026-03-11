@@ -12,7 +12,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _Costmdls_models, _Costmdls_originalBytes;
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
 import { CostModel } from './CostModel.js';
-import { InvalidStateError } from '@cardano-sdk/util';
+import { InvalidStateError } from "../../../../deps/util.js";
 import { PlutusLanguageVersion } from '../../../Cardano/types/Script.js';
 export class Costmdls {
     constructor(models = new Map()) {

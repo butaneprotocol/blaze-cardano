@@ -189,8 +189,6 @@
     "util/misc/index.js"
   ],
   "bareImports": [
-    "@cardano-sdk/crypto",
-    "@cardano-sdk/util",
     "@foxglove/crc",
     "@scure/base",
     "fraction.js",
@@ -198,5 +196,9 @@
     "lodash/uniqWith.js",
     "ts-custom-error",
     "web-encoding"
+  ],
+  "rewrittenImports": [
+    "@cardano-sdk/crypto",
+    "@cardano-sdk/util"
   ]
 }

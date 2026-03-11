@@ -1,4 +1,4 @@
-import * as Crypto from '@cardano-sdk/crypto';
+import * as Crypto from "../../../deps/crypto.js";
 export const TransactionId = (value) => Crypto.Hash32ByteBase16(value);
 TransactionId.fromHexBlob = (value) => Crypto.Hash32ByteBase16.fromHexBlob(value);
 export var InputSource;

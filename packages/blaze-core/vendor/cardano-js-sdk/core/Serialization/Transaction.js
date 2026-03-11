@@ -12,7 +12,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _Transaction_body, _Transaction_witnessSet, _Transaction_auxiliaryData, _Transaction_isValid, _Transaction_originalBytes;
 import { AuxiliaryData } from './AuxiliaryData/index.js';
 import { CborReader, CborReaderState, CborWriter } from './CBOR/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../deps/util.js";
 import { TransactionBody } from './TransactionBody/index.js';
 import { TransactionWitnessSet } from './TransactionWitnessSet/index.js';
 import { hexToBytes } from '../util/misc/index.js';

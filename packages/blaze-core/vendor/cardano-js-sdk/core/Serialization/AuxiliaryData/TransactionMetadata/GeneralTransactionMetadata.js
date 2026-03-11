@@ -11,7 +11,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _GeneralTransactionMetadata_metadata, _GeneralTransactionMetadata_originalBytes;
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
-import { HexBlob } from '@cardano-sdk/util';
+import { HexBlob } from "../../../../deps/util.js";
 import { TransactionMetadatum } from './TransactionMetadatum.js';
 import { hexToBytes } from '../../../util/misc/index.js';
 export class GeneralTransactionMetadata {

@@ -1,5 +1,5 @@
 import { Address, AddressType } from '../Address/Address.js';
-import { InvalidStringError } from '@cardano-sdk/util';
+import { InvalidStringError } from "../../../deps/util.js";
 const getAddressKeyIDs = (input) => {
     const address = typeof input === 'string' ? Address.fromString(input) : input;
     if (!address) {

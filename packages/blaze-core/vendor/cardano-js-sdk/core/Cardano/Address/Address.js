@@ -14,7 +14,7 @@ import * as BaseEncoding from '@scure/base';
 import { BaseAddress } from './BaseAddress.js';
 import { ByronAddress } from './ByronAddress.js';
 import { EnterpriseAddress } from './EnterpriseAddress.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../deps/util.js";
 import { NetworkId } from '../ChainId.js';
 import { PointerAddress } from './PointerAddress.js';
 import { RewardAddress } from './RewardAddress.js';

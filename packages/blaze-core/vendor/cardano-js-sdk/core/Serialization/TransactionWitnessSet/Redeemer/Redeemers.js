@@ -12,7 +12,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _Redeemers_values, _Redeemers_originalBytes;
 import { CborReader, CborReaderState, CborWriter } from '../../CBOR/index.js';
 import { ExUnits } from '../../Common/index.js';
-import { HexBlob, InvalidArgumentError } from '@cardano-sdk/util';
+import { HexBlob, InvalidArgumentError } from "../../../../deps/util.js";
 import { PlutusData } from '../../PlutusData/index.js';
 import { Redeemer } from './Redeemer.js';
 import { hexToBytes } from '../../../util/misc/index.js';
