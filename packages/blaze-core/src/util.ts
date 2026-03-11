@@ -1,6 +1,5 @@
 import * as C from "../vendor/cardano-js-sdk/index.js";
-import type { OpaqueString } from "@cardano-sdk/util";
-import { HexBlob, typedHex } from "@cardano-sdk/util";
+import { HexBlob, typedHex } from "../vendor/cardano-js-sdk/deps/util.js";
 import type {
   PolicyId,
   PaymentAddress,
@@ -27,6 +26,8 @@ import * as bip39 from "@scure/bip39";
 import { ed25519 as ed } from "@noble/curves/ed25519";
 
 export { wordlist } from "@scure/bip39/wordlists/english";
+
+export type OpaqueString<_T extends PropertyKey> = string;
 
 /**
  * Converts an Address to a PaymentAddress.
@@ -317,5 +318,4 @@ export const setInConwayEra = C.setInConwayEra;
 /**
  * Exporting HexBlob, OpaqueString, and typedHex.
  */
-export type { OpaqueString };
 export { HexBlob, typedHex };
