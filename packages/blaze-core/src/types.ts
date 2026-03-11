@@ -1,5 +1,5 @@
 import { type HexBlob, type OpaqueString, typedHex } from "@cardano-sdk/util";
-import * as C from "@cardano-sdk/core";
+import * as C from "../vendor/cardano-js-sdk/index.js";
 import * as Crypto from "@cardano-sdk/crypto";
 
 export const Slot = C.Cardano.Slot;

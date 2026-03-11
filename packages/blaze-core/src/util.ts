@@ -1,4 +1,4 @@
-import * as C from "@cardano-sdk/core";
+import * as C from "../vendor/cardano-js-sdk/index.js";
 import type { OpaqueString } from "@cardano-sdk/util";
 import { HexBlob, typedHex } from "@cardano-sdk/util";
 import type {
