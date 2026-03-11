@@ -253,8 +253,6 @@
         "@blaze-cardano/core": "workspace:*",
         "@blaze-cardano/query": "workspace:*",
         "@blaze-cardano/tx": "workspace:*",
-        "@emurgo/cardano-message-signing-browser": "^1.1.0",
-        "@emurgo/cardano-message-signing-nodejs": "^1.1.0",
       },
       "devDependencies": {
         "@blaze-cardano/eslint-config": "workspace:*",
@@ -388,10 +386,6 @@
     "@emnapi/runtime": ["@emnapi/runtime@1.8.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-mehfKSMWjjNol8659Z8KxEMrdSJDDot5SXMq00dM8BN4o+CLNXQ0xH2V7EchNHV4RmbZLmmPdEaXZc5H2FXmDg=="],
 
     "@emnapi/wasi-threads": ["@emnapi/wasi-threads@1.1.0", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-WI0DdZ8xFSbgMjR1sFsKABJ/C5OnRrjT06JXbZKexJGrDuPTzZdDYfFlsgcCXCyf+suG5QU2e/y1Wo2V/OapLQ=="],
-
-    "@emurgo/cardano-message-signing-browser": ["@emurgo/cardano-message-signing-browser@1.1.0", "", {}, "sha512-LyeiGIqCyZu9DZnKsi4wlBjZA1MN+uy3Cqpb5J6RZWvFXDJnCoxrYB/EixUiGRD/la4WsldBgtPsrIHyGsVkpg=="],
-
-    "@emurgo/cardano-message-signing-nodejs": ["@emurgo/cardano-message-signing-nodejs@1.1.0", "", {}, "sha512-PQRc8K8wZshEdmQenNUzVtiI8oJNF/1uAnBhidee5C4o1l2mDLOW+ur46HWHIFKQ6x8mSJTllcjMscHgzju0gQ=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.3", "", { "os": "aix", "cpu": "ppc64" }, "sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg=="],
 
