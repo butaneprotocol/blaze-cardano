@@ -977,6 +977,7 @@ export class Emulator {
     if (proposalSet) {
       const proposals = proposalSet.values();
       let totalDeposit = 0n;
+      let policyInvokes = 0n;
       for (let i = 0; i < proposals.length; i++) {
         const p = proposals[i]!;
         const expected = BigInt(this.params.governanceActionDeposit ?? 0);
@@ -984,6 +985,16 @@ export class Emulator {
           throw new Error(
             `Invalid governance deposit: supplied ${p.deposit()} expected ${this.params.governanceActionDeposit ?? 0}`,
           );
+        }
+        const action = p.toCore().governanceAction;
+        const policyHash =
+          (action.__typename === "parameter_change_action" ||
+            action.__typename === "treasury_withdrawals_action") &&
+          action.policyHash !== null
+            ? action.policyHash
+            : null;
+        if (policyHash) {
+          consumeScript(policyHash, RedeemerTag.Proposing, policyInvokes++);
         }
         totalDeposit += BigInt(p.deposit());
       }
@@ -995,13 +1006,29 @@ export class Emulator {
     // Voting witnesses
     const voting = body.votingProcedures();
     if (voting !== undefined) {
-      for (const { voter } of voting.toCore()) {
+      const voteCore = voting.toCore();
+      const scriptDrepVoterOrder = voteCore
+        .map(({ voter }) => Voter.fromCore(voter))
+        .filter((voter) => voter.kind() === VoterKind.DRepScriptHash)
+        .map((voter) => String(voter.toDrepCred()!.hash).toLowerCase())
+        .sort();
+
+      for (const { voter } of voteCore) {
         const vs = Voter.fromCore(voter);
         switch (vs.kind()) {
           case VoterKind.DrepKeyHash:
           case VoterKind.DRepScriptHash: {
             const cred = vs.toDrepCred()!;
-            consumeCred(cred);
+            const index = scriptDrepVoterOrder.indexOf(
+              String(cred.hash).toLowerCase(),
+            );
+            consumeCred(
+              cred,
+              vs.kind() === VoterKind.DRepScriptHash
+                ? RedeemerTag.Voting
+                : undefined,
+              index >= 0 ? BigInt(index) : undefined,
+            );
             break;
           }
           case VoterKind.ConstitutionalCommitteeKeyHash:
