@@ -127,11 +127,15 @@ export class RoutedProvider extends Provider {
     params: unknown[],
     callback: () => Promise<T>,
   ): Promise<T> {
+    if (!this.debugLogger) {
+      return callback();
+    }
+
     const start = Date.now();
-    this.debugLogger?.({ operation, provider, status: "start", params });
+    this.debugLogger({ operation, provider, status: "start", params });
     try {
       const result = await callback();
-      this.debugLogger?.({
+      this.debugLogger({
         operation,
         provider,
         status: "success",
@@ -140,7 +144,7 @@ export class RoutedProvider extends Provider {
       });
       return result;
     } catch (error) {
-      this.debugLogger?.({
+      this.debugLogger({
         operation,
         provider,
         status: "error",
