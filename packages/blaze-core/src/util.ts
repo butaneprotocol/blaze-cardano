@@ -18,6 +18,7 @@ import {
   Hash32ByteBase16,
   Ed25519SignatureHex,
   Credential,
+  isRewardAccount,
 } from "./types";
 import { sha256 } from "@noble/hashes/sha256";
 import * as sha3 from "@noble/hashes/sha3";
@@ -36,7 +37,7 @@ export { wordlist } from "@scure/bip39/wordlists/english";
 export function getPaymentAddress(address: Address): PaymentAddress {
   const bech = address.toBech32();
 
-  if (bech.__opaqueString == "RewardAccount") {
+  if (isRewardAccount(bech)) {
     throw new Error(
       "getPaymentAddress: failed because a reward account was passed in!",
     );

@@ -230,11 +230,11 @@ export class Ogmios {
   }
 
   async queryLedgerStateProposedProtocolParameters(): Promise<
-    schema.QueryLedgerStateProposedProtocolParametersResponse["result"]
+    schema.QueryLedgerStateProtocolParametersResponse["result"]
   > {
     return this.request<
       any,
-      schema.Ogmios["QueryLedgerStateProposedProtocolParametersResponse"]
+      schema.Ogmios["QueryLedgerStateProtocolParametersResponse"]
     >("queryLedgerState/proposedProtocolParameters", {});
   }
 

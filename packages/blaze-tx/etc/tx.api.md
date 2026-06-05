@@ -5,6 +5,8 @@
 ```ts
 
 import { Address } from '@blaze-cardano/core';
+import type { Anchor } from '@blaze-cardano/core';
+import type { AnchorCore } from '@blaze-cardano/core';
 import { AssetId } from '@blaze-cardano/core';
 import type { AssetName } from '@blaze-cardano/core';
 import { AuxiliaryData } from '@blaze-cardano/core';
@@ -14,7 +16,9 @@ import type { Datum } from '@blaze-cardano/core';
 import type { Ed25519KeyHashHex } from '@blaze-cardano/core';
 import { Ed25519PublicKeyHex } from '@blaze-cardano/core';
 import { Ed25519SignatureHex } from '@blaze-cardano/core';
+import type { EpochNo } from '@blaze-cardano/core';
 import type { Evaluator } from '@blaze-cardano/core';
+import type { GovernanceAction } from '@blaze-cardano/core';
 import type { Hash32ByteBase16 } from '@blaze-cardano/core';
 import type { HexBlob } from '@blaze-cardano/core';
 import type { Metadata } from '@blaze-cardano/core';
@@ -22,6 +26,8 @@ import type { NetworkId } from '@blaze-cardano/core';
 import { PlutusData } from '@blaze-cardano/core';
 import type { PolicyId } from '@blaze-cardano/core';
 import type { PoolId } from '@blaze-cardano/core';
+import type { PoolParameters } from '@blaze-cardano/core';
+import { ProposalProcedure } from '@blaze-cardano/core';
 import { ProtocolParameters } from '@blaze-cardano/core';
 import type { Redeemers } from '@blaze-cardano/core';
 import type { RewardAccount } from '@blaze-cardano/core';
@@ -33,6 +39,7 @@ import { TransactionOutput } from '@blaze-cardano/core';
 import { TransactionUnspentOutput } from '@blaze-cardano/core';
 import { TransactionWitnessSet } from '@blaze-cardano/core';
 import { Value as Value_2 } from '@blaze-cardano/core';
+import type { VotingProcedures } from '@blaze-cardano/core';
 
 // @public
 export const assertLockAddress: (address: Address) => never | void;
@@ -143,12 +150,24 @@ export class TxBuilder {
     addMint(policy: PolicyId, assets: Map<AssetName, bigint>, redeemer?: PlutusData): this;
     addOutput(output: TransactionOutput): TxBuilder;
     addPreCompleteHook(hook: (tx: TxBuilder) => Promise<void>): TxBuilder;
+    addProposal(proposal: ProposalProcedure): TxBuilder;
+    // (undocumented)
+    addProposal(params: {
+        deposit: bigint;
+        rewardAccount: RewardAccount;
+        governanceAction: GovernanceAction;
+        anchor: Anchor | AnchorCore;
+    }): TxBuilder;
     addReferenceInput(utxo: TransactionUnspentOutput): TxBuilder;
-    addRegisterPool(): void;
+    addRegisterDRep(drep: Credential, deposit: bigint, anchor?: Anchor): TxBuilder;
+    addRegisterPool(poolParameters: PoolParameters): TxBuilder;
     addRegisterStake(credential: Credential): this;
     addRequiredSigner(signer: Ed25519KeyHashHex): TxBuilder;
-    addRetirePool(): void;
+    addRetirePool(poolId: PoolId, epoch: EpochNo): TxBuilder;
+    addUnregisterDRep(drep: Credential, refund: bigint): TxBuilder;
     addUnspentOutputs(utxos: TransactionUnspentOutput[]): TxBuilder;
+    addUpdateDRep(drep: Credential, anchor?: Anchor): TxBuilder;
+    addVoteDelegation(delegator: Credential, drep: Credential | "alwaysAbstain" | "alwaysNoConfidence", redeemer?: PlutusData): TxBuilder;
     addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData): TxBuilder;
     protected buildFinalWitnessSet(signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][]): TransactionWitnessSet;
     protected buildPlaceholderWitnessSet(): TransactionWitnessSet;
@@ -182,6 +201,7 @@ export class TxBuilder {
     setRewardAddress(address: Address): TxBuilder;
     setValidFrom(validFrom: Slot): TxBuilder;
     setValidUntil(validUntil: Slot): TxBuilder;
+    setVotingProcedures(votingProcedures: VotingProcedures): TxBuilder;
     toCbor(): string;
     // Warning: (ae-forgotten-export) The symbol "SelectionResult" needs to be exported by the entry point index.d.ts
     useCoinSelector(selector: (inputs: TransactionUnspentOutput[], dearth: Value_2) => SelectionResult): TxBuilder;

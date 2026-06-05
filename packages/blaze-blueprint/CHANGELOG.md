@@ -1,5 +1,29 @@
 # @blaze-cardano/blueprint
 
+## 0.8.2
+
+### Patch Changes
+
+- d0f40de: Fix blueprint code generation:
+
+  - Fix generic type naming by extracting type parameters from schema metadata (handles module names with underscores like `library_b`)
+  - Fix generic type naming for nested module paths (e.g., `SignedPayload<ProtocolRedeemer>` → `SignedPayload_ProtocolRedeemer`)
+  - Use `Type.Number()` for map integer keys since JS objects can't have BigInt keys
+  - Replace `Type.Unsafe<PlutusData>` with `TPlutusData` to fix TS2742 declaration emit errors
+  - Add PolicyId type to blueprint generation
+
+## 0.8.1
+
+### Patch Changes
+
+- e401c32: Add PolicyId type to blueprint generation
+
+## 0.8.0
+
+### Minor Changes
+
+- e956e2c: Generics in plutus.json files were not being translated into correct types via Blueprint. This updates the blueprint generation logic to correctly format generics in the output.
+
 ## 0.7.2
 
 ### Patch Changes

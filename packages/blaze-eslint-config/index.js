@@ -1,39 +1,26 @@
-/** @type { import("eslint").Linter.Config } */
-module.exports = {
-  root: true,
-  extends: [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "prettier",
-    "turbo",
-  ],
-  rules: {
-    "@typescript-eslint/consistent-type-imports": "error",
-    "@typescript-eslint/consistent-type-exports": "error",
-    "@typescript-eslint/no-explicit-any": "off",
-    "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-  },
-  parser: "@typescript-eslint/parser",
-  ignorePatterns: ["node_modules", "dist", ".eslintrc.js"],
-  plugins: ["@typescript-eslint"],
-  parserOptions: {
-    sourceType: "module",
-    ecmaVersion: 2020,
-    extraFileExtensions: [".svelte"],
-  },
-  env: {
-    browser: true,
-    es2017: true,
-    node: true,
-  },
-  overrides: [
-    {
-      files: ["*.svelte"],
-      parser: "svelte-eslint-parser",
-      parserOptions: {
-        parser: "@typescript-eslint/parser",
-      },
+import eslint from "@eslint/js";
+import tseslint from "typescript-eslint";
+import prettier from "eslint-config-prettier/flat";
+import turbo from "eslint-config-turbo/flat";
+
+export default tseslint.config(
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
+  prettier,
+  ...turbo,
+  {
+    rules: {
+      "@typescript-eslint/consistent-type-imports": "error",
+      "@typescript-eslint/consistent-type-exports": "error",
+      "@typescript-eslint/no-explicit-any": "off",
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_" },
+      ],
     },
-  ],
-};
+  },
+  {
+    ignores: ["**/node_modules/**", "**/dist/**", "**/docs/**"],
+  },
+);

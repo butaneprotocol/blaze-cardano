@@ -2,7 +2,7 @@
  * Snapshot (version) docs for packages that changed in the current release.
  * Requires: the per-package api:md already wrote Markdown into packages/[pkg]/docs/api
  *
- * Usage: pnpm docs:version
+ * Usage: bun run docs:version
  */
 import { execSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
@@ -24,7 +24,7 @@ const PKG_ID = {
 
 function getReleases() {
   try {
-    const out = execSync("pnpm changeset status --output=JSON", {
+    const out = execSync("bun run changeset status --output=JSON", {
       stdio: ["ignore", "pipe", "pipe"],
     }).toString();
     const data = JSON.parse(out);

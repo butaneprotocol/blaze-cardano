@@ -1,37 +1,99 @@
-import crypto from "node:crypto";
+import { describe, expect, it, vi } from "vitest";
 import {
+  Address,
+  Bip32PrivateKey,
+  CborSet,
   Hash28ByteBase16,
-  Transaction,
-  TxCBOR,
-  TransactionUnspentOutput,
   HexBlob,
+  NetworkId,
+  TransactionUnspentOutput,
+  VkeyWitness,
+  hardCodedProtocolParams,
 } from "@blaze-cardano/core";
-import app from "../../src/rpc/app";
+import { TxBuilder } from "@blaze-cardano/tx";
+import { HotWallet } from "@blaze-cardano/wallet";
 import { alwaysTrueScript } from "../util";
 
 const jsonHeaders = {
   "content-type": "application/json",
 };
 
-// Pre-built transaction CBOR generated with deterministic wallet seeds.
-// It spends the first genesis UTxO created for `payer`, sends 1.5 ADA
-// (1_500_000 lovelace) to `receiver`, and returns the remaining 3,331,859
-// lovelace to `payer`.
-const SIMPLE_PAYMENT_CBOR =
-  "84a300d901028182582000000000000000000000000000000000000000000000000000000000000000000001828258390099d9534eb11dafebd7ee3a8f7a764846f29959aa4f85080179d0b3a17567290f5c83ef19b2b342b2b36326e6330b513e090669aaa6fd7fd31a0016e360825839001acd4518ee339d87b84c995134aafa9fc7abcc831b74facd97a10f236106524858359a6791726c545d1d24b060ad097ed7735ad3e5b803031a0032d713021a000290cda100d9010281825820687b9d927e93be3094f4b8daa1087e40fe7f334a1994a9dfa0fab06cef59443a58403952017604e3fb9493c91a7f47d938b67dd277dca9ad350609c4d242dc0c2ae6398976b514b8c076e10c1885e5368f6e1e661b070efac12296244a3eb50f5b0ff5f6";
+async function loadApp() {
+  const module = await import("../../src/rpc/app");
+  return module.default;
+}
 
-const SIMPLE_PAYMENT_TX = Transaction.fromCbor(TxCBOR(SIMPLE_PAYMENT_CBOR));
-const SIMPLE_PAYMENT_OUTPUT = SIMPLE_PAYMENT_TX.body().outputs()[0]!;
-const SIMPLE_PAYMENT_CHANGE = SIMPLE_PAYMENT_TX.body().outputs()[1]!;
-const SIMPLE_PAYMENT_ADDRESS = SIMPLE_PAYMENT_OUTPUT.address().toBech32();
-const SIMPLE_PAYMENT_AMOUNT = SIMPLE_PAYMENT_OUTPUT.amount().coin().toString();
-const SIMPLE_CHANGE_ADDRESS = SIMPLE_PAYMENT_CHANGE.address().toBech32();
-const SIMPLE_CHANGE_AMOUNT = SIMPLE_PAYMENT_CHANGE.amount()
-  .coin()
-  .toString();
+function clampScalar(bytes: Uint8Array): Uint8Array {
+  bytes[0] = bytes[0]! & 248;
+  bytes[31] = (bytes[31]! & 63) | 64;
+  return bytes;
+}
+
+async function listUtxos(
+  app: Awaited<ReturnType<typeof loadApp>>,
+): Promise<TransactionUnspentOutput[]> {
+  const stateResponse = await app.request("/emulator/state?include=utxos");
+  expect(stateResponse.status).toBe(200);
+  const state = (await stateResponse.json()) as {
+    utxos?: Array<string>;
+  };
+  return (state.utxos ?? []).map((hex) =>
+    TransactionUnspentOutput.fromCbor(
+      HexBlob(hex.startsWith("0x") ? hex.slice(2) : hex),
+    ),
+  );
+}
+
+async function buildSignedPaymentCbor(
+  app: Awaited<ReturnType<typeof loadApp>>,
+  payerSeed: Buffer,
+  payerAddress: Address,
+  receiverAddress: Address,
+): Promise<{ cbor: string; txId: string; outputCbors: string[] }> {
+  const masterkey = Bip32PrivateKey.fromBytes(
+    clampScalar(new Uint8Array(payerSeed)),
+  );
+  const wallet = await HotWallet.fromMasterkey(masterkey.hex(), {
+    network: NetworkId.Testnet,
+  } as never);
+  expect(wallet.address.toBech32()).toBe(payerAddress.toBech32());
+
+  const payerUtxo = (await listUtxos(app)).find(
+    (utxo) => utxo.output().address().toBech32() === payerAddress.toBech32(),
+  );
+  expect(payerUtxo).toBeDefined();
+
+  const tx = await new TxBuilder(hardCodedProtocolParams)
+    .addUnspentOutputs([payerUtxo!])
+    .setNetworkId(NetworkId.Testnet)
+    .setChangeAddress(payerAddress)
+    .payLovelace(receiverAddress, 1_500_000n)
+    .complete();
+
+  const signed = await wallet.signTransaction(tx, true);
+  const signedKeys = signed.vkeys();
+  expect(signedKeys).toBeDefined();
+
+  const witnessSet = tx.witnessSet();
+  const existingKeys = witnessSet.vkeys()?.toCore() ?? [];
+  witnessSet.setVkeys(
+    CborSet.fromCore(
+      [...signedKeys!.toCore(), ...existingKeys],
+      VkeyWitness.fromCore,
+    ),
+  );
+  tx.setWitnessSet(witnessSet);
+
+  return {
+    cbor: tx.toCbor(),
+    txId: tx.getId(),
+    outputCbors: tx.body().outputs().map((output) => output.toCbor()),
+  };
+}
 
 describe("emulator RPC app", () => {
   it("resets and advances the emulator", async () => {
+    const app = await loadApp();
     const resetResponse = await app.request("/emulator/reset", {
       method: "POST",
       headers: jsonHeaders,
@@ -53,6 +115,7 @@ describe("emulator RPC app", () => {
   });
 
   it("registers a wallet and exposes its address", async () => {
+    const app = await loadApp();
     await app.request("/emulator/reset", {
       method: "POST",
       headers: jsonHeaders,
@@ -100,6 +163,7 @@ describe("emulator RPC app", () => {
   });
 
   it("starts and stops the event loop", async () => {
+    const app = await loadApp();
     const startResponse = await app.request("/emulator/event-loop/start", {
       method: "POST",
     });
@@ -112,16 +176,23 @@ describe("emulator RPC app", () => {
   });
 
   it("accepts pre-built transaction CBOR", async () => {
+    const actualCrypto = await vi.importActual<typeof import("crypto")>(
+      "crypto",
+    );
     const seeds = [Buffer.alloc(96, 1), Buffer.alloc(96, 2)];
-    const originalRandomBytes = crypto.randomBytes;
     let calls = 0;
-    const randomSpy = jest
-      .spyOn(crypto, "randomBytes")
-      .mockImplementation((size) => {
-        const next = seeds[calls];
-        calls += 1;
-        return next ?? originalRandomBytes(size);
-      });
+    const randomBytes = ((size: number) => {
+      const next = seeds[calls];
+      calls += 1;
+      return next ?? actualCrypto.randomBytes(size);
+    }) as typeof actualCrypto.randomBytes;
+
+    vi.resetModules();
+    vi.doMock("crypto", () => ({
+      ...actualCrypto,
+      randomBytes,
+    }));
+    const app = await loadApp();
 
     try {
       await app.request("/emulator/reset", {
@@ -136,6 +207,9 @@ describe("emulator RPC app", () => {
         body: JSON.stringify({ label: "payer", lovelace: "5000000" }),
       });
       expect(registerPayer.status).toBe(200);
+      const payerPayload = (await registerPayer.json()) as {
+        address: string;
+      };
 
       const registerReceiver = await app.request("/emulator/register", {
         method: "POST",
@@ -143,17 +217,25 @@ describe("emulator RPC app", () => {
         body: JSON.stringify({ label: "receiver", lovelace: "0" }),
       });
       expect(registerReceiver.status).toBe(200);
+      const receiverPayload = (await registerReceiver.json()) as {
+        address: string;
+      };
+
+      const prebuilt = await buildSignedPaymentCbor(
+        app,
+        seeds[0]!,
+        Address.fromBech32(payerPayload.address),
+        Address.fromBech32(receiverPayload.address),
+      );
 
       const submitResponse = await app.request("/emulator/transactions", {
         method: "POST",
         headers: jsonHeaders,
-        body: JSON.stringify({ cbor: SIMPLE_PAYMENT_CBOR }),
+        body: JSON.stringify({ cbor: prebuilt.cbor }),
       });
       expect(submitResponse.status).toBe(200);
       const submitPayload = (await submitResponse.json()) as { txId: string };
-      expect(submitPayload.txId).toBe(
-        "951f0d42c24eb957a65ecb31056d7c5b98674c236def2a92f5d9dd132c8964f0",
-      );
+      expect(submitPayload.txId).toBe(prebuilt.txId);
 
       const advanceResponse = await app.request("/emulator/advance", {
         method: "POST",
@@ -162,38 +244,20 @@ describe("emulator RPC app", () => {
       });
       expect(advanceResponse.status).toBe(200);
 
-      const stateResponse = await app.request(
-        "/emulator/state?include=utxos",
+      const outputCbors = new Set(
+        (await listUtxos(app)).map((utxo) => utxo.output().toCbor()),
       );
-      expect(stateResponse.status).toBe(200);
-      const state = (await stateResponse.json()) as {
-        utxos?: Array<string>;
-      };
-      const utxos = (state.utxos ?? []).map((hex) =>
-        TransactionUnspentOutput.fromCbor(
-          HexBlob(hex.startsWith("0x") ? hex.slice(2) : hex),
-        ),
-      );
-      const receiverUtxo = utxos.find(
-        (utxo) => utxo.output().address().toBech32() === SIMPLE_PAYMENT_ADDRESS,
-      );
-      expect(receiverUtxo).toBeDefined();
-      expect(receiverUtxo?.output().amount().coin().toString()).toBe(
-        SIMPLE_PAYMENT_AMOUNT,
-      );
-
-      const payerChangeUtxo = utxos.find(
-        (utxo) =>
-          utxo.output().address().toBech32() === SIMPLE_CHANGE_ADDRESS &&
-          utxo.output().amount().coin().toString() === SIMPLE_CHANGE_AMOUNT,
-      );
-      expect(payerChangeUtxo).toBeDefined();
+      for (const outputCbor of prebuilt.outputCbors) {
+        expect(outputCbors.has(outputCbor)).toBe(true);
+      }
     } finally {
-      randomSpy.mockRestore();
+      vi.doUnmock("crypto");
+      vi.resetModules();
     }
   });
 
   it("exposes health and time endpoints", async () => {
+    const app = await loadApp();
     const healthResponse = await app.request("/health");
     expect(healthResponse.status).toBe(200);
     const health = (await healthResponse.json()) as { status: string };
@@ -212,6 +276,7 @@ describe("emulator RPC app", () => {
   });
 
   it("funds wallets and exposes UTxOs", async () => {
+    const app = await loadApp();
     await app.request("/emulator/reset", {
       method: "POST",
       headers: jsonHeaders,
@@ -259,6 +324,7 @@ describe("emulator RPC app", () => {
   });
 
   it("publishes scripts and manages committee state", async () => {
+    const app = await loadApp();
     await app.request("/emulator/reset", {
       method: "POST",
       headers: jsonHeaders,
@@ -322,6 +388,7 @@ describe("emulator RPC app", () => {
   });
 
   it("handles governance proposal lookups", async () => {
+    const app = await loadApp();
     const missingStatus = await app.request(
       "/emulator/governance/proposal-status/abcd",
     );

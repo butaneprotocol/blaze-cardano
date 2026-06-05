@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from "vitest";
 import {
   Hash28ByteBase16,
   HexBlob,
@@ -17,7 +18,7 @@ const alwaysTrueScript: Script = Script.newPlutusV2Script(
 
 describe("Blockfrost", () => {
   it("should be able to handle a string or a script in resolveScriptRef", async () => {
-    const spy = jest.spyOn(Blockfrost.prototype, "getUnspentOutputs");
+    const spy = vi.spyOn(Blockfrost.prototype, "getUnspentOutputs");
     spy.mockResolvedValue([]);
 
     await expect(

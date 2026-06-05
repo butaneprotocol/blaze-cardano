@@ -5,7 +5,7 @@
 ```ts
 
 import * as Schema from '@cardano-ogmios/schema';
-import WebSocket from 'isomorphic-ws';
+import { default as WebSocket_2 } from 'isomorphic-ws';
 
 // @public
 export class Ogmios {
@@ -18,7 +18,7 @@ class Ogmios_2 {
     // (undocumented)
     acquireMempool(): Promise<Schema.AcquireMempoolResponse["result"]>;
     // (undocumented)
-    connect(): WebSocket;
+    connect(): WebSocket_2;
     // (undocumented)
     evaluateTransaction(transaction: {
         cbor: string;
@@ -60,7 +60,7 @@ class Ogmios_2 {
         keys?: Schema.AnyStakeCredential[];
     }): Promise<Schema.QueryLedgerStateProjectedRewardsResponse["result"]>;
     // (undocumented)
-    queryLedgerStateProposedProtocolParameters(): Promise<Schema.QueryLedgerStateProposedProtocolParametersResponse["result"]>;
+    queryLedgerStateProposedProtocolParameters(): Promise<Schema.QueryLedgerStateProtocolParametersResponse["result"]>;
     // (undocumented)
     queryLedgerStateProtocolParameters(): Promise<Schema.QueryLedgerStateProtocolParametersResponse["result"]>;
     // (undocumented)

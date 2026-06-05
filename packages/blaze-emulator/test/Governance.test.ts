@@ -1,3 +1,4 @@
+import { describe, test, expect, beforeEach } from "vitest";
 import {
   Address,
   Credential,
@@ -73,6 +74,7 @@ describe("Emulator governance", () => {
     });
     emulator.params.constitutionalCommitteeMinSize = 1;
     emulator.bootstrapMode = false;
+    emulator.params.collateralPercentage = 0;
     emulator.setCommitteeState(emulator.cc, {
       hotCredentials: emulator.cc.members.reduce<
         Record<string, CredentialCore | undefined>
@@ -137,7 +139,9 @@ describe("Emulator governance", () => {
     procedure: ProposalProcedure,
   ): Promise<GovernanceActionId> => {
     const builder = blaze.newTransaction().addProposal(procedure);
+    builder.setMinimumFee(0n);
     const tx = await builder.complete();
+    tx.body().setFee(0n);
     const hash = await signAndSubmit(tx, blaze);
     emulator.awaitTransactionConfirmation(hash);
     return new GovernanceActionId(TransactionId(hash), 0n);
@@ -1178,7 +1182,6 @@ describe("Emulator governance", () => {
       "Active",
     );
   });
-
   test("script drep should be able to vote and propose", async () => {
     emulator.stepForwardToNextEpoch();
 

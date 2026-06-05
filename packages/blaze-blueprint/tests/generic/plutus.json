@@ -1,0 +1,201 @@
+{
+  "preamble": {
+    "title": "blueprint/test",
+    "description": "Aiken contracts for project 'blueprint/test'",
+    "version": "0.0.0",
+    "plutusVersion": "v3",
+    "compiler": {
+      "name": "Aiken",
+      "version": "v1.1.19+e525483"
+    },
+    "license": "Apache-2.0"
+  },
+  "validators": [
+    {
+      "title": "always_true_with_generic.script.spend",
+      "datum": {
+        "title": "_datum",
+        "schema": {
+          "$ref": "#/definitions/List$Int"
+        }
+      },
+      "redeemer": {
+        "title": "_redeemer",
+        "schema": {
+          "$ref": "#/definitions/Int"
+        }
+      },
+      "parameters": [
+        {
+          "title": "_param1",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        },
+        {
+          "title": "_param2",
+          "schema": {
+            "$ref": "#/definitions/ByteArray"
+          }
+        },
+        {
+          "title": "_param3",
+          "schema": {
+            "$ref": "#/definitions/always_true_with_generic~1GenericType$cardano~1transaction~1OutputReference"
+          }
+        }
+      ],
+      "compiledCode": "586701010022229800aba2aba1aab9eaab9dab9a9bad0049bae003488888896600264646644b30013370e900118041baa0028994c004c02c00660166018003375a601600891125118049baa0028b200e300830090013008002300800130053754011149a26cac80181",
+      "hash": "5867ab91f9a742c90c34e4202b193fdfd1cfb155ae93f54f66966c73"
+    },
+    {
+      "title": "always_true_with_generic.script.else",
+      "redeemer": {
+        "schema": {}
+      },
+      "parameters": [
+        {
+          "title": "_param1",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        },
+        {
+          "title": "_param2",
+          "schema": {
+            "$ref": "#/definitions/ByteArray"
+          }
+        },
+        {
+          "title": "_param3",
+          "schema": {
+            "$ref": "#/definitions/always_true_with_generic~1GenericType$cardano~1transaction~1OutputReference"
+          }
+        }
+      ],
+      "compiledCode": "586701010022229800aba2aba1aab9eaab9dab9a9bad0049bae003488888896600264646644b30013370e900118041baa0028994c004c02c00660166018003375a601600891125118049baa0028b200e300830090013008002300800130053754011149a26cac80181",
+      "hash": "5867ab91f9a742c90c34e4202b193fdfd1cfb155ae93f54f66966c73"
+    },
+    {
+      "title": "always_true_with_generic.script_no_params.spend",
+      "datum": {
+        "title": "_datum",
+        "schema": {
+          "$ref": "#/definitions/List$Int"
+        }
+      },
+      "redeemer": {
+        "title": "_redeemer",
+        "schema": {
+          "$ref": "#/definitions/Int"
+        }
+      },
+      "compiledCode": "585d01010029800aba2aba1aab9eaab9dab9a4888896600264646644b30013370e900118031baa0028994c004c02400660126014003375a601200891125118039baa0028b200a30063007001300600230060013003375400d149a26cac8009",
+      "hash": "b153634f4741edb2b4bf061a924489ad52f93e7bec3716dd91b2a29a"
+    },
+    {
+      "title": "always_true_with_generic.script_no_params.else",
+      "redeemer": {
+        "schema": {}
+      },
+      "compiledCode": "585d01010029800aba2aba1aab9eaab9dab9a4888896600264646644b30013370e900118031baa0028994c004c02400660126014003375a601200891125118039baa0028b200a30063007001300600230060013003375400d149a26cac8009",
+      "hash": "b153634f4741edb2b4bf061a924489ad52f93e7bec3716dd91b2a29a"
+    },
+    {
+      "title": "nested/sometimes_true.script.spend",
+      "datum": {
+        "title": "datum",
+        "schema": {
+          "$ref": "#/definitions/Data"
+        }
+      },
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/Int"
+        }
+      },
+      "parameters": [
+        {
+          "title": "param",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        }
+      ],
+      "compiledCode": "5862010100229800aba2aba1aab9eaab9dab9a9bad00248888896600264646644b30013370e900118039baa002899199119b88008375a601800c60140026014601600260106ea800a2c8030c01cc020004c01c008c01c004c010dd5003c52689b2b20041",
+      "hash": "3e7c77a7103a5cc0db75b5a07c3bf780cf6932021bfbb32a21a7d1e7"
+    },
+    {
+      "title": "nested/sometimes_true.script.else",
+      "redeemer": {
+        "schema": {}
+      },
+      "parameters": [
+        {
+          "title": "param",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        }
+      ],
+      "compiledCode": "5862010100229800aba2aba1aab9eaab9dab9a9bad00248888896600264646644b30013370e900118039baa002899199119b88008375a601800c60140026014601600260106ea800a2c8030c01cc020004c01c008c01c004c010dd5003c52689b2b20041",
+      "hash": "3e7c77a7103a5cc0db75b5a07c3bf780cf6932021bfbb32a21a7d1e7"
+    }
+  ],
+  "definitions": {
+    "ByteArray": {
+      "dataType": "bytes"
+    },
+    "Data": {
+      "title": "Data",
+      "description": "Any Plutus data."
+    },
+    "Int": {
+      "dataType": "integer"
+    },
+    "List$Int": {
+      "dataType": "list",
+      "items": {
+        "$ref": "#/definitions/Int"
+      }
+    },
+    "always_true_with_generic/GenericType$cardano/transaction/OutputReference": {
+      "title": "GenericType",
+      "anyOf": [
+        {
+          "title": "GenericType",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "action",
+              "$ref": "#/definitions/cardano~1transaction~1OutputReference"
+            }
+          ]
+        }
+      ]
+    },
+    "cardano/transaction/OutputReference": {
+      "title": "OutputReference",
+      "description": "An `OutputReference` is a unique reference to an output on-chain. The `output_index`\n corresponds to the position in the output list of the transaction (identified by its id)\n that produced that output",
+      "anyOf": [
+        {
+          "title": "OutputReference",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "transaction_id",
+              "$ref": "#/definitions/ByteArray"
+            },
+            {
+              "title": "output_index",
+              "$ref": "#/definitions/Int"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

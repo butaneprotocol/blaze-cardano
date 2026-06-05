@@ -1,5 +1,64 @@
 # @blaze-cardano/emulator
 
+## 0.4.5
+
+### Patch Changes
+
+- Updated dependencies [3aae293]
+  - @blaze-cardano/wallet@0.5.3
+
+## 0.4.4
+
+### Patch Changes
+
+- Updated dependencies [e22d8c3]
+  - @blaze-cardano/query@0.5.6
+  - @blaze-cardano/wallet@0.5.2
+
+## 0.4.3
+
+### Patch Changes
+
+- acb75c3: Updates the cardano-sdk dependencies to latest
+- Updated dependencies [acb75c3]
+  - @blaze-cardano/core@0.8.0
+  - @blaze-cardano/wallet@0.5.1
+  - @blaze-cardano/tx@0.14.1
+  - @blaze-cardano/query@0.5.5
+  - @blaze-cardano/vm@0.2.3
+
+## 0.4.2
+
+### Patch Changes
+
+- d0f40de: Fix unclamped Ed25519 scalar bug in emulator key generation
+
+  The emulator was generating BIP32 private keys using random bytes without proper Ed25519 scalar clamping, causing intermittent (~50%) signature verification failures. Keys are now properly clamped according to Ed25519 requirements before use.
+
+## 0.4.1
+
+### Patch Changes
+
+- e401c32: Fix unclamped Ed25519 scalar bug in emulator key generation
+
+  The emulator was generating BIP32 private keys using random bytes without proper Ed25519 scalar clamping, causing intermittent (~50%) signature verification failures. Keys are now properly clamped according to Ed25519 requirements before use.
+
+## 0.4.0
+
+### Minor Changes
+
+- b15acba: Governance tx building and emulation
+
+### Patch Changes
+
+- Updated dependencies [b5b2733]
+- Updated dependencies [b15acba]
+  - @blaze-cardano/wallet@0.5.0
+  - @blaze-cardano/tx@0.14.0
+  - @blaze-cardano/core@0.7.1
+  - @blaze-cardano/query@0.5.4
+  - @blaze-cardano/vm@0.2.2
+
 ## 0.3.35
 
 ### Patch Changes

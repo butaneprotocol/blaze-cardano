@@ -1,5 +1,43 @@
 # @blaze-cardano/wallet
 
+## 0.5.3
+
+### Patch Changes
+
+- 3aae293: Auto-detect stake key signing in HotWallet from requiredSigners
+
+  HotWallet.signTransaction() now inspects tx.body().requiredSigners() for the wallet's stake key hash and automatically signs with the stake key when present. This mirrors CIP-30 wallet behavior where all required keys are signed automatically, fixing test failures when the SDK sets the owner credential to the stake key hash.
+
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [e22d8c3]
+  - @blaze-cardano/query@0.5.6
+
+## 0.5.1
+
+### Patch Changes
+
+- acb75c3: Updates the cardano-sdk dependencies to latest
+- Updated dependencies [acb75c3]
+  - @blaze-cardano/core@0.8.0
+  - @blaze-cardano/tx@0.14.1
+  - @blaze-cardano/query@0.5.5
+
+## 0.5.0
+
+### Minor Changes
+
+- b5b2733: Updates the HotWallet.fromMasterKey method to default to the provider network, and throw an error if it does not match the optional parameter type.
+
+### Patch Changes
+
+- Updated dependencies [b15acba]
+  - @blaze-cardano/tx@0.14.0
+  - @blaze-cardano/core@0.7.1
+  - @blaze-cardano/query@0.5.4
+
 ## 0.4.14
 
 ### Patch Changes

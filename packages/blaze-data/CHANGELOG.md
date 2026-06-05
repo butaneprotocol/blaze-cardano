@@ -1,5 +1,19 @@
 # @blaze-cardano/data
 
+## 0.6.6
+
+### Patch Changes
+
+- Updated dependencies [acb75c3]
+  - @blaze-cardano/core@0.8.0
+
+## 0.6.5
+
+### Patch Changes
+
+- Updated dependencies [b15acba]
+  - @blaze-cardano/core@0.7.1
+
 ## 0.6.4
 
 ### Patch Changes

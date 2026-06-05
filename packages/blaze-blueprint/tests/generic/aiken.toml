@@ -1,0 +1,16 @@
+name = "blueprint/test"
+version = "0.0.0"
+compiler = "v1.1.9"
+plutus = "v3"
+license = "Apache-2.0"
+description = "Aiken contracts for project 'blueprint/test'"
+
+[repository]
+user = "blueprint"
+project = "test"
+platform = "github"
+
+[[dependencies]]
+name = "aiken-lang/stdlib"
+version = "2.2.0"
+source = "github"

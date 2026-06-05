@@ -1,1 +1,1 @@
-export { generateBlueprint } from "./blueprint";
+export { generateBlueprint, Generator } from "./blueprint";

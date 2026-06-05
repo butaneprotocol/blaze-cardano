@@ -5,6 +5,6 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "query": "node index.js"
+    "query": "bun run index.js"
   }
 }

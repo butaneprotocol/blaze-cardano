@@ -3,7 +3,7 @@
 To run this example, please follow the steps below from the workspace root:
 
 ```bash
-$ pnpm build && pnpm test
+$ bun run build && bun run test
 $ cd examples/kupmios
 # Add your test mnemonic, kupo and ogmios endpoints
 $ vi index.js

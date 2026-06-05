@@ -1,5 +1,26 @@
 # @blaze-cardano/tx
 
+## 0.14.1
+
+### Patch Changes
+
+- acb75c3: Updates the cardano-sdk dependencies to latest
+- Updated dependencies [acb75c3]
+  - @blaze-cardano/core@0.8.0
+  - @blaze-cardano/vm@0.2.3
+
+## 0.14.0
+
+### Minor Changes
+
+- b15acba: Governance tx building and emulation
+
+### Patch Changes
+
+- Updated dependencies [b15acba]
+  - @blaze-cardano/core@0.7.1
+  - @blaze-cardano/vm@0.2.2
+
 ## 0.13.4
 
 ### Patch Changes

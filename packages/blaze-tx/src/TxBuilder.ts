@@ -1569,6 +1569,10 @@ export class TxBuilder {
         this.body.fee(),
         this.params.collateralPercentage,
       );
+      if (requiredCollateral === 0n && this.collateralUtxos.size === 0) {
+        this.body.setTotalCollateral(0n);
+        return;
+      }
       this.body.setTotalCollateral(requiredCollateral);
 
       let providedCollateral = value.sum(
@@ -1608,7 +1612,7 @@ export class TxBuilder {
               this.params.coinsPerUtxoByte,
               this.params.maxValueSize,
             );
-          } catch (_e) {
+          } catch {
             return false;
           }
 
@@ -2225,7 +2229,7 @@ export class TxBuilder {
       const redeemers = [...this.redeemers.values()];
       for (const redeemerEntry of redeemers) {
         if (
-          redeemerEntry.tag() == RedeemerTag.Reward &&
+          redeemerEntry.tag() == RedeemerTag.Cert &&
           redeemerEntry.index() >= BigInt(insertIdx)
         ) {
           redeemerEntry.setIndex(redeemerEntry.index() + 1n);
@@ -2715,9 +2719,7 @@ export class TxBuilder {
       Ed25519KeyHashHex,
       Hash<Ed25519KeyHashHex>
     > = this.body.requiredSigners() ?? CborSet.fromCore([], Hash.fromCore);
-    this.requiredWitnesses.add(
-      HashAsPubKeyHex(Hash28ByteBase16.fromEd25519KeyHashHex(signer)),
-    );
+    this.requiredWitnesses.add(HashAsPubKeyHex(signer));
     // Convert the signer to a hash and add it to the set of required signers.
     const values = [...signers.values()];
     values.push(Hash.fromCore(signer));

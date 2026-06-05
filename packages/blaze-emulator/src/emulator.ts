@@ -53,6 +53,7 @@ import {
   hardCodedProtocolParams,
   isCertType,
   DatumKind,
+  initCrypto,
 } from "@blaze-cardano/core";
 import {
   Blaze,
@@ -112,6 +113,32 @@ import {
   serialiseDrepCredential,
   serialiseVoter,
 } from "./governance";
+
+/**
+ * Clamp a scalar according to Ed25519 requirements for BIP32-Ed25519.
+ *
+ * For extended Ed25519 keys (used by @cardano-sdk/crypto), the scalar must be
+ * "clamped" to be valid:
+ * - Bits 0, 1, 2 must be 0 (divisible by cofactor 8)
+ * - Bit 255 must be 0
+ * - Bit 254 must be 1
+ *
+ * When using libsodium's _noclamp signing functions (as the SDK does for
+ * extended keys), unclamped scalars produce signatures that don't verify
+ * correctly against the derived public key.
+ *
+ * @param bytes - The raw bytes to clamp (at least 32 bytes, typically 96 for Bip32 keys)
+ * @returns The clamped bytes (mutates in place and returns the same array)
+ */
+function clampScalar(bytes: Uint8Array): Uint8Array {
+  // Clear bits 0, 1, 2 of first byte (ensure divisible by cofactor 8)
+  bytes[0] = bytes[0]! & 248; // 248 = 0b11111000
+
+  // Clear bit 7 (255), set bit 6 (254) of byte 31
+  bytes[31] = (bytes[31]! & 63) | 64; // 63 = 0b00111111, 64 = 0b01000000
+
+  return bytes;
+}
 
 /**
  * The Emulator class is used to simulate the behavior of a ledger.
@@ -263,8 +290,8 @@ export class Emulator {
   private async getOrAddWallet(label: string): Promise<Wallet> {
     if (!this.mockedWallets.has(label)) {
       const provider = new EmulatorProvider(this);
-      const entropy = randomBytes(96);
-      const masterkey = Bip32PrivateKey.fromBytes(new Uint8Array(entropy));
+      const entropy = clampScalar(new Uint8Array(randomBytes(96)));
+      const masterkey = Bip32PrivateKey.fromBytes(entropy);
       const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
       this.mockedWallets.set(label, wallet);
     }
@@ -638,6 +665,8 @@ export class Emulator {
    * @throws {Error} If witness validation, collateral checks, validity intervals, or governance constraints fail.
    */
   async submitTransaction(tx: Transaction): Promise<TransactionId> {
+    await initCrypto();
+
     const body = tx.body();
     const witnessSet = tx.witnessSet();
 
@@ -655,23 +684,19 @@ export class Emulator {
     const consumed: Set<Hash28ByteBase16 | Hash32ByteBase16> = new Set();
 
     // Vkey witnesses are valid
-    const vkeyHashes = new Set(
-      await Promise.all(
-        witnessSet
-          .vkeys()!
-          .values()
-          .map(async (vkey) => {
-            const key = Ed25519PublicKey.fromHex(vkey.vkey());
-            const keyHash = await key.hash();
-            const sig = Ed25519Signature.fromHex(vkey.signature());
-            if (!key.verify(sig, HexBlob(txId))) {
-              throw new Error(
-                `Invalid vkey in witness set with hash ${keyHash}`,
-              );
-            }
-            return Hash28ByteBase16.fromEd25519KeyHashHex(keyHash.hex());
-          }),
-      ),
+    const vkeyHashes = new Set<Hash28ByteBase16>(
+      witnessSet
+        .vkeys()!
+        .values()
+        .map((vkey) => {
+          const key = Ed25519PublicKey.fromHex(vkey.vkey());
+          const keyHash = key.hash();
+          const sig = Ed25519Signature.fromHex(vkey.signature());
+          if (!key.verify(sig, HexBlob(txId))) {
+            throw new Error(`Invalid vkey in witness set with hash ${keyHash}`);
+          }
+          return keyHash.hex();
+        }),
     );
 
     // TODO: bootstrap addresses validation
@@ -900,7 +925,7 @@ export class Emulator {
       .requiredSigners()
       ?.values()
       .forEach((hash) => {
-        consumeVkey(Hash28ByteBase16.fromEd25519KeyHashHex(hash.value()));
+        consumeVkey(hash.value());
       });
 
     // Validity interval contains the current slot range and is formed correctly
@@ -1039,7 +1064,7 @@ export class Emulator {
           }
           case VoterKind.StakePoolKeyHash: {
             const keyHash = vs.toStakingPoolKeyHash()!;
-            consumeVkey(Hash28ByteBase16.fromEd25519KeyHashHex(keyHash));
+            consumeVkey(keyHash);
             break;
           }
         }
@@ -1214,8 +1239,7 @@ export class Emulator {
       account.balance -= withdrawn;
     }
 
-    tx
-      .witnessSet()
+    tx.witnessSet()
       .plutusData()
       ?.values()
       .forEach((datum) => {
