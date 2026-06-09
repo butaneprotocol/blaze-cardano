@@ -25,6 +25,7 @@ import type {
   GovernanceActionId,
   AnchorCore,
   CredentialCore,
+  Vote,
 } from "@blaze-cardano/core";
 import {
   AuxiliaryData,
@@ -72,7 +73,6 @@ import {
   UnregisterDelegateRepresentative,
   UpdateDelegateRepresentative,
   VoteDelegation,
-  Vote,
   VotingProcedure,
   DRep,
   ProposalProcedure,
