@@ -163,9 +163,7 @@ export class RoutedProvider extends Provider {
     );
   }
 
-  getUnspentOutputs(
-    address: Address,
-  ): Promise<TransactionUnspentOutput[]> {
+  getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]> {
     const provider = this.providerFor("getUnspentOutputs", "query");
     return this.call("getUnspentOutputs", provider, [address], () =>
       provider.getUnspentOutputs(address),

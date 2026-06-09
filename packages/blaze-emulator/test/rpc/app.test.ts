@@ -87,7 +87,10 @@ async function buildSignedPaymentCbor(
   return {
     cbor: tx.toCbor(),
     txId: tx.getId(),
-    outputCbors: tx.body().outputs().map((output) => output.toCbor()),
+    outputCbors: tx
+      .body()
+      .outputs()
+      .map((output) => output.toCbor()),
   };
 }
 
@@ -176,9 +179,8 @@ describe("emulator RPC app", () => {
   });
 
   it("accepts pre-built transaction CBOR", async () => {
-    const actualCrypto = await vi.importActual<typeof import("crypto")>(
-      "crypto",
-    );
+    const actualCrypto =
+      await vi.importActual<typeof import("crypto")>("crypto");
     const seeds = [Buffer.alloc(96, 1), Buffer.alloc(96, 2)];
     let calls = 0;
     const randomBytes = ((size: number) => {
@@ -376,9 +378,7 @@ describe("emulator RPC app", () => {
     );
     expect(hotResponse.status).toBe(200);
 
-    const committeeState = await app.request(
-      "/emulator/governance/committee",
-    );
+    const committeeState = await app.request("/emulator/governance/committee");
     const committee = (await committeeState.json()) as {
       members: Array<{ coldCredentialHash: string }>;
       hotCredentials: Array<{ hotCredentialHash: string | null }>;

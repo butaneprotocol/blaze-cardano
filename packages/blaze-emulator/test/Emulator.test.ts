@@ -267,9 +267,7 @@ describe("Emulator", () => {
 
   describe("expectScriptFailure", () => {
     const LOCK_AMOUNT = 2_000_000n;
-    const createFailingScriptSpend = async (
-      blazeClient: Blaze<any, any>,
-    ) => {
+    const createFailingScriptSpend = async (blazeClient: Blaze<any, any>) => {
       const scriptAddress = addressFromCredential(
         NetworkId.Testnet,
         Credential.fromCore({
@@ -284,7 +282,9 @@ describe("Emulator", () => {
         .complete();
       const lockHash = await signAndSubmit(lockTx, blazeClient);
       emulator.awaitTransactionConfirmation(lockHash);
-      const lockedOutput = emulator.getOutput(new TransactionInput(lockHash, 0n));
+      const lockedOutput = emulator.getOutput(
+        new TransactionInput(lockHash, 0n),
+      );
       isDefined(lockedOutput);
       return blazeClient
         .newTransaction()
@@ -301,7 +301,10 @@ describe("Emulator", () => {
         await emulator.register("script-user", makeValue(5_000_000n));
         const builder = await createFailingScriptSpend(scriptBlaze);
         await expect(
-          emulator.expectScriptFailure(builder, /could not resolve script hash/i),
+          emulator.expectScriptFailure(
+            builder,
+            /could not resolve script hash/i,
+          ),
         ).resolves.not.toThrow();
       });
     });

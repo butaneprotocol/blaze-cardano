@@ -232,7 +232,9 @@ describe("Blockfrost", () => {
     await expect(
       provider.resolveScriptRef(Hash28ByteBase16("0".repeat(56))),
     ).resolves.not.toThrow();
-    await expect(provider.resolveScriptRef(alwaysTrueScript)).resolves.not.toThrow();
+    await expect(
+      provider.resolveScriptRef(alwaysTrueScript),
+    ).resolves.not.toThrow();
 
     expect(spy).toHaveBeenCalledTimes(2);
   });

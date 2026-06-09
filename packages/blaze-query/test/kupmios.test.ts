@@ -186,7 +186,9 @@ describe("Kupmios", () => {
     const ogmios = makeOgmios();
     mockFetch(jsonResponse({ datum: datumCbor }));
 
-    const datum = await provider(ogmios).resolveDatum(DatumHash("3".repeat(64)));
+    const datum = await provider(ogmios).resolveDatum(
+      DatumHash("3".repeat(64)),
+    );
 
     expect(datum.toCbor()).toBe(datumCbor);
   });
@@ -218,9 +220,9 @@ describe("Kupmios", () => {
     });
     const tx = { toCbor: () => "00" } as unknown as Transaction;
 
-    await expect(
-      provider(ogmios).postTransactionToChain(tx),
-    ).resolves.toBe("4".repeat(64));
+    await expect(provider(ogmios).postTransactionToChain(tx)).resolves.toBe(
+      "4".repeat(64),
+    );
     expect(ogmios.submitTransaction).toHaveBeenCalledWith({ cbor: "00" });
   });
 
@@ -237,10 +239,7 @@ describe("Kupmios", () => {
     const evaluated = await provider(ogmios).evaluateTransaction(tx, []);
     const [evaluatedRedeemer] = evaluated.values();
 
-    expect(ogmios.evaluateTransaction).toHaveBeenCalledWith(
-      { cbor: "00" },
-      [],
-    );
+    expect(ogmios.evaluateTransaction).toHaveBeenCalledWith({ cbor: "00" }, []);
     expect(evaluatedRedeemer?.exUnits().toCore()).toEqual({
       memory: 123,
       steps: 456,

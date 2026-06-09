@@ -74,7 +74,9 @@ class StubProvider extends Provider {
     return `${this.label}:redeemers` as unknown as Redeemers;
   }
 
-  override async resolveScriptRef(): Promise<TransactionUnspentOutput | undefined> {
+  override async resolveScriptRef(): Promise<
+    TransactionUnspentOutput | undefined
+  > {
     this.calls.push("resolveScriptRef");
     return `${this.label}:script-ref` as unknown as TransactionUnspentOutput;
   }
@@ -95,10 +97,7 @@ describe("RoutedProvider", () => {
 
     await provider.getParameters();
     await provider.resolveDatum("datum" as unknown as DatumHash);
-    await provider.evaluateTransaction(
-      "tx" as unknown as Transaction,
-      [],
-    );
+    await provider.evaluateTransaction("tx" as unknown as Transaction, []);
     await provider.postTransactionToChain("tx" as unknown as Transaction);
     await provider.awaitTransactionConfirmation(
       "txid" as unknown as TransactionId,

@@ -65,8 +65,14 @@ async function createWalletEnvironment() {
     ...generateGenesisOutputs(accountB.address),
   ]);
   const provider = new EmulatorProvider(emulator);
-  const walletA = await HotWallet.fromMasterkey(accountA.masterkeyHex, provider);
-  const walletB = await HotWallet.fromMasterkey(accountB.masterkeyHex, provider);
+  const walletA = await HotWallet.fromMasterkey(
+    accountA.masterkeyHex,
+    provider,
+  );
+  const walletB = await HotWallet.fromMasterkey(
+    accountB.masterkeyHex,
+    provider,
+  );
   const blaze = await Blaze.from(provider, walletA);
   return { emulator, provider, walletA, walletB, blaze };
 }
@@ -124,8 +130,9 @@ async function scriptRoundTripScenario() {
 
 async function governanceParameterChangeScenario() {
   const [account] = await baseAccountsPromise;
-  const faucetOutputs = Array.from({ length: 4 }, () =>
-    new TransactionOutput(account.address, makeValue(50_000_000_000n)),
+  const faucetOutputs = Array.from(
+    { length: 4 },
+    () => new TransactionOutput(account.address, makeValue(50_000_000_000n)),
   );
   const emulator = new Emulator([
     ...generateGenesisOutputs(account.address),
@@ -209,10 +216,7 @@ bench
   .add("register mocked wallet", registerMockWalletScenario)
   .add("simple payment", simplePaymentScenario)
   .add("script lock -> spend", scriptRoundTripScenario)
-  .add(
-    "parameter change governance flow",
-    governanceParameterChangeScenario,
-  );
+  .add("parameter change governance flow", governanceParameterChangeScenario);
 
 async function main() {
   await bench.run();

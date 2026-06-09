@@ -339,7 +339,10 @@ const serializeCommittee = () => {
   const committee = getGovernanceState(emulator).committee;
   return {
     members: committee.members.map(
-      (member: { coldCredentialHash: string | Hash28ByteBase16; epoch: number }) => ({
+      (member: {
+        coldCredentialHash: string | Hash28ByteBase16;
+        epoch: number;
+      }) => ({
         coldCredentialHash: member.coldCredentialHash.toString(),
         epoch: member.epoch,
       }),
@@ -363,7 +366,14 @@ const serializeCommittee = () => {
 
 const serializeTallies = (
   result: NonNullable<ReturnType<Emulator["getTallies"]>>,
-): { tallies: { drep: { yes: string; no: string }; spo: { yes: string; no: string }; cc: { yes: string; no: string } }; activeCcMembers: string } => {
+): {
+  tallies: {
+    drep: { yes: string; no: string };
+    spo: { yes: string; no: string };
+    cc: { yes: string; no: string };
+  };
+  activeCcMembers: string;
+} => {
   const tallyToString = (tally: { yes: bigint; no: bigint }) => ({
     yes: tally.yes.toString(),
     no: tally.no.toString(),
@@ -609,7 +619,8 @@ app.openapi(
   async (c: Context) => {
     const { label, lovelace } = await parseJson(c, registerSchema);
     try {
-      const value = lovelace !== undefined ? makeValue(BigInt(lovelace)) : undefined;
+      const value =
+        lovelace !== undefined ? makeValue(BigInt(lovelace)) : undefined;
       const address = await emulator.register(label, value);
       return c.json({ address: address.toBech32() }, 200);
     } catch (error) {
@@ -648,7 +659,8 @@ app.openapi(
   async (c: Context) => {
     const { label, lovelace } = await parseJson(c, registerSchema);
     try {
-      const value = lovelace !== undefined ? makeValue(BigInt(lovelace)) : undefined;
+      const value =
+        lovelace !== undefined ? makeValue(BigInt(lovelace)) : undefined;
       await emulator.fund(label, value);
       return c.json({ ok: true }, 200);
     } catch (error) {
@@ -945,13 +957,15 @@ app.openapi(
     try {
       emulator.setCommitteeState({
         quorumThreshold,
-        members: (members ?? []).map((member: { coldCredentialHash: string; epoch: number }) => ({
-          coldCredential: {
-            type: CredentialType.KeyHash,
-            hash: Hash28ByteBase16(member.coldCredentialHash),
-          },
-          epoch: EpochNo(member.epoch),
-        })),
+        members: (members ?? []).map(
+          (member: { coldCredentialHash: string; epoch: number }) => ({
+            coldCredential: {
+              type: CredentialType.KeyHash,
+              hash: Hash28ByteBase16(member.coldCredentialHash),
+            },
+            epoch: EpochNo(member.epoch),
+          }),
+        ),
       });
       return c.json(serializeCommittee(), 200);
     } catch (error) {
