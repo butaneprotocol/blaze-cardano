@@ -1,10 +1,9 @@
 ---
+"@blaze-cardano/core": minor
+"@blaze-cardano/tx": minor
 "@blaze-cardano/query": minor
-"@blaze-cardano/emulator": patch
+"@blaze-cardano/sdk": minor
+"@blaze-cardano/emulator": minor
 ---
 
-Add routed provider support for separate query, evaluation, and submission
-backends with debug events, export the Maestro provider from the public query
-entrypoint, add mocked provider-behavior coverage for Blockfrost, Kupmios, and
-Maestro, and fix emulator witness accounting for governance script vote and
-proposal-policy redeemers.
+Add Catalyst M1 SDK and emulator work: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
