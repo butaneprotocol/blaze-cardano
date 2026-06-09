@@ -345,6 +345,9 @@ export type GovernanceActionKind = C.Serialization.GovernanceActionKind;
 export const hardCodedProtocolParams: ProtocolParameters;
 
 // @public (undocumented)
+export type HardForkInitiationAction = C.Cardano.HardForkInitiationAction;
+
+// @public (undocumented)
 export const Hash: typeof C.Serialization.Hash;
 
 // @public (undocumented)
@@ -369,6 +372,9 @@ export type Hash32ByteBase16 = Crypto.Hash32ByteBase16;
 export function HashAsPubKeyHex(hash: Hash28ByteBase16): Ed25519PublicKeyHex;
 
 export { HexBlob }
+
+// @public (undocumented)
+export type InfoAction = C.Cardano.InfoAction;
 
 // @public
 export function initCrypto(): Promise<void>;
@@ -483,7 +489,16 @@ export const NetworkId: typeof C.Cardano.NetworkId;
 // @public (undocumented)
 export type NetworkId = C.Cardano.ChainId["networkId"];
 
+// @public (undocumented)
+export type NewConstitution = C.Cardano.NewConstitution;
+
+// @public (undocumented)
+export type NoConfidence = C.Cardano.NoConfidence;
+
 export { OpaqueString }
+
+// @public (undocumented)
+export type ParameterChangeAction = C.Cardano.ParameterChangeAction;
 
 // @public (undocumented)
 export const PaymentAddress: (value: string) => C.Cardano.PaymentAddress;
@@ -752,11 +767,8 @@ export const SLOT_CONFIG_NETWORK: {
 
 // @public
 export interface SlotConfig {
-    // (undocumented)
     slotLength: number;
-    // (undocumented)
     zeroSlot: number;
-    // (undocumented)
     zeroTime: number;
 }
 
@@ -867,6 +879,9 @@ export const TransactionWitnessSet: typeof C.Serialization.TransactionWitnessSet
 
 // @public (undocumented)
 export type TransactionWitnessSet = C.Serialization.TransactionWitnessSet;
+
+// @public (undocumented)
+export type TreasuryWithdrawalsAction = C.Cardano.TreasuryWithdrawalsAction;
 
 // @public (undocumented)
 export const TxCBOR: {

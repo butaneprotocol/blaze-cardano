@@ -389,15 +389,14 @@ export const TransactionMetadatumKind =
 export type TransactionMetadatumKind = C.Serialization.TransactionMetadatumKind;
 
 /**
- * The SlotConfig interface defines the configuration for slots.
- * @interface SlotConfig
- * @property {number} zeroTime - The zero time for slot calculation.
- * @property {number} zeroSlot - The zero slot.
- * @property {number} slotLength - The slot length.
+ * Slot configuration for a Cardano network.
  */
 export interface SlotConfig {
+  /** The zero time for slot calculation. */
   zeroTime: number;
+  /** The zero slot. */
   zeroSlot: number;
+  /** The slot length. */
   slotLength: number;
 }
 

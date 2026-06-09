@@ -2,6 +2,8 @@ import type { Emulator } from "../../emulator";
 import type {
   TransactionUnspentOutput,
   CredentialCore,
+  CredentialType,
+  Hash28ByteBase16,
 } from "@blaze-cardano/core";
 
 const formatBigInt = (value: bigint) => value.toString();
@@ -35,7 +37,34 @@ export const listWallets = async (emulator: Emulator) => {
   return entries;
 };
 
-export const getGovernanceState = (emulator: Emulator) => {
+export interface GovernanceStateSnapshot {
+  committee: {
+    members: {
+      coldCredentialHash: string;
+      epoch: number;
+    }[];
+    quorumThreshold: {
+      numerator: number;
+      denominator: number;
+    };
+    hotCredentials: {
+      coldCredentialHash: string;
+      hotCredentialHash: Hash28ByteBase16 | null;
+      credentialType: CredentialType | null;
+    }[];
+  };
+  constitutionalCommitteeMinSize: number | null;
+  governanceActionLifetime: number | null;
+  lastEnactedActionByKind: Record<number, string>;
+  constitution: {
+    anchor: unknown;
+    scriptHash: string | null;
+  };
+}
+
+export const getGovernanceState = (
+  emulator: Emulator,
+): GovernanceStateSnapshot => {
   const internal = emulator as unknown as {
     ccHotCredentials: Record<string, CredentialCore | undefined>;
     lastEnactedActionByKind: Record<number, string>;

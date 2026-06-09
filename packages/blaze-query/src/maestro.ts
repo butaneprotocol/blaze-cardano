@@ -27,13 +27,12 @@ export class Maestro extends Provider {
   private url: string;
   private apiKey: string;
 
-  constructor({
-    network,
-    apiKey,
-  }: {
+  constructor(input: {
     network: "mainnet" | "preview" | "preprod";
     apiKey: string;
   }) {
+    const { network, apiKey } = input;
+
     super(
       network == "mainnet" ? NetworkId.Mainnet : NetworkId.Testnet,
       network === "mainnet"

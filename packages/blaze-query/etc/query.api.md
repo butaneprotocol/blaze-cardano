@@ -154,6 +154,31 @@ export class Kupmios extends Provider {
 }
 
 // @public (undocumented)
+export class Maestro extends Provider {
+    constructor(input: {
+        network: "mainnet" | "preview" | "preprod";
+        apiKey: string;
+    });
+    // (undocumented)
+    awaitTransactionConfirmation(txId: TransactionId, timeout?: number): Promise<boolean>;
+    // (undocumented)
+    evaluateTransaction(tx: Transaction, additionalUtxos: TransactionUnspentOutput[]): Promise<Redeemers>;
+    getParameters(): Promise<ProtocolParameters>;
+    // (undocumented)
+    getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
+    // (undocumented)
+    getUnspentOutputs(address: Address | Credential): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    postTransactionToChain(tx: Transaction): Promise<TransactionId>;
+    // (undocumented)
+    resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+    // (undocumented)
+    resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
+}
+
+// @public (undocumented)
 export type NetworkName = "cardano-mainnet" | "cardano-preprod" | "cardano-preview" | "cardano-sanchonet" | "unknown";
 
 // @public
@@ -178,10 +203,72 @@ export abstract class Provider {
     unixToSlot(unix_millis: bigint | number): Slot;
 }
 
+// @public (undocumented)
+export type ProviderDebugEvent = {
+    operation: ProviderOperation;
+    provider: Provider;
+    status: "start";
+    params: unknown[];
+} | {
+    operation: ProviderOperation;
+    provider: Provider;
+    status: "success";
+    params: unknown[];
+    durationMs: number;
+} | {
+    operation: ProviderOperation;
+    provider: Provider;
+    status: "error";
+    params: unknown[];
+    durationMs: number;
+    error: unknown;
+};
+
+// @public (undocumented)
+export type ProviderDebugLogger = (event: ProviderDebugEvent) => void;
+
+// @public (undocumented)
+export type ProviderOperation = "getParameters" | "getUnspentOutputs" | "getUnspentOutputsWithAsset" | "getUnspentOutputByNFT" | "resolveUnspentOutputs" | "resolveDatum" | "awaitTransactionConfirmation" | "postTransactionToChain" | "evaluateTransaction" | "resolveScriptRef";
+
+// @public (undocumented)
+export type ProviderRoutingConfig = {
+    defaultProvider: Provider;
+    queryProvider?: Provider;
+    evaluationProvider?: Provider;
+    submissionProvider?: Provider;
+    perOperation?: Partial<Record<ProviderOperation, Provider>>;
+    debugLogger?: ProviderDebugLogger;
+};
+
 // @public
 export const purposeToTag: {
     [key: string]: number;
 };
+
+// @public
+export class RoutedProvider extends Provider {
+    constructor(config: ProviderRoutingConfig);
+    // (undocumented)
+    awaitTransactionConfirmation(txId: TransactionId, timeout?: number): Promise<boolean>;
+    // (undocumented)
+    evaluateTransaction(tx: Transaction, additionalUtxos: TransactionUnspentOutput[]): Promise<Redeemers>;
+    // (undocumented)
+    getParameters(): Promise<ProtocolParameters>;
+    // (undocumented)
+    getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
+    // (undocumented)
+    getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    postTransactionToChain(tx: Transaction): Promise<TransactionId>;
+    // (undocumented)
+    resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+    // (undocumented)
+    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
+    // (undocumented)
+    resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
+}
 
 // (No @packageDocumentation comment for this package)
 

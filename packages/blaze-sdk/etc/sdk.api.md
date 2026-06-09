@@ -354,8 +354,7 @@ type CommitteeMember = C.Cardano.CommitteeMember;
 // Warning: (ae-forgotten-export) The symbol "IScriptData" needs to be exported by the entry point index.d.ts
 //
 // @public
-export function computeScriptData(redeemers: Redeemers, datums: ReturnType<TransactionWitnessSet["plutusData"]>,
-// TODO: weird import shenanigans
+export function computeScriptData(redeemers: Redeemers, datums: ReturnType<TransactionWitnessSet["plutusData"]>, // TODO: weird import shenanigans
 usedCostModels: Costmdls): IScriptData | undefined;
 
 // @public (undocumented)
@@ -425,11 +424,13 @@ declare namespace Core {
         GovernanceAction,
         GovernanceActionId,
         GovernanceActionKind,
+        HardForkInitiationAction,
         Hash,
         Hash28ByteBase16,
         Hash32ByteBase16,
         HashAsPubKeyHex,
         HexBlob,
+        InfoAction,
         Metadata,
         Metadatum,
         MetadatumList,
@@ -438,7 +439,10 @@ declare namespace Core {
         NativeScript,
         nativescript_d_exports as NativeScripts,
         NetworkId,
+        NewConstitution,
+        NoConfidence,
         OpaqueString,
+        ParameterChangeAction,
         PaymentAddress,
         PlutusData,
         PlutusDataKind,
@@ -498,6 +502,7 @@ declare namespace Core {
         TransactionUnspentOutput,
         TransactionWitnessPlutusData,
         TransactionWitnessSet,
+        TreasuryWithdrawalsAction,
         TxCBOR,
         UTxOSelectionError,
         UnregisterDelegateRepresentative,
@@ -715,6 +720,9 @@ type GovernanceActionKind = C.Serialization.GovernanceActionKind;
 const hardCodedProtocolParams: ProtocolParameters;
 
 // @public (undocumented)
+type HardForkInitiationAction = C.Cardano.HardForkInitiationAction;
+
+// @public (undocumented)
 const Hash: typeof C.Serialization.Hash;
 
 // @public (undocumented)
@@ -787,6 +795,9 @@ export class HotWallet implements Wallet {
     signData(address: Address, payload: string): Promise<CIP30DataSignature>;
     signTransaction(tx: Transaction, partialSign?: boolean, signWithStakeKey?: boolean): Promise<TransactionWitnessSet>;
 }
+
+// @public (undocumented)
+type InfoAction = C.Cardano.InfoAction;
 
 // @public
 function initCrypto(): Promise<void>;
@@ -872,6 +883,31 @@ export class Kupmios extends Provider {
     static serializeUtxos(unspentOutputs: TransactionUnspentOutput[]): Schema.Utxo;
 }
 
+// @public (undocumented)
+export class Maestro extends Provider {
+    constructor(input: {
+        network: "mainnet" | "preview" | "preprod";
+        apiKey: string;
+    });
+    // (undocumented)
+    awaitTransactionConfirmation(txId: TransactionId, timeout?: number): Promise<boolean>;
+    // (undocumented)
+    evaluateTransaction(tx: Transaction, additionalUtxos: TransactionUnspentOutput[]): Promise<Redeemers>;
+    getParameters(): Promise<ProtocolParameters>;
+    // (undocumented)
+    getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
+    // (undocumented)
+    getUnspentOutputs(address: Address | Credential): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    postTransactionToChain(tx: Transaction): Promise<TransactionId>;
+    // (undocumented)
+    resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+    // (undocumented)
+    resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
+}
+
 // @public
 export function makeValue(lovelace: bigint, ...assets: [string, bigint][]): Value_2;
 
@@ -934,6 +970,15 @@ type NetworkId = C.Cardano.ChainId["networkId"];
 
 // @public (undocumented)
 export type NetworkName = "cardano-mainnet" | "cardano-preprod" | "cardano-preview" | "cardano-sanchonet" | "unknown";
+
+// @public (undocumented)
+type NewConstitution = C.Cardano.NewConstitution;
+
+// @public (undocumented)
+type NoConfidence = C.Cardano.NoConfidence;
+
+// @public (undocumented)
+type ParameterChangeAction = C.Cardano.ParameterChangeAction;
 
 // @public (undocumented)
 const PaymentAddress: (value: string) => C.Cardano.PaymentAddress;
@@ -1097,6 +1142,43 @@ export abstract class Provider {
     unixToSlot(unix_millis: bigint | number): Slot;
 }
 
+// @public (undocumented)
+export type ProviderDebugEvent = {
+    operation: ProviderOperation;
+    provider: Provider;
+    status: "start";
+    params: unknown[];
+} | {
+    operation: ProviderOperation;
+    provider: Provider;
+    status: "success";
+    params: unknown[];
+    durationMs: number;
+} | {
+    operation: ProviderOperation;
+    provider: Provider;
+    status: "error";
+    params: unknown[];
+    durationMs: number;
+    error: unknown;
+};
+
+// @public (undocumented)
+export type ProviderDebugLogger = (event: ProviderDebugEvent) => void;
+
+// @public (undocumented)
+export type ProviderOperation = "getParameters" | "getUnspentOutputs" | "getUnspentOutputsWithAsset" | "getUnspentOutputByNFT" | "resolveUnspentOutputs" | "resolveDatum" | "awaitTransactionConfirmation" | "postTransactionToChain" | "evaluateTransaction" | "resolveScriptRef";
+
+// @public (undocumented)
+export type ProviderRoutingConfig = {
+    defaultProvider: Provider;
+    queryProvider?: Provider;
+    evaluationProvider?: Provider;
+    submissionProvider?: Provider;
+    perOperation?: Partial<Record<ProviderOperation, Provider>>;
+    debugLogger?: ProviderDebugLogger;
+};
+
 // @public
 export const purposeToTag: {
     [key: string]: number;
@@ -1151,6 +1233,31 @@ const RewardAddress: typeof C.Cardano.RewardAddress;
 
 // @public (undocumented)
 type RewardAddress = C.Cardano.RewardAddress;
+
+// @public
+export class RoutedProvider extends Provider {
+    constructor(config: ProviderRoutingConfig);
+    // (undocumented)
+    awaitTransactionConfirmation(txId: TransactionId, timeout?: number): Promise<boolean>;
+    // (undocumented)
+    evaluateTransaction(tx: Transaction, additionalUtxos: TransactionUnspentOutput[]): Promise<Redeemers>;
+    // (undocumented)
+    getParameters(): Promise<ProtocolParameters>;
+    // (undocumented)
+    getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
+    // (undocumented)
+    getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    postTransactionToChain(tx: Transaction): Promise<TransactionId>;
+    // (undocumented)
+    resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+    // (undocumented)
+    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
+    // (undocumented)
+    resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
+}
 
 // @public (undocumented)
 const Script: typeof C.Serialization.Script;
@@ -1230,11 +1337,8 @@ const SLOT_CONFIG_NETWORK: {
 
 // @public
 interface SlotConfig {
-    // (undocumented)
     slotLength: number;
-    // (undocumented)
     zeroSlot: number;
-    // (undocumented)
     zeroTime: number;
 }
 
@@ -1352,6 +1456,9 @@ const TransactionWitnessSet: typeof C.Serialization.TransactionWitnessSet;
 // @public (undocumented)
 type TransactionWitnessSet = C.Serialization.TransactionWitnessSet;
 
+// @public (undocumented)
+type TreasuryWithdrawalsAction = C.Cardano.TreasuryWithdrawalsAction;
+
 // @public
 export class TxBuilder {
     constructor(params: ProtocolParameters, tracing?: boolean);
@@ -1362,23 +1469,28 @@ export class TxBuilder {
     addMint(policy: PolicyId, assets: Map<AssetName, bigint>, redeemer?: PlutusData): this;
     addOutput(output: TransactionOutput): TxBuilder;
     addPreCompleteHook(hook: (tx: TxBuilder) => Promise<void>): TxBuilder;
-    addProposal(proposal: ProposalProcedure): TxBuilder;
+    addProposal(proposal: ProposalProcedure, redeemer?: PlutusData): TxBuilder;
     // (undocumented)
     addProposal(params: {
         deposit: bigint;
         rewardAccount: RewardAccount;
         governanceAction: GovernanceAction;
         anchor: Anchor | AnchorCore;
-    }): TxBuilder;
+    }, redeemer?: PlutusData): TxBuilder;
     addReferenceInput(utxo: TransactionUnspentOutput): TxBuilder;
-    addRegisterDRep(drep: Credential, deposit: bigint, anchor?: Anchor): TxBuilder;
+    addRegisterDRep(drep: Credential, deposit: bigint, anchor?: Anchor, redeemer?: PlutusData): TxBuilder;
     addRegisterPool(poolParameters: PoolParameters): TxBuilder;
     addRegisterStake(credential: Credential): this;
     addRequiredSigner(signer: Ed25519KeyHashHex): TxBuilder;
     addRetirePool(poolId: PoolId, epoch: EpochNo): TxBuilder;
-    addUnregisterDRep(drep: Credential, refund: bigint): TxBuilder;
+    addUnregisterDRep(drep: Credential, refund: bigint, redeemer?: PlutusData): TxBuilder;
     addUnspentOutputs(utxos: TransactionUnspentOutput[]): TxBuilder;
-    addUpdateDRep(drep: Credential, anchor?: Anchor): TxBuilder;
+    addUpdateDRep(drep: Credential, anchor?: Anchor, redeemer?: PlutusData): TxBuilder;
+    // (undocumented)
+    addVote(voter: Voter, actionId: GovernanceActionId, voteOrProcedure: Vote | VotingProcedure, options?: {
+        anchor?: Anchor;
+        redeemer?: PlutusData;
+    }): TxBuilder;
     addVoteDelegation(delegator: Credential, drep: Credential | "alwaysAbstain" | "alwaysNoConfidence", redeemer?: PlutusData): TxBuilder;
     addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData): TxBuilder;
     protected buildFinalWitnessSet(signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][]): TransactionWitnessSet;
@@ -1413,7 +1525,7 @@ export class TxBuilder {
     setRewardAddress(address: Address): TxBuilder;
     setValidFrom(validFrom: Slot): TxBuilder;
     setValidUntil(validUntil: Slot): TxBuilder;
-    setVotingProcedures(votingProcedures: VotingProcedures): TxBuilder;
+    setVotingProcedures(votingProcedures: VotingProcedures, voteRedeemers?: Map<string, PlutusData>): TxBuilder;
     toCbor(): string;
     // Warning: (ae-forgotten-export) The symbol "SelectionResult" needs to be exported by the entry point index.d.ts
     useCoinSelector(selector: (inputs: TransactionUnspentOutput[], dearth: Value_2) => SelectionResult): TxBuilder;
