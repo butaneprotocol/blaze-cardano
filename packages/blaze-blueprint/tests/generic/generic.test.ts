@@ -194,6 +194,41 @@ describe("Generator.normalizeTypeName", () => {
     });
   });
 
+  describe("angle-bracket generic format (newer Aiken)", () => {
+    it("should extract type params from the schema for Tuple<<...>> titles", () => {
+      const definitionName = "Tuple<<types/common/AssetClass,Int>>";
+      const schema = {
+        title: "Tuple",
+        dataType: "list" as const,
+        items: [
+          { $ref: "#/definitions/types~1common~1AssetClass" },
+          { $ref: "#/definitions/Int" },
+        ],
+      };
+
+      const result = generator.normalizeTypeName(definitionName, schema);
+      expect(result).toBe("Tuple_AssetClass_Int");
+    });
+
+    it("should fall back to parsing the name when no schema is given", () => {
+      expect(generator.normalizeTypeName("Tuple<<ByteArray,Data>>")).toBe(
+        "Tuple_ByteArray_Data",
+      );
+      expect(
+        generator.normalizeTypeName(
+          "Tuple<<aiken/crypto/VerificationKey,aiken/crypto/Signature>>",
+        ),
+      ).toBe("Tuple_VerificationKey_Signature");
+    });
+
+    it("should take the last path segment of a module-qualified base name", () => {
+      const result = generator.normalizeTypeName(
+        "my/module/SignedPayload<types/ProtocolRedeemer>",
+      );
+      expect(result).toBe("SignedPayload_ProtocolRedeemer");
+    });
+  });
+
   describe("regular (non-generic) types", () => {
     it("should return the last segment for simple types", () => {
       const result = generator.normalizeTypeName("Int");

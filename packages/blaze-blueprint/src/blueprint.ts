@@ -242,6 +242,28 @@ export class Generator {
     fullDefinitionName: string,
     schema?: Annotated<Schema>,
   ): string {
+    // Angle-bracket generic format (newer Aiken): "Tuple<<ByteArray,Data>>",
+    // "my/module/SignedPayload<types/ProtocolRedeemer>". The base name is
+    // everything before the first "<"; type params are extracted from the
+    // schema structure when possible, falling back to parsing the name.
+    const angleIndex = fullDefinitionName.indexOf("<");
+    if (angleIndex > 0) {
+      const baseName = fullDefinitionName
+        .substring(0, angleIndex)
+        .split("/")
+        .pop()!;
+      const schemaTypeParams = this.extractTypeParamsFromSchema(schema);
+      const typeParamNames =
+        schemaTypeParams !== null && schemaTypeParams.length > 0
+          ? schemaTypeParams
+          : fullDefinitionName
+              .substring(angleIndex)
+              .replace(/[<>]/g, "")
+              .split(",")
+              .map((paramPath) => paramPath.split("/").pop()!);
+      return `${baseName}_${typeParamNames.join("_")}`.replace(/~/g, "_");
+    }
+
     const parts = fullDefinitionName.split("/");
 
     // Find the part containing "$" (indicates generic type instantiation)
