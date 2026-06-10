@@ -11,4 +11,7 @@ understood the older `Tuple$a_b` dollar format, so these fell through to the
 `AssetClass,Int>>:`), making the generated module fail to parse. The base name
 is now taken from everything before the first `<`, with type parameters
 extracted from the schema structure when available (falling back to parsing
-the title).
+the title). Type parameters that are themselves generic instantiations
+(`Tuple<<ByteArray,List<Int>>>`, `List<types/order/RouteStep>`) are normalized
+recursively — this also applies to dollar-format definitions resolved through
+the schema, which previously kept brackets from nested parameter names.

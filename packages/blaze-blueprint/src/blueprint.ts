@@ -158,9 +158,7 @@ export class Generator {
       const typeParams: string[] = [];
       for (const item of schema.items) {
         if ("$ref" in item) {
-          const paramName = this.definitionName(item);
-          const lastSegment = paramName.split("/").pop()!;
-          typeParams.push(lastSegment.replace(/~/g, "_"));
+          typeParams.push(this.typeParamName(this.definitionName(item)));
         }
       }
       if (typeParams.length > 0) {
@@ -179,14 +177,10 @@ export class Generator {
     ) {
       const typeParams: string[] = [];
       if ("$ref" in schema.keys) {
-        const keyName = this.definitionName(schema.keys);
-        const lastSegment = keyName.split("/").pop()!;
-        typeParams.push(lastSegment.replace(/~/g, "_"));
+        typeParams.push(this.typeParamName(this.definitionName(schema.keys)));
       }
       if ("$ref" in schema.values) {
-        const valueName = this.definitionName(schema.values);
-        const lastSegment = valueName.split("/").pop()!;
-        typeParams.push(lastSegment.replace(/~/g, "_"));
+        typeParams.push(this.typeParamName(this.definitionName(schema.values)));
       }
       if (typeParams.length > 0) {
         return typeParams;
@@ -202,12 +196,60 @@ export class Generator {
       "$ref" in schema.items &&
       typeof schema.items.$ref === "string"
     ) {
-      const paramName = this.definitionName(schema.items as { $ref: string });
-      const lastSegment = paramName.split("/").pop()!;
-      return [lastSegment.replace(/~/g, "_")];
+      return [
+        this.typeParamName(this.definitionName(schema.items as { $ref: string })),
+      ];
     }
 
     return null;
+  }
+
+  /**
+   * Normalizes a single type-parameter name. A parameter can itself be a
+   * generic instantiation ("List<Int>", "List<types/order/RouteStep>"), in
+   * which case it is normalized recursively so the result stays a valid
+   * identifier fragment.
+   */
+  private typeParamName(paramName: string): string {
+    if (paramName.includes("<")) {
+      return this.normalizeTypeName(paramName);
+    }
+    return paramName.split("/").pop()!.replace(/~/g, "_");
+  }
+
+  /**
+   * Parses the "<...>" tail of an angle-bracket generic title into normalized
+   * type-parameter names: strips the outer bracket pair(s), splits on
+   * top-level commas only, and recurses into nested generics.
+   * "<<ByteArray,List<Int>>>" -> ["ByteArray", "List_Int"]
+   */
+  private parseAngleBracketParams(bracketed: string): string[] {
+    let outer = 0;
+    while (bracketed[outer] === "<") {
+      outer += 1;
+    }
+    const inner = bracketed.slice(outer, bracketed.length - outer);
+
+    const params: string[] = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < inner.length; i++) {
+      const c = inner[i];
+      if (c === "<") {
+        depth += 1;
+      } else if (c === ">") {
+        depth -= 1;
+      } else if (c === "," && depth === 0) {
+        params.push(inner.slice(start, i));
+        start = i + 1;
+      }
+    }
+    params.push(inner.slice(start));
+
+    return params
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0)
+      .map((p) => this.typeParamName(p));
   }
 
   /**
@@ -256,11 +298,9 @@ export class Generator {
       const typeParamNames =
         schemaTypeParams !== null && schemaTypeParams.length > 0
           ? schemaTypeParams
-          : fullDefinitionName
-              .substring(angleIndex)
-              .replace(/[<>]/g, "")
-              .split(",")
-              .map((paramPath) => paramPath.split("/").pop()!);
+          : this.parseAngleBracketParams(
+              fullDefinitionName.substring(angleIndex),
+            );
       return `${baseName}_${typeParamNames.join("_")}`.replace(/~/g, "_");
     }
 

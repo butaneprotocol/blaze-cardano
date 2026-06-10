@@ -228,6 +228,45 @@ describe("Generator.normalizeTypeName", () => {
       );
       expect(result).toBe("SignedPayload_ProtocolRedeemer");
     });
+
+    it("should normalize nested generic type params via the schema", () => {
+      const definitionName = "Tuple<<ByteArray,List<Int>>>";
+      const schema = {
+        title: "Tuple",
+        dataType: "list" as const,
+        items: [
+          { $ref: "#/definitions/ByteArray" },
+          { $ref: "#/definitions/List<Int>" },
+        ],
+      };
+
+      const result = generator.normalizeTypeName(definitionName, schema);
+      expect(result).toBe("Tuple_ByteArray_List_Int");
+    });
+
+    it("should normalize module-qualified nested generic params via the schema", () => {
+      const definitionName = "Tuple<<ByteArray,List<types/order/RouteStep>>>";
+      const schema = {
+        title: "Tuple",
+        dataType: "list" as const,
+        items: [
+          { $ref: "#/definitions/ByteArray" },
+          { $ref: "#/definitions/List<types~1order~1RouteStep>" },
+        ],
+      };
+
+      const result = generator.normalizeTypeName(definitionName, schema);
+      expect(result).toBe("Tuple_ByteArray_List_RouteStep");
+    });
+
+    it("should split only top-level commas in the no-schema fallback", () => {
+      expect(generator.normalizeTypeName("Tuple<<ByteArray,List<Int>>>")).toBe(
+        "Tuple_ByteArray_List_Int",
+      );
+      expect(
+        generator.normalizeTypeName("Pairs<ByteArray,Pairs<ByteArray,Int>>"),
+      ).toBe("Pairs_ByteArray_Pairs_ByteArray_Int");
+    });
   });
 
   describe("regular (non-generic) types", () => {
