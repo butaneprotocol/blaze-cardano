@@ -245,6 +245,20 @@ export class HotWallet implements Wallet {
 
     const vkeys = [payemntVkw.toCore()];
 
+    // Auto-detect: sign with stake key if requiredSigners includes our stake key hash
+    if (!signWithStakeKey && this.stakeSigningKey) {
+      const stakeKeyHash = (
+        await (await this.stakeSigningKey.toPublic()).toRawKey().hash()
+      ).hex();
+      const requiredSigners = tx.body().requiredSigners()?.values() ?? [];
+      for (const rs of requiredSigners) {
+        if (rs.value() === stakeKeyHash) {
+          signWithStakeKey = true;
+          break;
+        }
+      }
+    }
+
     if (signWithStakeKey) {
       if (!this.stakeSigningKey) {
         throw new Error(

@@ -98,7 +98,7 @@ export const Bip32PrivateKey: typeof Crypto.Bip32PrivateKey;
 export type Bip32PrivateKey = Crypto.Bip32PrivateKey;
 
 // @public (undocumented)
-export type Bip32PrivateKeyHex = OpaqueString<"Bip32PrivateKeyHex">;
+export type Bip32PrivateKeyHex = OpaqueString<"Bip32PrivateKeyHex"> & HexBlob;
 
 // @public (undocumented)
 export const Bip32PrivateKeyHex: (value: string) => Bip32PrivateKeyHex;
@@ -249,7 +249,7 @@ export const Ed25519KeyHashHex: (value: string) => Crypto.Ed25519KeyHashHex;
 export type Ed25519KeyHashHex = Crypto.Ed25519KeyHashHex;
 
 // @public (undocumented)
-export type Ed25519PrivateExtendedKeyHex = OpaqueString<"Ed25519PrivateKeyHex">;
+export type Ed25519PrivateExtendedKeyHex = OpaqueString<"Ed25519PrivateKeyHex"> & HexBlob;
 
 // @public (undocumented)
 export const Ed25519PrivateExtendedKeyHex: (value: string) => Ed25519PrivateExtendedKeyHex;
@@ -261,7 +261,7 @@ export const Ed25519PrivateKey: typeof Crypto.Ed25519PrivateKey;
 export type Ed25519PrivateKey = Crypto.Ed25519PrivateKey;
 
 // @public (undocumented)
-export type Ed25519PrivateNormalKeyHex = OpaqueString<"Ed25519PrivateKeyHex">;
+export type Ed25519PrivateNormalKeyHex = OpaqueString<"Ed25519PrivateKeyHex"> & HexBlob;
 
 // @public (undocumented)
 export const Ed25519PrivateNormalKeyHex: (value: string) => Ed25519PrivateNormalKeyHex;
@@ -273,7 +273,10 @@ export const Ed25519PublicKey: typeof Crypto.Ed25519PublicKey;
 export type Ed25519PublicKey = Crypto.Ed25519PublicKey;
 
 // @public (undocumented)
-export const Ed25519PublicKeyHex: (value: string) => Crypto.Ed25519PublicKeyHex;
+export const Ed25519PublicKeyHex: {
+    (value: string): Crypto.Ed25519PublicKeyHex;
+    fromBip32PublicKey(bip32PublicKey: Crypto.Bip32PublicKeyHex): Crypto.Ed25519PublicKeyHex;
+};
 
 // @public (undocumented)
 export type Ed25519PublicKeyHex = Crypto.Ed25519PublicKeyHex;
@@ -348,10 +351,7 @@ export const Hash: typeof C.Serialization.Hash;
 export type Hash<T extends string> = C.Serialization.Hash<T>;
 
 // @public (undocumented)
-export const Hash28ByteBase16: {
-    (value: string): Crypto.Hash28ByteBase16;
-    fromEd25519KeyHashHex(value: Crypto.Ed25519KeyHashHex): Crypto.Hash28ByteBase16;
-};
+export const Hash28ByteBase16: (value: string) => Crypto.Hash28ByteBase16;
 
 // @public (undocumented)
 export type Hash28ByteBase16 = Crypto.Hash28ByteBase16;
@@ -369,6 +369,9 @@ export type Hash32ByteBase16 = Crypto.Hash32ByteBase16;
 export function HashAsPubKeyHex(hash: Hash28ByteBase16): Ed25519PublicKeyHex;
 
 export { HexBlob }
+
+// @public
+export function initCrypto(): Promise<void>;
 
 // @public (undocumented)
 export const isCertType: <K extends keyof {
@@ -412,6 +415,9 @@ export const isCertType: <K extends keyof {
     VoteDelegationCertificate: C.Cardano.VoteDelegationCertificate;
     VoteRegistrationDelegateCertificate: C.Cardano.VoteRegistrationDelegationCertificate;
 }[K];
+
+// @public (undocumented)
+export const isRewardAccount: (bech: PaymentAddress | RewardAccount) => bech is RewardAccount;
 
 // @public (undocumented)
 function justAddress(address: string, networkId: NetworkId): NativeScript;

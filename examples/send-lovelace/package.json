@@ -5,12 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "send": "tsx index.ts"
+    "send": "bun run index.ts"
   },
   "dependencies": {
-    "@blaze-cardano/sdk": "workspace:*"
-  },
-  "devDependencies": {
-    "tsx": "^4.9.4"
+    "@blaze-cardano/sdk": "^0.2.48"
   }
 }

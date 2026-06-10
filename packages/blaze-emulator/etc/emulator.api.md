@@ -87,7 +87,7 @@ export const ECONOMIC_GROUP_FIELDS: Readonly<Set<string>>;
 
 // @public
 export class Emulator {
-    constructor(genesisOutputs: TransactionOutput[], { evaluator, slotConfig, trace: traceGovernance, slotsPerEpoch, params, treasury, cc, ccHotCredentials, }?: EmulatorOptions);
+    constructor(genesisOutputs: TransactionOutput[], input?: EmulatorOptions);
     accounts: Map<RewardAccount, RegisteredAccount>;
     // (undocumented)
     activePools: Record<PoolId, PoolParameters>;
@@ -134,7 +134,7 @@ export class Emulator {
     register(label: string, value?: Value, datum?: PlutusData): Promise<Address>;
     removeUtxo(inp: TransactionInput): void;
     setCommitteeHotCredential(coldCredentialHash: Hash28ByteBase16 | string, credential?: CredentialCore): void;
-    setCommitteeState(committee: Committee, { hotCredentials, }?: {
+    setCommitteeState(committee: Committee, input?: {
         hotCredentials?: Record<string, CredentialCore | undefined>;
     }): void;
     slotToUnix(slot: Slot | number | bigint): number;

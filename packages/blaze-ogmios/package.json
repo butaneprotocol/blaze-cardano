@@ -1,41 +1,45 @@
 {
   "name": "@blaze-cardano/ogmios",
-  "version": "0.0.7",
   "description": "Blaze cardano ogmios library",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    }
-  },
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsdown src/index.ts --format esm,cjs --dts --external rxjs",
-    "dev": "tsdown src/index.ts --format esm,cjs --watch --dts --external rxjs",
-    "lint": "eslint \"src/**/*.ts*\"",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "build:types": "tsc -p tsconfig.docs.json",
-    "api:extract": "api-extractor run --local --verbose",
-    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
-    "api:prepare": "pnpm build:types && pnpm api:extract && pnpm api:md"
+  "version": "0.0.7",
+  "dependencies": {
+    "@cardano-ogmios/schema": "^6.6.1",
+    "isomorphic-ws": "^5.0.0"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
-    "eslint": "^8.57.0",
+    "eslint": "^9.22.0",
     "ts-node": "^10.9.2",
-    "tsdown": "^0.15.9",
-    "typescript": "^5.3.3"
+    "tsdown": "^0.21.0",
+    "typescript": "^5.7.3"
   },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "@cardano-ogmios/schema": "^6.6.1",
-    "isomorphic-ws": "^5.0.0"
-  }
+  "scripts": {
+    "api:extract": "api-extractor run --local --verbose",
+    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
+    "api:prepare": "bun run build:types && bun run api:extract && bun run api:md",
+    "build": "tsdown",
+    "build:types": "tsc -p tsconfig.docs.json",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "dev": "tsdown --watch",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "types": "./dist/index.d.cts"
 }

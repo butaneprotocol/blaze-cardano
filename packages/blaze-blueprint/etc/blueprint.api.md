@@ -7,7 +7,83 @@
 // Warning: (ae-forgotten-export) The symbol "BlueprintArgs" needs to be exported by the entry point index.d.ts
 //
 // @public
-export function generateBlueprint({ infile, tracedBlueprint, outfile, useSdk, }: BlueprintArgs): Promise<void>;
+export function generateBlueprint(input: BlueprintArgs): Promise<void>;
+
+// @public (undocumented)
+class Generator_2 {
+    // (undocumented)
+    buffer: string[];
+    // (undocumented)
+    buildLine(segment: string): void;
+    // (undocumented)
+    definitionName(declaration: {
+        $ref: string;
+    }): string;
+    // (undocumented)
+    finishLine(segment?: string): void;
+    // (undocumented)
+    indent(): void;
+    // (undocumented)
+    indentLevel: number;
+    // (undocumented)
+    indentSize: number;
+    // (undocumented)
+    static isBoolean(shape: Schema): shape is boolean;
+    // (undocumented)
+    static isNullable(shape: Schema): shape is {
+        anyOf: [
+            {
+            title: "Some";
+            fields: (Schema | Annotated<Schema>)[];
+        },
+            {
+            title: "None";
+        }
+        ];
+    };
+    // (undocumented)
+    isStandardType(name: string): boolean;
+    // Warning: (ae-forgotten-export) The symbol "Unit" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    static isUnit(shape: Schema): shape is Unit;
+    // (undocumented)
+    static isVoid(shape: Constructor): boolean;
+    // (undocumented)
+    line: string;
+    // Warning: (ae-forgotten-export) The symbol "Annotated" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "Schema" needs to be exported by the entry point index.d.ts
+    normalizeTypeName(fullDefinitionName: string, schema?: Annotated<Schema>): string;
+    // (undocumented)
+    outdent(): void;
+    // (undocumented)
+    static snakeToCamel(s: string | undefined): string | undefined;
+    // (undocumented)
+    typeName(declaration: {
+        $ref: string;
+    }, definitions?: Record<string, Annotated<Schema>>): string;
+    // (undocumented)
+    static upperFirst(s: string | undefined): string | undefined;
+    // (undocumented)
+    writeImports(useSdk: boolean): void;
+    // (undocumented)
+    writeLine(line?: string): void;
+    // (undocumented)
+    writeModule(definitions: Record<string, Annotated<Schema>>): void;
+    // Warning: (ae-forgotten-export) The symbol "Declaration" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "Data" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "Constructor" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    writeTypeboxType(schema: Declaration<Schema> | Annotated<Declaration<Schema>> | Data | Annotated<Data> | Annotated<Constructor>, definitions: Record<string, Annotated<Schema>>, stack?: string[], options?: {
+        isMapKey?: boolean;
+    }): void;
+    // Warning: (ae-forgotten-export) The symbol "Blueprint" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    writeValidators(blueprint: Blueprint, blueprintWithTrace?: Blueprint): void;
+}
+export { Generator_2 as Generator }
 
 // (No @packageDocumentation comment for this package)
 

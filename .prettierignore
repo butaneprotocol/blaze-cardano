@@ -1,5 +1,6 @@
-# Ignore files for PNPM, NPM and YARN
-pnpm-lock.yaml
+# Ignore lockfiles and generated files
+bun.lock
+CHANGELOG.md
 node_modules/
 .turbo/
 dist/

@@ -46,5 +46,4 @@ export type List = {
   items: Schema | Schema[];
 };
 
-// eslint-disable-next-line
 export type Schema = Unit | Boolean | Int | Bytes | String | Pair | List | Data;

@@ -1213,8 +1213,7 @@ export class Emulator {
       account.balance -= withdrawn;
     }
 
-    tx
-      .witnessSet()
+    tx.witnessSet()
       .plutusData()
       ?.values()
       .forEach((datum) => {
