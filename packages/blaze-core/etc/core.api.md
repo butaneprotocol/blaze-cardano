@@ -902,6 +902,9 @@ export const UnregisterDelegateRepresentative: typeof C.Serialization.Unregister
 export type UnregisterDelegateRepresentative = C.Serialization.UnregisterDelegateRepresentative;
 
 // @public (undocumented)
+export type UpdateCommittee = C.Cardano.UpdateCommittee;
+
+// @public (undocumented)
 export const UpdateDelegateRepresentative: typeof C.Serialization.UpdateDelegateRepresentative;
 
 // @public (undocumented)
