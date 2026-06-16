@@ -1,12 +1,25 @@
 name: e2e
 
+run-name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs['full-provider-evidence'] == 'true' && 'e2e full-provider-evidence' || 'e2e' }}
+
 on:
   push:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
+    inputs:
+      full-provider-evidence:
+        description: "Require Blockfrost, Kupmios, and Maestro live e2e evidence"
+        required: false
+        type: boolean
+        default: false
+      e2e-query-address:
+        description: "Optional preview address override for provider parity reads; defaults to the e2e wallet address"
+        required: false
+        type: string
 
-# cancel in-progress runs on new commits to same PR (gitub.event.number)
+# cancel in-progress runs on new commits to same PR (github.event.number)
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
   cancel-in-progress: true
@@ -27,11 +40,46 @@ jobs:
       CI: true
       SEED_MNEMONIC: ${{ secrets.SEED_MNEMONIC }}
       BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
+      KUPO_URL: ${{ secrets.KUPO_URL }}
+      OGMIOS_URL: ${{ secrets.OGMIOS_URL }}
+      MAESTRO_KEY: ${{ secrets.MAESTRO_KEY }}
+      E2E_QUERY_ADDRESS: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs['e2e-query-address'] || vars.E2E_QUERY_ADDRESS }}
+      BLAZE_SCRIPT_DEPLOYMENT_E2E: "true"
+      BLAZE_FULL_PROVIDER_E2E: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs['full-provider-evidence'] == 'true' }}
     steps:
       - name: ✅ Verify required secrets
         run: |
+          present() {
+            if [ -n "$1" ]; then echo "configured"; else echo "missing"; fi
+          }
+
+          {
+            echo "## Catalyst e2e evidence"
+            echo
+            echo "| Check | Status |"
+            echo "| --- | --- |"
+            echo "| Full provider evidence requested | ${BLAZE_FULL_PROVIDER_E2E} |"
+            echo "| SEED_MNEMONIC | $(present "${SEED_MNEMONIC}") |"
+            echo "| BLOCKFROST_KEY | $(present "${BLOCKFROST_KEY}") |"
+            echo "| KUPO_URL | $(present "${KUPO_URL}") |"
+            echo "| OGMIOS_URL | $(present "${OGMIOS_URL}") |"
+            echo "| MAESTRO_KEY | $(present "${MAESTRO_KEY}") |"
+            echo "| E2E_QUERY_ADDRESS override | $(present "${E2E_QUERY_ADDRESS}") |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
           if [ -z "${SEED_MNEMONIC}" ]; then echo "SEED_MNEMONIC secret is not set"; exit 1; fi
           if [ -z "${BLOCKFROST_KEY}" ]; then echo "BLOCKFROST_KEY secret is not set"; exit 1; fi
+          if [ -z "${KUPO_URL}" ] || [ -z "${OGMIOS_URL}" ]; then
+            echo "Kupmios e2e is disabled until KUPO_URL and OGMIOS_URL are configured."
+          fi
+          if [ -z "${MAESTRO_KEY}" ]; then
+            echo "Provider parity e2e is disabled until MAESTRO_KEY is configured."
+          fi
+          if [ "${BLAZE_FULL_PROVIDER_E2E}" = "true" ]; then
+            if [ -z "${KUPO_URL}" ]; then echo "KUPO_URL secret is required for full provider evidence"; exit 1; fi
+            if [ -z "${OGMIOS_URL}" ]; then echo "OGMIOS_URL secret is required for full provider evidence"; exit 1; fi
+            if [ -z "${MAESTRO_KEY}" ]; then echo "MAESTRO_KEY secret is required for full provider evidence"; exit 1; fi
+          fi
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,7 +87,7 @@ jobs:
       - name: 📦 Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.10"
+          bun-version: "1.3.14"
 
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4

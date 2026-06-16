@@ -6,5 +6,11 @@
   "linked": [],
   "access": "public",
   "baseBranch": "main",
+  "ignore": [
+    "advanced-querying",
+    "script-deploy-aiken",
+    "script-deploy-basic",
+    "script-deploy-ci"
+  ],
   "updateInternalDependencies": "patch"
 }

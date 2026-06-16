@@ -1,0 +1,50 @@
+{
+  "name": "@blaze-cardano/deploy",
+  "description": "Declarative script deployment utilities for Blaze Cardano",
+  "version": "0.0.0",
+  "dependencies": {
+    "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/query": "workspace:*",
+    "@blaze-cardano/tx": "workspace:*",
+    "@blaze-cardano/wallet": "workspace:*"
+  },
+  "devDependencies": {
+    "@blaze-cardano/eslint-config": "workspace:*",
+    "@blaze-cardano/tsconfig": "workspace:*",
+    "eslint": "^9.22.0",
+    "tsdown": "^0.21.0",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "api:extract": "api-extractor run --local --verbose",
+    "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
+    "api:prepare": "bun run build:types && bun run api:extract && bun run api:md",
+    "build": "tsdown",
+    "build:types": "tsc -p tsconfig.docs.json",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "coverage": "vitest run --coverage",
+    "dev": "tsdown --watch",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "watch": "tsdown --watch"
+  },
+  "type": "module",
+  "types": "./dist/index.d.cts"
+}

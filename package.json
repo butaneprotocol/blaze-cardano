@@ -21,13 +21,15 @@
     "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.18"
   },
-  "packageManager": "bun@1.3.10",
+  "packageManager": "bun@1.3.14",
   "scripts": {
     "build": "turbo run build",
     "changeset": "changeset",
     "clean": "turbo run clean && rm -rf .turbo && rm -rf node_modules",
     "dev": "turbo run dev --parallel",
     "docs": "typedoc --skipErrorChecking && mkdir docs/logo && cp logo/BLAZE_LOGO2.svg docs/logo/BLAZE_LOGO2.svg",
+    "docs:format": "prettier --write docs/catalyst docs/src/index.md docs/src/roadmap.md docs/src/cardano-integration-process.md docs/sidebars/root.sidebar.ts docs/sidebars/catalyst.sidebar.mjs docs/sidebars/deploy.sidebar.mjs docs/docusaurus.config.ts --ignore-path /dev/null",
+    "docs:format:check": "prettier --check docs/catalyst docs/src/index.md docs/src/roadmap.md docs/src/cardano-integration-process.md docs/sidebars/root.sidebar.ts docs/sidebars/catalyst.sidebar.mjs docs/sidebars/deploy.sidebar.mjs docs/docusaurus.config.ts --ignore-path /dev/null",
     "docs:prepare": "turbo run api:prepare",
     "docs:version": "node scripts/version-docs.mjs",
     "fmt": "prettier -w .",
@@ -40,6 +42,9 @@
   },
   "workspaces": [
     "packages/*",
-    "!**/examples/**"
+    "examples/advanced-querying",
+    "examples/script-deploy-aiken",
+    "examples/script-deploy-basic",
+    "examples/script-deploy-ci"
   ]
 }

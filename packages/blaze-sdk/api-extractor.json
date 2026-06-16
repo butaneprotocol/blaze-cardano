@@ -13,6 +13,7 @@
   "bundledPackages": [
     "@blaze-cardano/query",
     "@blaze-cardano/tx",
+    "@blaze-cardano/deploy",
     "@blaze-cardano/wallet",
     "@blaze-cardano/uplc",
     "@blaze-cardano/core"

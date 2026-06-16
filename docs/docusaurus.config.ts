@@ -4,6 +4,7 @@ const plugins: [string, string[]][] = [
   ["blueprint", ["current"]],
   ["core", ["current"]],
   ["data", ["current"]],
+  ["deploy", ["current"]],
   ["emulator", ["current", "0.3.30"]],
   ["ogmios", ["current"]],
   ["query", ["current"]],
@@ -16,7 +17,7 @@ const plugins: [string, string[]][] = [
 
 const config: Config = {
   title: "Blaze Cardano",
-  url: "https://docs.butane.dev",
+  url: "https://blaze.butane.dev",
   baseUrl: "/",
   markdown: {
     format: "detect",
@@ -48,6 +49,10 @@ const config: Config = {
           to: "/sdk",
         },
         {
+          label: "Catalyst",
+          to: "/catalyst",
+        },
+        {
           label: "Emulator",
           to: "/emulator",
         },
@@ -58,20 +63,22 @@ const config: Config = {
         {
           type: "dropdown",
           label: "More Packages",
-          items: plugins.filter(([slug]) => !["sdk", "emulator", "wallet"].includes(slug)).map(([slug, versions]) => ({
-            label: `@blaze-cardano/${slug}`,
-            to: `/${slug}`,
-          })),
+          items: plugins
+            .filter(([slug]) => !["sdk", "emulator", "wallet"].includes(slug))
+            .map(([slug]) => ({
+              label: `@blaze-cardano/${slug}`,
+              to: `/${slug}`,
+            })),
         },
         /**
          * Must create a custom dropdown for each package that only shows if we're in that slug path.
          */
-        ...(plugins.map(([slug, versions]) => ({
-          type: 'custom-VersionDropdown',
+        ...plugins.map(([slug]) => ({
+          type: "custom-VersionDropdown",
           docsPluginId: `blaze-${slug}`,
           routePrefix: `/${slug}`,
-          position: 'right',
-        }))),
+          position: "right",
+        })),
         {
           href: "https://github.com/butaneprotocol/blaze-cardano",
           label: "GitHub",
@@ -80,20 +87,34 @@ const config: Config = {
       ],
     },
   },
-  plugins: plugins.map(([slug, versions]) => [
-    "@docusaurus/plugin-content-docs",
-    {
-      id: `blaze-${slug}`,
-      path: `../packages/blaze-${slug}/docs`,
-      routeBasePath: slug,
-      sidebarPath: require.resolve(`./sidebars/${slug}.sidebar.mjs`),
-      lastVersion: "current",
-      includeCurrentVersion: true,
-      onlyIncludeVersions: versions,
-      editUrl: "https://github.com/you/repo/edit/main/packages/ui/docs",
-      include: ["**/*.md", "**/*.mdx"],
-    },
-  ]),
+  plugins: [
+    [
+      "@docusaurus/plugin-content-docs",
+      {
+        id: "catalyst",
+        path: "./catalyst",
+        routeBasePath: "catalyst",
+        sidebarPath: require.resolve("./sidebars/catalyst.sidebar.mjs"),
+        editUrl:
+          "https://github.com/butaneprotocol/blaze-cardano/edit/main/docs",
+        include: ["**/*.md", "**/*.mdx"],
+      },
+    ],
+    ...plugins.map(([slug, versions]) => [
+      "@docusaurus/plugin-content-docs",
+      {
+        id: `blaze-${slug}`,
+        path: `../packages/blaze-${slug}/docs`,
+        routeBasePath: slug,
+        sidebarPath: require.resolve(`./sidebars/${slug}.sidebar.mjs`),
+        lastVersion: "current",
+        includeCurrentVersion: true,
+        onlyIncludeVersions: versions,
+        editUrl: `https://github.com/butaneprotocol/blaze-cardano/edit/main/packages/blaze-${slug}/docs`,
+        include: ["**/*.md", "**/*.mdx"],
+      },
+    ]),
+  ],
 };
 
 export default config;

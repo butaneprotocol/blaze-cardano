@@ -1,9 +1,17 @@
 ---
-"@blaze-cardano/core": minor
-"@blaze-cardano/tx": minor
-"@blaze-cardano/query": minor
-"@blaze-cardano/sdk": minor
-"@blaze-cardano/emulator": minor
+"@blaze-cardano/blueprint": major
+"@blaze-cardano/core": major
+"@blaze-cardano/data": major
+"@blaze-cardano/deploy": major
+"@blaze-cardano/emulator": major
+"@blaze-cardano/ogmios": major
+"@blaze-cardano/plutus": major
+"@blaze-cardano/query": major
+"@blaze-cardano/sdk": major
+"@blaze-cardano/tx": major
+"@blaze-cardano/uplc": major
+"@blaze-cardano/vm": major
+"@blaze-cardano/wallet": major
 ---
 
-Add Catalyst M1 SDK and emulator work: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
+Prepare the public Blaze runtime packages for a 1.0.0 release with provider routing, advanced query APIs, transaction safety helpers, governance and emulator improvements, and declarative script deployment utilities.

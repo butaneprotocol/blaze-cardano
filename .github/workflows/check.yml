@@ -6,7 +6,7 @@ on:
       - main
   pull_request:
 
-# cancel in-progress runs on new commits to same PR (gitub.event.number)
+# cancel in-progress runs on new commits to same PR (github.event.number)
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
   cancel-in-progress: true
@@ -25,7 +25,7 @@ jobs:
       - name: 📦 Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.10"
+          bun-version: "1.3.14"
 
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
@@ -58,6 +58,9 @@ jobs:
       - name: 🧪 Run fmt check
         run: bun run prettier --check .
 
+      - name: 🧪 Run docs fmt check
+        run: bun run docs:format:check
+
       - name: 🧪 Run lint
         run: bun run lint
 
@@ -72,5 +75,20 @@ jobs:
       - name: 🧪 Run test
         run: bun run test
 
-      - name: 📙 Run Docs
+      - name: 📊 Run query benchmark
+        run: bun --filter @blaze-cardano/query bench
+
+      - name: 📊 Run deploy coverage
+        run: bun --filter @blaze-cardano/deploy coverage
+
+      - name: 📊 Run transaction coverage
+        run: bun --filter @blaze-cardano/tx test:coverage
+
+      - name: 📙 Prepare API docs
         run: bun run docs:prepare
+
+      - name: 📙 Build docs site
+        run: |
+          cd docs
+          bun install --frozen-lockfile
+          bun run build

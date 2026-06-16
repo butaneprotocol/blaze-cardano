@@ -58,10 +58,16 @@ export function applyParams(hex: HexBlob, ...params: PlutusData[]): HexBlob;
 export function applyParamsToScript<T extends TArray>(plutusScript: string, type: T, params: Exact<T>): HexBlob;
 
 // @public
+export const assertDeploymentAddress: (address: Address) => Address;
+
+// @public
 export const assertLockAddress: (address: Address) => never | void;
 
 // @public
 export const assertPaymentsAddress: (address: Address) => never | void;
+
+// @public
+export const assertPositiveAssetQuantities: (operation: string, assets: ReadonlyMap<AssetName, bigint>) => void;
 
 // @public
 export const assertValidOutput: (output: TransactionOutput, coinsPerUtxoByte: number, maxValueSize: number) => void | never;
@@ -85,6 +91,16 @@ const AssetName: {
 
 // @public (undocumented)
 type AssetName = C.Cardano.AssetName;
+
+// @public (undocumented)
+export class AsyncEventQueue<T> implements AsyncIterable<T> {
+    // (undocumented)
+    [Symbol.asyncIterator](): AsyncIterator<T>;
+    // (undocumented)
+    close(): void;
+    // (undocumented)
+    push(value: T): void;
+}
 
 // @public (undocumented)
 const AuxiliaryData: typeof C.Serialization.AuxiliaryData;
@@ -238,6 +254,9 @@ export interface BlockfrostProtocolParametersResponse {
 }
 
 // @public
+export const burnDeploymentAddress: (network: NetworkId) => Address;
+
+// @public
 export function calculateMinAda(output: TransactionOutput, coinsPerUtxoByte: number): bigint;
 
 // @public
@@ -245,6 +264,9 @@ export function calculateReferenceScriptFee(refScripts: Script[], params: Protoc
 
 // @public
 export function calculateRequiredCollateral(fee: bigint, collateralPercentage: number): bigint;
+
+// @public
+export const canonicalJson: (value: unknown) => string;
 
 // @public (undocumented)
 const CborReader: typeof C.Serialization.CborReader;
@@ -289,6 +311,47 @@ const CertificateType: typeof C.Cardano.CertificateType;
 
 // @public (undocumented)
 type CertificateType = C.Cardano.CertificateType;
+
+// @public (undocumented)
+export type ChainEvent = {
+    type: "rollForward";
+    point: ChainPoint;
+    block: unknown;
+} | {
+    type: "rollBackward";
+    point: ChainPoint | "origin";
+} | {
+    type: "utxoProduced";
+    address: Address;
+    input: TransactionInput;
+} | {
+    type: "utxoSpent";
+    address: Address;
+    input: TransactionInput;
+};
+
+// @public (undocumented)
+export type ChainEventFilter = {
+    types?: readonly ChainEventType[];
+};
+
+// @public (undocumented)
+export const chainEventMatches: (event: ChainEvent, filter?: ChainEventFilter) => boolean;
+
+// @public (undocumented)
+export interface ChainEventSource {
+    // (undocumented)
+    events(filter?: ChainEventFilter, signal?: AbortSignal): AsyncIterable<ChainEvent>;
+}
+
+// @public (undocumented)
+export type ChainEventType = ChainEvent["type"];
+
+// @public (undocumented)
+export type ChainPoint = {
+    slot: number;
+    hash: string;
+};
 
 // @public (undocumented)
 export interface CIP30DataSignature {
@@ -350,6 +413,9 @@ type Committee = C.Cardano.Committee;
 
 // @public (undocumented)
 type CommitteeMember = C.Cardano.CommitteeMember;
+
+// @public
+export const compareDeploymentVersions: (left: string, right: string) => -1 | 0 | 1;
 
 // Warning: (ae-forgotten-export) The symbol "IScriptData" needs to be exported by the entry point index.d.ts
 //
@@ -506,6 +572,7 @@ declare namespace Core {
         TxCBOR,
         UTxOSelectionError,
         UnregisterDelegateRepresentative,
+        UpdateCommittee,
         UpdateDelegateRepresentative,
         Value_2 as Value,
         VkeyWitness,
@@ -561,6 +628,9 @@ type CostModel = C.Serialization.CostModel;
 type CostModels = C.Cardano.CostModels;
 
 // @public (undocumented)
+export const createQueryClient: (provider: Provider, options?: QueryClientOptions) => QueryClient;
+
+// @public (undocumented)
 const Credential: typeof C.Serialization.Credential;
 
 // @public (undocumented)
@@ -593,11 +663,41 @@ type DatumHash = Crypto.Hash32ByteBase16;
 // @public (undocumented)
 const DatumKind: typeof C.Serialization.DatumKind;
 
+// @public
+export const defineScriptDeployment: (manifest: ScriptDeploymentManifest) => ScriptDeploymentManifest;
+
+// @public
+export const defineTypedScript: <DatumType extends PlutusData, RedeemerType extends PlutusData>(script: Script, options?: {
+    name?: string;
+}) => TypedScript<DatumType, RedeemerType>;
+
 // @public (undocumented)
 type DelegateRepresentative = C.Cardano.DelegateRepresentative;
 
 // @public (undocumented)
 type DelegateRepresentativeThresholds = C.Cardano.DelegateRepresentativeThresholds;
+
+// @public
+export const deploymentAddressFromValidator: (network: NetworkId, validator: Script) => Address;
+
+// @public
+export class DeploymentPlanner {
+    constructor(provider: Provider, cache?: ScriptDeploymentCache | undefined);
+    readonly cache?: ScriptDeploymentCache | undefined;
+    readonly provider: Provider;
+    reconcile(manifest: ScriptDeploymentManifest): Promise<ScriptDeploymentPlan>;
+}
+
+// @public
+export const deployScriptRefs: (input: DeployScriptRefsInput) => Promise<ScriptDeploymentResult>;
+
+// @public
+export type DeployScriptRefsInput = {
+    manifest: ScriptDeploymentManifest;
+    provider: Provider;
+    wallet: Wallet;
+    cache?: ScriptDeploymentCache;
+};
 
 // @public
 function derivePublicKey(privateKey: Ed25519PrivateNormalKeyHex | Ed25519PrivateExtendedKeyHex): Ed25519PublicKeyHex;
@@ -676,6 +776,12 @@ type ExUnits = C.Serialization.ExUnits;
 
 // @public (undocumented)
 const ExUnits: typeof C.Serialization.ExUnits;
+
+// @public
+export const formatScriptHash: (hash: Hash28ByteBase16) => string;
+
+// @public
+export const formatTxInput: (input: TransactionInput) => string;
 
 // @public (undocumented)
 type Fraction = C.Cardano.Fraction;
@@ -867,6 +973,8 @@ export class Kupmios extends Provider {
     // (undocumented)
     static readonly confirmationTimeout: number;
     evaluateTransaction(tx: Transaction, additionalUtxos: TransactionUnspentOutput[]): Promise<Redeemers>;
+    // (undocumented)
+    events(filter?: ChainEventFilter, signal?: AbortSignal): AsyncIterable<ChainEvent>;
     getParameters(): Promise<ProtocolParameters>;
     getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
     getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>;
@@ -910,6 +1018,17 @@ export class Maestro extends Provider {
 
 // @public
 export function makeValue(lovelace: bigint, ...assets: [string, bigint][]): Value_2;
+
+// @public
+export class MemoryScriptDeploymentCache implements ScriptDeploymentCache {
+    constructor(records?: readonly ScriptDeploymentRecord[]);
+    findByName(name: string): ScriptDeploymentRecord | undefined;
+    findByScriptHash(scriptHash: Hash28ByteBase16): ScriptDeploymentRecord | undefined;
+    put(record: ScriptDeploymentRecord): void;
+    records(): readonly ScriptDeploymentRecord[];
+    remove(name: string): boolean;
+    snapshot(manifestHash?: ScriptDeploymentCacheSnapshot["manifestHash"]): ScriptDeploymentCacheSnapshot;
+}
 
 // @public (undocumented)
 const Metadata: typeof C.Serialization.GeneralTransactionMetadata;
@@ -962,6 +1081,9 @@ namespace nativescript_d_exports {
     export { address, after, allOf, anyOf, atLeastNOfK, before, justAddress };
 }
 
+// @public
+export const negateAssetQuantities: (assets: ReadonlyMap<AssetName, bigint>) => Map<AssetName, bigint>;
+
 // @public (undocumented)
 const NetworkId: typeof C.Cardano.NetworkId;
 
@@ -974,11 +1096,31 @@ export type NetworkName = "cardano-mainnet" | "cardano-preprod" | "cardano-previ
 // @public (undocumented)
 type NewConstitution = C.Cardano.NewConstitution;
 
+// @public
+export const nextPatchVersion: (version: string) => string;
+
 // @public (undocumented)
 type NoConfidence = C.Cardano.NoConfidence;
 
 // @public (undocumented)
+export const ogmiosChainSyncEvents: (input: OgmiosChainSyncOptions) => AsyncIterable<ChainEvent>;
+
+// @public (undocumented)
+export type OgmiosChainSyncOptions = {
+    url: string;
+    filter?: ChainEventFilter;
+    signal?: AbortSignal;
+    socketFactory?: (url: string) => WebSocketLike;
+};
+
+// @public (undocumented)
 type ParameterChangeAction = C.Cardano.ParameterChangeAction;
+
+// @public
+export const parseScriptDeploymentCache: (snapshot: ScriptDeploymentCacheSnapshot) => MemoryScriptDeploymentCache;
+
+// @public
+export const parseTxInput: (value: string) => TransactionInput;
 
 // @public (undocumented)
 const PaymentAddress: (value: string) => C.Cardano.PaymentAddress;
@@ -1042,6 +1184,16 @@ type PolicyId = C.Cardano.PolicyId;
 
 // @public
 function PolicyIdToHash(policy: PolicyId): Hash28ByteBase16;
+
+// @public (undocumented)
+export function pollAddressEvents(provider: Provider, options: PollingAddressEventOptions): AsyncIterable<ChainEvent>;
+
+// @public (undocumented)
+export type PollingAddressEventOptions = ChainEventFilter & {
+    address: Address;
+    intervalMs?: number;
+    signal?: AbortSignal;
+};
 
 // @public (undocumented)
 const PoolId: {
@@ -1143,6 +1295,9 @@ export abstract class Provider {
 }
 
 // @public (undocumented)
+export const providerCacheKey: (operation: string, params: readonly unknown[]) => string;
+
+// @public (undocumented)
 export type ProviderDebugEvent = {
     operation: ProviderOperation;
     provider: Provider;
@@ -1183,6 +1338,86 @@ export type ProviderRoutingConfig = {
 export const purposeToTag: {
     [key: string]: number;
 };
+
+// @public (undocumented)
+export class QueryCache<K, V> {
+    constructor(options?: QueryCacheOptions);
+    // (undocumented)
+    clear(): void;
+    // (undocumented)
+    delete(key: K): boolean;
+    // (undocumented)
+    get(key: K): V | undefined;
+    // (undocumented)
+    prune(): void;
+    // (undocumented)
+    read(key: K): QueryCacheLookup<V>;
+    // (undocumented)
+    set(key: K, value: V, ttlMs?: number): void;
+    // (undocumented)
+    get size(): number;
+}
+
+// @public (undocumented)
+export type QueryCacheEntry<V> = {
+    value: V;
+    expiresAt: number;
+};
+
+// @public (undocumented)
+export type QueryCacheLookup<V> = {
+    hit: true;
+    value: V;
+} | {
+    hit: false;
+    value?: undefined;
+};
+
+// @public (undocumented)
+export type QueryCacheOptions = {
+    ttlMs?: number;
+    maxEntries?: number;
+    now?: () => number;
+};
+
+// @public (undocumented)
+export class QueryClient {
+    constructor(provider: Provider, options?: QueryClientOptions);
+    // (undocumented)
+    cache(): QueryCache<string, unknown>;
+    // (undocumented)
+    chain<T>(query: (client: QueryClient) => Promise<T>): Promise<T>;
+    // (undocumented)
+    getParameters(): Promise<ProtocolParameters>;
+    // (undocumented)
+    getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
+    // (undocumented)
+    getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    provider(): Provider;
+    // (undocumented)
+    resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+    // (undocumented)
+    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
+    // (undocumented)
+    resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    withCache(cache: QueryCache<string, unknown>): QueryClient;
+}
+
+// @public (undocumented)
+export type QueryClientOptions = {
+    cache?: QueryCache<string, unknown>;
+};
+
+// @public
+export const reconcileScriptDeployment: (input: {
+    manifest: ScriptDeploymentManifest;
+    provider: Provider;
+    cache?: ScriptDeploymentCache;
+}) => Promise<ScriptDeploymentPlan>;
 
 // @public (undocumented)
 const Redeemer: typeof C.Serialization.Redeemer;
@@ -1277,6 +1512,116 @@ const ScriptAny: typeof C.Serialization.ScriptAny;
 // @public (undocumented)
 type ScriptAny = C.Serialization.ScriptAny;
 
+// @public
+export type ScriptDeploymentAction = {
+    type: "reuse";
+    target: ScriptDeploymentTarget;
+    record: ScriptDeploymentRecord;
+} | {
+    type: "deploy";
+    target: ScriptDeploymentTarget;
+} | {
+    type: "replace";
+    target: ScriptDeploymentTarget;
+    previous: ScriptDeploymentRecord;
+} | {
+    type: "retire";
+    record: ScriptDeploymentRecord;
+};
+
+// @public
+export interface ScriptDeploymentCache {
+    findByName(name: string): ScriptDeploymentRecord | undefined;
+    findByScriptHash(scriptHash: Hash28ByteBase16): ScriptDeploymentRecord | undefined;
+    put(record: ScriptDeploymentRecord): void;
+    records(): readonly ScriptDeploymentRecord[];
+    remove(name: string): boolean;
+    snapshot(manifestHash?: Hash32ByteBase16): ScriptDeploymentCacheSnapshot;
+}
+
+// @public
+export class ScriptDeploymentCacheError extends ScriptDeploymentError {
+    constructor(message: string, options?: {
+        cause?: unknown;
+    });
+}
+
+// @public
+export type ScriptDeploymentCacheSnapshot = {
+    manifestHash?: Hash32ByteBase16;
+    records: readonly SerializableScriptDeploymentRecord[];
+};
+
+// @public
+export class ScriptDeploymentError extends Error {
+    constructor(message: string, options?: {
+        cause?: unknown;
+    });
+}
+
+// @public
+export type ScriptDeploymentManifest = {
+    id: string;
+    network: NetworkName;
+    targets: readonly ScriptDeploymentTarget[];
+};
+
+// @public
+export class ScriptDeploymentManifestError extends ScriptDeploymentError {
+    constructor(message: string, options?: {
+        cause?: unknown;
+    });
+}
+
+// @public
+export const scriptDeploymentManifestHash: (manifest: ScriptDeploymentManifest) => Hash32ByteBase16;
+
+// @public
+export type ScriptDeploymentPlan = {
+    manifestHash: Hash32ByteBase16;
+    actions: readonly ScriptDeploymentAction[];
+};
+
+// @public
+export class ScriptDeploymentPlanError extends ScriptDeploymentError {
+    constructor(message: string, options?: {
+        cause?: unknown;
+    });
+}
+
+// @public
+export type ScriptDeploymentRecord = {
+    name: string;
+    version: string;
+    scriptHash: Hash28ByteBase16;
+    address: Address;
+    txInput?: TransactionInput;
+    status: ScriptDeploymentStatus;
+    manifestHash?: Hash32ByteBase16;
+    supersededBy?: Hash28ByteBase16;
+};
+
+// @public
+export type ScriptDeploymentResult = {
+    manifestHash: Hash32ByteBase16;
+    transactions: readonly TransactionId[];
+    records: readonly ScriptDeploymentRecord[];
+};
+
+// @public
+export type ScriptDeploymentStatus = "matched" | "missing" | "stale" | "superseded";
+
+// @public
+export type ScriptDeploymentTarget = {
+    name: string;
+    version: string;
+    script: Script;
+    address: Address;
+    minAda?: bigint;
+    dependencies?: readonly string[];
+    metadata?: Readonly<Record<string, string>>;
+};
+
 // @public (undocumented)
 type ScriptHash = Crypto.Hash28ByteBase16;
 
@@ -1297,6 +1642,39 @@ export type ScriptType = "Native" | "PlutusV1" | "PlutusV2" | "PlutusV3";
 
 // @public (undocumented)
 type SelectionPhase = "wide" | "deep" | "final";
+
+// @public
+export type SerializableScriptDeploymentManifest = {
+    id: string;
+    network: NetworkName;
+    targets: readonly SerializableScriptDeploymentTarget[];
+};
+
+// @public
+export type SerializableScriptDeploymentRecord = {
+    name: string;
+    version: string;
+    scriptHash: Hash28ByteBase16;
+    address: string;
+    txInput?: string;
+    status: ScriptDeploymentStatus;
+    manifestHash?: Hash32ByteBase16;
+    supersededBy?: Hash28ByteBase16;
+};
+
+// @public
+export type SerializableScriptDeploymentTarget = {
+    name: string;
+    version: string;
+    scriptHash: Hash28ByteBase16;
+    address: string;
+    minAda?: string;
+    dependencies: readonly string[];
+    metadata: Readonly<Record<string, string>>;
+};
+
+// @public
+export const serializeScriptDeploymentManifest: (manifest: ScriptDeploymentManifest) => SerializableScriptDeploymentManifest;
 
 // @public
 const setInConwayEra: (value: boolean) => false;
@@ -1346,6 +1724,9 @@ interface SlotConfig {
 export function sortLargestFirst(inputs: TransactionUnspentOutput[]): TransactionUnspentOutput[];
 
 // @public (undocumented)
+export const stableQueryValue: (value: unknown) => unknown;
+
+// @public (undocumented)
 type StakeAddressCertificate = C.Cardano.StakeAddressCertificate;
 
 // @public (undocumented)
@@ -1380,6 +1761,12 @@ const StakeRegistrationCertificateTypes: readonly [C.Cardano.CertificateType.Sta
 
 // @public
 export const stringifyBigint: typeof JSON.stringify;
+
+// @public
+export const stringifyScriptDeploymentCache: (cache: ScriptDeploymentCache, manifestHash?: ScriptDeploymentCacheSnapshot["manifestHash"]) => string;
+
+// @public
+export const supersedeRecord: (record: ScriptDeploymentRecord, replacement: ScriptDeploymentRecord) => ScriptDeploymentRecord;
 
 // @public (undocumented)
 const TimelockExpiry: typeof C.Serialization.TimelockExpiry;
@@ -1427,6 +1814,9 @@ const TransactionInput: typeof C.Serialization.TransactionInput;
 type TransactionInput = C.Serialization.TransactionInput;
 
 // @public (undocumented)
+export const transactionInputKey: (input: TransactionInput) => string;
+
+// @public (undocumented)
 type TransactionInputSet = C.Serialization.CborSet<ReturnType<TransactionInput["toCore"]>, TransactionInput>;
 
 // @public (undocumented)
@@ -1440,6 +1830,11 @@ const TransactionOutput: typeof C.Serialization.TransactionOutput;
 
 // @public (undocumented)
 type TransactionOutput = C.Serialization.TransactionOutput;
+
+// @public
+export class TransactionSafetyError extends Error {
+    constructor(message: string);
+}
 
 // @public (undocumented)
 const TransactionUnspentOutput: typeof C.Serialization.TransactionUnspentOutput;
@@ -1483,6 +1878,7 @@ export class TxBuilder {
     addRegisterStake(credential: Credential): this;
     addRequiredSigner(signer: Ed25519KeyHashHex): TxBuilder;
     addRetirePool(poolId: PoolId, epoch: EpochNo): TxBuilder;
+    addTypedInput<T extends TypedScript<PlutusData, PlutusData>>(utxo: TransactionUnspentOutput, typedScript: T, redeemer: TypedScriptRedeemer<T>, unhashDatum?: TypedScriptDatum<T>): TxBuilder;
     addUnregisterDRep(drep: Credential, refund: bigint, redeemer?: PlutusData): TxBuilder;
     addUnspentOutputs(utxos: TransactionUnspentOutput[]): TxBuilder;
     addUpdateDRep(drep: Credential, anchor?: Anchor, redeemer?: PlutusData): TxBuilder;
@@ -1496,14 +1892,17 @@ export class TxBuilder {
     protected buildFinalWitnessSet(signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][]): TransactionWitnessSet;
     protected buildPlaceholderWitnessSet(): TransactionWitnessSet;
     get burnAddress(): Address;
+    burnAssets(policy: PolicyId, assets: Map<AssetName, bigint>, redeemer?: PlutusData): TxBuilder;
     protected calculateFees(): void;
     complete(params?: UseCoinSelectionArgs): Promise<Transaction>;
     delegate(poolId: PoolId, redeemer?: PlutusData): this;
-    deployScript(script: Script, address?: Address): TxBuilder;
+    deployScript(script: Script, address?: Address, minAda?: bigint): TxBuilder;
     enableTracing(enabled: boolean): TxBuilder;
     protected getScriptData(tw: TransactionWitnessSet): IScriptData | undefined;
     lockAssets(address: Address, value: Value_2, datum: Datum, scriptReference?: Script): TxBuilder;
     lockLovelace(address: Address, lovelace: bigint, datum: Datum, scriptReference?: Script): TxBuilder;
+    lockTypedAssets<T extends TypedScript<PlutusData, PlutusData>>(typedScript: T, address: Address, value: Value_2, datum: TypedScriptDatum<T>, scriptReference?: Script): TxBuilder;
+    mintAssets(policy: PolicyId, assets: Map<AssetName, bigint>, redeemer?: PlutusData): TxBuilder;
     get outputsCount(): number;
     // (undocumented)
     readonly params: ProtocolParameters;
@@ -1527,9 +1926,15 @@ export class TxBuilder {
     setValidUntil(validUntil: Slot): TxBuilder;
     setVotingProcedures(votingProcedures: VotingProcedures, voteRedeemers?: Map<string, PlutusData>): TxBuilder;
     toCbor(): string;
+    transferAssets(address: Address, value: Value_2, datum?: Datum): TxBuilder;
     // Warning: (ae-forgotten-export) The symbol "SelectionResult" needs to be exported by the entry point index.d.ts
     useCoinSelector(selector: (inputs: TransactionUnspentOutput[], dearth: Value_2) => SelectionResult): TxBuilder;
     useEvaluator(evaluator: Evaluator, override?: boolean): TxBuilder;
+}
+
+// @public
+export class TxBuilderReuseError extends Error {
+    constructor(message: string);
 }
 
 // @public (undocumented)
@@ -1542,11 +1947,28 @@ const TxCBOR: {
 // @public (undocumented)
 type TxCBOR = C.Serialization.TxCBOR;
 
+// @public
+export type TypedScript<DatumType extends PlutusData, RedeemerType extends PlutusData> = {
+    readonly script: Script;
+    readonly name?: string;
+    readonly [datumBrand]?: DatumType;
+    readonly [redeemerBrand]?: RedeemerType;
+};
+
+// @public
+export type TypedScriptDatum<T> = T extends TypedScript<infer DatumType, PlutusData> ? DatumType : never;
+
+// @public
+export type TypedScriptRedeemer<T> = T extends TypedScript<PlutusData, infer RedeemerType> ? RedeemerType : never;
+
 // @public (undocumented)
 const UnregisterDelegateRepresentative: typeof C.Serialization.UnregisterDelegateRepresentative;
 
 // @public (undocumented)
 type UnregisterDelegateRepresentative = C.Serialization.UnregisterDelegateRepresentative;
+
+// @public (undocumented)
+type UpdateCommittee = C.Cardano.UpdateCommittee;
 
 // @public (undocumented)
 const UpdateDelegateRepresentative: typeof C.Serialization.UpdateDelegateRepresentative;
@@ -1600,6 +2022,9 @@ class UTxOSelectionError extends Error {
     // (undocumented)
     selectedInputs?: TransactionUnspentOutput[] | undefined;
 }
+
+// @public
+export const validateScriptDeploymentManifest: (manifest: ScriptDeploymentManifest) => ScriptDeploymentManifest;
 
 // @public (undocumented)
 export namespace Value {
@@ -1676,6 +2101,19 @@ export abstract class Wallet {
 //
 // @public
 export const WalletDetails: Wallet$1[];
+
+// @public (undocumented)
+export type WebSocketLike = {
+    send(data: string): void;
+    close(): void;
+    addEventListener?(type: "open" | "message" | "error" | "close", listener: (event: unknown) => void): void;
+    onopen?: (event: unknown) => void;
+    onmessage?: (event: {
+        data: unknown;
+    }) => void;
+    onerror?: (event: unknown) => void;
+    onclose?: (event: unknown) => void;
+};
 
 // @public
 export class WebWallet implements Wallet {

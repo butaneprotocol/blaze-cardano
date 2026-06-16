@@ -1,8 +1,12 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { Blaze, HotSingleWallet, Blockfrost } from "@blaze-cardano/sdk";
+import { appendEvidenceSummary } from "./summary";
 import { walletFromMnemonic } from "./wallet";
 
-describe("sequential e2e txs", () => {
+const enabled = process.env["SEED_MNEMONIC"] && process.env["BLOCKFROST_KEY"];
+const describeIf = enabled ? describe : describe.skip;
+
+describeIf("sequential e2e txs", () => {
   const mnemonic = process.env["SEED_MNEMONIC"] as string;
   let provider: Blockfrost;
   let wallet: Awaited<ReturnType<typeof walletFromMnemonic>>;
@@ -16,15 +20,15 @@ describe("sequential e2e txs", () => {
     });
     wallet = await walletFromMnemonic(mnemonic, provider);
     blaze = await Blaze.from(provider, wallet);
-    console.log("address: ", wallet.address.toBech32());
     const utxos = await provider.getUnspentOutputs(wallet.address);
-    console.log("utxos", utxos);
     if (utxos.length === 0) {
       const addr = wallet.address;
       console.error(`E2E wallet has no funds. Please fund: ${addr.toBech32()}`);
       throw new Error("E2E wallet has no funds");
     }
-    console.log("E2E tests beginning with wallet: ", wallet.address.toBech32());
+    console.log(
+      `E2E transaction test wallet ${wallet.address.toBech32()} has ${utxos.length} UTxO(s).`,
+    );
   });
 
   it("sends minimal lovelace to self", async () => {
@@ -34,10 +38,17 @@ describe("sequential e2e txs", () => {
       .complete();
 
     const signed = await blaze.signTransaction(tx);
-    console.log("signed tx", signed.toCbor());
     const txId = await blaze.submitTransaction(signed);
+    console.log(`Submitted e2e self-payment transaction ${txId}.`);
     const ok = await provider.awaitTransactionConfirmation(txId, 120000);
     expect(ok).toBe(true);
+
+    appendEvidenceSummary("Transaction submission live e2e", [
+      ["network", "preview"],
+      ["wallet address", wallet.address.toBech32()],
+      ["transaction id", txId],
+      ["confirmed", String(ok)],
+    ]);
   }, 150000);
 
   // it("sends two sequential small self-payments", async () => {

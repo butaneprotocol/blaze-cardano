@@ -30,8 +30,6 @@ title: Blaze Cardano
 
 ### Get started
 
-This api is experimental!
-
 #### Installation
 
 ```
@@ -53,12 +51,12 @@ const rl = readline.createInterface({ input: stdin, output: stdout });
 await setTimeout(() => {}, 1000);
 
 let address = Core.addressFromBech32(
-  await rl.question("Please enter your bech32 cardano address: ")
+  await rl.question("Please enter your bech32 cardano address: "),
 );
 
 // $butane wallet can collect donations for us
 const blazeWallet = Core.addressFromBech32(
-  "addr1qye93uefq8r6ezk0kzq443u9zht7ylu5nelvw8eracd200ylzvhpxn9c4g2fyxe5rlmn6z5qmm3dtjqfjn2vvy58l88szlpjw4"
+  "addr1qye93uefq8r6ezk0kzq443u9zht7ylu5nelvw8eracd200ylzvhpxn9c4g2fyxe5rlmn6z5qmm3dtjqfjn2vvy58l88szlpjw4",
 );
 
 const provider = new Maestro({
@@ -93,7 +91,28 @@ Blaze supports multiple providers for interacting with the Cardano blockchain. B
 
 ### Docs
 
-Blaze channel is in the [TxPipe Discord](https://discord.gg/FAeAR6jX)!
+Start with the package guides:
+
+- [SDK getting started](/sdk/guides/getting-started)
+- [Aiken transaction flow](/sdk/guides/aiken-transaction)
+- [Transaction building](/tx/guides/transaction-building)
+- [Script transactions](/tx/guides/script-transactions)
+- [Transaction safety](/tx/guides/safety)
+- [Advanced querying](/query/guides/advanced-querying)
+- [Provider routing](/query/guides/provider-routing)
+- [Provider internals](/query/guides/provider-internals)
+- [Script deployment](/deploy/guides/script-deployment)
+- [Script management](/deploy/guides/script-management)
+- [Script deployment CI/CD](/deploy/guides/ci-cd)
+- [Provider compatibility for deployment](/deploy/guides/provider-compatibility)
+
+Project process and community resources:
+
+- [Roadmap](/roadmap)
+- [Cardano integration process](/cardano-integration-process)
+- [Contributing](https://github.com/butaneprotocol/blaze-cardano/blob/main/CONTRIBUTING.md)
+- [Security policy](https://github.com/butaneprotocol/blaze-cardano/blob/main/SECURITY.md)
+- [TxPipe Discord](https://discord.gg/FAeAR6jX)
 
 ### Runs on Blaze
 
@@ -107,4 +126,4 @@ A list of projects, apps, websites, repositories, which depend on this library i
 
 ### Contributing
 
-Please see link.
+Please read the [contribution guide](https://github.com/butaneprotocol/blaze-cardano/blob/main/CONTRIBUTING.md) before opening issues or pull requests.

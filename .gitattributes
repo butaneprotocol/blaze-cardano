@@ -1,3 +1,4 @@
 *.flat linguist-detectable=false
 *.uplc linguist-detectable=false
 *.uplc.expected linguist-detectable=false
+packages/*/etc/*.api.md -whitespace

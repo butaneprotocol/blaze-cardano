@@ -45,7 +45,6 @@ Public planning issues:
 
 This analysis comes from direct source review of the upstream implementations named or implied by the proposal. The reviewed snapshots were:
 
-
 | Project                            | Snapshot                                   | Source inspected                                                                                    |
 | ---------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
 | CML / `cardano-multiplatform-lib`  | `a34592e1e0d3c1e958d72f05c72282d788403aa5` | Conway CDDL for governance, certificates, transaction body, multi-era Rust/WASM accessors           |
@@ -53,7 +52,6 @@ This analysis comes from direct source review of the upstream implementations na
 | `cardano-node` / `cardano-testnet` | `a53156c39ae56b3b24bab9433def3143cea2b216` | Governance test helpers that exercise CLI flows against live epoch state                            |
 | Mesh SDK                           | `3df879e48f400f19eea0ebddfb00099b0809f484` | Transaction builder governance, vote/proposal script witnesses, DRep certificates, governance types |
 | Lucid Evolution                    | `2c9056958f8dc4e78a3207e0246f8a31bc014c2f` | Transaction builder governance, emulator docs, script-context handling, wallet witness extraction   |
-
 
 The reviewed libraries cover a lot of Conway transaction construction and witness handling. None of them provides the full local governance-emulator behavior described by this proposal: proposal admission, vote validation, DRep and committee state, snapshots, tallies, ratification, enactment, expiry, refunds, treasury effects, and inspectable RPC state.
 
@@ -95,7 +93,6 @@ Lucid's emulator docs state that the emulator is simplified and does not impleme
 
 ### Findings from the review
 
-
 | Upstream behavior                                                                                                                              | M1 planning implication                                                                                                               |
 | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Conway transaction bodies contain voting procedures and proposal procedures                                                                    | The emulator feature plan includes governance transaction-body fields instead of treating governance as off-chain metadata.           |
@@ -106,7 +103,6 @@ Lucid's emulator docs state that the emulator is simplified and does not impleme
 | Governance state changes across epochs                                                                                                         | The feature plan includes snapshots, expiry, ratification, enactment, deposits, refunds, treasury state, and last enacted action IDs. |
 | `cardano-testnet` relies on live node state queries for DRep state, governance state, deposits, treasury, protocol params, and action lifetime | The feature plan includes local inspection points for the same classes of state so SDK tests do not need a live node.                 |
 | M1 asks for benchmark and test criteria                                                                                                        | The plan includes baseline emulator scenarios, governance-flow scenarios, coverage thresholds, and regression checks.                 |
-
 
 ## Proposed feature set
 
@@ -138,7 +134,7 @@ The benchmark matrix measures the current emulator state and gives later milesto
 - script lock and spend
 - parameter-change governance flow with DRep registration, proposal submission, voting, and epoch advancement
 
-The benchmark source is [packages/blaze-emulator/benchmarks/index.ts](../../../packages/blaze-emulator/benchmarks/index.ts#L48-L220). The public benchmark thread is [Emulator: add benchmark baseline](https://github.com/butaneprotocol/blaze-cardano/issues/340).
+The benchmark source is [packages/blaze-emulator/benchmarks/index.ts](../../../../packages/blaze-emulator/benchmarks/index.ts#L48-L220). The public benchmark thread is [Emulator: add benchmark baseline](https://github.com/butaneprotocol/blaze-cardano/issues/340).
 
 Command:
 
@@ -146,14 +142,12 @@ Command:
 bun --filter @blaze-cardano/emulator bench
 ```
 
-
 | Task                             | Latency avg   | Throughput avg |
 | -------------------------------- | ------------- | -------------- |
 | register mocked wallet           | 269,530 ns    | 3,829 ops/s    |
 | simple payment                   | 2,757,496 ns  | 418 ops/s      |
 | script lock -> spend             | 11,939,709 ns | 92 ops/s       |
 | parameter change governance flow | 10,259,966 ns | 112 ops/s      |
-
 
 Testing criteria for later delivery:
 

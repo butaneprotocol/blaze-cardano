@@ -11,7 +11,26 @@ const config: SidebarsConfig = {
       type: "category",
       label: "Guides",
       items: [
-        {type: 'link', label: 'Example Guide', href: '/core/guides/introduction'}
+        {
+          type: "link",
+          label: "Getting started",
+          href: "/sdk/guides/getting-started",
+        },
+        {
+          type: "link",
+          label: "Transaction building",
+          href: "/tx/guides/transaction-building",
+        },
+        {
+          type: "link",
+          label: "Advanced querying",
+          href: "/query/guides/advanced-querying",
+        },
+        {
+          type: "link",
+          label: "Script deployment",
+          href: "/deploy/guides/script-deployment",
+        },
       ],
     },
     {
@@ -19,17 +38,42 @@ const config: SidebarsConfig = {
       label: "API",
       collapsed: false,
       items: [
-        {type: 'link', label: '@blaze-cardano/blueprint', href: '/blueprint/api/blueprint'},
-        {type: 'link', label: '@blaze-cardano/core', href: '/core/api/core'},
-        {type: 'link', label: '@blaze-cardano/data', href: '/data/api/data'},
-        {type: 'link', label: '@blaze-cardano/emulator', href: '/emulator/api/emulator'},
-        {type: 'link', label: '@blaze-cardano/ogmios', href: '/ogmios/api/ogmios'},
-        {type: 'link', label: '@blaze-cardano/query', href: '/query/api/query'},
-        {type: 'link', label: '@blaze-cardano/sdk', href: '/sdk/api/sdk'},
-        {type: 'link', label: '@blaze-cardano/tx', href: '/tx/api/tx'},
-        {type: 'link', label: '@blaze-cardano/uplc', href: '/uplc/api/uplc'},
-        {type: 'link', label: '@blaze-cardano/vm', href: '/vm/api/vm'},
-        {type: 'link', label: '@blaze-cardano/wallet', href: '/wallet/api/wallet'}
+        {
+          type: "link",
+          label: "@blaze-cardano/blueprint",
+          href: "/blueprint/api/blueprint",
+        },
+        { type: "link", label: "@blaze-cardano/core", href: "/core/api/core" },
+        { type: "link", label: "@blaze-cardano/data", href: "/data/api/data" },
+        {
+          type: "link",
+          label: "@blaze-cardano/deploy",
+          href: "/deploy/api/deploy",
+        },
+        {
+          type: "link",
+          label: "@blaze-cardano/emulator",
+          href: "/emulator/api/emulator",
+        },
+        {
+          type: "link",
+          label: "@blaze-cardano/ogmios",
+          href: "/ogmios/api/ogmios",
+        },
+        {
+          type: "link",
+          label: "@blaze-cardano/query",
+          href: "/query/api/query",
+        },
+        { type: "link", label: "@blaze-cardano/sdk", href: "/sdk/api/sdk" },
+        { type: "link", label: "@blaze-cardano/tx", href: "/tx/api/tx" },
+        { type: "link", label: "@blaze-cardano/uplc", href: "/uplc/api/uplc" },
+        { type: "link", label: "@blaze-cardano/vm", href: "/vm/api/vm" },
+        {
+          type: "link",
+          label: "@blaze-cardano/wallet",
+          href: "/wallet/api/wallet",
+        },
       ],
     },
   ],

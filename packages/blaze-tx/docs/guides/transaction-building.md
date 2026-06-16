@@ -19,7 +19,7 @@ You can also construct `TxBuilder` directly if you already have protocol paramet
 
 ## Paying ada and assets
 
-Use `payLovelace` for ada payments and `payAssets` when the output contains a full `Value`.
+Use `payLovelace` for ada payments and `payAssets` when the output contains a full `Value`. `transferAssets` is the same asset-transfer operation with a name that is useful at call sites where explicit value movement matters.
 
 ```ts
 import { makeValue } from "@blaze-cardano/tx";
@@ -30,6 +30,13 @@ const tx = await blaze
   .newTransaction()
   .payLovelace(receiverAddress, 5_000_000n)
   .payAssets(receiverAddress, makeValue(2_000_000n, [assetId, 1n]))
+  .complete();
+```
+
+```ts
+const tx = await blaze
+  .newTransaction()
+  .transferAssets(receiverAddress, makeValue(2_000_000n, [assetId, 1n]))
   .complete();
 ```
 
@@ -52,6 +59,19 @@ const tx = await blaze
 ```
 
 Use metadata for data that belongs to the transaction as a whole. Use datums for data that belongs to a script output.
+
+## Minting and burning assets
+
+Use `mintAssets` for positive mint quantities and `burnAssets` for positive burn quantities. `burnAssets` records the burn as negative mint entries internally, so the call site does not pass negative amounts.
+
+```ts
+const tx = await blaze
+  .newTransaction()
+  .burnAssets(policyId, new Map([[assetName, 1n]]), redeemer)
+  .complete();
+```
+
+Both helpers reject zero and negative quantities.
 
 ## Locking assets at scripts
 
@@ -137,16 +157,16 @@ const tx = await blaze
 
 ## Deploying reference scripts
 
-Use `deployScript` to create an output that carries a script reference. Pass an address when your application needs to keep control of that output.
+Use `deployScript` to create an output that carries a script reference. Pass an address when your application needs to keep control of that output. The optional third argument sets a lovelace floor for the reference-script UTxO while still letting the builder enforce the protocol minimum.
 
 ```ts
 const tx = await blaze
   .newTransaction()
-  .deployScript(validatorScript, ownerAddress)
+  .deployScript(validatorScript, ownerAddress, 5_000_000n)
   .complete();
 ```
 
-If you do not pass an address, the builder locks the reference script at a burn address. This is useful in testing when your application wants to guarantee the ref-script utxo won't be spent by accident.
+If you do not pass an address, the builder locks the reference script at a burn address for the builder's network. Set the network id before using this convenience form. This is useful in testing when your application wants to guarantee the ref-script utxo won't be spent by accident.
 
 ```ts
 const tx = await blaze
@@ -167,6 +187,8 @@ const tx = await blaze
   .payLovelace(receiverAddress, 5_000_000n)
   .complete();
 ```
+
+Complete each `TxBuilder` once. After `complete()` returns a transaction, a second call throws `TxBuilderReuseError`; create a new builder for the next transaction.
 
 Sign the completed transaction, then submit it through `Blaze`.
 

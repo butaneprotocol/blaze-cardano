@@ -55,18 +55,15 @@ import {
   DatumKind,
   initCrypto,
 } from "@blaze-cardano/core";
-import {
-  Blaze,
-  HotWallet,
-  type Provider,
-  type Wallet,
-} from "@blaze-cardano/sdk";
+import { type Provider } from "@blaze-cardano/query";
+import { Blaze } from "@blaze-cardano/sdk/blaze";
 import {
   calculateReferenceScriptFee,
   makeValue,
   type TxBuilder,
   Value as V,
 } from "@blaze-cardano/tx";
+import { HotWallet, type Wallet } from "@blaze-cardano/wallet";
 import { makeUplcEvaluator } from "@blaze-cardano/vm";
 import { randomBytes } from "crypto";
 import {

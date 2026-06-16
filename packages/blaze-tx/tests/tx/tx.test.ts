@@ -634,38 +634,36 @@ describe("Transaction Building", () => {
     const testAddress = Address.fromBech32(
       "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
     );
-    const tx = new TxBuilder(hardCodedProtocolParams)
-      .setNetworkId(NetworkId.Testnet)
-      .setChangeAddress(testAddress)
-      .addWithdrawal(
-        RewardAccount.fromCredential(
-          testAddress.getProps().paymentPart!,
-          NetworkId.Testnet,
-        ),
-        100_000_000n,
-      )
-      .addInput(
-        new TransactionUnspentOutput(
-          new TransactionInput(
-            TransactionId(
-              "7f11d088de6c214c25dbeff5a98ef5cb4f34741c062ead606859bee58ae0794d",
-            ),
-            0n,
+    const buildTx = () =>
+      new TxBuilder(hardCodedProtocolParams)
+        .setNetworkId(NetworkId.Testnet)
+        .setChangeAddress(testAddress)
+        .addWithdrawal(
+          RewardAccount.fromCredential(
+            testAddress.getProps().paymentPart!,
+            NetworkId.Testnet,
           ),
-          new TransactionOutput(testAddress, value.makeValue(1_000_000n)),
-        ),
-      )
-      .payAssets(testAddress, value.makeValue(48_708_900n));
+          100_000_000n,
+        )
+        .addInput(
+          new TransactionUnspentOutput(
+            new TransactionInput(
+              TransactionId(
+                "7f11d088de6c214c25dbeff5a98ef5cb4f34741c062ead606859bee58ae0794d",
+              ),
+              0n,
+            ),
+            new TransactionOutput(testAddress, value.makeValue(1_000_000n)),
+          ),
+        )
+        .payAssets(testAddress, value.makeValue(48_708_900n));
 
-    try {
-      await tx.complete({ useCoinSelection: false });
-    } catch (e) {
-      expect((e as Error).message).toEqual(
-        "Change output has more than inputs provide. Missing coin: 49840323. Missing multiassets: undefined",
-      );
-    }
+    const txWithoutSelection = await buildTx().complete({
+      useCoinSelection: false,
+    });
+    expect(txWithoutSelection.body().inputs().values().length).toEqual(1);
 
-    tx.addInput(
+    const tx = buildTx().addInput(
       new TransactionUnspentOutput(
         new TransactionInput(TransactionId("0".repeat(64)), 0n),
         new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
@@ -675,6 +673,33 @@ describe("Transaction Building", () => {
     const txComplete = await tx.complete({ useCoinSelection: false });
     expect(txComplete.body().inputs().values().length).toEqual(2);
     expect(txComplete.body().outputs().length).toEqual(2);
+  });
+
+  it("should honor an explicit script deployment lovelace floor", async () => {
+    const testAddress = Address.fromBech32(
+      "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
+    );
+    const alwaysTrueScript = Script.newPlutusV2Script(
+      new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
+    );
+
+    const tx = await new TxBuilder(hardCodedProtocolParams)
+      .setNetworkId(NetworkId.Testnet)
+      .setChangeAddress(testAddress)
+      .addUnspentOutputs([
+        new TransactionUnspentOutput(
+          new TransactionInput(TransactionId("0".repeat(64)), 0n),
+          new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
+        ),
+      ])
+      .deployScript(alwaysTrueScript, testAddress, 5_000_000n)
+      .complete();
+
+    const deploymentOutput = Array.from(tx.body().outputs().values()).find(
+      (output) => output.scriptRef()?.hash() === alwaysTrueScript.hash(),
+    );
+
+    expect(deploymentOutput?.amount().coin()).toEqual(5_000_000n);
   });
 
   it("should correctly build a transaction when deregistering stake from a payment credential", async () => {

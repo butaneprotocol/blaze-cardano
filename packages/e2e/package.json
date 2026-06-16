@@ -2,6 +2,8 @@
   "name": "@blaze-cardano/e2e",
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/deploy": "workspace:*",
+    "@blaze-cardano/emulator": "workspace:*",
     "@blaze-cardano/ogmios": "workspace:*",
     "@blaze-cardano/query": "workspace:*",
     "@blaze-cardano/sdk": "workspace:*",

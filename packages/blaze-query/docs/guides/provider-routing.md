@@ -35,6 +35,12 @@ const provider = new RoutedProvider({
 });
 ```
 
+All routed providers must target the same Cardano network. `RoutedProvider`
+rejects mixed network IDs and also rejects mismatched known network names, such
+as routing a `cardano-preview` default provider to a `cardano-preprod`
+submission provider. Providers with an `unknown` network name can still be used
+when the network ID matches.
+
 ## Debug Logging
 
 Pass `debugLogger` to observe provider calls. The logger receives the operation,
