@@ -5,6 +5,8 @@ node_modules
 .claude/settings.local.json
 dist/
 build
+coverage/
+packages/*/coverage/
 
 # Docs
 packages/*/docs/api

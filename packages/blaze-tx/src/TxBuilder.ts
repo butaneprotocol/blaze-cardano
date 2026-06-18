@@ -4,7 +4,6 @@ import type {
   Script,
   ScriptHash,
   Ed25519KeyHashHex,
-  Hash28ByteBase16,
   Hash32ByteBase16,
   PolicyId,
   AssetName,
@@ -19,15 +18,18 @@ import type {
   NetworkId,
   Metadata,
   Anchor,
-  VotingProcedures,
   DelegateRepresentative,
   PoolParameters,
   EpochNo,
   GovernanceAction,
+  GovernanceActionId,
   AnchorCore,
+  CredentialCore,
+  Vote,
 } from "@blaze-cardano/core";
 import {
   AuxiliaryData,
+  Hash28ByteBase16,
   HexBlob,
   CborSet,
   TransactionInput,
@@ -36,6 +38,7 @@ import {
   Value,
   TransactionOutput,
   PlutusData,
+  VotingProcedures,
   Redeemers,
   Redeemer,
   RedeemerPurpose,
@@ -70,8 +73,11 @@ import {
   UnregisterDelegateRepresentative,
   UpdateDelegateRepresentative,
   VoteDelegation,
+  VotingProcedure,
   DRep,
   ProposalProcedure,
+  Voter,
+  VoterKind,
   PoolRegistration,
   PoolRetirement,
 } from "@blaze-cardano/core";
@@ -172,6 +178,8 @@ export class TxBuilder {
   private consumedMintHashes: Hash28ByteBase16[] = [];
   private consumedWithdrawalHashes: Hash28ByteBase16[] = [];
   private consumedDeregisterHashes: Hash28ByteBase16[] = [];
+  private consumedDrepHashes: Hash28ByteBase16[] = [];
+  private consumedVoteHashes: Hash28ByteBase16[] = [];
   private consumedSpendInputs: string[] = [];
   private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
   private feePadding: bigint = 0n; // A padding to add onto the fee; use only in emergencies, and open a ticket so we can fix the fee calculation please!
@@ -1561,6 +1569,10 @@ export class TxBuilder {
         this.body.fee(),
         this.params.collateralPercentage,
       );
+      if (requiredCollateral === 0n && this.collateralUtxos.size === 0) {
+        this.body.setTotalCollateral(0n);
+        return;
+      }
       this.body.setTotalCollateral(requiredCollateral);
 
       let providedCollateral = value.sum(
@@ -2130,15 +2142,18 @@ export class TxBuilder {
     drep: Credential,
     deposit: bigint,
     anchor?: Anchor,
+    redeemer?: PlutusData,
   ): TxBuilder {
+    const core = drep.toCore();
     const cert = Certificate.newRegisterDelegateRepresentativeCert(
-      new RegisterDelegateRepresentative(drep.toCore(), deposit, anchor),
+      new RegisterDelegateRepresentative(core, deposit, anchor),
     );
     const certs =
       this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
     const vals = [...certs.values(), cert];
     certs.setValues(vals);
     this.body.setCerts(certs);
+    this.handleDRepCertificateWitness(core, redeemer);
     return this;
   }
 
@@ -2150,9 +2165,14 @@ export class TxBuilder {
    *
    * @param {Credential} drep - The dRep credential to unregister.
    * @param {bigint} refund - The refund amount (lovelace).
+   * @param {PlutusData} [redeemer] - Optional redeemer when the credential is script-based.
    * @returns {TxBuilder} The updated transaction builder.
    */
-  addUnregisterDRep(drep: Credential, refund: bigint): TxBuilder {
+  addUnregisterDRep(
+    drep: Credential,
+    refund: bigint,
+    redeemer?: PlutusData,
+  ): TxBuilder {
     const cert = Certificate.newUnregisterDelegateRepresentativeCert(
       new UnregisterDelegateRepresentative(drep.toCore(), refund),
     );
@@ -2161,6 +2181,7 @@ export class TxBuilder {
     const vals = [...certs.values(), cert];
     certs.setValues(vals);
     this.body.setCerts(certs);
+    this.handleDRepCertificateWitness(drep.toCore(), redeemer);
     return this;
   }
 
@@ -2172,9 +2193,14 @@ export class TxBuilder {
    *
    * @param {Credential} drep - The dRep credential to update.
    * @param {Anchor} [anchor] - Optional new anchor.
+   * @param {PlutusData} [redeemer] - Optional redeemer when the credential is script-based.
    * @returns {TxBuilder} The updated transaction builder.
    */
-  addUpdateDRep(drep: Credential, anchor?: Anchor): TxBuilder {
+  addUpdateDRep(
+    drep: Credential,
+    anchor?: Anchor,
+    redeemer?: PlutusData,
+  ): TxBuilder {
     const cert = Certificate.newUpdateDelegateRepresentativeCert(
       new UpdateDelegateRepresentative(drep.toCore(), anchor),
     );
@@ -2183,7 +2209,52 @@ export class TxBuilder {
     const vals = [...certs.values(), cert];
     certs.setValues(vals);
     this.body.setCerts(certs);
+    this.handleDRepCertificateWitness(drep.toCore(), redeemer);
     return this;
+  }
+
+  private handleDRepCertificateWitness(
+    credential: CredentialCore,
+    redeemer?: PlutusData,
+  ): void {
+    const hash = credential.hash;
+    const insertIdx = insertSorted(this.consumedDrepHashes, hash);
+    if (credential.type === CredentialType.ScriptHash) {
+      if (!redeemer) {
+        throw new Error(
+          "TxBuilder DRep action requires a redeemer for script credentials.",
+        );
+      }
+      this.requiredPlutusScripts.add(hash);
+      const redeemers = [...this.redeemers.values()];
+      for (const redeemerEntry of redeemers) {
+        if (
+          redeemerEntry.tag() == RedeemerTag.Cert &&
+          redeemerEntry.index() >= BigInt(insertIdx)
+        ) {
+          redeemerEntry.setIndex(redeemerEntry.index() + 1n);
+        }
+      }
+      redeemers.push(
+        Redeemer.fromCore({
+          index: insertIdx,
+          purpose: RedeemerPurpose["certificate"],
+          data: redeemer.toCore(),
+          executionUnits: {
+            memory: this.params.maxExecutionUnitsPerTransaction.memory,
+            steps: this.params.maxExecutionUnitsPerTransaction.steps,
+          },
+        }),
+      );
+      this.redeemers.setValues(redeemers);
+    } else {
+      if (redeemer) {
+        throw new Error(
+          "TxBuilder DRep action cannot attach a redeemer to a key credential.",
+        );
+      }
+      this.requiredWitnesses.add(HashAsPubKeyHex(hash));
+    }
   }
 
   /**
@@ -2194,9 +2265,157 @@ export class TxBuilder {
    * @param {VotingProcedures} votingProcedures - The set of voting procedures to attach.
    * @returns {TxBuilder} The updated transaction builder.
    */
-  setVotingProcedures(votingProcedures: VotingProcedures): TxBuilder {
+  setVotingProcedures(
+    votingProcedures: VotingProcedures,
+    voteRedeemers?: Map<string, PlutusData>,
+  ): TxBuilder {
     this.body.setVotingProcedures(votingProcedures);
+    if (!voteRedeemers || voteRedeemers.size === 0) {
+      return this;
+    }
+
+    const unused = new Map<string, PlutusData>();
+    for (const [hash, data] of voteRedeemers.entries()) {
+      unused.set(hash.toLowerCase(), data);
+    }
+
+    const redeemers = [...this.redeemers.values()];
+    for (const { voter } of votingProcedures.toCore()) {
+      const parsed = Voter.fromCore(voter);
+      if (parsed.kind() !== VoterKind.DRepScriptHash) continue;
+      const cred = parsed.toDrepCred();
+      if (!cred) continue;
+      const hash = String(cred.hash).toLowerCase();
+      const redeemer = unused.get(hash);
+      if (!redeemer) {
+        if (!this.consumedVoteHashes.includes(Hash28ByteBase16(hash))) {
+          throw new Error(
+            `TxBuilder setVotingProcedures: missing redeemer for script dRep ${hash}`,
+          );
+        }
+        continue;
+      }
+
+      const insertIdx = insertSorted(this.consumedVoteHashes, hash);
+      for (const existing of redeemers) {
+        if (
+          existing.tag() == RedeemerTag.Voting &&
+          existing.index() >= BigInt(insertIdx)
+        ) {
+          existing.setIndex(existing.index() + 1n);
+        }
+      }
+
+      redeemers.push(
+        Redeemer.fromCore({
+          index: insertIdx,
+          purpose: RedeemerPurpose["vote"],
+          data: redeemer.toCore(),
+          executionUnits: {
+            memory: this.params.maxExecutionUnitsPerTransaction.memory,
+            steps: this.params.maxExecutionUnitsPerTransaction.steps,
+          },
+        }),
+      );
+      this.requiredPlutusScripts.add(cred.hash);
+      unused.delete(hash);
+    }
+
+    if (unused.size > 0) {
+      const leftovers = Array.from(unused.keys()).join(", ");
+      throw new Error(
+        `TxBuilder setVotingProcedures: unused script vote redeemer(s) for ${leftovers}`,
+      );
+    }
+
+    this.redeemers.setValues(redeemers);
     return this;
+  }
+
+  private handleProposalRedeemer(
+    proposal: ProposalProcedure,
+    redeemer: PlutusData | undefined,
+    proposalIndex: bigint,
+  ): void {
+    const core = proposal.toCore();
+    const action = core.governanceAction;
+    const typename = action.__typename;
+    const policyHash =
+      (typename === "parameter_change_action" ||
+        typename === "treasury_withdrawals_action") &&
+      action.policyHash !== null
+        ? action.policyHash
+        : null;
+
+    if (!policyHash) {
+      if (redeemer) {
+        throw new Error(
+          "TxBuilder addProposal: unexpected redeemer for proposal without policy script.",
+        );
+      }
+      return;
+    }
+
+    if (!redeemer) {
+      throw new Error(
+        "TxBuilder addProposal: proposal policy requires a redeemer when policy hash is set.",
+      );
+    }
+
+    const redeemers = [...this.redeemers.values()];
+
+    redeemers.push(
+      Redeemer.fromCore({
+        index: Number(proposalIndex),
+        purpose: RedeemerPurpose.propose,
+        data: redeemer.toCore(),
+        executionUnits: {
+          memory: this.params.maxExecutionUnitsPerTransaction.memory,
+          steps: this.params.maxExecutionUnitsPerTransaction.steps,
+        },
+      }),
+    );
+    this.redeemers.setValues(redeemers);
+    this.requiredPlutusScripts.add(policyHash);
+  }
+
+  addVote(
+    voter: Voter,
+    actionId: GovernanceActionId,
+    voteOrProcedure: Vote | VotingProcedure,
+    options: { anchor?: Anchor; redeemer?: PlutusData } = {},
+  ): TxBuilder {
+    const { anchor, redeemer } = options;
+    if (redeemer && voter.kind() !== VoterKind.DRepScriptHash) {
+      throw new Error(
+        "TxBuilder addVote: redeemer can only be provided for script dReps.",
+      );
+    }
+
+    const votingProcedures =
+      this.body.votingProcedures() ?? new VotingProcedures();
+
+    const procedure =
+      voteOrProcedure instanceof VotingProcedure
+        ? voteOrProcedure
+        : new VotingProcedure(voteOrProcedure);
+
+    if (anchor) {
+      procedure.setAnchor(anchor);
+    }
+
+    votingProcedures.insert(voter, actionId, procedure);
+
+    let redeemerMap: Map<string, PlutusData> | undefined;
+    if (redeemer && voter.kind() === VoterKind.DRepScriptHash) {
+      const cred = voter.toDrepCred();
+      if (!cred) {
+        throw new Error("TxBuilder addVote: missing DRep credential for voter");
+      }
+      redeemerMap = new Map([[String(cred.hash).toLowerCase(), redeemer]]);
+    }
+
+    return this.setVotingProcedures(votingProcedures, redeemerMap);
   }
 
   /**
@@ -2264,13 +2483,16 @@ export class TxBuilder {
    * Adds a governance proposal to this transaction.
    * Accepts either an existing ProposalProcedure, or raw fields to construct one.
    */
-  addProposal(proposal: ProposalProcedure): TxBuilder;
-  addProposal(params: {
-    deposit: bigint;
-    rewardAccount: RewardAccount;
-    governanceAction: GovernanceAction;
-    anchor: Anchor | AnchorCore;
-  }): TxBuilder;
+  addProposal(proposal: ProposalProcedure, redeemer?: PlutusData): TxBuilder;
+  addProposal(
+    params: {
+      deposit: bigint;
+      rewardAccount: RewardAccount;
+      governanceAction: GovernanceAction;
+      anchor: Anchor | AnchorCore;
+    },
+    redeemer?: PlutusData,
+  ): TxBuilder;
   addProposal(
     proposalOrParams:
       | ProposalProcedure
@@ -2280,6 +2502,7 @@ export class TxBuilder {
           governanceAction: GovernanceAction;
           anchor: Anchor | AnchorCore;
         },
+    redeemer?: PlutusData,
   ): TxBuilder {
     let pp: ProposalProcedure;
     if ("toCbor" in proposalOrParams) {
@@ -2305,6 +2528,8 @@ export class TxBuilder {
     const vals = [...existingSet.values(), pp];
     existingSet.setValues(vals);
     this.body.setProposalProcedures(existingSet);
+    const proposalIndex = BigInt(vals.length - 1);
+    this.handleProposalRedeemer(pp, redeemer, proposalIndex);
     return this;
   }
 

@@ -27,13 +27,12 @@ export class Maestro extends Provider {
   private url: string;
   private apiKey: string;
 
-  constructor({
-    network,
-    apiKey,
-  }: {
+  constructor(input: {
     network: "mainnet" | "preview" | "preprod";
     apiKey: string;
   }) {
+    const { network, apiKey } = input;
+
     super(
       network == "mainnet" ? NetworkId.Mainnet : NetworkId.Testnet,
       network === "mainnet"
@@ -70,7 +69,7 @@ export class Maestro extends Provider {
             json as MaestroResponse<MaestroProtocolParametersResponse>;
           if ("message" in response) {
             throw new Error(
-              `getUnspentOutputs: Maestro threw "${response.message}"`,
+              `getParameters: Maestro threw "${response.message}"`,
             );
           }
           const params = response.data;
@@ -283,49 +282,42 @@ export class Maestro extends Provider {
       (txIn) => `${txIn.transactionId()}#${txIn.index()}`,
     );
 
-    try {
-      const response = await fetch(`${this.url}${query}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          ...this.headers(),
-        },
-        body: JSON.stringify(txInStrings),
-      });
+    const response = await fetch(`${this.url}${query}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...this.headers(),
+      },
+      body: JSON.stringify(txInStrings),
+    });
 
-      if (!response.ok) {
-        throw new Error(
-          `resolveUnspentOutputs: Failed to resolve unspent outputs from Maestro endpoint. Status code ${response.status}`,
-        );
-      }
-
-      const json =
-        (await response.json()) as MaestroResponse<MaestroUnspentOutputResolution>;
-
-      if ("message" in json) {
-        throw new Error(
-          `resolveUnspentOutputs: Maestro threw "${json.message}"`,
-        );
-      }
-
-      const resolvedOutputs: TransactionUnspentOutput[] = json.data.map(
-        (output) => {
-          const txIn = new TransactionInput(
-            TransactionId(output.tx_hash),
-            BigInt(output.index),
-          );
-          const txOut = TransactionOutput.fromCbor(HexBlob(output.txout_cbor));
-
-          return new TransactionUnspentOutput(txIn, txOut);
-        },
+    if (!response.ok) {
+      throw new Error(
+        `resolveUnspentOutputs: Failed to resolve unspent outputs from Maestro endpoint. Status code ${response.status}`,
       );
-
-      return resolvedOutputs;
-    } catch (error) {
-      console.error("resolveUnspentOutputs:", error);
-      throw new Error("resolveUnspentOutputs: Unexpected error occurred");
     }
+
+    const json =
+      (await response.json()) as MaestroResponse<MaestroUnspentOutputResolution>;
+
+    if ("message" in json) {
+      throw new Error(`resolveUnspentOutputs: Maestro threw "${json.message}"`);
+    }
+
+    const resolvedOutputs: TransactionUnspentOutput[] = json.data.map(
+      (output) => {
+        const txIn = new TransactionInput(
+          TransactionId(output.tx_hash),
+          BigInt(output.index),
+        );
+        const txOut = TransactionOutput.fromCbor(HexBlob(output.txout_cbor));
+
+        return new TransactionUnspentOutput(txIn, txOut);
+      },
+    );
+
+    return resolvedOutputs;
   }
 
   resolveDatum(datumHash: DatumHash): Promise<PlutusData> {
@@ -349,7 +341,9 @@ export class Maestro extends Provider {
     const startTime = Date.now();
     let finalResponse: boolean = false;
     const checkConfirmation = async () => {
-      const response = await fetch(`${this.url}/transactions/${txId}/cbor`);
+      const response = await fetch(`${this.url}/transactions/${txId}/cbor`, {
+        headers: this.headers(),
+      });
       if (response.ok) {
         finalResponse = true;
       } else if (Date.now() - startTime < (timeout || 0)) {
@@ -362,7 +356,6 @@ export class Maestro extends Provider {
 
   async postTransactionToChain(tx: Transaction): Promise<TransactionId> {
     const query = `/txmanager`;
-    console.log("attempting to submit ", tx.toCbor());
     return fetch(`${this.url}${query}`, {
       method: "POST",
       headers: {
@@ -374,7 +367,6 @@ export class Maestro extends Provider {
     })
       .then(async (resp) => {
         if (!resp.ok) {
-          console.log(JSON.stringify(resp));
           const body = await resp.text();
           throw new Error(
             `postTransactionToChain: failed to submit transaction to Maestro endpoint. Status code ${body}`,
@@ -412,7 +404,6 @@ export class Maestro extends Provider {
     });
 
     if (!response.ok) {
-      console.log(JSON.stringify(response));
       const body = await response.text();
       throw new Error(
         `evaluateTransaction: failed to evaluate transaction with Maestro endpoint. Status code ${body}`,
@@ -702,6 +693,10 @@ function purposeFromTag(tag: string): RedeemerTag {
     mint: RedeemerTag.Mint,
     cert: RedeemerTag.Cert,
     wdrl: RedeemerTag.Reward,
+    withdraw: RedeemerTag.Reward,
+    withdrawal: RedeemerTag.Reward,
+    vote: RedeemerTag.Voting,
+    propose: RedeemerTag.Proposing,
   };
 
   const normalizedTag = tag.toLowerCase();

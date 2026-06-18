@@ -237,6 +237,14 @@ export type GovernanceActionId = C.Serialization.GovernanceActionId;
 export const GovernanceActionKind = C.Serialization.GovernanceActionKind;
 export type GovernanceActionKind = C.Serialization.GovernanceActionKind;
 
+export type ParameterChangeAction = C.Cardano.ParameterChangeAction;
+export type TreasuryWithdrawalsAction = C.Cardano.TreasuryWithdrawalsAction;
+export type HardForkInitiationAction = C.Cardano.HardForkInitiationAction;
+export type NoConfidence = C.Cardano.NoConfidence;
+export type UpdateCommittee = C.Cardano.UpdateCommittee;
+export type InfoAction = C.Cardano.InfoAction;
+export type NewConstitution = C.Cardano.NewConstitution;
+
 export const Constitution = C.Serialization.Constitution;
 export type Constitution = C.Serialization.Constitution;
 
@@ -381,15 +389,14 @@ export const TransactionMetadatumKind =
 export type TransactionMetadatumKind = C.Serialization.TransactionMetadatumKind;
 
 /**
- * The SlotConfig interface defines the configuration for slots.
- * @interface SlotConfig
- * @property {number} zeroTime - The zero time for slot calculation.
- * @property {number} zeroSlot - The zero slot.
- * @property {number} slotLength - The slot length.
+ * Slot configuration for a Cardano network.
  */
 export interface SlotConfig {
+  /** The zero time for slot calculation. */
   zeroTime: number;
+  /** The zero slot. */
   zeroSlot: number;
+  /** The slot length. */
   slotLength: number;
 }
 
