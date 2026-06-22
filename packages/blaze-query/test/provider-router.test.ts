@@ -10,9 +10,11 @@ import {
   type Address,
   type AssetId,
   type DatumHash,
+  type Hash28ByteBase16,
   type PlutusData,
   type ProtocolParameters,
   type Redeemers,
+  type Script,
   type Transaction,
   type TransactionId,
   type TransactionInput,
@@ -25,8 +27,9 @@ class StubProvider extends Provider {
   constructor(
     readonly label: string,
     networkName: NetworkName = "cardano-preview",
+    network = NetworkId.Testnet,
   ) {
-    super(NetworkId.Testnet, networkName);
+    super(network, networkName);
   }
 
   async getParameters(): Promise<ProtocolParameters> {
@@ -133,6 +136,53 @@ describe("RoutedProvider", () => {
     expect(override.calls).toEqual(["getUnspentOutputs"]);
     expect(query.calls).toEqual(["getUnspentOutputsWithAsset"]);
     expect(fallback.calls).toEqual([]);
+  });
+
+  test("routes script-reference resolution as a query operation", async () => {
+    const fallback = new StubProvider("fallback");
+    const query = new StubProvider("query");
+    const override = new StubProvider("override");
+    const provider = new RoutedProvider({
+      defaultProvider: fallback,
+      queryProvider: query,
+      perOperation: {
+        resolveScriptRef: override,
+      },
+    });
+
+    await provider.resolveScriptRef(
+      "script-hash" as unknown as Script | Hash28ByteBase16,
+    );
+
+    expect(override.calls).toEqual(["resolveScriptRef"]);
+    expect(query.calls).toEqual([]);
+    expect(fallback.calls).toEqual([]);
+  });
+
+  test("rejects providers from different networks", () => {
+    expect(
+      () =>
+        new RoutedProvider({
+          defaultProvider: new StubProvider("preview"),
+          submissionProvider: new StubProvider(
+            "mainnet",
+            "cardano-mainnet",
+            NetworkId.Mainnet,
+          ),
+        }),
+    ).toThrow(/network does not match/);
+  });
+
+  test("rejects providers from different named testnets", () => {
+    expect(
+      () =>
+        new RoutedProvider({
+          defaultProvider: new StubProvider("preview"),
+          perOperation: {
+            getParameters: new StubProvider("preprod", "cardano-preprod"),
+          },
+        }),
+    ).toThrow(/cardano-preprod/);
   });
 
   test("emits debug events around provider calls", async () => {

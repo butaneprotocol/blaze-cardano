@@ -1,0 +1,14 @@
+{
+  "name": "catalyst-1200040-evidence",
+  "dependencies": {
+    "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/emulator": "workspace:*",
+    "@blaze-cardano/sdk": "workspace:*",
+    "@blaze-cardano/wallet": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "private": true,
+  "type": "module"
+}

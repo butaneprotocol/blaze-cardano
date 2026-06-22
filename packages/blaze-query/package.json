@@ -1,6 +1,6 @@
 {
   "name": "@blaze-cardano/query",
-  "description": "Blaze cardano emulator library",
+  "description": "Blaze Cardano chain-query provider library",
   "version": "0.5.6",
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
@@ -39,6 +39,7 @@
     "api:extract": "api-extractor run --local --verbose",
     "api:md": "rimraf docs/api && api-documenter markdown -i etc -o docs/api",
     "api:prepare": "bun run build:types && bun run api:extract && bun run api:md",
+    "bench": "bun benchmarks/query-cache.ts",
     "build": "tsdown",
     "build:types": "npx tsc -p tsconfig.docs.json",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",

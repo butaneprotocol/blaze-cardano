@@ -23,6 +23,7 @@ import {
 } from "@blaze-cardano/core";
 import { Provider } from "./provider";
 
+/** @public */
 export class Maestro extends Provider {
   private url: string;
   private apiKey: string;

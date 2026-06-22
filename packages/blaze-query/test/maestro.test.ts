@@ -7,10 +7,12 @@ import {
   Redeemer,
   RedeemerPurpose,
   Redeemers,
+  Script,
   TransactionId,
   TransactionInput,
   TransactionOutput,
   Value,
+  PlutusV2Script,
   type Transaction,
 } from "@blaze-cardano/core";
 import { Maestro } from "../src";
@@ -24,6 +26,15 @@ const txOutput = new TransactionOutput(
   Value.fromCore({ coins: 5_000_000n }),
 );
 const txOutputCbor = txOutput.toCbor();
+const referenceScript = Script.newPlutusV2Script(
+  new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
+);
+const scriptReferenceOutput = new TransactionOutput(
+  address,
+  Value.fromCore({ coins: 5_000_000n }),
+);
+scriptReferenceOutput.setScriptRef(referenceScript);
+const scriptReferenceOutputCbor = scriptReferenceOutput.toCbor();
 const lastUpdated = {
   timestamp: "now",
   block_hash: "2".repeat(64),
@@ -165,6 +176,38 @@ describe("Maestro", () => {
     expect(utxo?.input().transactionId()).toBe(txHash);
     expect(utxo?.input().index()).toBe(1n);
     expect(utxo?.output().toCbor()).toBe(txOutputCbor);
+  });
+
+  test("resolves script references with the provider fallback", async () => {
+    const fetchMock = mockFetch(
+      jsonResponse({
+        data: [
+          {
+            tx_hash: txHash,
+            index: 1,
+            slot: 10,
+            txout_cbor: txOutputCbor,
+          },
+          {
+            tx_hash: txHash,
+            index: 2,
+            slot: 11,
+            txout_cbor: scriptReferenceOutputCbor,
+          },
+        ],
+        last_updated: lastUpdated,
+        next_cursor: null,
+      }),
+    );
+
+    const utxo = await maestro().resolveScriptRef(referenceScript, address);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://preview.gomaestro-api.org/v1/addresses/${address.toBech32()}/utxos?with_cbor=true&count=100`,
+      { headers: { "api-key": "test-key" } },
+    );
+    expect(utxo?.input().index()).toBe(2n);
+    expect(utxo?.output().scriptRef()?.hash()).toBe(referenceScript.hash());
   });
 
   test("resolves explicit transaction inputs by POST body", async () => {

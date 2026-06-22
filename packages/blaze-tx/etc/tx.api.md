@@ -40,7 +40,7 @@ import { TransactionOutput } from '@blaze-cardano/core';
 import { TransactionUnspentOutput } from '@blaze-cardano/core';
 import { TransactionWitnessSet } from '@blaze-cardano/core';
 import { Value as Value_2 } from '@blaze-cardano/core';
-import { Vote } from '@blaze-cardano/core';
+import type { Vote } from '@blaze-cardano/core';
 import { Voter } from '@blaze-cardano/core';
 import { VotingProcedure } from '@blaze-cardano/core';
 import { VotingProcedures } from '@blaze-cardano/core';
@@ -184,7 +184,7 @@ export class TxBuilder {
     protected calculateFees(): void;
     complete(params?: UseCoinSelectionArgs): Promise<Transaction>;
     delegate(poolId: PoolId, redeemer?: PlutusData): this;
-    deployScript(script: Script, address?: Address): TxBuilder;
+    deployScript(script: Script, address?: Address, minAda?: bigint): TxBuilder;
     enableTracing(enabled: boolean): TxBuilder;
     protected getScriptData(tw: TransactionWitnessSet): IScriptData | undefined;
     lockAssets(address: Address, value: Value_2, datum: Datum, scriptReference?: Script): TxBuilder;

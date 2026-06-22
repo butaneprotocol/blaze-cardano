@@ -36,6 +36,7 @@ import {
 } from "@blaze-cardano/core";
 import { purposeToTag, Provider, type NetworkName } from "./provider";
 
+/** @public */
 export class Blockfrost extends Provider {
   url: string;
   private projectId: string;
@@ -747,6 +748,7 @@ export class Blockfrost extends Provider {
 }
 
 type BlockfrostLanguageVersions = "PlutusV1" | "PlutusV2" | "PlutusV3";
+/** @public */
 export const fromBlockfrostLanguageVersion = (
   x: BlockfrostLanguageVersions,
 ): PlutusLanguageVersion => {
@@ -760,6 +762,7 @@ export const fromBlockfrostLanguageVersion = (
   throw new Error("fromBlockfrostLanguageVersion: Unreachable!");
 };
 
+/** @public */
 export interface BlockfrostProtocolParametersResponse {
   epoch: number;
   min_fee_a: number;
