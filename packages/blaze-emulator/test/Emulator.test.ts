@@ -220,11 +220,11 @@ describe("Emulator", () => {
   test("Should be able to spend from a script with a reference input", async () => {
     const refTx = await blaze
       .newTransaction()
-      .deployScript(alwaysTrueScript)
+      .deployScript(alwaysTrueScript, address1)
       .complete();
     const refTxHash = await signAndSubmit(refTx, blaze);
     emulator.awaitTransactionConfirmation(refTxHash);
-    const refUtxo = await provider.resolveScriptRef(alwaysTrueScript);
+    const refUtxo = await provider.resolveScriptRef(alwaysTrueScript, address1);
     isDefined(refUtxo);
     // const refIn = new TransactionInput(refTxHash, 0n);
     // const refUtxo = new TransactionUnspentOutput(

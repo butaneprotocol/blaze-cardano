@@ -1,0 +1,18 @@
+{
+  "name": "script-deploy-ci",
+  "description": "CI deployment command for Blaze reference scripts",
+  "version": "0.1.0",
+  "dependencies": {
+    "@blaze-cardano/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@blaze-cardano/tsconfig": "workspace:*",
+    "typescript": "^5.7.3"
+  },
+  "private": true,
+  "scripts": {
+    "deploy": "bun run deploy.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module"
+}

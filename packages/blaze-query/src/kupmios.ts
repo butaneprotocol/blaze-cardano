@@ -29,12 +29,15 @@ import {
   RedeemerTag,
 } from "@blaze-cardano/core";
 import { purposeToTag, Provider } from "./provider";
+import { ogmiosChainSyncEvents } from "./ogmios-chain-sync";
+import type { ChainEvent, ChainEventFilter } from "./events";
 import type { Unwrapped } from "@blaze-cardano/ogmios";
 import type * as Schema from "@cardano-ogmios/schema";
 import JSONbig_ from "@cardanosolutions/json-bigint";
 
 const JSONbig = JSONbig_({ useNativeBigInt: true });
 
+/** @public */
 export class Kupmios extends Provider {
   kupoUrl: string;
   ogmios: Unwrapped.Ogmios;
@@ -66,6 +69,17 @@ export class Kupmios extends Provider {
     );
     this.kupoUrl = kupoUrl;
     this.ogmios = ogmios;
+  }
+
+  events(
+    filter: ChainEventFilter = {},
+    signal?: AbortSignal,
+  ): AsyncIterable<ChainEvent> {
+    return ogmiosChainSyncEvents({
+      url: this.ogmios.url,
+      filter,
+      signal,
+    });
   }
 
   /**

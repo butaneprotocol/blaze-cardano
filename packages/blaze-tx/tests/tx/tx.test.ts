@@ -7,6 +7,7 @@ import {
   hardCodedProtocolParams,
   HexBlob,
   NetworkId,
+  getBurnAddress,
   Slot,
   RewardAccount,
   PlutusData,
@@ -675,6 +676,38 @@ describe("Transaction Building", () => {
     const txComplete = await tx.complete({ useCoinSelection: false });
     expect(txComplete.body().inputs().values().length).toEqual(2);
     expect(txComplete.body().outputs().length).toEqual(2);
+  });
+
+  it("should respect caller supplied minimum ADA when deploying a script", async () => {
+    const testAddress = Address.fromBech32(
+      "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
+    );
+    const alwaysTrueScript = Script.newPlutusV2Script(
+      new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
+    );
+
+    const tx = await new TxBuilder(hardCodedProtocolParams)
+      .setNetworkId(NetworkId.Testnet)
+      .setChangeAddress(testAddress)
+      .addUnspentOutputs([
+        new TransactionUnspentOutput(
+          new TransactionInput(TransactionId("0".repeat(64)), 0n),
+          new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
+        ),
+      ])
+      .deployScript(
+        alwaysTrueScript,
+        getBurnAddress(NetworkId.Testnet),
+        5_000_000n,
+      )
+      .complete();
+
+    const deploymentOutput = tx
+      .body()
+      .outputs()
+      .values()
+      .find((output) => output.scriptRef()?.hash() === alwaysTrueScript.hash());
+    expect(deploymentOutput?.amount().coin()).toBe(5_000_000n);
   });
 
   it("should correctly build a transaction when deregistering stake from a payment credential", async () => {

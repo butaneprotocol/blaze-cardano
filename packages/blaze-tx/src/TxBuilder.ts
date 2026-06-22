@@ -834,6 +834,7 @@ export class TxBuilder {
    *
    * @param {Script} script - The script to be deployed.
    * @param {Address} [address] - The address to lock the script to. Defaults to a burn address where the UTxO will be unspendable.
+   * @param {bigint} [minAda] - Optional minimum lovelace to place on the script reference output. The builder still enforces the protocol minimum if it is larger.
    * @returns {TxBuilder} The same transaction builder.
    *
    *
@@ -845,10 +846,19 @@ export class TxBuilder {
    * txBuilder.deployScript(myScript, someAddress);
    * ```
    */
-  deployScript(script: Script, address: Address = this.burnAddress): TxBuilder {
+  deployScript(
+    script: Script,
+    address: Address = this.burnAddress,
+    minAda?: bigint,
+  ): TxBuilder {
     const out = new TransactionOutput(address, new Value(0n));
     out.setScriptRef(script);
-    out.amount().setCoin(this.calculateMinAda(out));
+    const requiredAda = this.calculateMinAda(out);
+    out
+      .amount()
+      .setCoin(
+        minAda !== undefined && minAda > requiredAda ? minAda : requiredAda,
+      );
     this.addOutput(out);
     return this;
   }

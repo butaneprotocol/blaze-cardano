@@ -189,7 +189,7 @@ export class TxBuilder {
     protected calculateFees(): void;
     complete(params?: UseCoinSelectionArgs): Promise<Transaction>;
     delegate(poolId: PoolId, redeemer?: PlutusData): this;
-    deployScript(script: Script, address?: Address): TxBuilder;
+    deployScript(script: Script, address?: Address, minAda?: bigint): TxBuilder;
     enableTracing(enabled: boolean): TxBuilder;
     protected getScriptData(tw: TransactionWitnessSet): IScriptData | undefined;
     lockAssets(address: Address, value: Value_2, datum: Datum, scriptReference?: Script): TxBuilder;
