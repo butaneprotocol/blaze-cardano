@@ -2404,13 +2404,9 @@ export class TxBuilder {
    *
    * Script DRep votes must provide a redeemer. Key DRep, committee, and stake pool votes must not.
    */
-  addVote({
-    voter,
-    actionId,
-    vote,
-    anchor,
-    redeemer,
-  }: AddVoteOptions): TxBuilder {
+  addVote(options: AddVoteOptions): TxBuilder {
+    const { voter, actionId, vote, anchor, redeemer } = options;
+
     if (redeemer && voter.kind() !== VoterKind.DRepScriptHash) {
       throw new Error(
         "TxBuilder addVote: redeemer can only be provided for script dReps.",
