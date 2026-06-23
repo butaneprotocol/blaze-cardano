@@ -1245,7 +1245,12 @@ describe("Emulator governance", () => {
     const voteBuilder = blaze
       .newTransaction()
       .provideScript(scriptVote.Script)
-      .addVote(voter, actionId, Vote.yes, { redeemer: VOID_PLUTUS_DATA });
+      .addVote({
+        voter,
+        actionId,
+        vote: Vote.yes,
+        redeemer: VOID_PLUTUS_DATA,
+      });
     const voteTx = await voteBuilder.complete();
     const voteHash = await signAndSubmit(voteTx, blaze);
     emulator.awaitTransactionConfirmation(voteHash);

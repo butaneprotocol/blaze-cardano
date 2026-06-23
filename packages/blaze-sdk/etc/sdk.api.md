@@ -42,6 +42,15 @@ const AddressType: typeof C.Cardano.AddressType;
 // @public (undocumented)
 type AddressType = C.Cardano.AddressType;
 
+// @public
+export interface AddVoteOptions {
+    actionId: GovernanceActionId;
+    anchor?: Anchor;
+    redeemer?: PlutusData;
+    vote: Vote | VotingProcedure;
+    voter: Voter;
+}
+
 // @public (undocumented)
 const Anchor: typeof C.Serialization.Anchor;
 
@@ -506,6 +515,7 @@ declare namespace Core {
         TxCBOR,
         UTxOSelectionError,
         UnregisterDelegateRepresentative,
+        UpdateCommittee,
         UpdateDelegateRepresentative,
         Value_2 as Value,
         VkeyWitness,
@@ -1486,11 +1496,7 @@ export class TxBuilder {
     addUnregisterDRep(drep: Credential, refund: bigint, redeemer?: PlutusData): TxBuilder;
     addUnspentOutputs(utxos: TransactionUnspentOutput[]): TxBuilder;
     addUpdateDRep(drep: Credential, anchor?: Anchor, redeemer?: PlutusData): TxBuilder;
-    // (undocumented)
-    addVote(voter: Voter, actionId: GovernanceActionId, voteOrProcedure: Vote | VotingProcedure, options?: {
-        anchor?: Anchor;
-        redeemer?: PlutusData;
-    }): TxBuilder;
+    addVote(input: AddVoteOptions): TxBuilder;
     addVoteDelegation(delegator: Credential, drep: Credential | "alwaysAbstain" | "alwaysNoConfidence", redeemer?: PlutusData): TxBuilder;
     addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData): TxBuilder;
     protected buildFinalWitnessSet(signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][]): TransactionWitnessSet;
@@ -1547,6 +1553,9 @@ const UnregisterDelegateRepresentative: typeof C.Serialization.UnregisterDelegat
 
 // @public (undocumented)
 type UnregisterDelegateRepresentative = C.Serialization.UnregisterDelegateRepresentative;
+
+// @public (undocumented)
+type UpdateCommittee = C.Cardano.UpdateCommittee;
 
 // @public (undocumented)
 const UpdateDelegateRepresentative: typeof C.Serialization.UpdateDelegateRepresentative;
