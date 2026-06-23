@@ -6,8 +6,6 @@ import type {
   Hash28ByteBase16,
 } from "@blaze-cardano/core";
 
-const formatBigInt = (value: bigint) => value.toString();
-
 export const toUtxoSnapshot = (utxo: TransactionUnspentOutput) => {
   return utxo.toCbor();
 };
@@ -29,7 +27,7 @@ export const listWallets = async (emulator: Emulator) => {
         label,
         address: addressBech32,
         utxoCount: walletUtxos.length,
-        lovelace: formatBigInt(total),
+        lovelace: total.toString(),
       };
     }),
   );
@@ -110,9 +108,9 @@ export const serializeState = async (
     slot: emulator.clock.slot,
     epoch: emulator.clock.epoch,
     block: emulator.clock.block,
-    treasury: formatBigInt(emulator.treasury),
-    depositPot: formatBigInt(emulator.depositPot),
-    feePot: formatBigInt(emulator.feePot),
+    treasury: emulator.treasury.toString(),
+    depositPot: emulator.depositPot.toString(),
+    feePot: emulator.feePot.toString(),
     utxoCount: emulator.utxos().length,
     eventLoopRunning: Boolean(emulator.eventLoop),
   };

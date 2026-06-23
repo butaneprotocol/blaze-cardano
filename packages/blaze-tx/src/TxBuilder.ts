@@ -135,7 +135,27 @@ constraints:
 */
 
 /**
+ * Options for adding one governance vote to a transaction.
+ *
+ * @public
+ */
+export interface AddVoteOptions {
+  /** Voter casting the governance vote. */
+  voter: Voter;
+  /** Governance action being voted on. */
+  actionId: GovernanceActionId;
+  /** Vote value or full voting procedure. */
+  vote: Vote | VotingProcedure;
+  /** Optional governance vote anchor. */
+  anchor?: Anchor;
+  /** Redeemer for script DRep votes. */
+  redeemer?: PlutusData;
+}
+
+/**
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
+ *
+ * @public
  */
 export class TxBuilder {
   readonly params: ProtocolParameters;
@@ -2389,13 +2409,14 @@ export class TxBuilder {
     this.requiredPlutusScripts.add(policyHash);
   }
 
-  addVote(
-    voter: Voter,
-    actionId: GovernanceActionId,
-    voteOrProcedure: Vote | VotingProcedure,
-    options: { anchor?: Anchor; redeemer?: PlutusData } = {},
-  ): TxBuilder {
-    const { anchor, redeemer } = options;
+  /**
+   * Add a governance vote to the transaction.
+   *
+   * Script DRep votes must provide a redeemer. Key DRep, committee, and stake pool votes must not.
+   */
+  addVote(options: AddVoteOptions): TxBuilder {
+    const { voter, actionId, vote, anchor, redeemer } = options;
+
     if (redeemer && voter.kind() !== VoterKind.DRepScriptHash) {
       throw new Error(
         "TxBuilder addVote: redeemer can only be provided for script dReps.",
@@ -2406,9 +2427,7 @@ export class TxBuilder {
       this.body.votingProcedures() ?? new VotingProcedures();
 
     const procedure =
-      voteOrProcedure instanceof VotingProcedure
-        ? voteOrProcedure
-        : new VotingProcedure(voteOrProcedure);
+      vote instanceof VotingProcedure ? vote : new VotingProcedure(vote);
 
     if (anchor) {
       procedure.setAnchor(anchor);

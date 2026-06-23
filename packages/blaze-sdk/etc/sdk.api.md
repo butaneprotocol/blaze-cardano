@@ -42,6 +42,15 @@ const AddressType: typeof C.Cardano.AddressType;
 // @public (undocumented)
 type AddressType = C.Cardano.AddressType;
 
+// @public
+export interface AddVoteOptions {
+    actionId: GovernanceActionId;
+    anchor?: Anchor;
+    redeemer?: PlutusData;
+    vote: Vote | VotingProcedure;
+    voter: Voter;
+}
+
 // @public (undocumented)
 const Anchor: typeof C.Serialization.Anchor;
 
@@ -1646,11 +1655,7 @@ export class TxBuilder {
     addUnregisterDRep(drep: Credential, refund: bigint, redeemer?: PlutusData): TxBuilder;
     addUnspentOutputs(utxos: TransactionUnspentOutput[]): TxBuilder;
     addUpdateDRep(drep: Credential, anchor?: Anchor, redeemer?: PlutusData): TxBuilder;
-    // (undocumented)
-    addVote(voter: Voter, actionId: GovernanceActionId, voteOrProcedure: Vote | VotingProcedure, options?: {
-        anchor?: Anchor;
-        redeemer?: PlutusData;
-    }): TxBuilder;
+    addVote(input: AddVoteOptions): TxBuilder;
     addVoteDelegation(delegator: Credential, drep: Credential | "alwaysAbstain" | "alwaysNoConfidence", redeemer?: PlutusData): TxBuilder;
     addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData): TxBuilder;
     protected buildFinalWitnessSet(signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][]): TransactionWitnessSet;

@@ -46,6 +46,15 @@ import { VotingProcedure } from '@blaze-cardano/core';
 import { VotingProcedures } from '@blaze-cardano/core';
 
 // @public
+export interface AddVoteOptions {
+    actionId: GovernanceActionId;
+    anchor?: Anchor;
+    redeemer?: PlutusData;
+    vote: Vote | VotingProcedure;
+    voter: Voter;
+}
+
+// @public
 export const assertLockAddress: (address: Address) => never | void;
 
 // @public
@@ -171,11 +180,7 @@ export class TxBuilder {
     addUnregisterDRep(drep: Credential, refund: bigint, redeemer?: PlutusData): TxBuilder;
     addUnspentOutputs(utxos: TransactionUnspentOutput[]): TxBuilder;
     addUpdateDRep(drep: Credential, anchor?: Anchor, redeemer?: PlutusData): TxBuilder;
-    // (undocumented)
-    addVote(voter: Voter, actionId: GovernanceActionId, voteOrProcedure: Vote | VotingProcedure, options?: {
-        anchor?: Anchor;
-        redeemer?: PlutusData;
-    }): TxBuilder;
+    addVote(input: AddVoteOptions): TxBuilder;
     addVoteDelegation(delegator: Credential, drep: Credential | "alwaysAbstain" | "alwaysNoConfidence", redeemer?: PlutusData): TxBuilder;
     addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData): TxBuilder;
     protected buildFinalWitnessSet(signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][]): TransactionWitnessSet;
