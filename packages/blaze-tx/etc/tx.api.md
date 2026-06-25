@@ -180,7 +180,7 @@ export class TxBuilder {
     addUnregisterDRep(drep: Credential, refund: bigint, redeemer?: PlutusData): TxBuilder;
     addUnspentOutputs(utxos: TransactionUnspentOutput[]): TxBuilder;
     addUpdateDRep(drep: Credential, anchor?: Anchor, redeemer?: PlutusData): TxBuilder;
-    addVote(input: AddVoteOptions): TxBuilder;
+    addVote(options: AddVoteOptions): TxBuilder;
     addVoteDelegation(delegator: Credential, drep: Credential | "alwaysAbstain" | "alwaysNoConfidence", redeemer?: PlutusData): TxBuilder;
     addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData): TxBuilder;
     protected buildFinalWitnessSet(signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][]): TransactionWitnessSet;
@@ -189,7 +189,7 @@ export class TxBuilder {
     protected calculateFees(): void;
     complete(params?: UseCoinSelectionArgs): Promise<Transaction>;
     delegate(poolId: PoolId, redeemer?: PlutusData): this;
-    deployScript(script: Script, address?: Address, minAda?: bigint): TxBuilder;
+    deployScript(script: Script, address?: Address): TxBuilder;
     enableTracing(enabled: boolean): TxBuilder;
     protected getScriptData(tw: TransactionWitnessSet): IScriptData | undefined;
     lockAssets(address: Address, value: Value_2, datum: Datum, scriptReference?: Script): TxBuilder;

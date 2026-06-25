@@ -8,6 +8,7 @@ Required environment variables:
 
 - `SEED_MNEMONIC`
 - `BLOCKFROST_KEY`
+- `SCRIPT_DEPLOYMENT_ADDRESS`, a funded/operator-controlled preview address where the reference-script UTxO should be created
 - `SCRIPT_DEPLOYMENT_CACHE`, optional path to the cache JSON file
 
 Run locally with:

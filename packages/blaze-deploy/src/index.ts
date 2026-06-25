@@ -3,9 +3,7 @@
  * @packageDocumentation
  */
 
-export * from "./address";
 export * from "./cache";
-export * from "./compat";
 export * from "./deploy";
 export * from "./errors";
 export * from "./manage";

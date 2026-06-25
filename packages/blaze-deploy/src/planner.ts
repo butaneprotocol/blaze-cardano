@@ -9,7 +9,6 @@ import type {
   ScriptDeploymentManifest,
   ScriptDeploymentPlan,
   ScriptDeploymentRecord,
-  ScriptDeploymentTarget,
 } from "./types";
 import { ScriptDeploymentManifestError } from "./errors";
 
@@ -27,31 +26,9 @@ const assertProviderNetwork = (
   }
 };
 
-const orderTargets = (
-  targets: readonly ScriptDeploymentTarget[],
-): readonly ScriptDeploymentTarget[] => {
-  const byName = new Map(targets.map((target) => [target.name, target]));
-  const ordered: ScriptDeploymentTarget[] = [];
-  const visited = new Set<string>();
-
-  const visit = (target: ScriptDeploymentTarget) => {
-    if (visited.has(target.name)) return;
-    for (const dependency of target.dependencies ?? []) {
-      visit(byName.get(dependency)!);
-    }
-    visited.add(target.name);
-    ordered.push(target);
-  };
-
-  for (const target of targets) {
-    visit(target);
-  }
-  return ordered;
-};
-
 const liveRecord = async (
   provider: Provider,
-  target: ScriptDeploymentTarget,
+  target: ScriptDeploymentManifest["targets"][number],
   manifestHash: ReturnType<typeof scriptDeploymentManifestHash>,
 ): Promise<ScriptDeploymentRecord | undefined> => {
   const live = await provider.resolveScriptRef(target.script, target.address);
@@ -61,7 +38,7 @@ const liveRecord = async (
     version: target.version,
     scriptHash: target.script.hash(),
     address: target.address,
-    txInput: live.input(),
+    utxo: live,
     status: "matched",
     manifestHash,
   };
@@ -90,7 +67,7 @@ export class DeploymentPlanner {
     const actions: ScriptDeploymentAction[] = [];
     const plannedNames = new Set<string>();
 
-    for (const target of orderTargets(manifest.targets)) {
+    for (const target of manifest.targets) {
       plannedNames.add(target.name);
       const cached = this.cache?.findByName(target.name);
       const live = await liveRecord(this.provider, target, manifestHash);

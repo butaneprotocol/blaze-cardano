@@ -6,7 +6,6 @@ import {
   Blockfrost,
   HotSingleWallet,
   MemoryScriptDeploymentCache,
-  burnDeploymentAddress,
   defineScriptDeployment,
   deployScriptRefs,
   parseScriptDeploymentCache,
@@ -42,6 +41,9 @@ const provider = new Blockfrost({
   projectId: env("BLOCKFROST_KEY"),
 });
 const wallet = await walletFromMnemonic(env("SEED_MNEMONIC"), provider);
+const deploymentAddress = Core.addressFromBech32(
+  env("SCRIPT_DEPLOYMENT_ADDRESS"),
+);
 const cache = existsSync(cachePath)
   ? parseScriptDeploymentCache(JSON.parse(await readFile(cachePath, "utf8")))
   : new MemoryScriptDeploymentCache();
@@ -53,7 +55,7 @@ const manifest = defineScriptDeployment({
       name: "always-true",
       version: "1.0.0",
       script,
-      address: burnDeploymentAddress(Core.NetworkId.Testnet),
+      address: deploymentAddress,
       metadata: {
         source: "examples/script-deploy-ci/deploy.ts",
       },
@@ -76,4 +78,13 @@ await writeFile(
   stringifyScriptDeploymentCache(cache, result.manifestHash),
 );
 
-console.log(JSON.stringify(result, null, 2));
+console.log(
+  "deployment result",
+  result.records.map((record) => ({
+    name: record.name,
+    version: record.version,
+    status: record.status,
+    txId: record.utxo?.input().transactionId().toString(),
+    index: record.utxo?.input().index().toString(),
+  })),
+);

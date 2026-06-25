@@ -678,7 +678,7 @@ describe("Transaction Building", () => {
     expect(txComplete.body().outputs().length).toEqual(2);
   });
 
-  it("should respect caller supplied minimum ADA when deploying a script", async () => {
+  it("should deploy a script reference with builder-calculated minimum ADA", async () => {
     const testAddress = Address.fromBech32(
       "addr1q86ylp637q7hv7a9r387nz8d9zdhem2v06pjyg75fvcmen3rg8t4q3f80r56p93xqzhcup0w7e5heq7lnayjzqau3dfs7yrls5",
     );
@@ -695,11 +695,7 @@ describe("Transaction Building", () => {
           new TransactionOutput(testAddress, value.makeValue(50_000_000n)),
         ),
       ])
-      .deployScript(
-        alwaysTrueScript,
-        getBurnAddress(NetworkId.Testnet),
-        5_000_000n,
-      )
+      .deployScript(alwaysTrueScript, getBurnAddress(NetworkId.Testnet))
       .complete();
 
     const deploymentOutput = tx
@@ -707,7 +703,8 @@ describe("Transaction Building", () => {
       .outputs()
       .values()
       .find((output) => output.scriptRef()?.hash() === alwaysTrueScript.hash());
-    expect(deploymentOutput?.amount().coin()).toBe(5_000_000n);
+    expect(deploymentOutput).toBeDefined();
+    expect(deploymentOutput?.amount().coin()).toBeGreaterThan(0n);
   });
 
   it("should correctly build a transaction when deregistering stake from a payment credential", async () => {

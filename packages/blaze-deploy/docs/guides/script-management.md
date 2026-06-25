@@ -4,7 +4,7 @@ title: Script Management
 
 # Script Management
 
-Script deployment is only useful if the project can tell which scripts are current, which records were replaced, and which dependencies must be deployed first. Blaze uses a small manifest and cache standard for that job.
+Script deployment is only useful if the project can tell which scripts are current and which records were replaced. Blaze uses a small manifest and cache standard for that job.
 
 ## Identifiers
 
@@ -16,7 +16,7 @@ Blaze script deployments use three identifiers.
 | Deployment identity | Network, address, script hash, and version | Identifies where a particular script version is expected to be found. |
 | Manifest identity | Canonical hash of the deployment manifest | Identifies the complete desired deployment state. |
 
-The manifest hash is deterministic. Target order, dependency order, and metadata key order are normalized before hashing, so equivalent manifests produce the same identity.
+The manifest hash is deterministic. Target order and metadata key order are normalized before hashing, so equivalent manifests produce the same identity.
 
 ## Versions
 
@@ -38,34 +38,6 @@ const history = cache.records().filter((record) => record.name === "order-valida
 
 If more than one non-superseded record exists for the same target name, `findByName` returns the highest active semantic version. This lets a deployment job keep historical records without accidentally planning from an older active version.
 
-## Dependencies
-
-Dependencies are declared by target name. The deployment planner sorts targets so dependencies are planned before scripts that depend on them.
-
-```ts
-const manifest = defineScriptDeployment({
-  id: "dex",
-  network: "cardano-preview",
-  targets: [
-    {
-      name: "order-validator",
-      version: "1.0.0",
-      script: orderValidator,
-      address: orderAddress,
-    },
-    {
-      name: "settlement-policy",
-      version: "1.0.0",
-      script: settlementPolicy,
-      address: policyAddress,
-      dependencies: ["order-validator"],
-    },
-  ],
-});
-```
-
-Unknown dependencies and dependency cycles are rejected during manifest validation. That keeps CI failures early and avoids submitting a partial deployment whose dependent script was never published.
-
 ## Record Status
 
 Deployment records use these statuses.
@@ -81,7 +53,7 @@ The built-in executor writes `matched` records for successful deployments and `s
 
 ## Audit Output
 
-Use cache snapshots as deployment audit artifacts. A snapshot records the manifest hash and all deployment records, including superseded history. Cache parsing validates record shape, semantic versions, statuses, transaction input strings, 28-byte script hashes, and 32-byte manifest hashes so malformed CI artifacts fail before they can influence a deployment plan.
+Use cache snapshots as deployment audit artifacts. A snapshot records the manifest hash and all deployment records, including superseded history and resolved script-reference UTxO CBOR. Cache parsing validates record shape, semantic versions, statuses, UTxO CBOR, 28-byte script hashes, and 32-byte manifest hashes so malformed CI artifacts fail before they can influence a deployment plan.
 
 ```ts
 import { stringifyScriptDeploymentCache } from "@blaze-cardano/deploy";
