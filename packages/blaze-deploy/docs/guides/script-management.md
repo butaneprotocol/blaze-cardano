@@ -1,8 +1,8 @@
 ---
-title: Script Management
+title: Script management
 ---
 
-# Script Management
+# Script management
 
 Script deployment is only useful if the project can tell which scripts are current and which records were replaced. Blaze uses a small manifest and cache standard for that job.
 
@@ -38,7 +38,7 @@ const history = cache.records().filter((record) => record.name === "order-valida
 
 If more than one non-superseded record exists for the same target name, `findByName` returns the highest active semantic version. This lets a deployment job keep historical records without accidentally planning from an older active version.
 
-## Record Status
+## Record status
 
 Deployment records use these statuses.
 
@@ -51,9 +51,9 @@ Deployment records use these statuses.
 
 The built-in executor writes `matched` records for successful deployments and `superseded` records for replacements. It removes retired target history when a target is removed from the manifest.
 
-## Audit Output
+## Audit output
 
-Use cache snapshots as deployment audit artifacts. A snapshot records the manifest hash and all deployment records, including superseded history and resolved script-reference UTxO CBOR. Cache parsing validates record shape, semantic versions, statuses, UTxO CBOR, 28-byte script hashes, and 32-byte manifest hashes so malformed CI artifacts fail before they can influence a deployment plan.
+Use cache snapshots as deployment audit artifacts. A snapshot records the manifest hash and all deployment records, including superseded history and resolved script-reference UTxO CBOR. Cache parsing validates record shape, semantic versions, statuses, UTxO CBOR, 28-byte script hashes, and 32-byte manifest hashes before a deployment plan can use the artifact.
 
 ```ts
 import { stringifyScriptDeploymentCache } from "@blaze-cardano/deploy";

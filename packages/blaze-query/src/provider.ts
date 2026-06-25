@@ -142,11 +142,9 @@ export abstract class Provider {
    * Resolves the script deployment by finding a UTxO containing the script reference.
    *
    * @remarks
-   * This is a default implementation that works but may not be optimal.
-   * Subclasses of Provider should implement their own version for better performance.
-   *
-   * The method searches for a UTxO at the given address (or a burn address by default)
-   * that contains a script reference matching the provided script or script hash.
+   * Providers must implement this explicitly. Backends with native script-reference
+   * indexes should use them. Providers that can only search an address can call
+   * {@link findScriptRefInAddressUtxos}.
    * @example
    * ```typescript
    * const scriptUtxo = await provider.resolveScriptRef(myScript);
@@ -161,16 +159,10 @@ export abstract class Provider {
    * @param address - The address to search for the script deployment. Defaults to a burn address.
    * @returns The UTxO containing the script reference, or undefined if not found.
    */
-  async resolveScriptRef(
+  abstract resolveScriptRef(
     script: Script | Hash28ByteBase16,
-    address: Address = getBurnAddress(this.network),
-  ): Promise<TransactionUnspentOutput | undefined> {
-    const utxos = await this.getUnspentOutputs(address);
-    if (script instanceof Script) {
-      script = script.hash();
-    }
-    return utxos.find((utxo) => utxo.output().scriptRef()?.hash() === script);
-  }
+    address?: Address,
+  ): Promise<TransactionUnspentOutput | undefined>;
 
   /**
    * Get the slot config, which describes how to translate between slots and unix timestamps.
@@ -217,6 +209,17 @@ export abstract class Provider {
     );
   }
 }
+
+/** @public */
+export const findScriptRefInAddressUtxos = async (
+  provider: Provider,
+  script: Script | Hash28ByteBase16,
+  address: Address = getBurnAddress(provider.network),
+): Promise<TransactionUnspentOutput | undefined> => {
+  const scriptHash = script instanceof Script ? script.hash() : script;
+  const utxos = await provider.getUnspentOutputs(address);
+  return utxos.find((utxo) => utxo.output().scriptRef()?.hash() === scriptHash);
+};
 
 /**
  * Mapping of RedeemerPurpose to RedeemerTag. Ensures consistency between purpose strings and tag numbers.

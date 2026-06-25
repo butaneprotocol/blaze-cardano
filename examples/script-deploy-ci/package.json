@@ -3,7 +3,10 @@
   "description": "CI deployment command for Blaze reference scripts",
   "version": "0.1.0",
   "dependencies": {
-    "@blaze-cardano/sdk": "workspace:*"
+    "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/deploy": "workspace:*",
+    "@blaze-cardano/query": "workspace:*",
+    "@blaze-cardano/wallet": "workspace:*"
   },
   "devDependencies": {
     "@blaze-cardano/tsconfig": "workspace:*",

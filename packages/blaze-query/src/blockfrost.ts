@@ -16,7 +16,6 @@ import {
   DatumHash,
   ExUnits,
   fromHex,
-  getBurnAddress,
   hardCodedProtocolParams,
   Hash28ByteBase16,
   HexBlob,
@@ -690,16 +689,46 @@ export class Blockfrost extends Provider {
 
   override async resolveScriptRef(
     script: Script | Hash28ByteBase16,
-    address: Address = getBurnAddress(this.network),
+    address?: Address,
   ): Promise<TransactionUnspentOutput | undefined> {
-    if (script instanceof Script) {
-      script = script.hash();
+    const scriptHash = script instanceof Script ? script.hash() : script;
+    const expectedAddress = address?.toBech32();
+    const maxPageCount = 100;
+    let page = 1;
+
+    for (;;) {
+      const pagination = `count=${maxPageCount}&page=${page}`;
+      const query = `/scripts/${scriptHash}/utxos?${pagination}`;
+      const json = await fetch(`${this.url}${query}`, {
+        headers: this.headers(),
+      }).then((resp) => resp.json());
+
+      if (!json) {
+        throw new Error("resolveScriptRef: Could not parse response json");
+      }
+
+      const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
+
+      if ("message" in response) {
+        throw new Error(
+          `resolveScriptRef: Blockfrost threw "${response.message}"`,
+        );
+      }
+
+      const match = response.find(
+        (utxo) => !expectedAddress || utxo.address === expectedAddress,
+      );
+      if (match) {
+        return this.buildTransactionUnspentOutput(
+          Address.fromBech32(match.address),
+        )(match);
+      }
+
+      if (response.length < maxPageCount) {
+        return undefined;
+      }
+      page += 1;
     }
-    const utxos = await this.getUnspentOutputs(
-      address,
-      (u) => u.reference_script_hash === script,
-    );
-    return utxos[0];
   }
 
   /**

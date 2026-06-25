@@ -54,6 +54,10 @@ class PollProvider extends Provider {
     return {} as PlutusData;
   }
 
+  async resolveScriptRef(): Promise<TransactionUnspentOutput | undefined> {
+    return undefined;
+  }
+
   async awaitTransactionConfirmation(): Promise<boolean> {
     return true;
   }

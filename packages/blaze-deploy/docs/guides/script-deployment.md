@@ -1,12 +1,12 @@
 ---
-title: Script Deployment
+title: Script deployment
 ---
 
-# Script Deployment
+# Script deployment
 
 `@blaze-cardano/deploy` turns a set of reference scripts into a repeatable deployment job. The package separates the job into three parts: a manifest that describes the desired chain state, a planner that reconciles that manifest with live chain data, and an executor that submits only the transactions still needed.
 
-## Define a Manifest
+## Define a manifest
 
 Use `defineScriptDeployment` to describe the reference scripts an application expects to have on chain. Each target has a stable name, a semantic version, the script, the deployment address, and optional metadata.
 
@@ -31,7 +31,7 @@ const manifest = defineScriptDeployment({
 });
 ```
 
-The deployment address should be explicit and controlled by the deploying application or operator. That keeps ownership, funding, update, and audit behavior clear for applications that need to prove where a script reference was published.
+The deployment address should be explicit and controlled by the application or operator. That keeps ownership, funding, updates, and audit behavior clear for applications that need to prove where a script reference was published.
 
 ```ts
 import { Core } from "@blaze-cardano/sdk";
@@ -41,9 +41,9 @@ const deploymentAddress = Core.addressFromBech32(process.env.SCRIPT_DEPLOYMENT_A
 
 The manifest network must match the deployment address network, and reconciliation also checks the provider's known network name. A `cardano-preview` manifest should not be planned with a `cardano-preprod` provider, even though both networks use testnet addresses.
 
-## Reconcile Before Submitting
+## Reconcile before submitting
 
-Before submitting anything, reconcile the manifest against the provider and an optional cache. The cache is only a hint: a cached target is reused only when the provider can still resolve the live reference-script UTxO for the target script and address.
+Before submitting anything, reconcile the manifest against the provider and an optional cache. The cache is only a hint. A cached target is reused only when the provider can still resolve the live reference-script UTxO for the target script and address.
 
 ```ts
 import { MemoryScriptDeploymentCache, reconcileScriptDeployment } from "@blaze-cardano/deploy";
@@ -61,7 +61,7 @@ The planner returns four action types.
 | `replace` | The cache has a record for the target name, but the manifest points to a different script. |
 | `retire` | The cache has an active record for a target that no longer appears in the manifest. |
 
-## Deploy Script References
+## Deploy script references
 
 Use `deployScriptRefs` when the plan is ready to execute. It builds one transaction per required deployment or replacement, signs with the supplied wallet, submits through the provider, requires confirmation, and resolves the live reference-script UTxO before writing the cache record.
 
@@ -83,7 +83,7 @@ If a submitted script cannot be resolved after confirmation, deployment fails in
 
 The executor also checks the wallet network before spending. A mainnet wallet cannot execute a preview, preprod, or sanchonet manifest, and a testnet wallet cannot execute a mainnet manifest.
 
-## Persist the Cache
+## Persist the cache
 
 Use `stringifyScriptDeploymentCache` and `parseScriptDeploymentCache` to store deployment records in CI artifacts, repository-controlled deployment metadata, or application release artifacts.
 
@@ -94,4 +94,4 @@ const text = stringifyScriptDeploymentCache(cache, result.manifestHash);
 const restored = parseScriptDeploymentCache(JSON.parse(text));
 ```
 
-Cache records include the target name, version, script hash, address, resolved script-reference UTxO CBOR, status, manifest hash, and supersession pointer when a record was replaced. `parseScriptDeploymentCache` validates the cache shape, semantic versions, statuses, UTxO CBOR, 28-byte script hashes, and 32-byte manifest hashes before returning a cache. The cache keeps history, while `findByName` returns the highest active version for normal deployment planning.
+Cache records include the target name, version, script hash, address, resolved script-reference UTxO CBOR, status, manifest hash, and supersession pointer when a record was replaced. `parseScriptDeploymentCache` validates the cache shape, semantic versions, statuses, UTxO CBOR, 28-byte script hashes, and 32-byte manifest hashes before returning a cache. The cache keeps history. `findByName` returns the highest active version for normal deployment planning.

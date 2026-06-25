@@ -1,15 +1,15 @@
 ---
-title: Advanced Querying
+title: Advanced querying
 ---
 
-# Advanced Querying
+# Advanced querying
 
-Use `QueryClient` when an application needs repeated chain reads, shared caching, or a cleaner way to compose dependent provider calls.
+Use `CachedProvider` when an application needs repeated chain reads, shared caching, or a cleaner way to compose dependent provider calls while still passing a normal provider into Blaze.
 
 ```ts
-import { QueryClient } from "@blaze-cardano/query";
+import { CachedProvider } from "@blaze-cardano/query";
 
-const query = new QueryClient(provider);
+const query = new CachedProvider(provider);
 
 const result = await query.chain(async (client) => {
   const scriptRef = await client.resolveScriptRef(validatorScript, scriptAddress);
@@ -20,25 +20,25 @@ const result = await query.chain(async (client) => {
 
 ## Caching
 
-`QueryClient` caches deterministic read operations by operation name and argument values. Address-like values are keyed by Bech32, transaction inputs are keyed as `<tx-id>#<index>`, scripts are keyed by hash, object keys are sorted, and `bigint` values are encoded as strings.
+`CachedProvider` caches deterministic read operations by operation name and argument values. Address-like values are keyed by Bech32, transaction inputs are keyed as `<tx-id>#<index>`, scripts are keyed by hash, object keys are sorted, and `bigint` values are encoded as strings.
 
 ```ts
-import { QueryCache, QueryClient } from "@blaze-cardano/query";
+import { CachedProvider, QueryCache } from "@blaze-cardano/query";
 
 const cache = new QueryCache<string, unknown>({
   ttlMs: 15_000,
   maxEntries: 1_000,
 });
 
-const query = new QueryClient(provider, { cache });
+const query = new CachedProvider(provider, { cache });
 
 await query.getUnspentOutputs(address);
 await query.getUnspentOutputs(address); // served from cache while the entry is fresh
 ```
 
-Do not cache reads that must reflect the next block immediately. For mempool-sensitive submission flows, prefer a short TTL or call the provider directly.
+Submission, confirmation, and transaction evaluation calls are delegated to the wrapped provider without caching. For reads that must reflect the next block immediately, prefer a short TTL or call the wrapped provider directly.
 
-## Event Streams
+## Event streams
 
 Kupmios exposes Ogmios chain-sync events through an async iterable.
 

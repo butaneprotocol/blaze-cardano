@@ -7,4 +7,4 @@ export * from "./ogmios-chain-sync";
 export * from "./polling-events";
 export * from "./provider";
 export * from "./provider-router";
-export * from "./query-client";
+export * from "./cached-provider";

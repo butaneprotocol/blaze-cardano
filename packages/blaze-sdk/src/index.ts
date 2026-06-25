@@ -1,5 +1,4 @@
 export * from "./blaze";
-export * from "@blaze-cardano/deploy";
 export * from "@blaze-cardano/query";
 export * from "@blaze-cardano/tx";
 export * from "@blaze-cardano/wallet";

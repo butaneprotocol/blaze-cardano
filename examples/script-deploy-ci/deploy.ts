@@ -2,17 +2,25 @@ import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
-  Core,
-  Blockfrost,
-  HotSingleWallet,
   MemoryScriptDeploymentCache,
   defineScriptDeployment,
   deployScriptRefs,
   parseScriptDeploymentCache,
   reconcileScriptDeployment,
   stringifyScriptDeploymentCache,
-  type Provider,
-} from "@blaze-cardano/sdk";
+} from "@blaze-cardano/deploy";
+import {
+  Ed25519PrivateKey,
+  HexBlob,
+  NetworkId,
+  PlutusV2Script,
+  Script,
+  addressFromBech32,
+  mnemonicToEntropy,
+  wordlist,
+} from "@blaze-cardano/core";
+import { Blockfrost, type Provider } from "@blaze-cardano/query";
+import { HotSingleWallet } from "@blaze-cardano/wallet";
 
 const env = (name: string): string => {
   const value = process.env[name];
@@ -21,16 +29,16 @@ const env = (name: string): string => {
 };
 
 const walletFromMnemonic = async (mnemonic: string, provider: Provider) => {
-  const entropy = Core.mnemonicToEntropy(mnemonic, Core.wordlist);
+  const entropy = mnemonicToEntropy(mnemonic, wordlist);
   return new HotSingleWallet(
-    Core.Ed25519PrivateKey.fromNormalBytes(entropy).hex(),
-    Core.NetworkId.Testnet,
+    Ed25519PrivateKey.fromNormalBytes(entropy).hex(),
+    NetworkId.Testnet,
     provider,
   );
 };
 
-const script = Core.Script.newPlutusV2Script(
-  new Core.PlutusV2Script(Core.HexBlob("510100003222253330044a229309b2b2b9a1")),
+const script = Script.newPlutusV2Script(
+  new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
 );
 
 const cachePath =
@@ -41,9 +49,7 @@ const provider = new Blockfrost({
   projectId: env("BLOCKFROST_KEY"),
 });
 const wallet = await walletFromMnemonic(env("SEED_MNEMONIC"), provider);
-const deploymentAddress = Core.addressFromBech32(
-  env("SCRIPT_DEPLOYMENT_ADDRESS"),
-);
+const deploymentAddress = addressFromBech32(env("SCRIPT_DEPLOYMENT_ADDRESS"));
 const cache = existsSync(cachePath)
   ? parseScriptDeploymentCache(JSON.parse(await readFile(cachePath, "utf8")))
   : new MemoryScriptDeploymentCache();

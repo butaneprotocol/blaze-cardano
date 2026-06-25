@@ -12,9 +12,9 @@ import {
   type TransactionUnspentOutput,
 } from "@blaze-cardano/core";
 import {
+  CachedProvider,
   Provider,
   QueryCache,
-  QueryClient,
   pollAddressEvents,
 } from "@blaze-cardano/query";
 import { fileURLToPath } from "node:url";
@@ -84,7 +84,7 @@ export const runAdvancedQueryExample = async (
   provider: Provider,
   pollDurationMs = 30_000,
 ) => {
-  const query = new QueryClient(provider, {
+  const query = new CachedProvider(provider, {
     cache: new QueryCache<string, unknown>({ ttlMs: 10_000, maxEntries: 500 }),
   });
 

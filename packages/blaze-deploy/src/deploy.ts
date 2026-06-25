@@ -1,12 +1,5 @@
-import {
-  CborSet,
-  NetworkId,
-  VkeyWitness,
-  type Transaction,
-  type TransactionId,
-} from "@blaze-cardano/core";
-import { TxBuilder } from "@blaze-cardano/tx";
-import type { Provider } from "@blaze-cardano/query";
+import { NetworkId, type TransactionId } from "@blaze-cardano/core";
+import { Blaze } from "@blaze-cardano/sdk/blaze";
 import type { Wallet } from "@blaze-cardano/wallet";
 import { MemoryScriptDeploymentCache } from "./cache";
 import { ScriptDeploymentManifestError } from "./errors";
@@ -47,53 +40,6 @@ const assertWalletNetwork = async (
   }
 };
 
-const newDeploymentTransaction = async (
-  provider: Provider,
-  wallet: Wallet,
-): Promise<TxBuilder> =>
-  new TxBuilder(await provider.getParameters()).addPreCompleteHook(
-    async (tx) => {
-      tx.setNetworkId(await wallet.getNetworkId())
-        .addUnspentOutputs(await wallet.getUnspentOutputs())
-        .setChangeAddress(await wallet.getChangeAddress(), false)
-        .useEvaluator((draft, utxos) =>
-          provider.evaluateTransaction(draft, utxos),
-        );
-    },
-  );
-
-const signTransaction = async (
-  wallet: Wallet,
-  transaction: Transaction,
-): Promise<Transaction> => {
-  const signed = await wallet.signTransaction(transaction, true);
-  const witnesses = transaction.witnessSet();
-  const existingVkeys = witnesses.vkeys()?.toCore() ?? [];
-  const signedVkeys = signed.vkeys();
-  if (!signedVkeys) {
-    throw new Error("Script deployment transaction was not signed by wallet.");
-  }
-  if (
-    signedVkeys
-      .toCore()
-      .some(([signedKey]) =>
-        existingVkeys.some(([existingKey]) => signedKey === existingKey),
-      )
-  ) {
-    throw new Error(
-      "Script deployment transaction already contains a signature.",
-    );
-  }
-  witnesses.setVkeys(
-    CborSet.fromCore(
-      [...signedVkeys.toCore(), ...existingVkeys],
-      VkeyWitness.fromCore,
-    ),
-  );
-  transaction.setWitnessSet(witnesses);
-  return transaction;
-};
-
 /** Reconcile and execute script reference deployment actions for a manifest.
  *
  * @public
@@ -109,6 +55,7 @@ export const deployScriptRefs = async (
   } = input;
   const plan = await reconcileScriptDeployment({ manifest, provider, cache });
   await assertWalletNetwork(manifest, wallet);
+  const blaze = await Blaze.from(provider, wallet);
   const transactions: TransactionId[] = [];
   const records: ScriptDeploymentRecord[] = [];
 
@@ -124,11 +71,12 @@ export const deployScriptRefs = async (
     }
 
     const target = action.target;
-    const tx = await (await newDeploymentTransaction(provider, wallet))
+    const tx = await blaze
+      .newTransaction()
       .deployScript(target.script, target.address)
       .complete();
-    const signed = await signTransaction(wallet, tx);
-    const txId = await provider.postTransactionToChain(signed);
+    const signed = await blaze.signTransaction(tx);
+    const txId = await blaze.submitTransaction(signed, true);
     transactions.push(txId);
     const confirmed = await provider.awaitTransactionConfirmation(txId);
     if (!confirmed) {
