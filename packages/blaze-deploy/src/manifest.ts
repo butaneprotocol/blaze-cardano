@@ -1,5 +1,4 @@
 import {
-  type Address,
   type Hash32ByteBase16,
   HexBlob,
   NetworkId,
@@ -63,37 +62,6 @@ const assertAddressNetwork = (
   }
 };
 
-const assertAcyclic = (targets: readonly ScriptDeploymentTarget[]) => {
-  const byName = new Map(targets.map((target) => [target.name, target]));
-  const visiting = new Set<string>();
-  const visited = new Set<string>();
-
-  const visit = (name: string, path: readonly string[]) => {
-    if (visited.has(name)) return;
-    if (visiting.has(name)) {
-      throw new ScriptDeploymentManifestError(
-        `Deployment dependency cycle detected: ${[...path, name].join(" -> ")}.`,
-      );
-    }
-    const target = byName.get(name);
-    if (!target) {
-      throw new ScriptDeploymentManifestError(
-        `Deployment dependency "${name}" does not exist.`,
-      );
-    }
-    visiting.add(name);
-    for (const dependency of target.dependencies ?? []) {
-      visit(dependency, [...path, name]);
-    }
-    visiting.delete(name);
-    visited.add(name);
-  };
-
-  for (const target of targets) {
-    visit(target.name, []);
-  }
-};
-
 /** Validate a deployment manifest and return it unchanged.
  *
  * @public
@@ -114,18 +82,7 @@ export const validateScriptDeploymentManifest = (
     names.add(target.name);
     assertSemanticVersion(target);
     assertAddressNetwork(manifest, target);
-    for (const dependency of target.dependencies ?? []) {
-      if (
-        !names.has(dependency) &&
-        !manifest.targets.some((t) => t.name === dependency)
-      ) {
-        throw new ScriptDeploymentManifestError(
-          `Target "${target.name}" depends on unknown target "${dependency}".`,
-        );
-      }
-    }
   }
-  assertAcyclic(manifest.targets);
   return manifest;
 };
 
@@ -146,8 +103,6 @@ export const serializeScriptDeploymentManifest = (
         version: target.version,
         scriptHash: target.script.hash(),
         address: target.address.toBech32(),
-        minAda: target.minAda?.toString(),
-        dependencies: [...(target.dependencies ?? [])].sort(),
         metadata: sortedObject(target.metadata),
       }))
       .sort((left, right) => left.name.localeCompare(right.name)),
@@ -199,9 +154,3 @@ export const scriptDeploymentManifestHash = (
 export const defineScriptDeployment = (
   manifest: ScriptDeploymentManifest,
 ): ScriptDeploymentManifest => validateScriptDeploymentManifest(manifest);
-
-/** Identity helper for call sites that want an explicit deployment address marker.
- *
- * @public
- */
-export const assertDeploymentAddress = (address: Address): Address => address;

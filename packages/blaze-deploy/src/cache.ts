@@ -1,5 +1,10 @@
-import { Address, type Hash28ByteBase16 } from "@blaze-cardano/core";
-import { formatTxInput, parseTxInput } from "./compat";
+import {
+  Address,
+  Hash28ByteBase16,
+  Hash32ByteBase16,
+  HexBlob,
+  TransactionUnspentOutput,
+} from "@blaze-cardano/core";
 import { compareDeploymentVersions } from "./manage";
 import type {
   ScriptDeploymentCache,
@@ -20,22 +25,6 @@ const statuses = new Set<ScriptDeploymentRecord["status"]>([
   "superseded",
 ]);
 
-const assertHash28 = (label: string, value: string | undefined): void => {
-  if (value !== undefined && !/^[0-9a-fA-F]{56}$/.test(value)) {
-    throw new ScriptDeploymentCacheError(
-      `${label} must be a 28-byte hex hash.`,
-    );
-  }
-};
-
-const assertHash32 = (label: string, value: string | undefined): void => {
-  if (value !== undefined && !/^[0-9a-fA-F]{64}$/.test(value)) {
-    throw new ScriptDeploymentCacheError(
-      `${label} must be a 32-byte hex hash.`,
-    );
-  }
-};
-
 const assertVersion = (version: string): void => {
   if (!/^\d+\.\d+\.\d+$/.test(version)) {
     throw new ScriptDeploymentCacheError(
@@ -51,11 +40,25 @@ const serializeRecord = (
   version: record.version,
   scriptHash: record.scriptHash,
   address: record.address.toBech32(),
-  txInput: record.txInput ? formatTxInput(record.txInput) : undefined,
+  utxoCbor: record.utxo?.toCbor(),
   status: record.status,
   manifestHash: record.manifestHash,
   supersededBy: record.supersededBy,
 });
+
+const parseUtxoCbor = (
+  value: string | undefined,
+): TransactionUnspentOutput | undefined => {
+  if (value === undefined) return undefined;
+  try {
+    return TransactionUnspentOutput.fromCbor(HexBlob(value));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new ScriptDeploymentCacheError(
+      `Invalid deployment cache UTxO CBOR: ${message}`,
+    );
+  }
+};
 
 const deserializeRecord = (
   record: SerializableScriptDeploymentRecord,
@@ -70,9 +73,15 @@ const deserializeRecord = (
     throw new ScriptDeploymentCacheError("Invalid deployment cache record.");
   }
   assertVersion(record.version);
-  assertHash28("Deployment cache script hash", record.scriptHash);
-  assertHash32("Deployment cache manifest hash", record.manifestHash);
-  assertHash28("Deployment cache supersededBy hash", record.supersededBy);
+  const scriptHash = Hash28ByteBase16(record.scriptHash);
+  const manifestHash =
+    record.manifestHash === undefined
+      ? undefined
+      : Hash32ByteBase16(record.manifestHash);
+  const supersededBy =
+    record.supersededBy === undefined
+      ? undefined
+      : Hash28ByteBase16(record.supersededBy);
   if (!statuses.has(record.status)) {
     throw new ScriptDeploymentCacheError(
       `Invalid deployment cache status "${record.status}".`,
@@ -81,12 +90,12 @@ const deserializeRecord = (
   return {
     name: record.name,
     version: record.version,
-    scriptHash: record.scriptHash,
+    scriptHash,
     address: Address.fromBech32(record.address),
-    txInput: record.txInput ? parseTxInput(record.txInput) : undefined,
+    utxo: parseUtxoCbor(record.utxoCbor),
     status: record.status,
-    manifestHash: record.manifestHash,
-    supersededBy: record.supersededBy,
+    manifestHash,
+    supersededBy,
   };
 };
 
@@ -165,7 +174,9 @@ export const parseScriptDeploymentCache = (
       "Invalid deployment cache snapshot: records must be an array.",
     );
   }
-  assertHash32("Deployment cache manifest hash", snapshot.manifestHash);
+  if (snapshot.manifestHash !== undefined) {
+    Hash32ByteBase16(snapshot.manifestHash);
+  }
   return new MemoryScriptDeploymentCache(
     snapshot.records.map(deserializeRecord),
   );

@@ -4,7 +4,7 @@ import type {
   Hash32ByteBase16,
   Script,
   TransactionId,
-  TransactionInput,
+  TransactionUnspentOutput,
 } from "@blaze-cardano/core";
 import type { NetworkName, Provider } from "@blaze-cardano/query";
 import type { Wallet } from "@blaze-cardano/wallet";
@@ -18,8 +18,6 @@ export type ScriptDeploymentTarget = {
   version: string;
   script: Script;
   address: Address;
-  minAda?: bigint;
-  dependencies?: readonly string[];
   metadata?: Readonly<Record<string, string>>;
 };
 
@@ -42,8 +40,6 @@ export type SerializableScriptDeploymentTarget = {
   version: string;
   scriptHash: Hash28ByteBase16;
   address: string;
-  minAda?: string;
-  dependencies: readonly string[];
   metadata: Readonly<Record<string, string>>;
 };
 
@@ -76,7 +72,7 @@ export type ScriptDeploymentRecord = {
   version: string;
   scriptHash: Hash28ByteBase16;
   address: Address;
-  txInput?: TransactionInput;
+  utxo?: TransactionUnspentOutput;
   status: ScriptDeploymentStatus;
   manifestHash?: Hash32ByteBase16;
   supersededBy?: Hash28ByteBase16;
@@ -91,7 +87,7 @@ export type SerializableScriptDeploymentRecord = {
   version: string;
   scriptHash: Hash28ByteBase16;
   address: string;
-  txInput?: string;
+  utxoCbor?: string;
   status: ScriptDeploymentStatus;
   manifestHash?: Hash32ByteBase16;
   supersededBy?: Hash28ByteBase16;

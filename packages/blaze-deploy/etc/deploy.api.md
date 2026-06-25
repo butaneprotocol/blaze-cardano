@@ -4,22 +4,15 @@
 
 ```ts
 
-import { Address } from '@blaze-cardano/core';
+import type { Address } from '@blaze-cardano/core';
 import { Hash28ByteBase16 } from '@blaze-cardano/core';
 import { Hash32ByteBase16 } from '@blaze-cardano/core';
-import { NetworkId } from '@blaze-cardano/core';
 import type { NetworkName } from '@blaze-cardano/query';
 import type { Provider } from '@blaze-cardano/query';
-import { Script } from '@blaze-cardano/core';
+import type { Script } from '@blaze-cardano/core';
 import type { TransactionId } from '@blaze-cardano/core';
-import { TransactionInput } from '@blaze-cardano/core';
+import type { TransactionUnspentOutput } from '@blaze-cardano/core';
 import type { Wallet } from '@blaze-cardano/wallet';
-
-// @public
-export const assertDeploymentAddress: (address: Address) => Address;
-
-// @public
-export const burnDeploymentAddress: (network: NetworkId) => Address;
 
 // @public
 export const canonicalJson: (value: unknown) => string;
@@ -29,9 +22,6 @@ export const compareDeploymentVersions: (left: string, right: string) => -1 | 0 
 
 // @public
 export const defineScriptDeployment: (manifest: ScriptDeploymentManifest) => ScriptDeploymentManifest;
-
-// @public
-export const deploymentAddressFromValidator: (network: NetworkId, validator: Script) => Address;
 
 // @public
 export class DeploymentPlanner {
@@ -55,12 +45,6 @@ export type DeployScriptRefsInput = {
 };
 
 // @public
-export const formatScriptHash: (hash: Hash28ByteBase16) => string;
-
-// @public
-export const formatTxInput: (input: TransactionInput) => string;
-
-// @public
 export class MemoryScriptDeploymentCache implements ScriptDeploymentCache {
     constructor(records?: readonly ScriptDeploymentRecord[]);
     findByName(name: string): ScriptDeploymentRecord | undefined;
@@ -76,9 +60,6 @@ export const nextPatchVersion: (version: string) => string;
 
 // @public
 export const parseScriptDeploymentCache: (snapshot: ScriptDeploymentCacheSnapshot) => MemoryScriptDeploymentCache;
-
-// @public
-export const parseTxInput: (value: string) => TransactionInput;
 
 // @public
 export const reconcileScriptDeployment: (input: {
@@ -170,7 +151,7 @@ export type ScriptDeploymentRecord = {
     version: string;
     scriptHash: Hash28ByteBase16;
     address: Address;
-    txInput?: TransactionInput;
+    utxo?: TransactionUnspentOutput;
     status: ScriptDeploymentStatus;
     manifestHash?: Hash32ByteBase16;
     supersededBy?: Hash28ByteBase16;
@@ -192,8 +173,6 @@ export type ScriptDeploymentTarget = {
     version: string;
     script: Script;
     address: Address;
-    minAda?: bigint;
-    dependencies?: readonly string[];
     metadata?: Readonly<Record<string, string>>;
 };
 
@@ -210,7 +189,7 @@ export type SerializableScriptDeploymentRecord = {
     version: string;
     scriptHash: Hash28ByteBase16;
     address: string;
-    txInput?: string;
+    utxoCbor?: string;
     status: ScriptDeploymentStatus;
     manifestHash?: Hash32ByteBase16;
     supersededBy?: Hash28ByteBase16;
@@ -222,8 +201,6 @@ export type SerializableScriptDeploymentTarget = {
     version: string;
     scriptHash: Hash28ByteBase16;
     address: string;
-    minAda?: string;
-    dependencies: readonly string[];
     metadata: Readonly<Record<string, string>>;
 };
 

@@ -66,6 +66,16 @@ const manifest = (targets: readonly ScriptDeploymentTarget[]) =>
 const txInput = (index = 0n): TransactionInput =>
   new TransactionInput(TransactionId("1".repeat(64)), index);
 
+const scriptReferenceUtxo = (
+  targetScript: Script = validatorScript,
+  targetAddress: Address = address,
+  input: TransactionInput = txInput(),
+): TransactionUnspentOutput => {
+  const output = new TransactionOutput(targetAddress, new Value(2_000_000n));
+  output.setScriptRef(targetScript);
+  return new TransactionUnspentOutput(input, output);
+};
+
 const record = (
   overrides: Partial<ScriptDeploymentRecord> = {},
 ): ScriptDeploymentRecord => ({
@@ -73,7 +83,7 @@ const record = (
   version: "1.0.0",
   scriptHash: validatorScript.hash(),
   address,
-  txInput: txInput(),
+  utxo: scriptReferenceUtxo(),
   status: "matched",
   ...overrides,
 });
@@ -105,9 +115,7 @@ class FakeProvider extends Provider {
     targetAddress: Address,
     input: TransactionInput,
   ): TransactionUnspentOutput {
-    const output = new TransactionOutput(targetAddress, new Value(2_000_000n));
-    output.setScriptRef(targetScript);
-    return new TransactionUnspentOutput(input, output);
+    return scriptReferenceUtxo(targetScript, targetAddress, input);
   }
 
   async getParameters(): Promise<ProtocolParameters> {
@@ -182,7 +190,6 @@ describe("script deployment manifests", () => {
     const policy = target({
       name: "policy",
       script: policyScript,
-      dependencies: ["validator"],
     });
 
     const left = manifest([validator, policy]);
@@ -193,21 +200,8 @@ describe("script deployment manifests", () => {
     );
   });
 
-  test("rejects duplicate targets, unknown dependencies, cycles, and network mismatches", () => {
+  test("rejects duplicate targets, network mismatches, and malformed versions", () => {
     expect(() => manifest([target(), target()])).toThrow(/Duplicate/);
-    expect(() =>
-      manifest([target({ dependencies: ["missing-validator"] })]),
-    ).toThrow(/unknown target/);
-    expect(() =>
-      manifest([
-        target({ name: "validator", dependencies: ["policy"] }),
-        target({
-          name: "policy",
-          script: policyScript,
-          dependencies: ["validator"],
-        }),
-      ]),
-    ).toThrow(/cycle/);
     expect(() => manifest([target({ address: mainnetAddress })])).toThrow(
       /address network/,
     );
@@ -232,7 +226,6 @@ describe("script deployment execution", () => {
     const deployment = manifest([
       target({
         script: validatorScript,
-        minAda: 5_000_000n,
       }),
     ]);
 
@@ -247,7 +240,7 @@ describe("script deployment execution", () => {
     const deploymentOutput = Array.from(
       provider.submittedTransactions[0]!.body().outputs().values(),
     ).find((output) => output.scriptRef()?.hash() === validatorScript.hash());
-    expect(deploymentOutput?.amount().coin()).toBe(5_000_000n);
+    expect(deploymentOutput).toBeDefined();
     expect(result.transactions).toHaveLength(1);
     expect(result.records).toMatchObject([
       {
@@ -256,6 +249,9 @@ describe("script deployment execution", () => {
         scriptHash: validatorScript.hash(),
       },
     ]);
+    expect(result.records[0]?.utxo?.output().scriptRef()?.hash()).toBe(
+      validatorScript.hash(),
+    );
     await expect(
       provider.resolveScriptRef(validatorScript),
     ).resolves.toBeDefined();
@@ -269,7 +265,7 @@ describe("script deployment execution", () => {
     expect(plan.actions).toMatchObject([{ type: "reuse" }]);
   });
 
-  test("executes dependent deployments in dependency order", async () => {
+  test("executes multiple deployments in manifest order", async () => {
     const provider = new FakeProvider();
     const signingKey = Ed25519PrivateNormalKeyHex(
       "02f984433fca5ccad486622ebdc5a43c2248fc6305bfec8d67b887dd1802861e",
@@ -286,9 +282,8 @@ describe("script deployment execution", () => {
       name: "policy",
       version: "1.0.0",
       script: policyScript,
-      dependencies: ["validator"],
     });
-    const deployment = manifest([policy, target()]);
+    const deployment = manifest([target(), policy]);
 
     const result = await deployScriptRefs({
       manifest: deployment,
@@ -459,36 +454,21 @@ describe("script deployment cache", () => {
     });
   });
 
-  test("rejects invalid transaction input references", () => {
-    const invalidRecord = (txInput: string) => ({
+  test("rejects invalid UTxO CBOR", () => {
+    const invalidRecord = (utxoCbor: string) => ({
       name: "validator",
       version: "1.0.0",
       scriptHash: validatorScript.hash(),
       address: address.toBech32(),
-      txInput,
+      utxoCbor,
       status: "matched" as const,
     });
 
     expect(() =>
       parseScriptDeploymentCache({
-        records: [invalidRecord("not-a-ref")],
+        records: [invalidRecord("not-cbor")],
       }),
-    ).toThrow(/Invalid transaction input/);
-    expect(() =>
-      parseScriptDeploymentCache({
-        records: [invalidRecord(`${"1".repeat(63)}#0`)],
-      }),
-    ).toThrow(/64 hex/);
-    expect(() =>
-      parseScriptDeploymentCache({
-        records: [invalidRecord(`${"1".repeat(64)}#-1`)],
-      }),
-    ).toThrow(/non-negative decimal/);
-    expect(() =>
-      parseScriptDeploymentCache({
-        records: [invalidRecord(`${"1".repeat(64)}#1n`)],
-      }),
-    ).toThrow(/non-negative decimal/);
+    ).toThrow(/Invalid deployment cache UTxO CBOR/);
   });
 
   test("rejects invalid status and version values", () => {
@@ -538,13 +518,13 @@ describe("script deployment cache", () => {
           },
         ],
       }),
-    ).toThrow(/script hash/);
+    ).toThrow(/expected length '56'/);
     expect(() =>
       parseScriptDeploymentCache({
         manifestHash: "not-a-manifest-hash" as never,
         records: [validRecord],
       }),
-    ).toThrow(/manifest hash/);
+    ).toThrow(/expected length '64'/);
     expect(() =>
       parseScriptDeploymentCache({ records: undefined as never }),
     ).toThrow(/records/);
@@ -592,7 +572,7 @@ describe("script deployment planning", () => {
     ).rejects.toThrow(/does not match deployment manifest network/);
   });
 
-  test("reuses live script references and records the live input", async () => {
+  test("reuses live script references and records the live UTxO", async () => {
     const provider = new FakeProvider();
     const deployment = target();
     provider.setLive(deployment, txInput(7n));
@@ -606,9 +586,14 @@ describe("script deployment planning", () => {
     expect(plan.actions).toMatchObject([
       {
         type: "reuse",
-        record: { name: "validator", txInput: txInput(7n) },
+        record: { name: "validator" },
       },
     ]);
+    const action = plan.actions[0];
+    expect(action?.type).toBe("reuse");
+    if (action?.type === "reuse") {
+      expect(action.record.utxo?.input().toCbor()).toBe(txInput(7n).toCbor());
+    }
   });
 
   test("marks live reused scripts as matched even when old cache history is superseded", async () => {
@@ -630,9 +615,14 @@ describe("script deployment planning", () => {
     expect(plan.actions).toMatchObject([
       {
         type: "reuse",
-        record: { name: "validator", status: "matched", txInput: txInput(8n) },
+        record: { name: "validator", status: "matched" },
       },
     ]);
+    const action = plan.actions[0];
+    expect(action?.type).toBe("reuse");
+    if (action?.type === "reuse") {
+      expect(action.record.utxo?.input().toCbor()).toBe(txInput(8n).toCbor());
+    }
   });
 
   test("replaces stale cache records when no live matching script exists", async () => {
@@ -657,24 +647,5 @@ describe("script deployment planning", () => {
     expect(plan.actions).toMatchObject([
       { type: "retire", record: { name: "validator" } },
     ]);
-  });
-
-  test("orders deployment actions after dependencies", async () => {
-    const policy = target({
-      name: "policy",
-      script: policyScript,
-      dependencies: ["validator"],
-    });
-
-    const plan = await reconcileScriptDeployment({
-      manifest: manifest([policy, target()]),
-      provider: new FakeProvider(),
-    });
-
-    expect(
-      plan.actions.map((action) =>
-        action.type === "retire" ? action.record.name : action.target.name,
-      ),
-    ).toEqual(["validator", "policy"]);
   });
 });

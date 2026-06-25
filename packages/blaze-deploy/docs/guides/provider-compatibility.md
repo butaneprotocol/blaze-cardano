@@ -34,7 +34,7 @@ The package intentionally works with normal Cardano development tools instead of
 | Tool | Integration point |
 | --- | --- |
 | Aiken | Compile validators, load the resulting script, and include it in a deployment manifest. |
-| cardano-cli | Use `formatTxInput` and `parseTxInput` for transaction input strings in cache files and audit output. |
+| cardano-cli | Inspect the UTxO CBOR stored in deployment cache records and compare it with provider-visible chain state. |
 | GitHub Actions | Run the deployment script with provider and wallet secrets, then persist the cache snapshot. |
 | Blaze emulator | Run manifest, planning, deployment, and reuse reconciliation locally without testnet credentials. |
 

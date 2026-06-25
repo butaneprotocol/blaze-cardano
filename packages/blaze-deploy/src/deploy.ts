@@ -125,7 +125,7 @@ export const deployScriptRefs = async (
 
     const target = action.target;
     const tx = await (await newDeploymentTransaction(provider, wallet))
-      .deployScript(target.script, target.address, target.minAda)
+      .deployScript(target.script, target.address)
       .complete();
     const signed = await signTransaction(wallet, tx);
     const txId = await provider.postTransactionToChain(signed);
@@ -147,7 +147,7 @@ export const deployScriptRefs = async (
       version: target.version,
       scriptHash: target.script.hash(),
       address: target.address,
-      txInput: live.input(),
+      utxo: live,
       status: "matched",
       manifestHash: plan.manifestHash,
     };

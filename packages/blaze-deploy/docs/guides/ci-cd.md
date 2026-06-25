@@ -46,6 +46,7 @@ jobs:
         env:
           BLOCKFROST_KEY: ${{ secrets.BLOCKFROST_KEY }}
           SEED_MNEMONIC: ${{ secrets.SCRIPT_DEPLOYMENT_SEED_MNEMONIC }}
+          SCRIPT_DEPLOYMENT_ADDRESS: ${{ secrets.SCRIPT_DEPLOYMENT_ADDRESS }}
           SCRIPT_DEPLOYMENT_CACHE: ${{ github.workspace }}/examples/script-deploy-ci/deployment-cache.json
       - uses: actions/upload-artifact@v4
         with:
@@ -78,4 +79,4 @@ A deployment job should fail if the provider cannot resolve the script reference
 
 ## Release Evidence
 
-For a public release, attach these artifacts to the pull request or release notes: the manifest source, the deployment cache snapshot, the CI run URL, transaction IDs for new deployments, package version, and docs URL. These artifacts are enough for another developer to replay the intended deployment state and compare it with live chain data.
+For a public release, attach these artifacts to the pull request or release notes: the manifest source, the deployment cache snapshot, the CI run URL, transaction IDs for new deployments, package version, and docs URL. The cache snapshot includes the resolved script-reference UTxO CBOR, so another developer can replay the intended deployment state and compare it with live chain data.
