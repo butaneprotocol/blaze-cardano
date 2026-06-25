@@ -5,6 +5,7 @@ import type {
   Transaction as BlazeTransaction,
   Redeemers,
   NetworkId,
+  Hash28ByteBase16,
 } from "@blaze-cardano/core";
 import {
   Address,
@@ -20,8 +21,9 @@ import {
   Script as BlazeScript,
   HexBlob,
   DatumKind,
+  getBurnAddress,
 } from "@blaze-cardano/core";
-import { Provider } from "./provider";
+import { findScriptRefInAddressUtxos, Provider } from "./provider";
 import WebSocket from "ws";
 
 export class HydraProvider extends Provider {
@@ -205,6 +207,13 @@ export class HydraProvider extends Provider {
     throw new Error(
       "resolveDatum: could not find a datum with that hash in the current snapshot",
     );
+  }
+
+  override resolveScriptRef(
+    script: BlazeScript | Hash28ByteBase16,
+    address: Address = getBurnAddress(this.network),
+  ): Promise<TransactionUnspentOutput | undefined> {
+    return findScriptRefInAddressUtxos(this, script, address);
   }
 
   async awaitTransactionConfirmation(

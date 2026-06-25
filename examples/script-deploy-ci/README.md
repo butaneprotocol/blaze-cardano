@@ -1,8 +1,8 @@
 # Script deployment CI example
 
-This example shows the shape of a deployment job that publishes reference scripts from a declarative manifest and stores the deployment cache as a CI artifact.
+This example shows a deployment job that publishes reference scripts from a manifest and stores the deployment cache as a CI artifact.
 
-The job expects a funded preview wallet and provider credentials. It is intentionally separate from the main Blaze CI because script deployment spends real testnet UTxOs.
+The job expects a funded preview wallet and provider credentials. It stays outside the main Blaze CI because script deployment spends real testnet UTxOs.
 
 Required environment variables:
 

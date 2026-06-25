@@ -1,6 +1,7 @@
 import type {
   ProtocolParameters,
   DatumHash,
+  Hash28ByteBase16,
   HexBlob,
   ScriptHash,
   Redeemer,
@@ -27,8 +28,13 @@ import {
   PlutusV3Script,
   NetworkId,
   RedeemerTag,
+  getBurnAddress,
 } from "@blaze-cardano/core";
-import { purposeToTag, Provider } from "./provider";
+import {
+  findScriptRefInAddressUtxos,
+  purposeToTag,
+  Provider,
+} from "./provider";
 import { ogmiosChainSyncEvents } from "./ogmios-chain-sync";
 import type { ChainEvent, ChainEventFilter } from "./events";
 import type { Unwrapped } from "@blaze-cardano/ogmios";
@@ -76,7 +82,7 @@ export class Kupmios extends Provider {
     signal?: AbortSignal,
   ): AsyncIterable<ChainEvent> {
     return ogmiosChainSyncEvents({
-      url: this.ogmios.url,
+      ogmios: this.ogmios,
       filter,
       signal,
     });
@@ -306,6 +312,13 @@ export class Kupmios extends Provider {
       throw new Error(`No datum found for datum hash: ${datumHash}`);
     }
     return PlutusData.fromCbor(result.datum);
+  }
+
+  override resolveScriptRef(
+    script: Script | Hash28ByteBase16,
+    address: Address = getBurnAddress(this.network),
+  ): Promise<TransactionUnspentOutput | undefined> {
+    return findScriptRefInAddressUtxos(this, script, address);
   }
 
   /**

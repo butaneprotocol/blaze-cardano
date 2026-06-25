@@ -256,6 +256,44 @@ export interface BlockfrostProtocolParametersResponse {
     tau: string;
 }
 
+// @public (undocumented)
+export class CachedProvider extends Provider {
+    constructor(provider: Provider, options?: CachedProviderOptions);
+    // (undocumented)
+    awaitTransactionConfirmation(txId: TransactionId, timeout?: number): Promise<boolean>;
+    // (undocumented)
+    cache(): QueryCache<string, unknown>;
+    // (undocumented)
+    chain<T>(query: (provider: CachedProvider) => Promise<T>): Promise<T>;
+    // (undocumented)
+    evaluateTransaction(tx: Transaction, additionalUtxos: TransactionUnspentOutput[]): Promise<Redeemers>;
+    // (undocumented)
+    getParameters(): Promise<ProtocolParameters>;
+    // (undocumented)
+    getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
+    // (undocumented)
+    getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    postTransactionToChain(tx: Transaction): Promise<TransactionId>;
+    // (undocumented)
+    provider(): Provider;
+    // (undocumented)
+    resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+    // (undocumented)
+    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
+    // (undocumented)
+    resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    withCache(cache: QueryCache<string, unknown>): CachedProvider;
+}
+
+// @public (undocumented)
+export type CachedProviderOptions = {
+    cache?: QueryCache<string, unknown>;
+};
+
 // @public
 export function calculateMinAda(output: TransactionOutput, coinsPerUtxoByte: number): bigint;
 
@@ -622,9 +660,6 @@ type CostModel = C.Serialization.CostModel;
 type CostModels = C.Cardano.CostModels;
 
 // @public (undocumented)
-export const createQueryClient: (provider: Provider, options?: QueryClientOptions) => QueryClient;
-
-// @public (undocumented)
 const Credential: typeof C.Serialization.Credential;
 
 // @public (undocumented)
@@ -740,6 +775,9 @@ type ExUnits = C.Serialization.ExUnits;
 
 // @public (undocumented)
 const ExUnits: typeof C.Serialization.ExUnits;
+
+// @public (undocumented)
+export const findScriptRefInAddressUtxos: (provider: Provider, script: Script | Hash28ByteBase16, address?: Address) => Promise<TransactionUnspentOutput | undefined>;
 
 // @public (undocumented)
 type Fraction = C.Cardano.Fraction;
@@ -945,6 +983,8 @@ export class Kupmios extends Provider {
     static readonly plutusVersions: string[];
     postTransactionToChain(tx: Transaction): Promise<TransactionId>;
     resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+    // (undocumented)
+    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
     resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
     static serializeUtxos(unspentOutputs: TransactionUnspentOutput[]): Schema.Utxo;
 }
@@ -970,6 +1010,8 @@ export class Maestro extends Provider {
     postTransactionToChain(tx: Transaction): Promise<TransactionId>;
     // (undocumented)
     resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+    // (undocumented)
+    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
     // (undocumented)
     resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
 }
@@ -1044,14 +1086,19 @@ type NewConstitution = C.Cardano.NewConstitution;
 type NoConfidence = C.Cardano.NoConfidence;
 
 // @public (undocumented)
+export type OgmiosChainSyncClient = {
+    findIntersection(points?: Schema.PointOrOrigin[]): Promise<Schema.IntersectionFound["result"]>;
+    nextBlock(): Promise<Schema.NextBlockResponse["result"]>;
+};
+
+// @public (undocumented)
 export const ogmiosChainSyncEvents: (input: OgmiosChainSyncOptions) => AsyncIterable<ChainEvent>;
 
 // @public (undocumented)
 export type OgmiosChainSyncOptions = {
-    url: string;
+    ogmios: OgmiosChainSyncClient;
     filter?: ChainEventFilter;
     signal?: AbortSignal;
-    socketFactory?: (url: string) => WebSocketLike;
 };
 
 // @public (undocumented)
@@ -1223,7 +1270,7 @@ export abstract class Provider {
     networkName: NetworkName;
     abstract postTransactionToChain(tx: Transaction): Promise<TransactionId>;
     abstract resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
-    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
+    abstract resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
     abstract resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
     slotToUnix(slot: Slot | number | bigint): number;
     unixToSlot(unix_millis: bigint | number): Slot;
@@ -1313,38 +1360,6 @@ export type QueryCacheOptions = {
     ttlMs?: number;
     maxEntries?: number;
     now?: () => number;
-};
-
-// @public (undocumented)
-export class QueryClient {
-    constructor(provider: Provider, options?: QueryClientOptions);
-    // (undocumented)
-    cache(): QueryCache<string, unknown>;
-    // (undocumented)
-    chain<T>(query: (client: QueryClient) => Promise<T>): Promise<T>;
-    // (undocumented)
-    getParameters(): Promise<ProtocolParameters>;
-    // (undocumented)
-    getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
-    // (undocumented)
-    getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>;
-    // (undocumented)
-    getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]>;
-    // (undocumented)
-    provider(): Provider;
-    // (undocumented)
-    resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
-    // (undocumented)
-    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
-    // (undocumented)
-    resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
-    // (undocumented)
-    withCache(cache: QueryCache<string, unknown>): QueryClient;
-}
-
-// @public (undocumented)
-export type QueryClientOptions = {
-    cache?: QueryCache<string, unknown>;
 };
 
 // @public (undocumented)
@@ -1845,19 +1860,6 @@ export abstract class Wallet {
 // @public
 export const WalletDetails: Wallet$1[];
 
-// @public (undocumented)
-export type WebSocketLike = {
-    send(data: string): void;
-    close(): void;
-    addEventListener?(type: "open" | "message" | "error" | "close", listener: (event: unknown) => void): void;
-    onopen?: (event: unknown) => void;
-    onmessage?: (event: {
-        data: unknown;
-    }) => void;
-    onerror?: (event: unknown) => void;
-    onclose?: (event: unknown) => void;
-};
-
 // @public
 export class WebWallet implements Wallet {
     constructor(webWallet: CIP30Interface);
@@ -1873,9 +1875,6 @@ export class WebWallet implements Wallet {
     signData(address: Address, payload: string): Promise<CIP30DataSignature>;
     signTransaction(tx: Transaction, partialSign: boolean): Promise<TransactionWitnessSet>;
 }
-
-
-export * from "@blaze-cardano/deploy";
 
 // (No @packageDocumentation comment for this package)
 

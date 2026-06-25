@@ -5,10 +5,11 @@
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/query": "workspace:*",
-    "@blaze-cardano/tx": "workspace:*",
+    "@blaze-cardano/sdk": "workspace:*",
     "@blaze-cardano/wallet": "workspace:*"
   },
   "devDependencies": {
+    "@blaze-cardano/emulator": "workspace:*",
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
     "eslint": "^9.22.0",

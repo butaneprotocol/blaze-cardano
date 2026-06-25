@@ -7,15 +7,18 @@ import type {
   Redeemers,
   DatumHash,
   SlotConfig,
+  Hash28ByteBase16,
+  Script,
 } from "@blaze-cardano/core";
 import {
+  getBurnAddress,
   TransactionInput,
   PlutusData,
   TransactionOutput,
   NetworkId,
 } from "@blaze-cardano/core";
 import { TransactionUnspentOutput } from "@blaze-cardano/core";
-import { Provider } from "@blaze-cardano/query";
+import { findScriptRefInAddressUtxos, Provider } from "@blaze-cardano/query";
 import type { Emulator } from "./emulator";
 
 /**
@@ -108,6 +111,13 @@ export class EmulatorProvider extends Provider {
     return Promise.resolve(
       PlutusData.fromCbor(this.emulator.datumHashes[datumHash]!.toCbor()),
     );
+  }
+
+  override resolveScriptRef(
+    script: Script | Hash28ByteBase16,
+    address: Address = getBurnAddress(this.network),
+  ): Promise<TransactionUnspentOutput | undefined> {
+    return findScriptRefInAddressUtxos(this, script, address);
   }
 
   awaitTransactionConfirmation(

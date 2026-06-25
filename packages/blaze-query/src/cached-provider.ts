@@ -5,24 +5,28 @@ import type {
   Hash28ByteBase16,
   PlutusData,
   ProtocolParameters,
+  Redeemers,
   Script,
+  Transaction,
+  TransactionId,
   TransactionInput,
   TransactionUnspentOutput,
 } from "@blaze-cardano/core";
-import type { Provider } from "./provider";
 import { QueryCache, providerCacheKey } from "./cache";
+import { Provider } from "./provider";
 
 /** @public */
-export type QueryClientOptions = {
+export type CachedProviderOptions = {
   cache?: QueryCache<string, unknown>;
 };
 
 /** @public */
-export class QueryClient {
+export class CachedProvider extends Provider {
   readonly #provider: Provider;
   readonly #cache: QueryCache<string, unknown>;
 
-  constructor(provider: Provider, options: QueryClientOptions = {}) {
+  constructor(provider: Provider, options: CachedProviderOptions = {}) {
+    super(provider.network, provider.networkName);
     this.#provider = provider;
     this.#cache = options.cache ?? new QueryCache<string, unknown>();
   }
@@ -35,11 +39,11 @@ export class QueryClient {
     return this.#cache;
   }
 
-  withCache(cache: QueryCache<string, unknown>): QueryClient {
-    return new QueryClient(this.#provider, { cache });
+  withCache(cache: QueryCache<string, unknown>): CachedProvider {
+    return new CachedProvider(this.#provider, { cache });
   }
 
-  async chain<T>(query: (client: QueryClient) => Promise<T>): Promise<T> {
+  async chain<T>(query: (provider: CachedProvider) => Promise<T>): Promise<T> {
     return query(this);
   }
 
@@ -84,13 +88,31 @@ export class QueryClient {
     );
   }
 
-  resolveScriptRef(
+  override resolveScriptRef(
     script: Script | Hash28ByteBase16,
     address?: Address,
   ): Promise<TransactionUnspentOutput | undefined> {
     return this.cached("resolveScriptRef", [script, address], () =>
       this.#provider.resolveScriptRef(script, address),
     );
+  }
+
+  awaitTransactionConfirmation(
+    txId: TransactionId,
+    timeout?: number,
+  ): Promise<boolean> {
+    return this.#provider.awaitTransactionConfirmation(txId, timeout);
+  }
+
+  postTransactionToChain(tx: Transaction): Promise<TransactionId> {
+    return this.#provider.postTransactionToChain(tx);
+  }
+
+  evaluateTransaction(
+    tx: Transaction,
+    additionalUtxos: TransactionUnspentOutput[],
+  ): Promise<Redeemers> {
+    return this.#provider.evaluateTransaction(tx, additionalUtxos);
   }
 
   private async cached<T>(
@@ -106,9 +128,3 @@ export class QueryClient {
     return result;
   }
 }
-
-/** @public */
-export const createQueryClient = (
-  provider: Provider,
-  options?: QueryClientOptions,
-): QueryClient => new QueryClient(provider, options);

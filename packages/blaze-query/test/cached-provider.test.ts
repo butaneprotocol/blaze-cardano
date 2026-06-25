@@ -8,12 +8,16 @@ import {
   type PlutusData,
   type ProtocolParameters,
   type Redeemers,
+  type Transaction,
   type TransactionUnspentOutput,
 } from "@blaze-cardano/core";
-import { Provider, QueryCache, QueryClient } from "../src";
+import { CachedProvider, Provider, QueryCache } from "../src";
 
 class CountingProvider extends Provider {
   calls = 0;
+  confirmations = 0;
+  submissions = 0;
+  evaluations = 0;
 
   constructor() {
     super(NetworkId.Testnet, "cardano-preview");
@@ -52,27 +56,44 @@ class CountingProvider extends Provider {
     return { source: this.calls } as unknown as PlutusData;
   }
 
+  async resolveScriptRef(): Promise<TransactionUnspentOutput | undefined> {
+    return undefined;
+  }
+
   async awaitTransactionConfirmation(): Promise<boolean> {
+    this.confirmations += 1;
     return true;
   }
 
   async postTransactionToChain(): Promise<TransactionId> {
+    this.submissions += 1;
     return TransactionId("1".repeat(64));
   }
 
   async evaluateTransaction(): Promise<Redeemers> {
+    this.evaluations += 1;
     return {} as Redeemers;
   }
 }
 
-describe("QueryClient", () => {
+describe("CachedProvider", () => {
+  test("is a provider-compatible cached wrapper", async () => {
+    const provider = new CountingProvider();
+    const cached = new CachedProvider(provider);
+
+    expect(cached).toBeInstanceOf(Provider);
+    expect(cached.network).toBe(provider.network);
+    expect(cached.networkName).toBe(provider.networkName);
+    expect(cached.provider()).toBe(provider);
+  });
+
   test("caches provider calls by operation and arguments", async () => {
     const provider = new CountingProvider();
-    const client = new QueryClient(provider);
+    const cached = new CachedProvider(provider);
     const address = "addr" as unknown as Address;
 
-    const first = await client.getUnspentOutputs(address);
-    const second = await client.getUnspentOutputs(address);
+    const first = await cached.getUnspentOutputs(address);
+    const second = await cached.getUnspentOutputs(address);
 
     expect(second).toBe(first);
     expect(provider.calls).toBe(1);
@@ -81,23 +102,23 @@ describe("QueryClient", () => {
   test("supports explicit cache expiry", async () => {
     let now = 1_000;
     const provider = new CountingProvider();
-    const client = new QueryClient(provider, {
+    const cached = new CachedProvider(provider, {
       cache: new QueryCache<string, unknown>({ ttlMs: 10, now: () => now }),
     });
 
-    await client.getParameters();
-    await client.getParameters();
+    await cached.getParameters();
+    await cached.getParameters();
     now += 11;
-    await client.getParameters();
+    await cached.getParameters();
 
     expect(provider.calls).toBe(2);
   });
 
-  test("chains cached async queries through one client", async () => {
+  test("chains cached async queries through one provider", async () => {
     const provider = new CountingProvider();
-    const client = new QueryClient(provider);
+    const cached = new CachedProvider(provider);
 
-    const result = await client.chain(async (query) => {
+    const result = await cached.chain(async (query) => {
       const params = await query.getParameters();
       const datum = await query.resolveDatum("datum" as unknown as DatumHash);
       await query.resolveDatum("datum" as unknown as DatumHash);
@@ -109,5 +130,21 @@ describe("QueryClient", () => {
       datum: { source: 2 },
     });
     expect(provider.calls).toBe(2);
+  });
+
+  test("delegates side-effecting provider operations without caching", async () => {
+    const provider = new CountingProvider();
+    const cached = new CachedProvider(provider);
+
+    await cached.awaitTransactionConfirmation(TransactionId("1".repeat(64)));
+    await cached.awaitTransactionConfirmation(TransactionId("1".repeat(64)));
+    await cached.postTransactionToChain({} as Transaction);
+    await cached.postTransactionToChain({} as Transaction);
+    await cached.evaluateTransaction({} as Transaction, []);
+    await cached.evaluateTransaction({} as Transaction, []);
+
+    expect(provider.confirmations).toBe(2);
+    expect(provider.submissions).toBe(2);
+    expect(provider.evaluations).toBe(2);
   });
 });

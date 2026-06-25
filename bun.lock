@@ -53,7 +53,10 @@
       "name": "script-deploy-ci",
       "version": "0.1.0",
       "dependencies": {
-        "@blaze-cardano/sdk": "workspace:*",
+        "@blaze-cardano/core": "workspace:*",
+        "@blaze-cardano/deploy": "workspace:*",
+        "@blaze-cardano/query": "workspace:*",
+        "@blaze-cardano/wallet": "workspace:*",
       },
       "devDependencies": {
         "@blaze-cardano/tsconfig": "workspace:*",
@@ -127,10 +130,11 @@
       "dependencies": {
         "@blaze-cardano/core": "workspace:*",
         "@blaze-cardano/query": "workspace:*",
-        "@blaze-cardano/tx": "workspace:*",
+        "@blaze-cardano/sdk": "workspace:*",
         "@blaze-cardano/wallet": "workspace:*",
       },
       "devDependencies": {
+        "@blaze-cardano/emulator": "workspace:*",
         "@blaze-cardano/eslint-config": "workspace:*",
         "@blaze-cardano/tsconfig": "workspace:*",
         "eslint": "^9.22.0",
@@ -239,7 +243,6 @@
       "version": "0.2.48",
       "dependencies": {
         "@blaze-cardano/core": "workspace:*",
-        "@blaze-cardano/deploy": "workspace:*",
         "@blaze-cardano/query": "workspace:*",
         "@blaze-cardano/tx": "workspace:*",
         "@blaze-cardano/uplc": "workspace:*",
@@ -333,8 +336,6 @@
       "name": "@blaze-cardano/e2e",
       "dependencies": {
         "@blaze-cardano/core": "workspace:*",
-        "@blaze-cardano/deploy": "workspace:*",
-        "@blaze-cardano/emulator": "workspace:*",
         "@blaze-cardano/ogmios": "workspace:*",
         "@blaze-cardano/query": "workspace:*",
         "@blaze-cardano/sdk": "workspace:*",

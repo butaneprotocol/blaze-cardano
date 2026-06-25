@@ -4,7 +4,6 @@
   "version": "0.2.48",
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
-    "@blaze-cardano/deploy": "workspace:*",
     "@blaze-cardano/query": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
     "@blaze-cardano/uplc": "workspace:*",
