@@ -3,9 +3,11 @@ import {
   NetworkId,
   type AssetId,
   type DatumHash,
+  type Hash28ByteBase16,
   type PlutusData,
   type ProtocolParameters,
   type Redeemers,
+  type Script,
   type Transaction,
   type TransactionId,
   type TransactionInput,
@@ -59,6 +61,13 @@ class StaticProvider extends Provider {
 
   async resolveDatum(_datumHash: DatumHash): Promise<PlutusData> {
     throw new Error("The demo provider does not contain datums.");
+  }
+
+  async resolveScriptRef(
+    _script: Script | Hash28ByteBase16,
+    _address?: Address,
+  ): Promise<TransactionUnspentOutput | undefined> {
+    return undefined;
   }
 
   async awaitTransactionConfirmation(
