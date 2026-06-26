@@ -1,0 +1,22 @@
+{
+  "name": "script-deploy-aiken",
+  "description": "Compile an Aiken validator and deploy it as a reference script with Blaze",
+  "version": "0.1.0",
+  "dependencies": {
+    "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/deploy": "workspace:*",
+    "@blaze-cardano/emulator": "workspace:*",
+    "@blaze-cardano/tx": "workspace:*"
+  },
+  "devDependencies": {
+    "@blaze-cardano/tsconfig": "workspace:*",
+    "typescript": "^5.7.3"
+  },
+  "private": true,
+  "scripts": {
+    "build:aiken": "aiken build",
+    "start": "bun run build:aiken && bun run index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module"
+}
