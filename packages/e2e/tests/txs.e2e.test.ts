@@ -2,7 +2,12 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { Blaze, HotSingleWallet, Blockfrost } from "@blaze-cardano/sdk";
 import { walletFromMnemonic } from "./wallet";
 
-describe("sequential e2e txs", () => {
+const enabled = Boolean(
+  process.env["SEED_MNEMONIC"] && process.env["BLOCKFROST_KEY"],
+);
+const describeIf = enabled ? describe : describe.skip;
+
+describeIf("sequential e2e txs", () => {
   const mnemonic = process.env["SEED_MNEMONIC"] as string;
   let provider: Blockfrost;
   let wallet: Awaited<ReturnType<typeof walletFromMnemonic>>;

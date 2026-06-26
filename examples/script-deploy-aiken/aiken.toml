@@ -1,0 +1,14 @@
+name = "blaze/script-deploy-aiken"
+version = "0.1.0"
+license = "Apache-2.0"
+description = "Small Aiken validator used by the Blaze script deployment example"
+
+[repository]
+user = "blaze"
+project = "script-deploy-aiken"
+platform = "github"
+
+[[dependencies]]
+name = "aiken-lang/stdlib"
+version = "v2.2.1"
+source = "github"

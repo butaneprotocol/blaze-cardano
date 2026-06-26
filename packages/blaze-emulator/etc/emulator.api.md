@@ -8,6 +8,7 @@ import { Address } from '@blaze-cardano/core';
 import { AnchorCore } from '@blaze-cardano/core';
 import type { AssetId } from '@blaze-cardano/core';
 import { Blaze } from '@blaze-cardano/sdk/blaze';
+import type { Blaze as Blaze_2 } from '@blaze-cardano/sdk';
 import type { Cardano } from '@blaze-cardano/core';
 import type { CertificateCore } from '@blaze-cardano/core';
 import { CertificateType } from '@blaze-cardano/core';
@@ -18,10 +19,12 @@ import { CredentialCore } from '@blaze-cardano/core';
 import { DatumHash } from '@blaze-cardano/core';
 import { DRep } from '@blaze-cardano/core';
 import { Ed25519KeyHashHex } from '@blaze-cardano/core';
+import { EpochNo } from '@blaze-cardano/core';
 import { Evaluator } from '@blaze-cardano/core';
 import { GovernanceActionId } from '@blaze-cardano/core';
 import { Hash28ByteBase16 } from '@blaze-cardano/core';
 import { HexBlob } from '@blaze-cardano/core';
+import type { HotWallet } from '@blaze-cardano/wallet';
 import { PlutusData } from '@blaze-cardano/core';
 import { PoolId } from '@blaze-cardano/core';
 import { PoolParameters } from '@blaze-cardano/core';
@@ -57,6 +60,9 @@ export type CertificateWithDeposit = CertificateCore & {
 
 // @public (undocumented)
 export const committeeMemberTermActive: (member: CommitteeMember, currentEpoch: number) => boolean;
+
+// @public
+export const configureGovernanceScenario: (emulator: Emulator, options?: GovernanceScenarioOptions) => void;
 
 // @public (undocumented)
 export const deserialiseInput: (input: SerialisedInput) => TransactionInput;
@@ -194,6 +200,8 @@ export class EmulatorProvider extends Provider {
     // (undocumented)
     resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
     // (undocumented)
+    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
+    // (undocumented)
     resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
 }
 
@@ -216,6 +224,25 @@ export const fractionMax: (...fractions: Cardano.Fraction[]) => Cardano.Fraction
 
 // @public (undocumented)
 export const GOVERNANCE_GROUP_FIELDS: Readonly<Set<string>>;
+
+// @public
+export type GovernanceScenarioActor = {
+    blaze: Blaze_2<Provider, HotWallet>;
+    address: Address;
+};
+
+// @public
+export type GovernanceScenarioDRep = {
+    stakeCredential: CredentialCore;
+    rewardAccount: RewardAccount;
+};
+
+// @public
+export type GovernanceScenarioOptions = {
+    committeeColdHash?: Hash28ByteBase16;
+    committeeTermEpoch?: EpochNo;
+    parameterOverrides?: Partial<ProtocolParameters>;
+};
 
 // @public (undocumented)
 export interface GovProposal {
@@ -307,6 +334,12 @@ export interface RegisteredAccount {
     poolId?: PoolId;
 }
 
+// @public
+export const registerKeyDRepForScenario: (emulator: Emulator, actor: GovernanceScenarioActor, options?: {
+    deposit?: bigint;
+    stake?: bigint;
+}) => Promise<GovernanceScenarioDRep>;
+
 // @public (undocumented)
 export const SECURITY_GROUP_FIELDS: Readonly<Set<string>>;
 
@@ -331,6 +364,9 @@ export const serialiseVoter: (voter: Voter) => string;
 // @public (undocumented)
 export type SerializedDRep = HexBlob;
 
+// @public
+export const signAndSubmitGovernanceTransaction: (emulator: Emulator, blaze: Blaze_2<Provider, HotWallet>, tx: Transaction, signWithStakeKey?: boolean) => Promise<TransactionId>;
+
 // @public (undocumented)
 export interface StakeSnapshot {
     // (undocumented)
@@ -338,6 +374,9 @@ export interface StakeSnapshot {
     // (undocumented)
     spoDelegation: Record<PoolId, bigint>;
 }
+
+// @public
+export const submitGovernanceScenarioProposal: (emulator: Emulator, actor: GovernanceScenarioActor, procedure: ProposalProcedure) => Promise<GovernanceActionId>;
 
 // @public (undocumented)
 export type Tallies = Record<"drep" | "spo" | "cc", Tally>;
@@ -355,6 +394,12 @@ export const TECHNICAL_GROUP_FIELDS: Readonly<Set<string>>;
 
 // @public (undocumented)
 export const toPoolIdKey: (hash: Ed25519KeyHashHex) => PoolId | null;
+
+// @public
+export const voteAsDRepInScenario: (emulator: Emulator, actor: GovernanceScenarioActor, voter: Voter, votes: Array<{
+    actionId: GovernanceActionId;
+    vote?: Vote;
+}>, requiredSigner?: Hash28ByteBase16) => Promise<TransactionId>;
 
 // @public (undocumented)
 export interface VoteRecord {

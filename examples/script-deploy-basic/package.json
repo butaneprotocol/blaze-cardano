@@ -1,0 +1,21 @@
+{
+  "name": "script-deploy-basic",
+  "description": "Deploy and resolve a reference script with Blaze deployment utilities",
+  "version": "0.1.0",
+  "dependencies": {
+    "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/deploy": "workspace:*",
+    "@blaze-cardano/emulator": "workspace:*",
+    "@blaze-cardano/tx": "workspace:*"
+  },
+  "devDependencies": {
+    "@blaze-cardano/tsconfig": "workspace:*",
+    "typescript": "^5.7.3"
+  },
+  "private": true,
+  "scripts": {
+    "start": "bun run index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module"
+}

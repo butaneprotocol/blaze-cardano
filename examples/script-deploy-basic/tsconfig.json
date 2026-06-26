@@ -1,0 +1,10 @@
+{
+  "extends": "../../packages/blaze-tsconfig/base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "module": "ES2022",
+    "target": "ES2022",
+    "types": ["node"]
+  },
+  "exclude": ["node_modules"]
+}

@@ -104,6 +104,13 @@ import {
   isEqualUTxO,
   assertValidOutput,
 } from "./utils";
+import { TxBuilderReuseError } from "./errors";
+import { assertPositiveAssetQuantities, negateAssetQuantities } from "./safety";
+import type {
+  TypedScript,
+  TypedScriptDatum,
+  TypedScriptRedeemer,
+} from "./typed-script";
 
 /*
 methods we want to implement somewhere in new blaze (from haskell codebase):
@@ -205,6 +212,7 @@ export class TxBuilder {
   private feePadding: bigint = 0n; // A padding to add onto the fee; use only in emergencies, and open a ticket so we can fix the fee calculation please!
   private coinSelector: CoinSelectionFunc = micahsSelector;
   private _burnAddress?: Address;
+  private completedTransaction?: Transaction;
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -230,8 +238,11 @@ export class TxBuilder {
    * @returns {Address}
    */
   get burnAddress(): Address {
+    if (this.networkId === undefined) {
+      throw new Error("Cannot use burn address without setting a network id.");
+    }
     if (!this._burnAddress) {
-      this._burnAddress = getBurnAddress(this.networkId!);
+      this._burnAddress = getBurnAddress(this.networkId);
     }
     return this._burnAddress;
   }
@@ -349,6 +360,9 @@ export class TxBuilder {
    * @returns {TxBuilder} The same transaction builder
    */
   setNetworkId(networkId: NetworkId): TxBuilder {
+    if (this.networkId !== networkId) {
+      this._burnAddress = undefined;
+    }
     this.networkId = networkId;
     return this;
   }
@@ -556,6 +570,25 @@ export class TxBuilder {
   }
 
   /**
+   * Adds a script input using the redeemer and datum types bound to a typed script.
+   *
+   * @param utxo - Script UTxO to spend.
+   * @param typedScript - Script wrapper that fixes the datum and redeemer types.
+   * @param redeemer - Redeemer matching the typed script.
+   * @param unhashDatum - Datum matching the typed script, required when the UTxO stores only a datum hash.
+   * @returns The same transaction builder.
+   */
+  addTypedInput<T extends TypedScript<PlutusData, PlutusData>>(
+    utxo: TransactionUnspentOutput,
+    typedScript: T,
+    redeemer: TypedScriptRedeemer<T>,
+    unhashDatum?: TypedScriptDatum<T>,
+  ): TxBuilder {
+    this.provideScript(typedScript.script);
+    return this.addInput(utxo, redeemer, unhashDatum);
+  }
+
+  /**
    * Adds unspent transaction outputs (UTxOs) to the set of UTxOs available for this transaction.
    * These UTxOs can then be used for balancing the transaction, ensuring that inputs and outputs are equal.
    *
@@ -651,6 +684,40 @@ export class TxBuilder {
       this.requiredNativeScripts.add(PolicyIdToHash(policy));
     }
     return this;
+  }
+
+  /**
+   * Mints assets while requiring positive asset quantities at the call site.
+   *
+   * @param policy - The policy id whose assets are minted.
+   * @param assets - Asset names and positive quantities to mint.
+   * @param redeemer - Optional redeemer for Plutus minting policies.
+   * @returns The same transaction builder.
+   */
+  mintAssets(
+    policy: PolicyId,
+    assets: Map<AssetName, bigint>,
+    redeemer?: PlutusData,
+  ): TxBuilder {
+    assertPositiveAssetQuantities("mintAssets", assets);
+    return this.addMint(policy, assets, redeemer);
+  }
+
+  /**
+   * Burns assets by accepting positive quantities at the call site and converting them into negative mint entries.
+   *
+   * @param policy - The policy id whose assets are burned.
+   * @param assets - Asset names and positive quantities to burn.
+   * @param redeemer - Optional redeemer for Plutus minting policies.
+   * @returns The same transaction builder.
+   */
+  burnAssets(
+    policy: PolicyId,
+    assets: Map<AssetName, bigint>,
+    redeemer?: PlutusData,
+  ): TxBuilder {
+    assertPositiveAssetQuantities("burnAssets", assets);
+    return this.addMint(policy, negateAssetQuantities(assets), redeemer);
   }
 
   /**
@@ -771,6 +838,18 @@ export class TxBuilder {
   }
 
   /**
+   * Adds an explicit asset-transfer output.
+   *
+   * @param address - Payment address receiving the value.
+   * @param value - Value to transfer.
+   * @param datum - Optional datum for the output.
+   * @returns The same transaction builder.
+   */
+  transferAssets(address: Address, value: Value, datum?: Datum): TxBuilder {
+    return this.payAssets(address, value, datum);
+  }
+
+  /**
    * Locks a specified amount of lovelace to a script.
    * The difference between 'pay' and 'lock' is that you pay to a public key/user,
    * and you lock at a script.
@@ -826,6 +905,31 @@ export class TxBuilder {
         datumHash,
         scriptReference: scriptReference?.toCore(),
       }),
+    );
+  }
+
+  /**
+   * Locks value at a script address using the datum type bound to a typed script.
+   *
+   * @param typedScript - Script wrapper that fixes the datum and redeemer types.
+   * @param address - Script address receiving the locked value.
+   * @param value - Value to lock.
+   * @param datum - Datum matching the typed script.
+   * @param scriptReference - Optional reference script to attach to the output. Defaults to the typed script.
+   * @returns The same transaction builder.
+   */
+  lockTypedAssets<T extends TypedScript<PlutusData, PlutusData>>(
+    typedScript: T,
+    address: Address,
+    value: Value,
+    datum: TypedScriptDatum<T>,
+    scriptReference?: Script,
+  ): TxBuilder {
+    return this.lockAssets(
+      address,
+      value,
+      datum,
+      scriptReference ?? typedScript.script,
     );
   }
 
@@ -1733,6 +1837,11 @@ export class TxBuilder {
   async complete(
     params: UseCoinSelectionArgs = { useCoinSelection: true },
   ): Promise<Transaction> {
+    if (this.completedTransaction) {
+      throw new TxBuilderReuseError(
+        "TxBuilder complete: this builder has already completed a transaction. Create a new TxBuilder for the next transaction.",
+      );
+    }
     const { useCoinSelection = true } = params;
     // Execute pre-complete hooks
     if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
@@ -1981,7 +2090,12 @@ export class TxBuilder {
     this.trace("Transaction succesfully balanced");
     // Return the fully constructed transaction.
     const finalWitnessSet = this.buildFinalWitnessSet([]);
-    return new Transaction(this.body, finalWitnessSet, this.auxiliaryData);
+    this.completedTransaction = new Transaction(
+      this.body,
+      finalWitnessSet,
+      this.auxiliaryData,
+    );
+    return this.completedTransaction;
   }
 
   /**
