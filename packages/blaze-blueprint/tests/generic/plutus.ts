@@ -2,7 +2,7 @@
 // @ts-nocheck
 import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";
 import { type PlutusData, type Script } from "@blaze-cardano/core";
-import { Type, Exact, TPlutusData, serialize, type TSchema } from "@blaze-cardano/data";
+import { Type, Exact, TPlutusData, serialize } from "@blaze-cardano/data";
 import { TypedScript } from "@blaze-cardano/tx";
 type Data = Exact<typeof TPlutusData>;
 type Int = bigint;
@@ -24,17 +24,17 @@ const serializeContractData = <T extends PlutusData>(schema, value): T => serial
 export const GenericType_OutputReference = Contracts.Import("GenericType_OutputReference");
 export type GenericType_OutputReference = Exact<typeof GenericType_OutputReference>;
 
-export const AlwaysTrueWithGenericScriptSpendDatumSchema = Type.Array(
+type __AlwaysTrueWithGenericScriptSpendDatumData = PlutusData & { readonly __AlwaysTrueWithGenericScriptSpendDatum: "__AlwaysTrueWithGenericScriptSpendDatumData" };
+const __AlwaysTrueWithGenericScriptSpendDatumSchema = Type.Array(
   Type.BigInt()
 );
-export type AlwaysTrueWithGenericScriptSpendDatumInput = Exact<typeof AlwaysTrueWithGenericScriptSpendDatumSchema>;
-export type AlwaysTrueWithGenericScriptSpendDatum = PlutusData & { readonly __AlwaysTrueWithGenericScriptSpendDatum: "AlwaysTrueWithGenericScriptSpendDatum" };
+type __AlwaysTrueWithGenericScriptSpendDatumInput = Exact<typeof __AlwaysTrueWithGenericScriptSpendDatumSchema>;
 
-export const AlwaysTrueWithGenericScriptSpendRedeemerSchema = Type.BigInt();
-export type AlwaysTrueWithGenericScriptSpendRedeemerInput = Exact<typeof AlwaysTrueWithGenericScriptSpendRedeemerSchema>;
-export type AlwaysTrueWithGenericScriptSpendRedeemer = PlutusData & { readonly __AlwaysTrueWithGenericScriptSpendRedeemer: "AlwaysTrueWithGenericScriptSpendRedeemer" };
+type __AlwaysTrueWithGenericScriptSpendRedeemerData = PlutusData & { readonly __AlwaysTrueWithGenericScriptSpendRedeemer: "__AlwaysTrueWithGenericScriptSpendRedeemerData" };
+const __AlwaysTrueWithGenericScriptSpendRedeemerSchema = Type.BigInt();
+type __AlwaysTrueWithGenericScriptSpendRedeemerInput = Exact<typeof __AlwaysTrueWithGenericScriptSpendRedeemerSchema>;
 
-export class AlwaysTrueWithGenericScriptSpend extends TypedScript<AlwaysTrueWithGenericScriptSpendDatum, AlwaysTrueWithGenericScriptSpendRedeemer> {
+export class AlwaysTrueWithGenericScriptSpend extends TypedScript<__AlwaysTrueWithGenericScriptSpendDatumData, __AlwaysTrueWithGenericScriptSpendRedeemerData> {
   constructor(
     _param1: Int,
     _param2: ByteArray,
@@ -64,19 +64,19 @@ export class AlwaysTrueWithGenericScriptSpend extends TypedScript<AlwaysTrueWith
     super(Script, "always_true_with_generic.script.spend");
   }
 
-  datum(value: AlwaysTrueWithGenericScriptSpendDatumInput): AlwaysTrueWithGenericScriptSpendDatum {
-    return serializeContractData<AlwaysTrueWithGenericScriptSpendDatum>(AlwaysTrueWithGenericScriptSpendDatumSchema, value);
+  datum(value: __AlwaysTrueWithGenericScriptSpendDatumInput): __AlwaysTrueWithGenericScriptSpendDatumData {
+    return serializeContractData<__AlwaysTrueWithGenericScriptSpendDatumData>(__AlwaysTrueWithGenericScriptSpendDatumSchema, value);
   }
 
-  redeemer(value: AlwaysTrueWithGenericScriptSpendRedeemerInput): AlwaysTrueWithGenericScriptSpendRedeemer {
-    return serializeContractData<AlwaysTrueWithGenericScriptSpendRedeemer>(AlwaysTrueWithGenericScriptSpendRedeemerSchema, value);
+  redeemer(value: __AlwaysTrueWithGenericScriptSpendRedeemerInput): __AlwaysTrueWithGenericScriptSpendRedeemerData {
+    return serializeContractData<__AlwaysTrueWithGenericScriptSpendRedeemerData>(__AlwaysTrueWithGenericScriptSpendRedeemerSchema, value);
   }
 }
-export const AlwaysTrueWithGenericScriptElseRedeemerSchema = TPlutusData;
-export type AlwaysTrueWithGenericScriptElseRedeemerInput = Exact<typeof AlwaysTrueWithGenericScriptElseRedeemerSchema>;
-export type AlwaysTrueWithGenericScriptElseRedeemer = PlutusData & { readonly __AlwaysTrueWithGenericScriptElseRedeemer: "AlwaysTrueWithGenericScriptElseRedeemer" };
+type __AlwaysTrueWithGenericScriptElseRedeemerData = PlutusData & { readonly __AlwaysTrueWithGenericScriptElseRedeemer: "__AlwaysTrueWithGenericScriptElseRedeemerData" };
+const __AlwaysTrueWithGenericScriptElseRedeemerSchema = TPlutusData;
+type __AlwaysTrueWithGenericScriptElseRedeemerInput = Exact<typeof __AlwaysTrueWithGenericScriptElseRedeemerSchema>;
 
-export class AlwaysTrueWithGenericScriptElse extends TypedScript<PlutusData, AlwaysTrueWithGenericScriptElseRedeemer> {
+export class AlwaysTrueWithGenericScriptElse extends TypedScript<PlutusData, __AlwaysTrueWithGenericScriptElseRedeemerData> {
   constructor(
     _param1: Int,
     _param2: ByteArray,
@@ -106,21 +106,21 @@ export class AlwaysTrueWithGenericScriptElse extends TypedScript<PlutusData, Alw
     super(Script, "always_true_with_generic.script.else");
   }
 
-  redeemer(value: AlwaysTrueWithGenericScriptElseRedeemerInput): AlwaysTrueWithGenericScriptElseRedeemer {
-    return serializeContractData<AlwaysTrueWithGenericScriptElseRedeemer>(AlwaysTrueWithGenericScriptElseRedeemerSchema, value);
+  redeemer(value: __AlwaysTrueWithGenericScriptElseRedeemerInput): __AlwaysTrueWithGenericScriptElseRedeemerData {
+    return serializeContractData<__AlwaysTrueWithGenericScriptElseRedeemerData>(__AlwaysTrueWithGenericScriptElseRedeemerSchema, value);
   }
 }
-export const AlwaysTrueWithGenericScriptNoParamsSpendDatumSchema = Type.Array(
+type __AlwaysTrueWithGenericScriptNoParamsSpendDatumData = PlutusData & { readonly __AlwaysTrueWithGenericScriptNoParamsSpendDatum: "__AlwaysTrueWithGenericScriptNoParamsSpendDatumData" };
+const __AlwaysTrueWithGenericScriptNoParamsSpendDatumSchema = Type.Array(
   Type.BigInt()
 );
-export type AlwaysTrueWithGenericScriptNoParamsSpendDatumInput = Exact<typeof AlwaysTrueWithGenericScriptNoParamsSpendDatumSchema>;
-export type AlwaysTrueWithGenericScriptNoParamsSpendDatum = PlutusData & { readonly __AlwaysTrueWithGenericScriptNoParamsSpendDatum: "AlwaysTrueWithGenericScriptNoParamsSpendDatum" };
+type __AlwaysTrueWithGenericScriptNoParamsSpendDatumInput = Exact<typeof __AlwaysTrueWithGenericScriptNoParamsSpendDatumSchema>;
 
-export const AlwaysTrueWithGenericScriptNoParamsSpendRedeemerSchema = Type.BigInt();
-export type AlwaysTrueWithGenericScriptNoParamsSpendRedeemerInput = Exact<typeof AlwaysTrueWithGenericScriptNoParamsSpendRedeemerSchema>;
-export type AlwaysTrueWithGenericScriptNoParamsSpendRedeemer = PlutusData & { readonly __AlwaysTrueWithGenericScriptNoParamsSpendRedeemer: "AlwaysTrueWithGenericScriptNoParamsSpendRedeemer" };
+type __AlwaysTrueWithGenericScriptNoParamsSpendRedeemerData = PlutusData & { readonly __AlwaysTrueWithGenericScriptNoParamsSpendRedeemer: "__AlwaysTrueWithGenericScriptNoParamsSpendRedeemerData" };
+const __AlwaysTrueWithGenericScriptNoParamsSpendRedeemerSchema = Type.BigInt();
+type __AlwaysTrueWithGenericScriptNoParamsSpendRedeemerInput = Exact<typeof __AlwaysTrueWithGenericScriptNoParamsSpendRedeemerSchema>;
 
-export class AlwaysTrueWithGenericScriptNoParamsSpend extends TypedScript<AlwaysTrueWithGenericScriptNoParamsSpendDatum, AlwaysTrueWithGenericScriptNoParamsSpendRedeemer> {
+export class AlwaysTrueWithGenericScriptNoParamsSpend extends TypedScript<__AlwaysTrueWithGenericScriptNoParamsSpendDatumData, __AlwaysTrueWithGenericScriptNoParamsSpendRedeemerData> {
   constructor(
     trace?: boolean = false,
   ) {
@@ -135,19 +135,19 @@ export class AlwaysTrueWithGenericScriptNoParamsSpend extends TypedScript<Always
     super(Script, "always_true_with_generic.script_no_params.spend");
   }
 
-  datum(value: AlwaysTrueWithGenericScriptNoParamsSpendDatumInput): AlwaysTrueWithGenericScriptNoParamsSpendDatum {
-    return serializeContractData<AlwaysTrueWithGenericScriptNoParamsSpendDatum>(AlwaysTrueWithGenericScriptNoParamsSpendDatumSchema, value);
+  datum(value: __AlwaysTrueWithGenericScriptNoParamsSpendDatumInput): __AlwaysTrueWithGenericScriptNoParamsSpendDatumData {
+    return serializeContractData<__AlwaysTrueWithGenericScriptNoParamsSpendDatumData>(__AlwaysTrueWithGenericScriptNoParamsSpendDatumSchema, value);
   }
 
-  redeemer(value: AlwaysTrueWithGenericScriptNoParamsSpendRedeemerInput): AlwaysTrueWithGenericScriptNoParamsSpendRedeemer {
-    return serializeContractData<AlwaysTrueWithGenericScriptNoParamsSpendRedeemer>(AlwaysTrueWithGenericScriptNoParamsSpendRedeemerSchema, value);
+  redeemer(value: __AlwaysTrueWithGenericScriptNoParamsSpendRedeemerInput): __AlwaysTrueWithGenericScriptNoParamsSpendRedeemerData {
+    return serializeContractData<__AlwaysTrueWithGenericScriptNoParamsSpendRedeemerData>(__AlwaysTrueWithGenericScriptNoParamsSpendRedeemerSchema, value);
   }
 }
-export const AlwaysTrueWithGenericScriptNoParamsElseRedeemerSchema = TPlutusData;
-export type AlwaysTrueWithGenericScriptNoParamsElseRedeemerInput = Exact<typeof AlwaysTrueWithGenericScriptNoParamsElseRedeemerSchema>;
-export type AlwaysTrueWithGenericScriptNoParamsElseRedeemer = PlutusData & { readonly __AlwaysTrueWithGenericScriptNoParamsElseRedeemer: "AlwaysTrueWithGenericScriptNoParamsElseRedeemer" };
+type __AlwaysTrueWithGenericScriptNoParamsElseRedeemerData = PlutusData & { readonly __AlwaysTrueWithGenericScriptNoParamsElseRedeemer: "__AlwaysTrueWithGenericScriptNoParamsElseRedeemerData" };
+const __AlwaysTrueWithGenericScriptNoParamsElseRedeemerSchema = TPlutusData;
+type __AlwaysTrueWithGenericScriptNoParamsElseRedeemerInput = Exact<typeof __AlwaysTrueWithGenericScriptNoParamsElseRedeemerSchema>;
 
-export class AlwaysTrueWithGenericScriptNoParamsElse extends TypedScript<PlutusData, AlwaysTrueWithGenericScriptNoParamsElseRedeemer> {
+export class AlwaysTrueWithGenericScriptNoParamsElse extends TypedScript<PlutusData, __AlwaysTrueWithGenericScriptNoParamsElseRedeemerData> {
   constructor(
     trace?: boolean = false,
   ) {
@@ -162,19 +162,19 @@ export class AlwaysTrueWithGenericScriptNoParamsElse extends TypedScript<PlutusD
     super(Script, "always_true_with_generic.script_no_params.else");
   }
 
-  redeemer(value: AlwaysTrueWithGenericScriptNoParamsElseRedeemerInput): AlwaysTrueWithGenericScriptNoParamsElseRedeemer {
-    return serializeContractData<AlwaysTrueWithGenericScriptNoParamsElseRedeemer>(AlwaysTrueWithGenericScriptNoParamsElseRedeemerSchema, value);
+  redeemer(value: __AlwaysTrueWithGenericScriptNoParamsElseRedeemerInput): __AlwaysTrueWithGenericScriptNoParamsElseRedeemerData {
+    return serializeContractData<__AlwaysTrueWithGenericScriptNoParamsElseRedeemerData>(__AlwaysTrueWithGenericScriptNoParamsElseRedeemerSchema, value);
   }
 }
-export const NestedSometimesTrueScriptSpendDatumSchema = TPlutusData;
-export type NestedSometimesTrueScriptSpendDatumInput = Exact<typeof NestedSometimesTrueScriptSpendDatumSchema>;
-export type NestedSometimesTrueScriptSpendDatum = PlutusData & { readonly __NestedSometimesTrueScriptSpendDatum: "NestedSometimesTrueScriptSpendDatum" };
+type __NestedSometimesTrueScriptSpendDatumData = PlutusData & { readonly __NestedSometimesTrueScriptSpendDatum: "__NestedSometimesTrueScriptSpendDatumData" };
+const __NestedSometimesTrueScriptSpendDatumSchema = TPlutusData;
+type __NestedSometimesTrueScriptSpendDatumInput = Exact<typeof __NestedSometimesTrueScriptSpendDatumSchema>;
 
-export const NestedSometimesTrueScriptSpendRedeemerSchema = Type.BigInt();
-export type NestedSometimesTrueScriptSpendRedeemerInput = Exact<typeof NestedSometimesTrueScriptSpendRedeemerSchema>;
-export type NestedSometimesTrueScriptSpendRedeemer = PlutusData & { readonly __NestedSometimesTrueScriptSpendRedeemer: "NestedSometimesTrueScriptSpendRedeemer" };
+type __NestedSometimesTrueScriptSpendRedeemerData = PlutusData & { readonly __NestedSometimesTrueScriptSpendRedeemer: "__NestedSometimesTrueScriptSpendRedeemerData" };
+const __NestedSometimesTrueScriptSpendRedeemerSchema = Type.BigInt();
+type __NestedSometimesTrueScriptSpendRedeemerInput = Exact<typeof __NestedSometimesTrueScriptSpendRedeemerSchema>;
 
-export class NestedSometimesTrueScriptSpend extends TypedScript<NestedSometimesTrueScriptSpendDatum, NestedSometimesTrueScriptSpendRedeemer> {
+export class NestedSometimesTrueScriptSpend extends TypedScript<__NestedSometimesTrueScriptSpendDatumData, __NestedSometimesTrueScriptSpendRedeemerData> {
   constructor(
     param: Int,
     trace?: boolean = false,
@@ -198,19 +198,19 @@ export class NestedSometimesTrueScriptSpend extends TypedScript<NestedSometimesT
     super(Script, "nested/sometimes_true.script.spend");
   }
 
-  datum(value: NestedSometimesTrueScriptSpendDatumInput): NestedSometimesTrueScriptSpendDatum {
-    return serializeContractData<NestedSometimesTrueScriptSpendDatum>(NestedSometimesTrueScriptSpendDatumSchema, value);
+  datum(value: __NestedSometimesTrueScriptSpendDatumInput): __NestedSometimesTrueScriptSpendDatumData {
+    return serializeContractData<__NestedSometimesTrueScriptSpendDatumData>(__NestedSometimesTrueScriptSpendDatumSchema, value);
   }
 
-  redeemer(value: NestedSometimesTrueScriptSpendRedeemerInput): NestedSometimesTrueScriptSpendRedeemer {
-    return serializeContractData<NestedSometimesTrueScriptSpendRedeemer>(NestedSometimesTrueScriptSpendRedeemerSchema, value);
+  redeemer(value: __NestedSometimesTrueScriptSpendRedeemerInput): __NestedSometimesTrueScriptSpendRedeemerData {
+    return serializeContractData<__NestedSometimesTrueScriptSpendRedeemerData>(__NestedSometimesTrueScriptSpendRedeemerSchema, value);
   }
 }
-export const NestedSometimesTrueScriptElseRedeemerSchema = TPlutusData;
-export type NestedSometimesTrueScriptElseRedeemerInput = Exact<typeof NestedSometimesTrueScriptElseRedeemerSchema>;
-export type NestedSometimesTrueScriptElseRedeemer = PlutusData & { readonly __NestedSometimesTrueScriptElseRedeemer: "NestedSometimesTrueScriptElseRedeemer" };
+type __NestedSometimesTrueScriptElseRedeemerData = PlutusData & { readonly __NestedSometimesTrueScriptElseRedeemer: "__NestedSometimesTrueScriptElseRedeemerData" };
+const __NestedSometimesTrueScriptElseRedeemerSchema = TPlutusData;
+type __NestedSometimesTrueScriptElseRedeemerInput = Exact<typeof __NestedSometimesTrueScriptElseRedeemerSchema>;
 
-export class NestedSometimesTrueScriptElse extends TypedScript<PlutusData, NestedSometimesTrueScriptElseRedeemer> {
+export class NestedSometimesTrueScriptElse extends TypedScript<PlutusData, __NestedSometimesTrueScriptElseRedeemerData> {
   constructor(
     param: Int,
     trace?: boolean = false,
@@ -234,7 +234,7 @@ export class NestedSometimesTrueScriptElse extends TypedScript<PlutusData, Neste
     super(Script, "nested/sometimes_true.script.else");
   }
 
-  redeemer(value: NestedSometimesTrueScriptElseRedeemerInput): NestedSometimesTrueScriptElseRedeemer {
-    return serializeContractData<NestedSometimesTrueScriptElseRedeemer>(NestedSometimesTrueScriptElseRedeemerSchema, value);
+  redeemer(value: __NestedSometimesTrueScriptElseRedeemerInput): __NestedSometimesTrueScriptElseRedeemerData {
+    return serializeContractData<__NestedSometimesTrueScriptElseRedeemerData>(__NestedSometimesTrueScriptElseRedeemerSchema, value);
   }
 }

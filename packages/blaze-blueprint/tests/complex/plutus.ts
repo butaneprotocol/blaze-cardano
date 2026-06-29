@@ -2,7 +2,7 @@
 // @ts-nocheck
 import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";
 import { type PlutusData, type Script } from "@blaze-cardano/core";
-import { Type, Exact, TPlutusData, serialize, type TSchema } from "@blaze-cardano/data";
+import { Type, Exact, TPlutusData, serialize } from "@blaze-cardano/data";
 import { TypedScript } from "@blaze-cardano/tx";
 type Data = Exact<typeof TPlutusData>;
 type Int = bigint;
@@ -190,15 +190,13 @@ export type VendorPermissions = Exact<typeof VendorPermissions>;
 export const VendorSpendRedeemer = Contracts.Import("VendorSpendRedeemer");
 export type VendorSpendRedeemer = Exact<typeof VendorSpendRedeemer>;
 
-export const OneshotOneshotSpendDatumSchema = Type.Ref("ScriptHashRegistry");
-export type OneshotOneshotSpendDatumInput = Exact<typeof OneshotOneshotSpendDatumSchema>;
-export type OneshotOneshotSpendDatum = PlutusData & { readonly __OneshotOneshotSpendDatum: "OneshotOneshotSpendDatum" };
+type __OneshotOneshotSpendDatumData = PlutusData & { readonly __OneshotOneshotSpendDatum: "__OneshotOneshotSpendDatumData" };
 
-export const OneshotOneshotSpendRedeemerSchema = TPlutusData;
-export type OneshotOneshotSpendRedeemerInput = Exact<typeof OneshotOneshotSpendRedeemerSchema>;
-export type OneshotOneshotSpendRedeemer = PlutusData & { readonly __OneshotOneshotSpendRedeemer: "OneshotOneshotSpendRedeemer" };
+type __OneshotOneshotSpendRedeemerData = PlutusData & { readonly __OneshotOneshotSpendRedeemer: "__OneshotOneshotSpendRedeemerData" };
+const __OneshotOneshotSpendRedeemerSchema = TPlutusData;
+type __OneshotOneshotSpendRedeemerInput = Exact<typeof __OneshotOneshotSpendRedeemerSchema>;
 
-export class OneshotOneshotSpend extends TypedScript<OneshotOneshotSpendDatum, OneshotOneshotSpendRedeemer> {
+export class OneshotOneshotSpend extends TypedScript<__OneshotOneshotSpendDatumData, __OneshotOneshotSpendRedeemerData> {
   constructor(
     utxoRef: OutputReference,
   ) {
@@ -220,19 +218,19 @@ export class OneshotOneshotSpend extends TypedScript<OneshotOneshotSpendDatum, O
     super(Script, "oneshot.oneshot.spend");
   }
 
-  datum(value: OneshotOneshotSpendDatumInput): OneshotOneshotSpendDatum {
-    return serializeContractData<OneshotOneshotSpendDatum>(OneshotOneshotSpendDatumSchema, value);
+  datum(value: ScriptHashRegistry): __OneshotOneshotSpendDatumData {
+    return serializeContractData<__OneshotOneshotSpendDatumData>(ScriptHashRegistry, value);
   }
 
-  redeemer(value: OneshotOneshotSpendRedeemerInput): OneshotOneshotSpendRedeemer {
-    return serializeContractData<OneshotOneshotSpendRedeemer>(OneshotOneshotSpendRedeemerSchema, value);
+  redeemer(value: __OneshotOneshotSpendRedeemerInput): __OneshotOneshotSpendRedeemerData {
+    return serializeContractData<__OneshotOneshotSpendRedeemerData>(__OneshotOneshotSpendRedeemerSchema, value);
   }
 }
-export const OneshotOneshotMintRedeemerSchema = Type.Undefined();
-export type OneshotOneshotMintRedeemerInput = Exact<typeof OneshotOneshotMintRedeemerSchema>;
-export type OneshotOneshotMintRedeemer = PlutusData & { readonly __OneshotOneshotMintRedeemer: "OneshotOneshotMintRedeemer" };
+type __OneshotOneshotMintRedeemerData = PlutusData & { readonly __OneshotOneshotMintRedeemer: "__OneshotOneshotMintRedeemerData" };
+const __OneshotOneshotMintRedeemerSchema = Type.Undefined();
+type __OneshotOneshotMintRedeemerInput = Exact<typeof __OneshotOneshotMintRedeemerSchema>;
 
-export class OneshotOneshotMint extends TypedScript<PlutusData, OneshotOneshotMintRedeemer> {
+export class OneshotOneshotMint extends TypedScript<PlutusData, __OneshotOneshotMintRedeemerData> {
   constructor(
     utxoRef: OutputReference,
   ) {
@@ -254,15 +252,15 @@ export class OneshotOneshotMint extends TypedScript<PlutusData, OneshotOneshotMi
     super(Script, "oneshot.oneshot.mint");
   }
 
-  redeemer(value: OneshotOneshotMintRedeemerInput): OneshotOneshotMintRedeemer {
-    return serializeContractData<OneshotOneshotMintRedeemer>(OneshotOneshotMintRedeemerSchema, value);
+  redeemer(value: __OneshotOneshotMintRedeemerInput): __OneshotOneshotMintRedeemerData {
+    return serializeContractData<__OneshotOneshotMintRedeemerData>(__OneshotOneshotMintRedeemerSchema, value);
   }
 }
-export const OneshotOneshotElseRedeemerSchema = TPlutusData;
-export type OneshotOneshotElseRedeemerInput = Exact<typeof OneshotOneshotElseRedeemerSchema>;
-export type OneshotOneshotElseRedeemer = PlutusData & { readonly __OneshotOneshotElseRedeemer: "OneshotOneshotElseRedeemer" };
+type __OneshotOneshotElseRedeemerData = PlutusData & { readonly __OneshotOneshotElseRedeemer: "__OneshotOneshotElseRedeemerData" };
+const __OneshotOneshotElseRedeemerSchema = TPlutusData;
+type __OneshotOneshotElseRedeemerInput = Exact<typeof __OneshotOneshotElseRedeemerSchema>;
 
-export class OneshotOneshotElse extends TypedScript<PlutusData, OneshotOneshotElseRedeemer> {
+export class OneshotOneshotElse extends TypedScript<PlutusData, __OneshotOneshotElseRedeemerData> {
   constructor(
     utxoRef: OutputReference,
   ) {
@@ -284,19 +282,17 @@ export class OneshotOneshotElse extends TypedScript<PlutusData, OneshotOneshotEl
     super(Script, "oneshot.oneshot.else");
   }
 
-  redeemer(value: OneshotOneshotElseRedeemerInput): OneshotOneshotElseRedeemer {
-    return serializeContractData<OneshotOneshotElseRedeemer>(OneshotOneshotElseRedeemerSchema, value);
+  redeemer(value: __OneshotOneshotElseRedeemerInput): __OneshotOneshotElseRedeemerData {
+    return serializeContractData<__OneshotOneshotElseRedeemerData>(__OneshotOneshotElseRedeemerSchema, value);
   }
 }
-export const TreasuryTreasurySpendDatumSchema = TPlutusData;
-export type TreasuryTreasurySpendDatumInput = Exact<typeof TreasuryTreasurySpendDatumSchema>;
-export type TreasuryTreasurySpendDatum = PlutusData & { readonly __TreasuryTreasurySpendDatum: "TreasuryTreasurySpendDatum" };
+type __TreasuryTreasurySpendDatumData = PlutusData & { readonly __TreasuryTreasurySpendDatum: "__TreasuryTreasurySpendDatumData" };
+const __TreasuryTreasurySpendDatumSchema = TPlutusData;
+type __TreasuryTreasurySpendDatumInput = Exact<typeof __TreasuryTreasurySpendDatumSchema>;
 
-export const TreasuryTreasurySpendRedeemerSchema = Type.Ref("TreasurySpendRedeemer");
-export type TreasuryTreasurySpendRedeemerInput = Exact<typeof TreasuryTreasurySpendRedeemerSchema>;
-export type TreasuryTreasurySpendRedeemer = PlutusData & { readonly __TreasuryTreasurySpendRedeemer: "TreasuryTreasurySpendRedeemer" };
+type __TreasuryTreasurySpendRedeemerData = PlutusData & { readonly __TreasuryTreasurySpendRedeemer: "__TreasuryTreasurySpendRedeemerData" };
 
-export class TreasuryTreasurySpend extends TypedScript<TreasuryTreasurySpendDatum, TreasuryTreasurySpendRedeemer> {
+export class TreasuryTreasurySpend extends TypedScript<__TreasuryTreasurySpendDatumData, __TreasuryTreasurySpendRedeemerData> {
   constructor(
     config: TreasuryConfiguration,
   ) {
@@ -315,19 +311,19 @@ export class TreasuryTreasurySpend extends TypedScript<TreasuryTreasurySpendDatu
     super(Script, "treasury.treasury.spend");
   }
 
-  datum(value: TreasuryTreasurySpendDatumInput): TreasuryTreasurySpendDatum {
-    return serializeContractData<TreasuryTreasurySpendDatum>(TreasuryTreasurySpendDatumSchema, value);
+  datum(value: __TreasuryTreasurySpendDatumInput): __TreasuryTreasurySpendDatumData {
+    return serializeContractData<__TreasuryTreasurySpendDatumData>(__TreasuryTreasurySpendDatumSchema, value);
   }
 
-  redeemer(value: TreasuryTreasurySpendRedeemerInput): TreasuryTreasurySpendRedeemer {
-    return serializeContractData<TreasuryTreasurySpendRedeemer>(TreasuryTreasurySpendRedeemerSchema, value);
+  redeemer(value: TreasurySpendRedeemer): __TreasuryTreasurySpendRedeemerData {
+    return serializeContractData<__TreasuryTreasurySpendRedeemerData>(TreasurySpendRedeemer, value);
   }
 }
-export const TreasuryTreasuryWithdrawRedeemerSchema = TPlutusData;
-export type TreasuryTreasuryWithdrawRedeemerInput = Exact<typeof TreasuryTreasuryWithdrawRedeemerSchema>;
-export type TreasuryTreasuryWithdrawRedeemer = PlutusData & { readonly __TreasuryTreasuryWithdrawRedeemer: "TreasuryTreasuryWithdrawRedeemer" };
+type __TreasuryTreasuryWithdrawRedeemerData = PlutusData & { readonly __TreasuryTreasuryWithdrawRedeemer: "__TreasuryTreasuryWithdrawRedeemerData" };
+const __TreasuryTreasuryWithdrawRedeemerSchema = TPlutusData;
+type __TreasuryTreasuryWithdrawRedeemerInput = Exact<typeof __TreasuryTreasuryWithdrawRedeemerSchema>;
 
-export class TreasuryTreasuryWithdraw extends TypedScript<PlutusData, TreasuryTreasuryWithdrawRedeemer> {
+export class TreasuryTreasuryWithdraw extends TypedScript<PlutusData, __TreasuryTreasuryWithdrawRedeemerData> {
   constructor(
     config: TreasuryConfiguration,
   ) {
@@ -346,15 +342,15 @@ export class TreasuryTreasuryWithdraw extends TypedScript<PlutusData, TreasuryTr
     super(Script, "treasury.treasury.withdraw");
   }
 
-  redeemer(value: TreasuryTreasuryWithdrawRedeemerInput): TreasuryTreasuryWithdrawRedeemer {
-    return serializeContractData<TreasuryTreasuryWithdrawRedeemer>(TreasuryTreasuryWithdrawRedeemerSchema, value);
+  redeemer(value: __TreasuryTreasuryWithdrawRedeemerInput): __TreasuryTreasuryWithdrawRedeemerData {
+    return serializeContractData<__TreasuryTreasuryWithdrawRedeemerData>(__TreasuryTreasuryWithdrawRedeemerSchema, value);
   }
 }
-export const TreasuryTreasuryVoteRedeemerSchema = TPlutusData;
-export type TreasuryTreasuryVoteRedeemerInput = Exact<typeof TreasuryTreasuryVoteRedeemerSchema>;
-export type TreasuryTreasuryVoteRedeemer = PlutusData & { readonly __TreasuryTreasuryVoteRedeemer: "TreasuryTreasuryVoteRedeemer" };
+type __TreasuryTreasuryVoteRedeemerData = PlutusData & { readonly __TreasuryTreasuryVoteRedeemer: "__TreasuryTreasuryVoteRedeemerData" };
+const __TreasuryTreasuryVoteRedeemerSchema = TPlutusData;
+type __TreasuryTreasuryVoteRedeemerInput = Exact<typeof __TreasuryTreasuryVoteRedeemerSchema>;
 
-export class TreasuryTreasuryVote extends TypedScript<PlutusData, TreasuryTreasuryVoteRedeemer> {
+export class TreasuryTreasuryVote extends TypedScript<PlutusData, __TreasuryTreasuryVoteRedeemerData> {
   constructor(
     config: TreasuryConfiguration,
   ) {
@@ -373,15 +369,15 @@ export class TreasuryTreasuryVote extends TypedScript<PlutusData, TreasuryTreasu
     super(Script, "treasury.treasury.vote");
   }
 
-  redeemer(value: TreasuryTreasuryVoteRedeemerInput): TreasuryTreasuryVoteRedeemer {
-    return serializeContractData<TreasuryTreasuryVoteRedeemer>(TreasuryTreasuryVoteRedeemerSchema, value);
+  redeemer(value: __TreasuryTreasuryVoteRedeemerInput): __TreasuryTreasuryVoteRedeemerData {
+    return serializeContractData<__TreasuryTreasuryVoteRedeemerData>(__TreasuryTreasuryVoteRedeemerSchema, value);
   }
 }
-export const TreasuryTreasuryPublishRedeemerSchema = TPlutusData;
-export type TreasuryTreasuryPublishRedeemerInput = Exact<typeof TreasuryTreasuryPublishRedeemerSchema>;
-export type TreasuryTreasuryPublishRedeemer = PlutusData & { readonly __TreasuryTreasuryPublishRedeemer: "TreasuryTreasuryPublishRedeemer" };
+type __TreasuryTreasuryPublishRedeemerData = PlutusData & { readonly __TreasuryTreasuryPublishRedeemer: "__TreasuryTreasuryPublishRedeemerData" };
+const __TreasuryTreasuryPublishRedeemerSchema = TPlutusData;
+type __TreasuryTreasuryPublishRedeemerInput = Exact<typeof __TreasuryTreasuryPublishRedeemerSchema>;
 
-export class TreasuryTreasuryPublish extends TypedScript<PlutusData, TreasuryTreasuryPublishRedeemer> {
+export class TreasuryTreasuryPublish extends TypedScript<PlutusData, __TreasuryTreasuryPublishRedeemerData> {
   constructor(
     config: TreasuryConfiguration,
   ) {
@@ -400,15 +396,15 @@ export class TreasuryTreasuryPublish extends TypedScript<PlutusData, TreasuryTre
     super(Script, "treasury.treasury.publish");
   }
 
-  redeemer(value: TreasuryTreasuryPublishRedeemerInput): TreasuryTreasuryPublishRedeemer {
-    return serializeContractData<TreasuryTreasuryPublishRedeemer>(TreasuryTreasuryPublishRedeemerSchema, value);
+  redeemer(value: __TreasuryTreasuryPublishRedeemerInput): __TreasuryTreasuryPublishRedeemerData {
+    return serializeContractData<__TreasuryTreasuryPublishRedeemerData>(__TreasuryTreasuryPublishRedeemerSchema, value);
   }
 }
-export const TreasuryTreasuryElseRedeemerSchema = TPlutusData;
-export type TreasuryTreasuryElseRedeemerInput = Exact<typeof TreasuryTreasuryElseRedeemerSchema>;
-export type TreasuryTreasuryElseRedeemer = PlutusData & { readonly __TreasuryTreasuryElseRedeemer: "TreasuryTreasuryElseRedeemer" };
+type __TreasuryTreasuryElseRedeemerData = PlutusData & { readonly __TreasuryTreasuryElseRedeemer: "__TreasuryTreasuryElseRedeemerData" };
+const __TreasuryTreasuryElseRedeemerSchema = TPlutusData;
+type __TreasuryTreasuryElseRedeemerInput = Exact<typeof __TreasuryTreasuryElseRedeemerSchema>;
 
-export class TreasuryTreasuryElse extends TypedScript<PlutusData, TreasuryTreasuryElseRedeemer> {
+export class TreasuryTreasuryElse extends TypedScript<PlutusData, __TreasuryTreasuryElseRedeemerData> {
   constructor(
     config: TreasuryConfiguration,
   ) {
@@ -427,19 +423,17 @@ export class TreasuryTreasuryElse extends TypedScript<PlutusData, TreasuryTreasu
     super(Script, "treasury.treasury.else");
   }
 
-  redeemer(value: TreasuryTreasuryElseRedeemerInput): TreasuryTreasuryElseRedeemer {
-    return serializeContractData<TreasuryTreasuryElseRedeemer>(TreasuryTreasuryElseRedeemerSchema, value);
+  redeemer(value: __TreasuryTreasuryElseRedeemerInput): __TreasuryTreasuryElseRedeemerData {
+    return serializeContractData<__TreasuryTreasuryElseRedeemerData>(__TreasuryTreasuryElseRedeemerSchema, value);
   }
 }
-export const VendorDocumentationSpendDatumSchema = Type.Ref("VendorDatum");
-export type VendorDocumentationSpendDatumInput = Exact<typeof VendorDocumentationSpendDatumSchema>;
-export type VendorDocumentationSpendDatum = PlutusData & { readonly __VendorDocumentationSpendDatum: "VendorDocumentationSpendDatum" };
+type __VendorDocumentationSpendDatumData = PlutusData & { readonly __VendorDocumentationSpendDatum: "__VendorDocumentationSpendDatumData" };
 
-export const VendorDocumentationSpendRedeemerSchema = TPlutusData;
-export type VendorDocumentationSpendRedeemerInput = Exact<typeof VendorDocumentationSpendRedeemerSchema>;
-export type VendorDocumentationSpendRedeemer = PlutusData & { readonly __VendorDocumentationSpendRedeemer: "VendorDocumentationSpendRedeemer" };
+type __VendorDocumentationSpendRedeemerData = PlutusData & { readonly __VendorDocumentationSpendRedeemer: "__VendorDocumentationSpendRedeemerData" };
+const __VendorDocumentationSpendRedeemerSchema = TPlutusData;
+type __VendorDocumentationSpendRedeemerInput = Exact<typeof __VendorDocumentationSpendRedeemerSchema>;
 
-export class VendorDocumentationSpend extends TypedScript<VendorDocumentationSpendDatum, VendorDocumentationSpendRedeemer> {
+export class VendorDocumentationSpend extends TypedScript<__VendorDocumentationSpendDatumData, __VendorDocumentationSpendRedeemerData> {
   constructor() {
     const Script = cborToScript(
       "587d01010029800aba2aba1aab9eaab9dab9cab9a48888896600264653001300700198039804000cc01c0092225980099b8748008c020dd500144c8cc892818058009805980600098049baa0028b200c180380098021baa0078a4d15330024911856616c696461746f722072657475726e65642066616c7365001365640041",
@@ -448,19 +442,19 @@ export class VendorDocumentationSpend extends TypedScript<VendorDocumentationSpe
     super(Script, "vendor.documentation.spend");
   }
 
-  datum(value: VendorDocumentationSpendDatumInput): VendorDocumentationSpendDatum {
-    return serializeContractData<VendorDocumentationSpendDatum>(VendorDocumentationSpendDatumSchema, value);
+  datum(value: VendorDatum): __VendorDocumentationSpendDatumData {
+    return serializeContractData<__VendorDocumentationSpendDatumData>(VendorDatum, value);
   }
 
-  redeemer(value: VendorDocumentationSpendRedeemerInput): VendorDocumentationSpendRedeemer {
-    return serializeContractData<VendorDocumentationSpendRedeemer>(VendorDocumentationSpendRedeemerSchema, value);
+  redeemer(value: __VendorDocumentationSpendRedeemerInput): __VendorDocumentationSpendRedeemerData {
+    return serializeContractData<__VendorDocumentationSpendRedeemerData>(__VendorDocumentationSpendRedeemerSchema, value);
   }
 }
-export const VendorDocumentationElseRedeemerSchema = TPlutusData;
-export type VendorDocumentationElseRedeemerInput = Exact<typeof VendorDocumentationElseRedeemerSchema>;
-export type VendorDocumentationElseRedeemer = PlutusData & { readonly __VendorDocumentationElseRedeemer: "VendorDocumentationElseRedeemer" };
+type __VendorDocumentationElseRedeemerData = PlutusData & { readonly __VendorDocumentationElseRedeemer: "__VendorDocumentationElseRedeemerData" };
+const __VendorDocumentationElseRedeemerSchema = TPlutusData;
+type __VendorDocumentationElseRedeemerInput = Exact<typeof __VendorDocumentationElseRedeemerSchema>;
 
-export class VendorDocumentationElse extends TypedScript<PlutusData, VendorDocumentationElseRedeemer> {
+export class VendorDocumentationElse extends TypedScript<PlutusData, __VendorDocumentationElseRedeemerData> {
   constructor() {
     const Script = cborToScript(
       "587d01010029800aba2aba1aab9eaab9dab9cab9a48888896600264653001300700198039804000cc01c0092225980099b8748008c020dd500144c8cc892818058009805980600098049baa0028b200c180380098021baa0078a4d15330024911856616c696461746f722072657475726e65642066616c7365001365640041",
@@ -469,19 +463,17 @@ export class VendorDocumentationElse extends TypedScript<PlutusData, VendorDocum
     super(Script, "vendor.documentation.else");
   }
 
-  redeemer(value: VendorDocumentationElseRedeemerInput): VendorDocumentationElseRedeemer {
-    return serializeContractData<VendorDocumentationElseRedeemer>(VendorDocumentationElseRedeemerSchema, value);
+  redeemer(value: __VendorDocumentationElseRedeemerInput): __VendorDocumentationElseRedeemerData {
+    return serializeContractData<__VendorDocumentationElseRedeemerData>(__VendorDocumentationElseRedeemerSchema, value);
   }
 }
-export const VendorVendorSpendDatumSchema = TPlutusData;
-export type VendorVendorSpendDatumInput = Exact<typeof VendorVendorSpendDatumSchema>;
-export type VendorVendorSpendDatum = PlutusData & { readonly __VendorVendorSpendDatum: "VendorVendorSpendDatum" };
+type __VendorVendorSpendDatumData = PlutusData & { readonly __VendorVendorSpendDatum: "__VendorVendorSpendDatumData" };
+const __VendorVendorSpendDatumSchema = TPlutusData;
+type __VendorVendorSpendDatumInput = Exact<typeof __VendorVendorSpendDatumSchema>;
 
-export const VendorVendorSpendRedeemerSchema = Type.Ref("VendorSpendRedeemer");
-export type VendorVendorSpendRedeemerInput = Exact<typeof VendorVendorSpendRedeemerSchema>;
-export type VendorVendorSpendRedeemer = PlutusData & { readonly __VendorVendorSpendRedeemer: "VendorVendorSpendRedeemer" };
+type __VendorVendorSpendRedeemerData = PlutusData & { readonly __VendorVendorSpendRedeemer: "__VendorVendorSpendRedeemerData" };
 
-export class VendorVendorSpend extends TypedScript<VendorVendorSpendDatum, VendorVendorSpendRedeemer> {
+export class VendorVendorSpend extends TypedScript<__VendorVendorSpendDatumData, __VendorVendorSpendRedeemerData> {
   constructor(
     config: VendorConfiguration,
   ) {
@@ -500,19 +492,19 @@ export class VendorVendorSpend extends TypedScript<VendorVendorSpendDatum, Vendo
     super(Script, "vendor.vendor.spend");
   }
 
-  datum(value: VendorVendorSpendDatumInput): VendorVendorSpendDatum {
-    return serializeContractData<VendorVendorSpendDatum>(VendorVendorSpendDatumSchema, value);
+  datum(value: __VendorVendorSpendDatumInput): __VendorVendorSpendDatumData {
+    return serializeContractData<__VendorVendorSpendDatumData>(__VendorVendorSpendDatumSchema, value);
   }
 
-  redeemer(value: VendorVendorSpendRedeemerInput): VendorVendorSpendRedeemer {
-    return serializeContractData<VendorVendorSpendRedeemer>(VendorVendorSpendRedeemerSchema, value);
+  redeemer(value: VendorSpendRedeemer): __VendorVendorSpendRedeemerData {
+    return serializeContractData<__VendorVendorSpendRedeemerData>(VendorSpendRedeemer, value);
   }
 }
-export const VendorVendorElseRedeemerSchema = TPlutusData;
-export type VendorVendorElseRedeemerInput = Exact<typeof VendorVendorElseRedeemerSchema>;
-export type VendorVendorElseRedeemer = PlutusData & { readonly __VendorVendorElseRedeemer: "VendorVendorElseRedeemer" };
+type __VendorVendorElseRedeemerData = PlutusData & { readonly __VendorVendorElseRedeemer: "__VendorVendorElseRedeemerData" };
+const __VendorVendorElseRedeemerSchema = TPlutusData;
+type __VendorVendorElseRedeemerInput = Exact<typeof __VendorVendorElseRedeemerSchema>;
 
-export class VendorVendorElse extends TypedScript<PlutusData, VendorVendorElseRedeemer> {
+export class VendorVendorElse extends TypedScript<PlutusData, __VendorVendorElseRedeemerData> {
   constructor(
     config: VendorConfiguration,
   ) {
@@ -531,7 +523,7 @@ export class VendorVendorElse extends TypedScript<PlutusData, VendorVendorElseRe
     super(Script, "vendor.vendor.else");
   }
 
-  redeemer(value: VendorVendorElseRedeemerInput): VendorVendorElseRedeemer {
-    return serializeContractData<VendorVendorElseRedeemer>(VendorVendorElseRedeemerSchema, value);
+  redeemer(value: __VendorVendorElseRedeemerInput): __VendorVendorElseRedeemerData {
+    return serializeContractData<__VendorVendorElseRedeemerData>(__VendorVendorElseRedeemerSchema, value);
   }
 }
