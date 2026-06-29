@@ -80,6 +80,7 @@ import {
   VoterKind,
   PoolRegistration,
   PoolRetirement,
+  addressFromCredentials,
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelectors/micahsSelector";
@@ -104,8 +105,6 @@ import {
   isEqualUTxO,
   assertValidOutput,
 } from "./utils";
-import { TxBuilderReuseError } from "./errors";
-import { assertPositiveAssetQuantities, negateAssetQuantities } from "./safety";
 import type {
   TypedScript,
   TypedScriptDatum,
@@ -158,6 +157,60 @@ export interface AddVoteOptions {
   /** Redeemer for script DRep votes. */
   redeemer?: PlutusData;
 }
+
+/**
+ * Options for locking assets at a typed script.
+ *
+ * @public
+ */
+export interface LockScriptAssetsOptions {
+  /** Full script address to lock at. If omitted, the builder creates one from the script and optional stake credential. */
+  address?: Address;
+  /** Optional stake credential used when constructing the script address. */
+  stakeCredential?: Credential;
+  /** Optional reference script attached to the output. */
+  scriptReference?: Script;
+}
+
+/** Error thrown when a completed transaction builder is completed again.
+ *
+ * @public
+ */
+export class TxBuilderReuseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TxBuilderReuseError";
+  }
+}
+
+/** Error thrown when a transaction safety check rejects unsafe input.
+ *
+ * @public
+ */
+export class TransactionSafetyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TransactionSafetyError";
+  }
+}
+
+const assertPositiveAssetQuantities = (
+  operation: string,
+  assets: ReadonlyMap<AssetName, bigint>,
+): void => {
+  for (const [assetName, quantity] of assets) {
+    if (quantity <= 0n) {
+      throw new TransactionSafetyError(
+        `${operation}: asset "${assetName}" quantity must be positive.`,
+      );
+    }
+  }
+};
+
+const negateAssetQuantities = (
+  assets: ReadonlyMap<AssetName, bigint>,
+): Map<AssetName, bigint> =>
+  new Map([...assets].map(([assetName, quantity]) => [assetName, -quantity]));
 
 /**
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
@@ -245,6 +298,31 @@ export class TxBuilder {
       this._burnAddress = getBurnAddress(this.networkId);
     }
     return this._burnAddress;
+  }
+
+  private typedScriptCredential(
+    typedScript: TypedScript<PlutusData, PlutusData>,
+  ): Credential {
+    return Credential.fromCore({
+      hash: typedScript.Script.hash(),
+      type: CredentialType.ScriptHash,
+    });
+  }
+
+  private addressFromTypedScript(
+    typedScript: TypedScript<PlutusData, PlutusData>,
+    stakeCredential?: Credential,
+  ): Address {
+    if (this.networkId === undefined) {
+      throw new Error(
+        "lockScriptAssets: typed script lock requires a network id. Call setNetworkId first or pass an explicit address.",
+      );
+    }
+    return addressFromCredentials(
+      this.networkId,
+      this.typedScriptCredential(typedScript),
+      stakeCredential,
+    );
   }
 
   /**
@@ -466,16 +544,21 @@ export class TxBuilder {
    * a redeemer and an unhashed datum can be provided for script validation purposes.
    *
    * @param {TransactionUnspentOutput} utxo - The UTxO to be consumed as an input.
-   * @param {PlutusData} [redeemer] - Optional. The redeemer data for script validation, required for spending Plutus script-locked UTxOs.
-   * @param {PlutusData} [unhashDatum] - Optional. The unhashed datum, required if the UTxO being spent includes a datum hash instead of inline datum.
+   * @param {TypedScriptRedeemer<T>} [redeemer] - Optional. The redeemer data for script validation, required for spending Plutus script-locked UTxOs.
+   * @param {TypedScriptDatum<T>} [unhashDatum] - Optional. The unhashed datum, required if the UTxO being spent includes a datum hash instead of inline datum.
    * @returns {TxBuilder} The same transaction builder
    * @throws {Error} If attempting to add a duplicate input, if the UTxO payment key is missing, if attempting to spend with a redeemer for a KeyHash credential,
    *                 if attempting to spend without a datum when required, or if providing both an inline datum and an unhashed datum.
    */
-  addInput(
+  addInput<
+    T extends TypedScript<PlutusData, PlutusData> = TypedScript<
+      PlutusData,
+      PlutusData
+    >,
+  >(
     utxo: TransactionUnspentOutput,
-    redeemer?: PlutusData,
-    unhashDatum?: PlutusData,
+    redeemer?: TypedScriptRedeemer<T>,
+    unhashDatum?: TypedScriptDatum<T>,
   ): TxBuilder {
     // Retrieve the current inputs from the transaction body for manipulation.
     const inputs = this.body.inputs();
@@ -568,26 +651,6 @@ export class TxBuilder {
 
     return this;
   }
-
-  /**
-   * Adds a script input using the redeemer and datum types bound to a typed script.
-   *
-   * @param utxo - Script UTxO to spend.
-   * @param typedScript - Script wrapper that fixes the datum and redeemer types.
-   * @param redeemer - Redeemer matching the typed script.
-   * @param unhashDatum - Datum matching the typed script, required when the UTxO stores only a datum hash.
-   * @returns The same transaction builder.
-   */
-  addTypedInput<T extends TypedScript<PlutusData, PlutusData>>(
-    utxo: TransactionUnspentOutput,
-    typedScript: T,
-    redeemer: TypedScriptRedeemer<T>,
-    unhashDatum?: TypedScriptDatum<T>,
-  ): TxBuilder {
-    this.provideScript(typedScript.script);
-    return this.addInput(utxo, redeemer, unhashDatum);
-  }
-
   /**
    * Adds unspent transaction outputs (UTxOs) to the set of UTxOs available for this transaction.
    * These UTxOs can then be used for balancing the transaction, ensuring that inputs and outputs are equal.
@@ -838,18 +901,6 @@ export class TxBuilder {
   }
 
   /**
-   * Adds an explicit asset-transfer output.
-   *
-   * @param address - Payment address receiving the value.
-   * @param value - Value to transfer.
-   * @param datum - Optional datum for the output.
-   * @returns The same transaction builder.
-   */
-  transferAssets(address: Address, value: Value, datum?: Datum): TxBuilder {
-    return this.payAssets(address, value, datum);
-  }
-
-  /**
    * Locks a specified amount of lovelace to a script.
    * The difference between 'pay' and 'lock' is that you pay to a public key/user,
    * and you lock at a script.
@@ -909,28 +960,24 @@ export class TxBuilder {
   }
 
   /**
-   * Locks value at a script address using the datum type bound to a typed script.
+   * Locks assets at a typed script, constructing the script address unless one is supplied explicitly.
    *
    * @param typedScript - Script wrapper that fixes the datum and redeemer types.
-   * @param address - Script address receiving the locked value.
-   * @param value - Value to lock.
+   * @param value - The value to lock.
    * @param datum - Datum matching the typed script.
-   * @param scriptReference - Optional reference script to attach to the output. Defaults to the typed script.
+   * @param options - Optional address, stake credential, or reference script.
    * @returns The same transaction builder.
    */
-  lockTypedAssets<T extends TypedScript<PlutusData, PlutusData>>(
+  lockScriptAssets<T extends TypedScript<PlutusData, PlutusData>>(
     typedScript: T,
-    address: Address,
     value: Value,
     datum: TypedScriptDatum<T>,
-    scriptReference?: Script,
+    options: LockScriptAssetsOptions = {},
   ): TxBuilder {
-    return this.lockAssets(
-      address,
-      value,
-      datum,
-      scriptReference ?? typedScript.script,
-    );
+    const address =
+      options.address ??
+      this.addressFromTypedScript(typedScript, options.stakeCredential);
+    return this.lockAssets(address, value, datum, options.scriptReference);
   }
 
   /**

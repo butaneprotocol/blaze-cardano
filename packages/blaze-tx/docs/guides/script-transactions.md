@@ -9,41 +9,55 @@ Script transactions use datums, redeemers, scripts, and script addresses. Blaze 
 ## Define a Typed Script
 
 ```ts
-import { defineTypedScript } from "@blaze-cardano/tx";
+import { TypedScript } from "@blaze-cardano/tx";
 import { Core } from "@blaze-cardano/sdk";
 
 type OrderDatum = Core.PlutusData;
 type CancelRedeemer = Core.PlutusData;
 
-const orderValidator = defineTypedScript<OrderDatum, CancelRedeemer>(
+const orderValidator = new TypedScript<OrderDatum, CancelRedeemer>(
   validatorScript,
-  { name: "order-validator" },
+  "order-validator",
 );
 ```
 
-The wrapper keeps the original `Script` at `orderValidator.script`. The generic datum and redeemer types are only used by TypeScript.
+The wrapper keeps the original `Script` at `orderValidator.Script`. The generic datum and redeemer types are only used by TypeScript.
 
 ## Lock Assets With a Typed Datum
 
 ```ts
 const tx = await blaze
   .newTransaction()
-  .lockTypedAssets(orderValidator, scriptAddress, makeValue(2_000_000n), datum)
+  .lockScriptAssets(orderValidator, makeValue(2_000_000n), datum)
   .complete();
 ```
 
-`lockTypedAssets` calls `lockAssets` internally and uses the wrapped script as the reference script unless another script reference is passed.
+`lockScriptAssets` constructs the script address from the validator hash and the builder network. Pass a stake credential when the output should use one:
+
+```ts
+tx.lockScriptAssets(orderValidator, makeValue(2_000_000n), datum, {
+  stakeCredential,
+});
+```
+
+If the application already has a full script address, pass it explicitly:
+
+```ts
+tx.lockScriptAssets(orderValidator, makeValue(2_000_000n), datum, {
+  address: scriptAddress,
+});
+```
 
 ## Spend With a Typed Redeemer
 
 ```ts
 const tx = await blaze
   .newTransaction()
-  .addTypedInput(orderUtxo, orderValidator, cancelRedeemer, datum)
+  .addInput<typeof orderValidator>(orderUtxo, cancelRedeemer, datum)
   .payLovelace(receiverAddress, 1_500_000n)
   .complete();
 ```
 
 If the UTxO has an inline datum, omit the final datum argument. If the UTxO stores only a datum hash, pass the unhashed datum as the final argument.
 
-Use `provideScript(orderValidator.script)` when the transaction needs to include the script witness directly instead of using a reference script.
+The generic argument keeps the redeemer and unhashed datum types tied to the typed script. Provide the script witness explicitly with `provideScript(orderValidator.Script)`, a reference script input, or whichever witness path the transaction should use.

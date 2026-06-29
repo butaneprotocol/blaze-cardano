@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as fs from "fs";
+import { HexBlob, PlutusData } from "@blaze-cardano/core";
+import { TypedScript } from "@blaze-cardano/tx";
 import {
   OneshotOneshotSpend,
   TreasuryTreasuryPublish,
@@ -42,6 +44,15 @@ describe("Generated code", () => {
     expect(generatedCode).not.toContain("Type.Unsafe<PlutusData>");
     expect(generatedCode).toContain("type Data = Exact<typeof TPlutusData>");
   });
+
+  it("should emit typed script classes and data serializers", () => {
+    const generatedCode = fs.readFileSync("./plutus.ts", "utf-8");
+    expect(generatedCode).toContain("extends TypedScript<");
+    expect(generatedCode).toContain("super(Script, ");
+    expect(generatedCode).toContain("datum(value:");
+    expect(generatedCode).toContain("redeemer(value:");
+    expect(generatedCode).not.toContain("public Script: Script");
+  });
 });
 
 describe("Blueprint", () => {
@@ -54,8 +65,12 @@ describe("Blueprint", () => {
         registry_token: "",
       });
       expect(publish).toBeDefined();
+      expect(publish).toBeInstanceOf(TypedScript);
       expect(publish.Script.hash()).toBeDefined();
       expect(publish.Script.asPlutusV3()?.rawBytes()).toBeDefined();
+      expect(
+        publish.redeemer(PlutusData.fromCbor(HexBlob("d87980"))).toCbor(),
+      ).toBeDefined();
 
       const allof = {
         After: {
@@ -96,6 +111,7 @@ describe("Blueprint", () => {
         registry_token: "12345678910123456789",
       });
       expect(publish2).toBeDefined();
+      expect(publish2).toBeInstanceOf(TypedScript);
       expect(publish2.Script.hash()).toBeDefined();
       expect(publish2.Script.asPlutusV3()?.rawBytes()).toBeDefined();
 
@@ -114,8 +130,13 @@ describe("Blueprint", () => {
         registry_token: "",
       });
       expect(spend).toBeDefined();
+      expect(spend).toBeInstanceOf(TypedScript);
       expect(spend.Script.hash()).toBeDefined();
       expect(spend.Script.asPlutusV3()?.rawBytes()).toBeDefined();
+      expect(
+        spend.datum(PlutusData.fromCbor(HexBlob("d87980"))).toCbor(),
+      ).toBeDefined();
+      expect(spend.redeemer("Reorganize").toCbor()).toBeDefined();
     });
   });
 
@@ -128,8 +149,12 @@ describe("Blueprint", () => {
         registry_token: "",
       });
       expect(spend).toBeDefined();
+      expect(spend).toBeInstanceOf(TypedScript);
       expect(spend.Script.hash()).toBeDefined();
       expect(spend.Script.asPlutusV3()?.rawBytes()).toBeDefined();
+      expect(
+        spend.redeemer(PlutusData.fromCbor(HexBlob("d87980"))).toCbor(),
+      ).toBeDefined();
     });
   });
 
@@ -142,8 +167,12 @@ describe("Blueprint", () => {
         registry_token: "",
       });
       expect(spend).toBeDefined();
+      expect(spend).toBeInstanceOf(TypedScript);
       expect(spend.Script.hash()).toBeDefined();
       expect(spend.Script.asPlutusV3()?.rawBytes()).toBeDefined();
+      expect(
+        spend.redeemer(PlutusData.fromCbor(HexBlob("d87980"))).toCbor(),
+      ).toBeDefined();
     });
   });
 
@@ -154,8 +183,24 @@ describe("Blueprint", () => {
         transaction_id: "00".repeat(32),
       });
       expect(spend).toBeDefined();
+      expect(spend).toBeInstanceOf(TypedScript);
       expect(spend.Script.hash()).toBeDefined();
       expect(spend.Script.asPlutusV3()?.rawBytes()).toBeDefined();
+      expect(
+        spend
+          .datum({
+            treasury: {
+              VerificationKey: ["00".repeat(28)],
+            },
+            vendor: {
+              Script: ["11".repeat(28)],
+            },
+          })
+          .toCbor(),
+      ).toBeDefined();
+      expect(
+        spend.redeemer(PlutusData.fromCbor(HexBlob("d87980"))).toCbor(),
+      ).toBeDefined();
     });
   });
 });

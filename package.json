@@ -43,7 +43,6 @@
     "docs/catalyst/1200040",
     "examples/advanced-querying",
     "examples/script-deploy-aiken",
-    "examples/script-deploy-basic",
     "examples/script-deploy-ci"
   ]
 }

@@ -73,9 +73,6 @@ export const assertLockAddress: (address: Address) => never | void;
 export const assertPaymentsAddress: (address: Address) => never | void;
 
 // @public
-export const assertPositiveAssetQuantities: (operation: string, assets: ReadonlyMap<AssetName, bigint>) => void;
-
-// @public
 export const assertValidOutput: (output: TransactionOutput, coinsPerUtxoByte: number, maxValueSize: number) => void | never;
 
 // @public (undocumented)
@@ -695,11 +692,6 @@ type DatumHash = Crypto.Hash32ByteBase16;
 // @public (undocumented)
 const DatumKind: typeof C.Serialization.DatumKind;
 
-// @public
-export const defineTypedScript: <DatumType extends PlutusData, RedeemerType extends PlutusData>(script: Script, options?: {
-    name?: string;
-}) => TypedScript<DatumType, RedeemerType>;
-
 // @public (undocumented)
 type DelegateRepresentative = C.Cardano.DelegateRepresentative;
 
@@ -997,6 +989,13 @@ export class Kupmios extends Provider {
     static serializeUtxos(unspentOutputs: TransactionUnspentOutput[]): Schema.Utxo;
 }
 
+// @public
+export interface LockScriptAssetsOptions {
+    address?: Address;
+    scriptReference?: Script;
+    stakeCredential?: Credential;
+}
+
 // @public (undocumented)
 export class Maestro extends Provider {
     constructor(input: {
@@ -1077,9 +1076,6 @@ type NativeScript = C.Serialization.NativeScript;
 namespace nativescript_d_exports {
     export { address, after, allOf, anyOf, atLeastNOfK, before, justAddress };
 }
-
-// @public
-export const negateAssetQuantities: (assets: ReadonlyMap<AssetName, bigint>) => Map<AssetName, bigint>;
 
 // @public (undocumented)
 const NetworkId: typeof C.Cardano.NetworkId;
@@ -1665,7 +1661,7 @@ export class TxBuilder {
     addAdditionalSigners(amount: number): TxBuilder;
     addDelegation(delegator: Credential, poolId: PoolId, redeemer?: PlutusData): TxBuilder;
     addDeregisterStake(credential: Credential, redeemer?: PlutusData): TxBuilder;
-    addInput(utxo: TransactionUnspentOutput, redeemer?: PlutusData, unhashDatum?: PlutusData): TxBuilder;
+    addInput<T extends TypedScript<PlutusData, PlutusData> = TypedScript<PlutusData, PlutusData>>(utxo: TransactionUnspentOutput, redeemer?: TypedScriptRedeemer<T>, unhashDatum?: TypedScriptDatum<T>): TxBuilder;
     addMint(policy: PolicyId, assets: Map<AssetName, bigint>, redeemer?: PlutusData): this;
     addOutput(output: TransactionOutput): TxBuilder;
     addPreCompleteHook(hook: (tx: TxBuilder) => Promise<void>): TxBuilder;
@@ -1683,7 +1679,6 @@ export class TxBuilder {
     addRegisterStake(credential: Credential): this;
     addRequiredSigner(signer: Ed25519KeyHashHex): TxBuilder;
     addRetirePool(poolId: PoolId, epoch: EpochNo): TxBuilder;
-    addTypedInput<T extends TypedScript<PlutusData, PlutusData>>(utxo: TransactionUnspentOutput, typedScript: T, redeemer: TypedScriptRedeemer<T>, unhashDatum?: TypedScriptDatum<T>): TxBuilder;
     addUnregisterDRep(drep: Credential, refund: bigint, redeemer?: PlutusData): TxBuilder;
     addUnspentOutputs(utxos: TransactionUnspentOutput[]): TxBuilder;
     addUpdateDRep(drep: Credential, anchor?: Anchor, redeemer?: PlutusData): TxBuilder;
@@ -1702,7 +1697,7 @@ export class TxBuilder {
     protected getScriptData(tw: TransactionWitnessSet): IScriptData | undefined;
     lockAssets(address: Address, value: Value_2, datum: Datum, scriptReference?: Script): TxBuilder;
     lockLovelace(address: Address, lovelace: bigint, datum: Datum, scriptReference?: Script): TxBuilder;
-    lockTypedAssets<T extends TypedScript<PlutusData, PlutusData>>(typedScript: T, address: Address, value: Value_2, datum: TypedScriptDatum<T>, scriptReference?: Script): TxBuilder;
+    lockScriptAssets<T extends TypedScript<PlutusData, PlutusData>>(typedScript: T, value: Value_2, datum: TypedScriptDatum<T>, options?: LockScriptAssetsOptions): TxBuilder;
     mintAssets(policy: PolicyId, assets: Map<AssetName, bigint>, redeemer?: PlutusData): TxBuilder;
     get outputsCount(): number;
     // (undocumented)
@@ -1727,7 +1722,6 @@ export class TxBuilder {
     setValidUntil(validUntil: Slot): TxBuilder;
     setVotingProcedures(votingProcedures: VotingProcedures, voteRedeemers?: Map<string, PlutusData>): TxBuilder;
     toCbor(): string;
-    transferAssets(address: Address, value: Value_2, datum?: Datum): TxBuilder;
     // Warning: (ae-forgotten-export) The symbol "SelectionResult" needs to be exported by the entry point index.d.ts
     useCoinSelector(selector: (inputs: TransactionUnspentOutput[], dearth: Value_2) => SelectionResult): TxBuilder;
     useEvaluator(evaluator: Evaluator, override?: boolean): TxBuilder;
@@ -1749,12 +1743,15 @@ const TxCBOR: {
 type TxCBOR = C.Serialization.TxCBOR;
 
 // @public
-export type TypedScript<DatumType extends PlutusData, RedeemerType extends PlutusData> = {
-    readonly script: Script;
-    readonly name?: string;
-    readonly [datumBrand]?: DatumType;
-    readonly [redeemerBrand]?: RedeemerType;
-};
+export class TypedScript<DatumType extends PlutusData, RedeemerType extends PlutusData> {
+    constructor(Script: Script, name?: string | undefined);
+    protected readonly __datum?: DatumType;
+    protected readonly __redeemer?: RedeemerType;
+    // (undocumented)
+    readonly name?: string | undefined;
+    // (undocumented)
+    readonly Script: Script;
+}
 
 // @public
 export type TypedScriptDatum<T> = T extends TypedScript<infer DatumType, PlutusData> ? DatumType : never;

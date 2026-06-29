@@ -81,21 +81,25 @@ export class Generator {
     this.writeLine(`// @ts-nocheck`);
     if (useSdk) {
       this.writeLine(
-        `import { applyParamsToScript, cborToScript, Core } from "@blaze-cardano/sdk"`,
+        `import { applyParamsToScript, cborToScript, Core, TypedScript } from "@blaze-cardano/sdk"`,
       );
       this.writeLine(
-        `import { Type, Exact, TPlutusData } from "@blaze-cardano/data";`,
+        `import { Type, Exact, TPlutusData, serialize, type TSchema } from "@blaze-cardano/data";`,
       );
       this.writeLine(`type Script = Core.Script;`);
       this.writeLine(`const Script = Core.Script;`);
+      this.writeLine(`type PlutusData = Core.PlutusData;`);
     } else {
       this.writeLine(
         `import { applyParamsToScript, cborToScript } from "@blaze-cardano/uplc";`,
       );
-      this.writeLine(`import { type Script } from "@blaze-cardano/core";`);
       this.writeLine(
-        `import { Type, Exact, TPlutusData } from "@blaze-cardano/data";`,
+        `import { type PlutusData, type Script } from "@blaze-cardano/core";`,
       );
+      this.writeLine(
+        `import { Type, Exact, TPlutusData, serialize, type TSchema } from "@blaze-cardano/data";`,
+      );
+      this.writeLine(`import { TypedScript } from "@blaze-cardano/tx";`);
     }
 
     // Map Plutus types to TS types.
@@ -323,11 +327,45 @@ export class Generator {
     }
     this.outdent();
     this.writeLine(`});`);
+    this.writeLine(`const ContractDefinitions = Contracts.$defs;`);
+    this.writeLine(
+      `const serializeContractData = <T extends PlutusData>(schema, value): T => serialize(schema, value, ContractDefinitions) as T;`,
+    );
     this.writeLine();
     for (const name of types) {
       this.writeLine(`export const ${name} = Contracts.Import("${name}");`);
       this.writeLine(`export type ${name} = Exact<typeof ${name}>;`);
     }
+  }
+
+  private writeValidatorDataShape(
+    name: string,
+    schema: Declaration<Schema>,
+    definitions: Record<string, Annotated<Schema>>,
+  ) {
+    this.buildLine(`export const ${name}Schema = `);
+    this.writeTypeboxType(schema, definitions);
+    this.finishLine(`;`);
+    this.writeLine(`export type ${name}Input = Exact<typeof ${name}Schema>;`);
+    this.writeLine(
+      `export type ${name} = PlutusData & { readonly __${name}: "${name}" };`,
+    );
+    this.writeLine();
+  }
+
+  private writeDataSerializer(
+    methodName: "datum" | "redeemer",
+    schemaName: string,
+  ) {
+    this.writeLine(
+      `${methodName}(value: ${schemaName}Input): ${schemaName} {`,
+    );
+    this.indent();
+    this.writeLine(
+      `return serializeContractData<${schemaName}>(${schemaName}Schema, value);`,
+    );
+    this.outdent();
+    this.writeLine(`}`);
   }
 
   public writeValidators(blueprint: Blueprint, blueprintWithTrace?: Blueprint) {
@@ -368,6 +406,8 @@ export class Generator {
 
       const params = validator.parameters ?? [];
       const hasParams = params.length > 0;
+      const datumType = validator.datum ? `${name}Datum` : "PlutusData";
+      const redeemerType = `${name}Redeemer`;
 
       // const paramsArgs = params.map((_, idx) => {
       //   const name = paramNames[idx]!;
@@ -379,9 +419,23 @@ export class Generator {
       // const constructorArgsString = `${paramsArgs.join(",\n  ")}`;
       // const parts = [];
 
-      this.writeLine(`export class ${name} {`);
+      if (validator.datum) {
+        this.writeValidatorDataShape(
+          `${name}Datum`,
+          validator.datum.schema,
+          blueprint.definitions,
+        );
+      }
+      this.writeValidatorDataShape(
+        `${name}Redeemer`,
+        validator.redeemer.schema,
+        blueprint.definitions,
+      );
+
+      this.writeLine(
+        `export class ${name} extends TypedScript<${datumType}, ${redeemerType}> {`,
+      );
       this.indent();
-      this.writeLine(`public Script: Script`);
       this.buildLine(`constructor(`);
       const hasConstructorArgs = hasParams || !!validatorWithTrace;
       if (hasConstructorArgs) {
@@ -409,7 +463,7 @@ export class Generator {
       }
       this.finishLine(") {");
       this.indent();
-      this.writeLine(`this.Script = cborToScript(`);
+      this.writeLine(`const Script = cborToScript(`);
       this.indent();
       if (hasParams) {
         this.writeLine(`applyParamsToScript(`);
@@ -457,11 +511,15 @@ export class Generator {
       this.writeLine(`${plutusVersion}`);
       this.outdent();
       this.writeLine(`);`);
+      this.writeLine(`super(Script, "${title}");`);
       this.outdent();
       this.finishLine("}");
-      this.indent();
-      this.buildLine(``);
-      this.outdent();
+      if (validator.datum) {
+        this.writeLine();
+        this.writeDataSerializer("datum", `${name}Datum`);
+      }
+      this.writeLine();
+      this.writeDataSerializer("redeemer", `${name}Redeemer`);
       this.outdent();
       this.writeLine(`}`);
     }

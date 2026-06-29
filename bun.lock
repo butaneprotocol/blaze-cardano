@@ -63,20 +63,6 @@
         "typescript": "^5.7.3",
       },
     },
-    "examples/script-deploy-basic": {
-      "name": "script-deploy-basic",
-      "version": "0.1.0",
-      "dependencies": {
-        "@blaze-cardano/core": "workspace:*",
-        "@blaze-cardano/deploy": "workspace:*",
-        "@blaze-cardano/emulator": "workspace:*",
-        "@blaze-cardano/tx": "workspace:*",
-      },
-      "devDependencies": {
-        "@blaze-cardano/tsconfig": "workspace:*",
-        "typescript": "^5.7.3",
-      },
-    },
     "examples/script-deploy-ci": {
       "name": "script-deploy-ci",
       "version": "0.1.0",
@@ -1332,8 +1318,6 @@
     "safer-buffer": ["safer-buffer@2.1.2", "", {}, "sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg=="],
 
     "script-deploy-aiken": ["script-deploy-aiken@workspace:examples/script-deploy-aiken"],
-
-    "script-deploy-basic": ["script-deploy-basic@workspace:examples/script-deploy-basic"],
 
     "script-deploy-ci": ["script-deploy-ci@workspace:examples/script-deploy-ci"],
 
