@@ -84,7 +84,7 @@ export class Generator {
         `import { applyParamsToScript, cborToScript, Core, TypedScript } from "@blaze-cardano/sdk"`,
       );
       this.writeLine(
-        `import { Type, Exact, TPlutusData, serialize, type TSchema } from "@blaze-cardano/data";`,
+        `import { Type, Exact, TPlutusData, serialize } from "@blaze-cardano/data";`,
       );
       this.writeLine(`type Script = Core.Script;`);
       this.writeLine(`const Script = Core.Script;`);
@@ -97,7 +97,7 @@ export class Generator {
         `import { type PlutusData, type Script } from "@blaze-cardano/core";`,
       );
       this.writeLine(
-        `import { Type, Exact, TPlutusData, serialize, type TSchema } from "@blaze-cardano/data";`,
+        `import { Type, Exact, TPlutusData, serialize } from "@blaze-cardano/data";`,
       );
       this.writeLine(`import { TypedScript } from "@blaze-cardano/tx";`);
     }
@@ -338,31 +338,59 @@ export class Generator {
     }
   }
 
-  private writeValidatorDataShape(
-    name: string,
+  private referencedDefinitionType(
     schema: Declaration<Schema>,
     definitions: Record<string, Annotated<Schema>>,
-  ) {
-    this.buildLine(`export const ${name}Schema = `);
+  ): string | undefined {
+    if (!("$ref" in schema)) return undefined;
+    const definitionName = this.definitionName(schema);
+    if (this.isStandardType(definitionName)) return undefined;
+    return this.typeName(schema, definitions);
+  }
+
+  private writeValidatorDataShape(
+    name: string,
+    kind: "Datum" | "Redeemer",
+    schema: Declaration<Schema>,
+    definitions: Record<string, Annotated<Schema>>,
+  ): { dataType: string; inputType: string; schemaName: string } {
+    const internalName = `__${name}${kind}`;
+    const dataType = `${internalName}Data`;
+    const referencedType = this.referencedDefinitionType(schema, definitions);
+
+    this.writeLine(
+      `type ${dataType} = PlutusData & { readonly ${internalName}: "${dataType}" };`,
+    );
+
+    if (referencedType) {
+      this.writeLine();
+      return {
+        dataType,
+        inputType: referencedType,
+        schemaName: referencedType,
+      };
+    }
+
+    const schemaName = `${internalName}Schema`;
+    const inputType = `${internalName}Input`;
+    this.buildLine(`const ${schemaName} = `);
     this.writeTypeboxType(schema, definitions);
     this.finishLine(`;`);
-    this.writeLine(`export type ${name}Input = Exact<typeof ${name}Schema>;`);
-    this.writeLine(
-      `export type ${name} = PlutusData & { readonly __${name}: "${name}" };`,
-    );
+    this.writeLine(`type ${inputType} = Exact<typeof ${schemaName}>;`);
     this.writeLine();
+    return { dataType, inputType, schemaName };
   }
 
   private writeDataSerializer(
     methodName: "datum" | "redeemer",
-    schemaName: string,
+    shape: { dataType: string; inputType: string; schemaName: string },
   ) {
     this.writeLine(
-      `${methodName}(value: ${schemaName}Input): ${schemaName} {`,
+      `${methodName}(value: ${shape.inputType}): ${shape.dataType} {`,
     );
     this.indent();
     this.writeLine(
-      `return serializeContractData<${schemaName}>(${schemaName}Schema, value);`,
+      `return serializeContractData<${shape.dataType}>(${shape.schemaName}, value);`,
     );
     this.outdent();
     this.writeLine(`}`);
@@ -406,8 +434,6 @@ export class Generator {
 
       const params = validator.parameters ?? [];
       const hasParams = params.length > 0;
-      const datumType = validator.datum ? `${name}Datum` : "PlutusData";
-      const redeemerType = `${name}Redeemer`;
 
       // const paramsArgs = params.map((_, idx) => {
       //   const name = paramNames[idx]!;
@@ -419,18 +445,22 @@ export class Generator {
       // const constructorArgsString = `${paramsArgs.join(",\n  ")}`;
       // const parts = [];
 
-      if (validator.datum) {
-        this.writeValidatorDataShape(
-          `${name}Datum`,
-          validator.datum.schema,
-          blueprint.definitions,
-        );
-      }
-      this.writeValidatorDataShape(
-        `${name}Redeemer`,
+      const datumShape = validator.datum
+        ? this.writeValidatorDataShape(
+            name,
+            "Datum",
+            validator.datum.schema,
+            blueprint.definitions,
+          )
+        : undefined;
+      const redeemerShape = this.writeValidatorDataShape(
+        name,
+        "Redeemer",
         validator.redeemer.schema,
         blueprint.definitions,
       );
+      const datumType = datumShape?.dataType ?? "PlutusData";
+      const redeemerType = redeemerShape.dataType;
 
       this.writeLine(
         `export class ${name} extends TypedScript<${datumType}, ${redeemerType}> {`,
@@ -514,12 +544,12 @@ export class Generator {
       this.writeLine(`super(Script, "${title}");`);
       this.outdent();
       this.finishLine("}");
-      if (validator.datum) {
+      if (datumShape) {
         this.writeLine();
-        this.writeDataSerializer("datum", `${name}Datum`);
+        this.writeDataSerializer("datum", datumShape);
       }
       this.writeLine();
-      this.writeDataSerializer("redeemer", `${name}Redeemer`);
+      this.writeDataSerializer("redeemer", redeemerShape);
       this.outdent();
       this.writeLine(`}`);
     }
