@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import fc from "fast-check";
 import {
   Address,
   AssetId,
   AssetName,
+  Credential,
+  CredentialType,
   HexBlob,
   NetworkId,
   PlutusData,
@@ -20,8 +23,8 @@ import {
   TransactionSafetyError,
   TxBuilder,
   TxBuilderReuseError,
-  defineTypedScript,
   makeValue,
+  TypedScript,
 } from "../../src";
 
 const paymentAddress = Address.fromBech32(
@@ -43,6 +46,57 @@ const fundedUtxo = () =>
   );
 
 describe("TxBuilder safety helpers", () => {
+  it("keeps burn quantities negative across positive asset maps", () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.bigInt({ min: 1n, max: 1_000_000n }), {
+          minLength: 1,
+          maxLength: 20,
+        }),
+        (quantities) => {
+          const tx = new TxBuilder(hardCodedProtocolParams);
+          const assets = new Map(
+            quantities.map((quantity, index) => [
+              AssetName(Buffer.from(`asset-${index}`, "utf8").toString("hex")),
+              quantity,
+            ]),
+          );
+
+          tx.burnAssets(policy, assets);
+
+          const body = (
+            tx as unknown as {
+              body: {
+                mint: () => Map<AssetId, bigint> | undefined;
+              };
+            }
+          ).body;
+
+          for (const [name, quantity] of assets) {
+            expect(body.mint()?.get(AssetId.fromParts(policy, name))).toBe(
+              -quantity,
+            );
+          }
+        },
+      ),
+    );
+  });
+
+  it("rejects non-positive mint and burn quantities", () => {
+    fc.assert(
+      fc.property(fc.bigInt({ max: 0n }), (quantity) => {
+        const assets = new Map([[assetName, quantity]]);
+
+        expect(() =>
+          new TxBuilder(hardCodedProtocolParams).mintAssets(policy, assets),
+        ).toThrow(TransactionSafetyError);
+        expect(() =>
+          new TxBuilder(hardCodedProtocolParams).burnAssets(policy, assets),
+        ).toThrow(TransactionSafetyError);
+      }),
+    );
+  });
+
   it("makes burns explicit and rejects non-positive quantities", () => {
     const tx = new TxBuilder(hardCodedProtocolParams);
 
@@ -63,43 +117,34 @@ describe("TxBuilder safety helpers", () => {
     expect(body.mint()?.get(AssetId.fromParts(policy, assetName))).toBe(-1n);
   });
 
-  it("makes transfers explicit through a named wrapper", () => {
-    const tx = new TxBuilder(hardCodedProtocolParams);
-
-    expect(() =>
-      tx.transferAssets(paymentAddress, makeValue(2_000_000n)),
-    ).not.toThrow();
-
-    const body = (
-      tx as unknown as {
-        body: {
-          outputs: () => unknown[];
-        };
-      }
-    ).body;
-
-    expect(body.outputs()).toHaveLength(1);
-  });
-
-  it("locks and spends through typed script wrappers", () => {
-    const typedScript = defineTypedScript<PlutusData, PlutusData>(
+  it("locks typed script assets and spends with typed addInput arguments", () => {
+    const typedScript = new TypedScript<PlutusData, PlutusData>(
       alwaysTrueScript,
-      { name: "always-true" },
+      "always-true",
     );
     const scriptAddress = addressFromValidator(
       NetworkId.Testnet,
       alwaysTrueScript,
     );
-    const tx = new TxBuilder(hardCodedProtocolParams);
+    const tx = new TxBuilder(hardCodedProtocolParams).setNetworkId(
+      NetworkId.Testnet,
+    );
 
     expect(() =>
-      tx.lockTypedAssets(
-        typedScript,
-        scriptAddress,
-        makeValue(2_000_000n),
-        datum,
-      ),
+      tx.lockScriptAssets(typedScript, makeValue(2_000_000n), datum),
     ).not.toThrow();
+
+    const body = (
+      tx as unknown as {
+        body: {
+          outputs: () => TransactionOutput[];
+        };
+      }
+    ).body;
+
+    expect(body.outputs()[0]!.address().toBech32()).toBe(
+      scriptAddress.toBech32(),
+    );
 
     const scriptUtxo = new TransactionUnspentOutput(
       new TransactionInput(TransactionId("2".repeat(64)), 0n),
@@ -107,8 +152,43 @@ describe("TxBuilder safety helpers", () => {
     );
 
     expect(() =>
-      tx.addTypedInput(scriptUtxo, typedScript, datum),
+      tx.addInput<typeof typedScript>(scriptUtxo, datum),
     ).not.toThrow();
+  });
+
+  it("locks typed scripts with a stake credential or explicit script address", () => {
+    const typedScript = new TypedScript<PlutusData, PlutusData>(
+      alwaysTrueScript,
+    );
+    const stakeCredential = Credential.fromCore({
+      hash: paymentAddress.getProps().delegationPart!.hash,
+      type: CredentialType.KeyHash,
+    });
+    const tx = new TxBuilder(hardCodedProtocolParams).setNetworkId(
+      NetworkId.Testnet,
+    );
+
+    expect(() =>
+      tx.lockScriptAssets(typedScript, makeValue(2_000_000n), datum, {
+        stakeCredential,
+      }),
+    ).not.toThrow();
+
+    const scriptAddress = addressFromValidator(
+      NetworkId.Testnet,
+      alwaysTrueScript,
+    );
+    expect(() =>
+      tx.lockScriptAssets(typedScript, makeValue(2_000_000n), datum, {
+        address: scriptAddress,
+      }),
+    ).not.toThrow();
+
+    expect(() =>
+      tx.lockScriptAssets(typedScript, makeValue(2_000_000n), datum, {
+        address: paymentAddress,
+      }),
+    ).toThrow(/script hash/i);
   });
 
   it("requires a network id before using the deployScript burn address convenience", () => {

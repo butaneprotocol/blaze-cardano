@@ -6,33 +6,6 @@ title: Governance Testing
 
 The emulator ships with Conway-era governance logic so you can exercise proposal submission, voting, and enactment flows in tests. This guide will walk you through setting up the emulator for governance testing, registering a DRep, submitting a proposal, and voting on it.
 
-## Scenario helpers
-
-For repeatable tests, use the exported scenario helpers from `@blaze-cardano/emulator`. They configure the emulator for deterministic Conway governance, submit proposal transactions, and cast DRep votes while returning the same `GovernanceActionId` values that the ledger path tracks internally.
-
-```ts
-import {
-  configureGovernanceScenario,
-  registerKeyDRepForScenario,
-  submitGovernanceScenarioProposal,
-  voteAsDRepInScenario,
-} from "@blaze-cardano/emulator";
-
-configureGovernanceScenario(emulator);
-const actor = { blaze, address };
-const drep = await registerKeyDRepForScenario(emulator, actor, { stake: 700_000_000n });
-emulator.stepForwardToNextEpoch();
-
-const actionId = await submitGovernanceScenarioProposal(emulator, actor, proposal);
-await voteAsDRepInScenario(
-  emulator,
-  actor,
-  Voter.newDrep(Credential.fromCore(drep.stakeCredential).toCore()),
-  [{ actionId, vote: Vote.yes }],
-  drep.stakeCredential.hash,
-);
-```
-
 ## Setup the Emulator
 
 First, we need to set up our emulator with some specific protocol parameters for governance testing. For simplicity, we'll set the governance action deposit and DRep deposit to zero. We'll also configure the voting thresholds to make it easier to pass proposals in our test environment.
