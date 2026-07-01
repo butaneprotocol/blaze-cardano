@@ -230,6 +230,29 @@ export class Generator {
   }
 
   /**
+   * Splits a string of comma-separated generic type parameters, respecting
+   * nesting depth of `<` / `>`. Used to parse Aiken's
+   *   SignedRedeemer<Void,SignedPayload<CommitteeAction>>
+   * style into [`Void`, `SignedPayload<CommitteeAction>`].
+   */
+  private splitTopLevelCommasImpl(inner: string): string[] {
+    const out: string[] = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < inner.length; i++) {
+      const ch = inner[i]!;
+      if (ch === "<") depth++;
+      else if (ch === ">") depth--;
+      else if (ch === "," && depth === 0) {
+        out.push(inner.substring(start, i));
+        start = i + 1;
+      }
+    }
+    out.push(inner.substring(start));
+    return out;
+  }
+
+  /**
    * Normalizes a full definition name into a valid TypeScript identifier.
    * Handles generic types by extracting type parameters from the schema when available,
    * falling back to parsing the definition name string.
@@ -259,6 +282,29 @@ export class Generator {
         return segments[segments.length - 1]!.replace(/~/g, "_");
       });
       return `${baseName}_${typeParamNames.join("_")}`;
+    }
+
+    // Handle Aiken's single-angle-bracket generic syntax:
+    // e.g. "types/SignedRedeemer<Void,types/CommitteeAction>"
+    // base name = last "/"-segment before "<"; type params = top-level
+    // comma-separated values inside <...>, each reduced to its last segment.
+    // Distinguish from "<<...>>" (handled above) by requiring exactly one
+    // opening "<" at the top level. We do this by checking that the name
+    // doesn't end in ">>".
+    if (
+      fullDefinitionName.includes("<") &&
+      !fullDefinitionName.endsWith(">>")
+    ) {
+      const singleAngleMatch = fullDefinitionName.match(/^(.+?)<(.+)>$/);
+      if (singleAngleMatch) {
+        const beforeAngle = singleAngleMatch[1]!;
+        const innerParams = singleAngleMatch[2]!;
+        const baseName = beforeAngle.split("/").pop()!;
+        const typeParamNames = this.splitTopLevelCommasImpl(innerParams).map(
+          (param) => this.normalizeTypeName(param.trim()),
+        );
+        return `${baseName}_${typeParamNames.join("_")}`.replace(/~/g, "_");
+      }
     }
 
     const genericBaseName = this.extractGenericBaseName(fullDefinitionName);
@@ -406,8 +452,23 @@ export class Generator {
         for (const param of params) {
           this.buildLine(`${Generator.snakeToCamel(param.title)}: `);
           if ("$ref" in param.schema) {
-            const typeName = this.typeName(param.schema, blueprint.definitions);
-            this.buildLine(typeName);
+            const refName = this.definitionName(param.schema);
+            const definition = blueprint.definitions[refName];
+            const primitive =
+              definition && "dataType" in definition
+                ? definition.dataType
+                : undefined;
+            if (primitive === "bytes") {
+              this.buildLine("string");
+            } else if (primitive === "integer") {
+              this.buildLine("bigint");
+            } else {
+              const typeName = this.typeName(
+                param.schema,
+                blueprint.definitions,
+              );
+              this.buildLine(typeName);
+            }
           } else {
             console.log("???", param);
           }
@@ -445,8 +506,9 @@ export class Generator {
         this.indent();
         for (const param of params) {
           if ("$ref" in param.schema) {
+            const refName = this.definitionName(param.schema);
             const typeName = this.typeName(param.schema, blueprint.definitions);
-            if (this.isStandardType(typeName)) {
+            if (this.isStandardType(refName) || this.isStandardType(typeName)) {
               this.writeTypeboxType(param.schema, blueprint.definitions);
             } else {
               this.buildLine(typeName);
