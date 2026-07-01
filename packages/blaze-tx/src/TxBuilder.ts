@@ -67,6 +67,10 @@ import {
   RedeemerTag,
   StakeRegistration,
   StakeDeregistration,
+  // Conway-style stake registration cert (type 7) with explicit deposit.
+  // Required on Dijkstra-era ledger where the legacy Shelley-cert-0 form is no
+  // longer accepted.
+  Serialization,
   getBurnAddress,
   setInConwayEra,
   RegisterDelegateRepresentative,
@@ -1224,13 +1228,13 @@ export class TxBuilder {
 
     for (const cert of this.body.certs()?.values() || []) {
       switch (cert.kind()) {
-        case 0: // Stake Registration
+        case 0: // Stake Registration (Shelley)
           outputValue = value.merge(
             outputValue,
             new Value(BigInt(this.params.stakeKeyDeposit)),
           );
           break;
-        case 1: // Stake Deregistration
+        case 1: // Stake Deregistration (Shelley)
           inputValue = value.merge(
             inputValue,
             new Value(BigInt(this.params.stakeKeyDeposit)),
@@ -1251,6 +1255,18 @@ export class TxBuilder {
               new Value(BigInt(this.params.poolDeposit)),
             );
           }
+          break;
+        case 7: // Registration (Conway+, with explicit deposit on cert)
+          outputValue = value.merge(
+            outputValue,
+            new Value(cert.asRegistrationCert()!.deposit()),
+          );
+          break;
+        case 8: // Unregistration (Conway+, with explicit refund on cert)
+          inputValue = value.merge(
+            inputValue,
+            new Value(cert.asUnregistrationCert()!.deposit()),
+          );
           break;
       }
     }
@@ -2095,20 +2111,49 @@ export class TxBuilder {
 
   /**
    * Adds a certificate to register a staker.
-   * @param {Credential} credential - The credential to register.
-   * @throws {Error} Method not implemented.
+   *
+   * On Conway+ (Dijkstra) the cert form is `Registration { credential, deposit }`
+   * (cert type 7); the legacy Shelley `StakeRegistration` (type 0) is rejected.
+   *
+   * When the credential is a script credential, Dijkstra requires a Plutus
+   * witness for the registration. Pass `redeemer` to attach a cert-purpose
+   * redeemer for this cert; the caller is responsible for supplying the
+   * validating script (e.g. as a reference input via {@link addReferenceInput}).
+   *
+   * @param credential — the credential to register (key or script).
+   * @param redeemer — optional Plutus redeemer when the credential is a script.
    */
-  addRegisterStake(credential: Credential) {
-    const stakeRegistration: StakeRegistration = new StakeRegistration(
+  addRegisterStake(credential: Credential, redeemer?: PlutusData) {
+    const registration = new Serialization.Registration(
       credential.toCore(),
+      BigInt(this.params.stakeKeyDeposit),
     );
     const registrationCertificate: Certificate =
-      Certificate.newStakeRegistration(stakeRegistration);
+      Certificate.newRegistrationCert(registration);
     const certs =
       this.body.certs() ?? CborSet.fromCore([], Certificate.fromCore);
+    const insertIdx = certs.values().length;
     const vals = [...certs.values(), registrationCertificate];
     certs.setValues(vals);
     this.body.setCerts(certs);
+
+    if (redeemer) {
+      const credentialHash = credential.toCore().hash;
+      this.requiredPlutusScripts.add(credentialHash);
+      const redeemers = [...this.redeemers.values()];
+      redeemers.push(
+        Redeemer.fromCore({
+          index: insertIdx,
+          purpose: RedeemerPurpose["certificate"],
+          data: redeemer.toCore(),
+          executionUnits: {
+            memory: this.params.maxExecutionUnitsPerTransaction.memory,
+            steps: this.params.maxExecutionUnitsPerTransaction.steps,
+          },
+        }),
+      );
+      this.redeemers.setValues(redeemers);
+    }
     return this;
   }
 
@@ -2493,7 +2538,7 @@ export class TxBuilder {
         const redeemers = [...this.redeemers.values()];
         redeemers.push(
           Redeemer.fromCore({
-            index: 256, // TODO: set correct index ordering
+            index: vals.length - 1, // index of the cert we just appended
             purpose: RedeemerPurpose["certificate"],
             data: redeemer.toCore(),
             executionUnits: {
