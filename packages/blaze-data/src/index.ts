@@ -272,6 +272,16 @@ export function _serialize<T extends TSchema>(
           );
         }
         break;
+      // Aiken's `Void` type — codegen emits `Type.Undefined()` for it; this
+      // must serialize to `Constr 0 []` to match the on-chain decoder.
+      case "undefined":
+      case "null":
+        {
+          return PlutusData.newConstrPlutusData(
+            new ConstrPlutusData(0n, new PlutusList()),
+          );
+        }
+        break;
       default: {
         console.log("Unhandled: ", type["type"]);
       }
