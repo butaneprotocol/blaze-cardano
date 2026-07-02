@@ -72,5 +72,10 @@ jobs:
       - name: 🧪 Run test
         run: bun run test
 
+      - name: 📊 Run coverage
+        run: |
+          bun --filter @blaze-cardano/emulator coverage
+          bun --filter @blaze-cardano/deploy coverage
+
       - name: 📙 Run Docs
         run: bun run docs:prepare
