@@ -38,6 +38,19 @@ const history = cache.records().filter((record) => record.name === "order-valida
 
 If more than one non-superseded record exists for the same target name, `findByName` returns the highest active semantic version. This lets a deployment job keep historical records without accidentally planning from an older active version.
 
+## Dependency management
+
+An application that spends from or mints with on-chain scripts depends on those scripts the same way it depends on packages: each one must exist, at a known version, before the application works. The manifest is the declaration of that dependency set. Every target pins a name, an `x.y.z` version, a script hash, and a deployment address, so the full set of scripts an application needs is reviewable in one place and hashed into one manifest identity.
+
+Reconciliation manages those dependencies against the chain. For each target the planner checks the live reference-script UTxO and decides whether to `reuse` it, `deploy` it fresh, or `replace` a record whose script hash no longer matches. Targets removed from the manifest are retired. Because targets are pinned by hash, a dependency cannot drift silently: any change to a script produces a different hash, a `replace` action, and a `superseded` record in the audit history.
+
+```ts
+const plan = await reconcileScriptDeployment({ manifest, provider, cache });
+for (const action of plan.actions) {
+  console.log(action.type, "target" in action ? action.target.name : action.record.name);
+}
+```
+
 ## Record status
 
 Deployment records use these statuses.
