@@ -257,6 +257,23 @@ describe("Blockfrost", () => {
     expect(refUtxo?.output().scriptRef()?.hash()).toBe(alwaysTrueScript.hash());
   });
 
+  test("resolves script refs to undefined for scripts Blockfrost has never seen", async () => {
+    mockFetch(
+      jsonResponse(
+        {
+          status_code: 404,
+          error: "Not Found",
+          message: "The requested component has not been found.",
+        },
+        { status: 404 },
+      ),
+    );
+
+    await expect(
+      blockfrost().resolveScriptRef(alwaysTrueScript),
+    ).resolves.toBeUndefined();
+  });
+
   test("propagates Blockfrost API error messages", async () => {
     mockFetch(jsonResponse({ message: "bad key" }));
 

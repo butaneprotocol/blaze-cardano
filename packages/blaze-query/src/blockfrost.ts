@@ -699,9 +699,17 @@ export class Blockfrost extends Provider {
     for (;;) {
       const pagination = `count=${maxPageCount}&page=${page}`;
       const query = `/scripts/${scriptHash}/utxos?${pagination}`;
-      const json = await fetch(`${this.url}${query}`, {
+      const resp = await fetch(`${this.url}${query}`, {
         headers: this.headers(),
-      }).then((resp) => resp.json());
+      });
+
+      // Blockfrost returns 404 for script hashes it has never seen on-chain,
+      // which simply means there is no reference UTxO to resolve.
+      if (resp.status === 404) {
+        return undefined;
+      }
+
+      const json = await resp.json();
 
       if (!json) {
         throw new Error("resolveScriptRef: Could not parse response json");
