@@ -73,9 +73,7 @@ describe("Blueprint", () => {
     expect(alwaysTrueElse.Script.hash()).toBeDefined();
     expect(alwaysTrueElse.Script.asPlutusV3()?.rawBytes()).toBeDefined();
     expect(
-      alwaysTrueElse
-        .redeemer(PlutusData.fromCbor(HexBlob("d87980")))
-        .toCbor(),
+      alwaysTrueElse.redeemer(PlutusData.fromCbor(HexBlob("d87980"))).toCbor(),
     ).toBeDefined();
   });
 
@@ -135,9 +133,7 @@ describe("Nested blueprint", () => {
     expect(sometimesTrueSpend.Script.hash()).toBeDefined();
     expect(sometimesTrueSpend.Script.asPlutusV3()?.rawBytes()).toBeDefined();
     expect(
-      sometimesTrueSpend
-        .datum(PlutusData.fromCbor(HexBlob("d87980")))
-        .toCbor(),
+      sometimesTrueSpend.datum(PlutusData.fromCbor(HexBlob("d87980"))).toCbor(),
     ).toBeDefined();
     expect(sometimesTrueSpend.redeemer(1n).toCbor()).toBeDefined();
   });

@@ -9,9 +9,9 @@ export class TypedScript<
   RedeemerType extends PlutusData,
 > {
   /** Type-only datum marker used for generic inference. */
-  protected declare readonly __datum?: DatumType;
+  declare protected readonly __datum?: DatumType;
   /** Type-only redeemer marker used for generic inference. */
-  protected declare readonly __redeemer?: RedeemerType;
+  declare protected readonly __redeemer?: RedeemerType;
 
   constructor(
     public readonly Script: Script,
