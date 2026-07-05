@@ -41,6 +41,7 @@ The three milestones built on each other. M1 added the core deployment and looku
 - A reconciliation planner that keeps first-time deploys, reuse of existing scripts, replacement of changed scripts, and retirement of removed scripts in one model.
 - An end-to-end example that compiles a real Aiken validator and deploys it against the emulator, so the path from source contract to on-chain reference script is demonstrated rather than described.
 - Documentation covering the management standard, dependency management, CI usage, and per-provider behavior.
+- On collaboration and engagement: all work was developed in public pull requests on the Blaze repository and peer reviewed by senior Cardano developers outside the immediate team, including the original Blaze author and reviewers from other Cardano projects. The tooling was shaped by and used in Butane's own production deployments, and the milestone evidence, planning issues, and review threads are public for anyone auditing or building on the work.
 
 ## Key learnings
 
@@ -53,6 +54,10 @@ The three milestones built on each other. M1 added the core deployment and looku
 - Grow real-world adoption beyond the initial Butane usage and gather download and usage figures now that the package is on npm.
 - Extend provider compatibility notes as the tooling is exercised against more live-network setups.
 - Fold operator feedback from CI usage back into the manifest format, for example explicit dependency ordering between scripts if projects ask for it.
+
+## Final thoughts
+
+Script deployment was one of those workflow gaps every Cardano team papered over with ad-hoc scripts. Treating deployed scripts the way package managers treat dependencies, with a declared manifest, reconciliation, and an audit trail, turned out to be the right shape for the problem, and building it inside an SDK that teams already use meant the result is something developers can adopt with one install rather than a new tool to learn. We expect the manifest format and the reconciliation model to keep evolving with real usage, and the package is structured so that can happen without breaking the standard.
 
 ## Links
 
