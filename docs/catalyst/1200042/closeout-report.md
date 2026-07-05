@@ -7,9 +7,9 @@
 - Milestone module: https://milestones.projectcatalyst.io/projects/1200042
 - Project number: 1200042
 - Challenge: F12 — Cardano Open: Developers
-- Project manager: [NAME — fill in before submission]
+- Project manager: Jay Taylor
 - Date started: 2024-08-12
-- Date completed: [COMPLETION DATE — fill in before submission]
+- Date completed: 2026-07-06
 - Requested budget: 60,000 ADA across three milestones (15,000 / 15,000 / 30,000)
 
 ## Challenge KPIs and how the project addressed them
