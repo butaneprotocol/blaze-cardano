@@ -230,4 +230,45 @@ describe("TxBuilder safety helpers", () => {
 
     await expect(tx.complete()).rejects.toThrow(TxBuilderReuseError);
   });
+
+  it("keeps a completed transaction unchanged under any later builder use", async () => {
+    const mutations: ((tx: TxBuilder) => void)[] = [
+      (tx) => tx.payAssets(paymentAddress, makeValue(1_500_000n)),
+      (tx) => tx.mintAssets(policy, new Map([[assetName, 5n]])),
+      (tx) => tx.burnAssets(policy, new Map([[assetName, 2n]])),
+      (tx) => tx.addUnspentOutputs([fundedUtxo()]),
+      (tx) => tx.setChangeAddress(paymentAddress),
+      (tx) => tx.setNetworkId(NetworkId.Mainnet),
+    ];
+
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(fc.nat({ max: mutations.length - 1 }), { maxLength: 12 }),
+        async (mutationIndices) => {
+          const builder = new TxBuilder(hardCodedProtocolParams)
+            .addUnspentOutputs([fundedUtxo()])
+            .setNetworkId(NetworkId.Testnet)
+            .setChangeAddress(paymentAddress)
+            .payAssets(paymentAddress, makeValue(2_000_000n));
+
+          const completed = await builder.complete();
+          const bytesAtCompletion = completed.toCbor();
+
+          for (const index of mutationIndices) {
+            try {
+              mutations[index]!(builder);
+            } catch {
+              // A mutation may throw for its own reasons; the invariant
+              // under test is only that the completed transaction and the
+              // reuse guard are unaffected.
+            }
+          }
+
+          expect(completed.toCbor()).toBe(bytesAtCompletion);
+          await expect(builder.complete()).rejects.toThrow(TxBuilderReuseError);
+        },
+      ),
+      { numRuns: 25 },
+    );
+  });
 });
