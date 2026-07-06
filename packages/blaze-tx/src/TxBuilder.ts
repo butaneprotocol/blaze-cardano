@@ -2138,12 +2138,13 @@ export class TxBuilder {
     }
 
     this.trace("Transaction succesfully balanced");
-    // Return the fully constructed transaction.
+    // Return the fully constructed transaction, round-tripped through CBOR
+    // so it holds its own bytes. Without this the returned transaction would
+    // share this builder's mutable body, and builder use after complete()
+    // would silently alter an already-completed transaction.
     const finalWitnessSet = this.buildFinalWitnessSet([]);
-    this.completedTransaction = new Transaction(
-      this.body,
-      finalWitnessSet,
-      this.auxiliaryData,
+    this.completedTransaction = Transaction.fromCbor(
+      new Transaction(this.body, finalWitnessSet, this.auxiliaryData).toCbor(),
     );
     return this.completedTransaction;
   }
