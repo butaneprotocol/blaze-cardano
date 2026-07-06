@@ -314,8 +314,11 @@ export class TxBuilder {
     stakeCredential?: Credential,
   ): Address {
     if (this.networkId === undefined) {
+      const script = typedScript.name
+        ? `typed script "${typedScript.name}"`
+        : "typed script";
       throw new Error(
-        "lockScriptAssets: typed script lock requires a network id. Call setNetworkId first or pass an explicit address.",
+        `lockScriptAssets: locking at ${script} requires a network id. Call setNetworkId first or pass an explicit address.`,
       );
     }
     return addressFromCredentials(

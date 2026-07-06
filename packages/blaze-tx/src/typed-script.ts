@@ -15,6 +15,7 @@ export class TypedScript<
 
   constructor(
     public readonly Script: Script,
+    /** Human-readable identifier included in builder error messages. Blueprint codegen sets it to the validator's blueprint title. */
     public readonly name?: string,
   ) {}
 }

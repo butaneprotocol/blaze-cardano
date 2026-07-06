@@ -191,6 +191,18 @@ describe("TxBuilder safety helpers", () => {
     ).toThrow(/script hash/i);
   });
 
+  it("names the typed script in the missing-network-id error", () => {
+    const namedScript = new TypedScript<PlutusData, PlutusData>(
+      alwaysTrueScript,
+      "order-validator",
+    );
+    const tx = new TxBuilder(hardCodedProtocolParams);
+
+    expect(() =>
+      tx.lockScriptAssets(namedScript, makeValue(2_000_000n), datum),
+    ).toThrow(/typed script "order-validator".*network id/);
+  });
+
   it("requires a network id before using the deployScript burn address convenience", () => {
     const tx = new TxBuilder(hardCodedProtocolParams);
 
