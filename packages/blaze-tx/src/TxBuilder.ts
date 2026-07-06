@@ -2138,14 +2138,23 @@ export class TxBuilder {
     }
 
     this.trace("Transaction succesfully balanced");
-    // Return the fully constructed transaction, round-tripped through CBOR
-    // so it holds its own bytes. Without this the returned transaction would
-    // share this builder's mutable body, and builder use after complete()
-    // would silently alter an already-completed transaction.
     const finalWitnessSet = this.buildFinalWitnessSet([]);
-    this.completedTransaction = Transaction.fromCbor(
-      new Transaction(this.body, finalWitnessSet, this.auxiliaryData).toCbor(),
+    this.completedTransaction = new Transaction(
+      this.body,
+      finalWitnessSet,
+      this.auxiliaryData,
     );
+    // Hand exclusive ownership of the mutable structures to the completed
+    // transaction. The builder gets fresh empty ones, so further use of this
+    // (already dead) builder cannot alter the transaction it produced.
+    this.body = new TransactionBody(
+      CborSet.fromCore([], TransactionInput.fromCore),
+      [],
+      0n,
+      undefined,
+    );
+    this.redeemers = Redeemers.fromCore([]);
+    this.auxiliaryData = undefined;
     return this.completedTransaction;
   }
 
