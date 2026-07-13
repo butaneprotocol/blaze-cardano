@@ -9,7 +9,7 @@ import {
   AlwaysTrueWithGenericScriptNoParamsSpend,
   GenericType_OutputReference,
 } from "./plutus";
-import { Generator } from "../../src/blueprint";
+import { Generator, generateBlueprint } from "../../src/blueprint";
 
 describe("Generated code", () => {
   it("should not contain Type.Unsafe<PlutusData> to avoid TS2742 declaration emit errors", () => {
@@ -239,5 +239,102 @@ describe("Generator.normalizeTypeName", () => {
       );
       expect(result).toBe("OutputReference");
     });
+  });
+
+  describe("angle-bracket generics (aiken v1.1.22 and later)", () => {
+    it("normalizes Tuple<<ByteArray,Data>> to a valid identifier", () => {
+      expect(generator.normalizeTypeName("Tuple<<ByteArray,Data>>")).toBe(
+        "Tuple_ByteArray_Data",
+      );
+    });
+
+    it("uses the last path segment of each type parameter", () => {
+      expect(
+        generator.normalizeTypeName(
+          "Tuple<<aiken/crypto/VerificationKey,aiken/crypto/Signature>>",
+        ),
+      ).toBe("Tuple_VerificationKey_Signature");
+      expect(
+        generator.normalizeTypeName("Tuple<<types/common/AssetClass,Int>>"),
+      ).toBe("Tuple_AssetClass_Int");
+    });
+
+    it("never emits an invalid identifier for angle-bracket names", () => {
+      const out = generator.normalizeTypeName(
+        "Tuple<<types/common/ModuleHash,ByteArray>>",
+      );
+      expect(out).toBe("Tuple_ModuleHash_ByteArray");
+      expect(out).toMatch(/^[A-Za-z_$][A-Za-z0-9_$]*$/);
+    });
+
+    // Aiken single-brackets user-defined generics (only built-in Tuple is
+    // double-bracketed), so the base name must be preserved, not dropped.
+    it("normalizes single-bracket user generics and keeps the base name", () => {
+      expect(
+        generator.normalizeTypeName("genc/types/MyPair<ByteArray,Int>"),
+      ).toBe("MyPair_ByteArray_Int");
+      expect(
+        generator.normalizeTypeName(
+          "gen/MyPair<cardano/transaction/OutputReference,Int>",
+        ),
+      ).toBe("MyPair_OutputReference_Int");
+    });
+
+    it("normalizes nested single and mixed single/double generics", () => {
+      expect(
+        generator.normalizeTypeName(
+          "genc/types/MyPair<genc/types/MyPair<ByteArray,Int>,Int>",
+        ),
+      ).toBe("MyPair_MyPair_ByteArray_Int_Int");
+      expect(
+        generator.normalizeTypeName("gen/Wrap<Tuple<<ByteArray,Int>>>"),
+      ).toBe("Wrap_Tuple_ByteArray_Int");
+    });
+  });
+
+  describe("sanitize backstop", () => {
+    it("suffixes TypeScript reserved words", () => {
+      expect(generator.normalizeTypeName("mod/return")).toBe("return_");
+      expect(generator.normalizeTypeName("mod/class")).toBe("class_");
+    });
+
+    it("throws on a name that normalizes to empty", () => {
+      expect(() => generator.normalizeTypeName("mod/")).toThrow(/empty/);
+    });
+  });
+
+  describe("name-collision guard", () => {
+    it("throws when two definitions normalize to the same identifier", () => {
+      const definitions: any = {
+        "a/common/State": { dataType: "bytes" },
+        "b/other/State": { dataType: "bytes" },
+      };
+      expect(() => generator.writeModule(definitions)).toThrow(/collision/);
+    });
+  });
+});
+
+// End-to-end against a real aiken v1.1.22 plutus.json (built from a project with
+// a user generic MyPair<A,B> and a built-in tuple), so CI exercises the actual
+// angle-bracket path, not just hand-written normalizer inputs.
+describe("angle-bracket generics end to end (real aiken v1.1.22 output)", () => {
+  it("generates valid, correctly-named declarations", async () => {
+    const out = "/tmp/blaze_v1_1_22_blueprint.ts";
+    await generateBlueprint({ infile: "./plutus.v1_1_22.json", outfile: out });
+    const code = fs.readFileSync(out, "utf-8");
+    fs.rmSync(out, { force: true });
+
+    const names = [...code.matchAll(/export (?:const|type) (\S+)/g)].map(
+      (m) => m[1]!,
+    );
+    // built-in Tuple (double bracket) and user generic (single bracket, base kept)
+    expect(names).toContain("Tuple_ByteArray_Int");
+    expect(names).toContain("MyPair_ByteArray_Int");
+    expect(names).toContain("MyPair_MyPair_ByteArray_Int_Int");
+    // every declared identifier is valid TypeScript (no leftover bracket or comma)
+    expect(names.length).toBeGreaterThan(0);
+    for (const n of names) {
+      expect(n).toMatch(/^[A-Za-z_$][A-Za-z0-9_$]*$/);
+    }
   });
 });

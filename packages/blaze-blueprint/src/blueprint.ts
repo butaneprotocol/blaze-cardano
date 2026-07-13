@@ -253,6 +253,90 @@ export class Generator {
     fullDefinitionName: string,
     schema?: Annotated<Schema>,
   ): string {
+    return Generator.sanitizeIdentifier(
+      this.normalizeTypeNameRaw(fullDefinitionName, schema),
+    );
+  }
+
+  // TypeScript reserved words that cannot appear as a declaration identifier.
+  private static readonly RESERVED = new Set([
+    "break", "case", "catch", "class", "const", "continue", "debugger",
+    "default", "delete", "do", "else", "enum", "export", "extends", "false",
+    "finally", "for", "function", "if", "import", "in", "instanceof", "new",
+    "null", "return", "super", "switch", "this", "throw", "true", "try",
+    "typeof", "var", "void", "while", "with", "implements", "interface",
+    "let", "package", "private", "protected", "public", "static", "yield",
+    "await",
+  ]);
+
+  // Coerce a computed name into a valid TypeScript identifier as a final guard.
+  // Replaces out-of-alphabet characters, prefixes a leading digit, suffixes a
+  // reserved word, and fails loud on an empty result (a definition name that
+  // normalizes to nothing is malformed input, not something to paper over).
+  private static sanitizeIdentifier(name: string): string {
+    let cleaned = name.replace(/[^A-Za-z0-9_$]/g, "_");
+    if (cleaned.length === 0) {
+      throw new Error(
+        `blueprint: definition name "${name}" normalizes to an empty ` +
+          `TypeScript identifier. The plutus.json definition names look malformed.`,
+      );
+    }
+    if (/^[0-9]/.test(cleaned)) cleaned = `_${cleaned}`;
+    if (Generator.RESERVED.has(cleaned)) cleaned = `${cleaned}_`;
+    return cleaned;
+  }
+
+  // Splits generic type params on top-level commas, respecting nested angle
+  // brackets. Counts every "<" as one level deeper, so the double-bracket Tuple
+  // form ("<<...>>") and the single-bracket user form ("<...>") both balance.
+  private splitTopLevelParams(inner: string): string[] {
+    const out: string[] = [];
+    let depth = 0;
+    let cur = "";
+    for (const ch of inner) {
+      if (ch === "<") depth++;
+      else if (ch === ">") depth--;
+      if (ch === "," && depth === 0) {
+        out.push(cur);
+        cur = "";
+      } else {
+        cur += ch;
+      }
+    }
+    if (cur.length > 0) out.push(cur);
+    return out;
+  }
+
+  // Normalizes aiken's angle-bracket generic encoding to an identifier. The
+  // built-in Tuple is double-bracketed ("Tuple<<A,B>>") and user generics are
+  // single-bracketed ("module/MyPair<A,B>"). Emit the base name (last path
+  // segment before the first "<") followed by each parameter's normalized name.
+  private normalizeAngleGeneric(name: string): string {
+    const firstLt = name.indexOf("<");
+    if (firstLt === -1) {
+      return name.split("/").pop()!.replace(/~/g, "_");
+    }
+    const base = name.slice(0, firstLt).split("/").pop()!.replace(/~/g, "_");
+    let open = 0;
+    while (name[firstLt + open] === "<") open++;
+    const inner = name.slice(firstLt + open, name.length - open);
+    const params = this.splitTopLevelParams(inner).map((p) =>
+      this.normalizeAngleGeneric(p.trim()),
+    );
+    return [base, ...params].join("_");
+  }
+
+  private normalizeTypeNameRaw(
+    fullDefinitionName: string,
+    schema?: Annotated<Schema>,
+  ): string {
+    // Newer aiken encodes generic instantiations with angle brackets:
+    // "Tuple<<ByteArray,Data>>" (built-in Tuple) and "module/MyPair<A,B>" (user
+    // generics). Older aiken used a "$" separator, still handled below.
+    if (fullDefinitionName.includes("<")) {
+      return this.normalizeAngleGeneric(fullDefinitionName);
+    }
+
     const parts = fullDefinitionName.split("/");
 
     // Find the part containing "$" (indicates generic type instantiation)
@@ -317,6 +401,7 @@ export class Generator {
 
   public writeModule(definitions: Record<string, Annotated<Schema>>) {
     const types = [];
+    const seen = new Map<string, string>();
     this.writeLine(`const Contracts = Type.Module({`);
     this.indent();
     for (const [name, definition] of Object.entries(definitions)) {
@@ -327,6 +412,15 @@ export class Generator {
         continue;
       }
       const normalizedName = this.normalizeTypeName(name, definition);
+      const previous = seen.get(normalizedName);
+      if (previous !== undefined && previous !== name) {
+        throw new Error(
+          `blueprint: type name collision "${normalizedName}" produced by both ` +
+            `"${previous}" and "${name}". Two distinct definitions map to the ` +
+            `same TypeScript identifier. Disambiguate the source types.`,
+        );
+      }
+      seen.set(normalizedName, name);
       types.push(normalizedName);
       this.buildLine(`${normalizedName}: `);
       this.writeTypeboxType(definition, definitions);
