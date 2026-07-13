@@ -72,10 +72,14 @@ jobs:
       - name: 🧪 Run test
         run: bun run test
 
+      - name: 🧪 Run non-secret e2e tests
+        run: bun --filter @blaze-cardano/e2e test
+
       - name: 📊 Run coverage
         run: |
           bun --filter @blaze-cardano/emulator coverage
           bun --filter @blaze-cardano/deploy coverage
+          bun --filter @blaze-cardano/tx test:coverage
 
       - name: 📙 Run Docs
         run: bun run docs:prepare

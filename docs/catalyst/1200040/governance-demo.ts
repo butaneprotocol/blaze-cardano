@@ -2,8 +2,6 @@ import {
   Address,
   Credential,
   CredentialType,
-  DRep,
-  Ed25519KeyHashHex,
   EpochNo,
   GovernanceActionId,
   Hash28ByteBase16,
@@ -15,8 +13,6 @@ import {
   TransactionId,
   Vote,
   Voter,
-  VotingProcedure,
-  VotingProcedures,
   hardCodedProtocolParams,
   type CommitteeMember,
   type CredentialCore,
@@ -24,8 +20,13 @@ import {
 import { Blaze, makeValue, type Provider } from "@blaze-cardano/sdk";
 import { HotWallet } from "@blaze-cardano/wallet";
 import { Emulator } from "@blaze-cardano/emulator";
+import {
+  GovernanceGuardPropose,
+  GovernanceGuardVote,
+} from "../../../packages/blaze-emulator/test/aiken/plutus";
 
 const ZERO_HASH32 = Hash32ByteBase16("".padStart(64, "0"));
+const GOVERNANCE_REDEEMER = 42n;
 
 async function signAndSubmit(
   tx: Transaction,
@@ -123,14 +124,48 @@ async function main(): Promise<void> {
     logStep(`3. initial stake snapshot: epoch=${emulator.clock.epoch}`);
 
     const stakeCredential = Credential.fromCore(stakeCred);
-    const setupTx = await wallet
+    const scriptVote = new GovernanceGuardVote(
+      GOVERNANCE_REDEEMER,
+      BigInt(hardCodedProtocolParams.governanceActionDeposit!),
+    );
+    const proposalPolicy = new GovernanceGuardPropose(
+      GOVERNANCE_REDEEMER,
+      BigInt(hardCodedProtocolParams.governanceActionDeposit!),
+    );
+    const scriptDrepCredential = Credential.fromCore({
+      type: CredentialType.ScriptHash,
+      hash: scriptVote.Script.hash(),
+    });
+    emulator.constitution.scriptHash = proposalPolicy.Script.hash();
+
+    const stakeRegistrationTx = await wallet
       .newTransaction()
       .addRegisterStake(stakeCredential)
-      .addRegisterDRep(stakeCredential, 0n)
       .complete();
-    const setupTxHash = await signAndSubmit(setupTx, wallet, true);
-    emulator.awaitTransactionConfirmation(setupTxHash);
-    logStep(`4. registered stake credential and DRep: tx=${setupTxHash}`);
+    const stakeRegistrationHash = await signAndSubmit(
+      stakeRegistrationTx,
+      wallet,
+    );
+    emulator.awaitTransactionConfirmation(stakeRegistrationHash);
+    logStep(`4. registered stake credential: tx=${stakeRegistrationHash}`);
+
+    const drepRegistrationTx = await wallet
+      .newTransaction()
+      .provideScript(scriptVote.Script)
+      .addRegisterDRep(
+        scriptDrepCredential,
+        0n,
+        undefined,
+        scriptVote.redeemer(GOVERNANCE_REDEEMER),
+      )
+      .complete();
+    const drepRegistrationHash = await signAndSubmit(
+      drepRegistrationTx,
+      wallet,
+    );
+    emulator.awaitTransactionConfirmation(drepRegistrationHash);
+    logStep(`5. registered script DRep: tx=${drepRegistrationHash}`);
+    logStep(`   PlutusV3 script hash: ${scriptVote.Script.hash()}`);
 
     const rewardAccount = RewardAccount.fromCredential(
       stakeCred,
@@ -141,11 +176,18 @@ async function main(): Promise<void> {
       throw new Error(`Missing reward account ${rewardAccount}`);
     }
     account.balance = 1_000_000_000n;
-    account.drep = DRep.newKeyHash(Ed25519KeyHashHex(stakeCred.hash));
-    logStep(`   delegated voting stake: rewardAccount=${rewardAccount}`);
+
+    const delegationTx = await wallet
+      .newTransaction()
+      .addVoteDelegation(stakeCredential, scriptDrepCredential)
+      .complete();
+    const delegationHash = await signAndSubmit(delegationTx, wallet, true);
+    emulator.awaitTransactionConfirmation(delegationHash);
+    logStep(`6. delegated voting stake to script DRep: tx=${delegationHash}`);
+    logStep(`   reward account: ${rewardAccount}`);
 
     emulator.stepForwardToNextEpoch();
-    logStep(`5. DRep voting power snapshotted: epoch=${emulator.clock.epoch}`);
+    logStep(`7. script DRep voting power snapshotted: epoch=${emulator.clock.epoch}`);
 
     const parameterChange = ProposalProcedure.fromCore({
       deposit: BigInt(hardCodedProtocolParams.governanceActionDeposit!),
@@ -157,7 +199,7 @@ async function main(): Promise<void> {
         protocolParamUpdate: {
           minFeeConstant: newMinFeeConstant,
         },
-        policyHash: emulator.constitution.scriptHash,
+        policyHash: proposalPolicy.Script.hash(),
       },
       anchor: {
         url: "ipfs://blaze-emulator-governance-demo",
@@ -167,35 +209,59 @@ async function main(): Promise<void> {
 
     const proposalTx = await wallet
       .newTransaction()
-      .addProposal(parameterChange)
+      .provideScript(proposalPolicy.Script)
+      .addProposal(
+        parameterChange,
+        proposalPolicy.redeemer(GOVERNANCE_REDEEMER),
+      )
       .complete();
     const proposalTxHash = await signAndSubmit(proposalTx, wallet);
     emulator.awaitTransactionConfirmation(proposalTxHash);
     const actionId = new GovernanceActionId(TransactionId(proposalTxHash), 0n);
     const action = actionId.toCore();
     const actionKey = `${action.id}:${BigInt(action.actionIndex)}`;
-    logStep(`6. submitted parameter-change proposal: ${actionKey}`);
+    logStep(`8. proposal policy accepted parameter change: ${actionKey}`);
     logStep(`   payload: minFeeConstant=${newMinFeeConstant}`);
 
-    const votingProcedures = new VotingProcedures();
-    votingProcedures.insert(
-      Voter.newDrep(Credential.fromCore(stakeCred).toCore()),
-      actionId,
-      new VotingProcedure(Vote.yes),
-    );
+    const voter = Voter.newDrep(scriptDrepCredential.toCore());
+    let rejectedInvalidRedeemer = false;
+    try {
+      await wallet
+        .newTransaction()
+        .provideScript(scriptVote.Script)
+        .addVote({
+          voter,
+          actionId,
+          vote: Vote.yes,
+          redeemer: scriptVote.redeemer(GOVERNANCE_REDEEMER - 1n),
+        })
+        .complete();
+    } catch {
+      rejectedInvalidRedeemer = true;
+    }
+    if (!rejectedInvalidRedeemer) {
+      throw new Error("Expected the PlutusV3 script to reject the wrong redeemer");
+    }
+    logStep("9. script rejected vote with the wrong redeemer");
+
     const voteTx = await wallet
       .newTransaction()
-      .setVotingProcedures(votingProcedures)
-      .addRequiredSigner(Ed25519KeyHashHex(stakeCred.hash))
+      .provideScript(scriptVote.Script)
+      .addVote({
+        voter,
+        actionId,
+        vote: Vote.yes,
+        redeemer: scriptVote.redeemer(GOVERNANCE_REDEEMER),
+      })
       .complete();
-    const voteTxHash = await signAndSubmit(voteTx, wallet, true);
+    const voteTxHash = await signAndSubmit(voteTx, wallet);
     emulator.awaitTransactionConfirmation(voteTxHash);
-    logStep(`7. submitted DRep yes vote: tx=${voteTxHash}`);
+    logStep(`10. script accepted DRep yes vote: tx=${voteTxHash}`);
 
     emulator.stepForwardToNextEpoch();
     const status = emulator.getGovernanceProposalStatus(actionId);
-    logStep(`8. advanced to epoch=${emulator.clock.epoch}: status=${status}`);
-    logStep(`9. final minFeeConstant=${emulator.params.minFeeConstant}`);
+    logStep(`11. advanced to epoch=${emulator.clock.epoch}: status=${status}`);
+    logStep(`12. final minFeeConstant=${emulator.params.minFeeConstant}`);
 
     if (status !== "Enacted") {
       throw new Error(`Expected proposal status Enacted, got ${status}`);

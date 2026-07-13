@@ -16,123 +16,123 @@ const ContractDefinitions = Contracts.$defs;
 const serializeContractData = <T extends PlutusData>(schema, value): T => serialize(schema, value, ContractDefinitions) as T;
 
 
-type __AlwaysTrueScriptVoteRedeemerData = PlutusData & { readonly __AlwaysTrueScriptVoteRedeemer: "__AlwaysTrueScriptVoteRedeemerData" };
-const __AlwaysTrueScriptVoteRedeemerSchema = TPlutusData;
-type __AlwaysTrueScriptVoteRedeemerInput = Exact<typeof __AlwaysTrueScriptVoteRedeemerSchema>;
+type __GovernanceGuardVoteRedeemerData = PlutusData & { readonly __GovernanceGuardVoteRedeemer: "__GovernanceGuardVoteRedeemerData" };
+const __GovernanceGuardVoteRedeemerSchema = Type.BigInt();
+type __GovernanceGuardVoteRedeemerInput = Exact<typeof __GovernanceGuardVoteRedeemerSchema>;
 
-export class AlwaysTrueScriptVote extends TypedScript<PlutusData, __AlwaysTrueScriptVoteRedeemerData> {
+export class GovernanceGuardVote extends TypedScript<PlutusData, __GovernanceGuardVoteRedeemerData> {
   constructor(
-    _param1: Int,
-    _param2: ByteArray,
+    expectedRedeemer: Int,
+    minimumDeposit: Int,
   ) {
     const Script = cborToScript(
       applyParamsToScript(
-        "589f0101002229800aba2aba1aab9eaab9dab9a9bad0039bae0024888888966002646465300130073754003300900398048012444b30013370e9004001c4c928980618059baa0048acc004cdc3a401400713233224a26eb4c034004c034c038004c02cdd5002456600266e1d20060038991991251375a601a002601a601c00260166ea80122c8049009201218041804800980400098029baa0088a4d13656400c1",
+        "58d20101002229800aba2aba1aab9eaab9dab9a9bad0039bad002488888896600264646530013007375400330090039b87375a60120049112cc004cdc3a40100071598009800804456600266e1d2002300a3754601860166ea801229462941009452820128acc004cdc3a40140071323259800980180544cdc48049bad300e300d3754601c601e00514a08058dd6980680098059baa0048acc004cdc3a400c0071323322300400b375a601a002601a601c00260166ea80122c8049009201218041804800980400098029baa0088a4d13656400c1",
         Type.Tuple([
           Type.BigInt(),
-          Type.String(),
+          Type.BigInt(),
         ]),
         [
-          _param1,
-          _param2,
+          expectedRedeemer,
+          minimumDeposit,
         ],
       ),
       "PlutusV3"
     );
-    super(Script, "always_true.script.vote");
+    super(Script, "governance.guard.vote");
   }
 
-  redeemer(value: __AlwaysTrueScriptVoteRedeemerInput): __AlwaysTrueScriptVoteRedeemerData {
-    return serializeContractData<__AlwaysTrueScriptVoteRedeemerData>(__AlwaysTrueScriptVoteRedeemerSchema, value);
+  redeemer(value: __GovernanceGuardVoteRedeemerInput): __GovernanceGuardVoteRedeemerData {
+    return serializeContractData<__GovernanceGuardVoteRedeemerData>(__GovernanceGuardVoteRedeemerSchema, value);
   }
 }
-type __AlwaysTrueScriptProposeRedeemerData = PlutusData & { readonly __AlwaysTrueScriptProposeRedeemer: "__AlwaysTrueScriptProposeRedeemerData" };
-const __AlwaysTrueScriptProposeRedeemerSchema = TPlutusData;
-type __AlwaysTrueScriptProposeRedeemerInput = Exact<typeof __AlwaysTrueScriptProposeRedeemerSchema>;
+type __GovernanceGuardProposeRedeemerData = PlutusData & { readonly __GovernanceGuardProposeRedeemer: "__GovernanceGuardProposeRedeemerData" };
+const __GovernanceGuardProposeRedeemerSchema = Type.BigInt();
+type __GovernanceGuardProposeRedeemerInput = Exact<typeof __GovernanceGuardProposeRedeemerSchema>;
 
-export class AlwaysTrueScriptPropose extends TypedScript<PlutusData, __AlwaysTrueScriptProposeRedeemerData> {
+export class GovernanceGuardPropose extends TypedScript<PlutusData, __GovernanceGuardProposeRedeemerData> {
   constructor(
-    _param1: Int,
-    _param2: ByteArray,
+    expectedRedeemer: Int,
+    minimumDeposit: Int,
   ) {
     const Script = cborToScript(
       applyParamsToScript(
-        "589f0101002229800aba2aba1aab9eaab9dab9a9bad0039bae0024888888966002646465300130073754003300900398048012444b30013370e9004001c4c928980618059baa0048acc004cdc3a401400713233224a26eb4c034004c034c038004c02cdd5002456600266e1d20060038991991251375a601a002601a601c00260166ea80122c8049009201218041804800980400098029baa0088a4d13656400c1",
+        "58d20101002229800aba2aba1aab9eaab9dab9a9bad0039bad002488888896600264646530013007375400330090039b87375a60120049112cc004cdc3a40100071598009800804456600266e1d2002300a3754601860166ea801229462941009452820128acc004cdc3a40140071323259800980180544cdc48049bad300e300d3754601c601e00514a08058dd6980680098059baa0048acc004cdc3a400c0071323322300400b375a601a002601a601c00260166ea80122c8049009201218041804800980400098029baa0088a4d13656400c1",
         Type.Tuple([
           Type.BigInt(),
-          Type.String(),
+          Type.BigInt(),
         ]),
         [
-          _param1,
-          _param2,
+          expectedRedeemer,
+          minimumDeposit,
         ],
       ),
       "PlutusV3"
     );
-    super(Script, "always_true.script.propose");
+    super(Script, "governance.guard.propose");
   }
 
-  redeemer(value: __AlwaysTrueScriptProposeRedeemerInput): __AlwaysTrueScriptProposeRedeemerData {
-    return serializeContractData<__AlwaysTrueScriptProposeRedeemerData>(__AlwaysTrueScriptProposeRedeemerSchema, value);
+  redeemer(value: __GovernanceGuardProposeRedeemerInput): __GovernanceGuardProposeRedeemerData {
+    return serializeContractData<__GovernanceGuardProposeRedeemerData>(__GovernanceGuardProposeRedeemerSchema, value);
   }
 }
-type __AlwaysTrueScriptPublishRedeemerData = PlutusData & { readonly __AlwaysTrueScriptPublishRedeemer: "__AlwaysTrueScriptPublishRedeemerData" };
-const __AlwaysTrueScriptPublishRedeemerSchema = TPlutusData;
-type __AlwaysTrueScriptPublishRedeemerInput = Exact<typeof __AlwaysTrueScriptPublishRedeemerSchema>;
+type __GovernanceGuardPublishRedeemerData = PlutusData & { readonly __GovernanceGuardPublishRedeemer: "__GovernanceGuardPublishRedeemerData" };
+const __GovernanceGuardPublishRedeemerSchema = Type.BigInt();
+type __GovernanceGuardPublishRedeemerInput = Exact<typeof __GovernanceGuardPublishRedeemerSchema>;
 
-export class AlwaysTrueScriptPublish extends TypedScript<PlutusData, __AlwaysTrueScriptPublishRedeemerData> {
+export class GovernanceGuardPublish extends TypedScript<PlutusData, __GovernanceGuardPublishRedeemerData> {
   constructor(
-    _param1: Int,
-    _param2: ByteArray,
+    expectedRedeemer: Int,
+    minimumDeposit: Int,
   ) {
     const Script = cborToScript(
       applyParamsToScript(
-        "589f0101002229800aba2aba1aab9eaab9dab9a9bad0039bae0024888888966002646465300130073754003300900398048012444b30013370e9004001c4c928980618059baa0048acc004cdc3a401400713233224a26eb4c034004c034c038004c02cdd5002456600266e1d20060038991991251375a601a002601a601c00260166ea80122c8049009201218041804800980400098029baa0088a4d13656400c1",
+        "58d20101002229800aba2aba1aab9eaab9dab9a9bad0039bad002488888896600264646530013007375400330090039b87375a60120049112cc004cdc3a40100071598009800804456600266e1d2002300a3754601860166ea801229462941009452820128acc004cdc3a40140071323259800980180544cdc48049bad300e300d3754601c601e00514a08058dd6980680098059baa0048acc004cdc3a400c0071323322300400b375a601a002601a601c00260166ea80122c8049009201218041804800980400098029baa0088a4d13656400c1",
         Type.Tuple([
           Type.BigInt(),
-          Type.String(),
+          Type.BigInt(),
         ]),
         [
-          _param1,
-          _param2,
+          expectedRedeemer,
+          minimumDeposit,
         ],
       ),
       "PlutusV3"
     );
-    super(Script, "always_true.script.publish");
+    super(Script, "governance.guard.publish");
   }
 
-  redeemer(value: __AlwaysTrueScriptPublishRedeemerInput): __AlwaysTrueScriptPublishRedeemerData {
-    return serializeContractData<__AlwaysTrueScriptPublishRedeemerData>(__AlwaysTrueScriptPublishRedeemerSchema, value);
+  redeemer(value: __GovernanceGuardPublishRedeemerInput): __GovernanceGuardPublishRedeemerData {
+    return serializeContractData<__GovernanceGuardPublishRedeemerData>(__GovernanceGuardPublishRedeemerSchema, value);
   }
 }
-type __AlwaysTrueScriptElseRedeemerData = PlutusData & { readonly __AlwaysTrueScriptElseRedeemer: "__AlwaysTrueScriptElseRedeemerData" };
-const __AlwaysTrueScriptElseRedeemerSchema = TPlutusData;
-type __AlwaysTrueScriptElseRedeemerInput = Exact<typeof __AlwaysTrueScriptElseRedeemerSchema>;
+type __GovernanceGuardElseRedeemerData = PlutusData & { readonly __GovernanceGuardElseRedeemer: "__GovernanceGuardElseRedeemerData" };
+const __GovernanceGuardElseRedeemerSchema = TPlutusData;
+type __GovernanceGuardElseRedeemerInput = Exact<typeof __GovernanceGuardElseRedeemerSchema>;
 
-export class AlwaysTrueScriptElse extends TypedScript<PlutusData, __AlwaysTrueScriptElseRedeemerData> {
+export class GovernanceGuardElse extends TypedScript<PlutusData, __GovernanceGuardElseRedeemerData> {
   constructor(
-    _param1: Int,
-    _param2: ByteArray,
+    expectedRedeemer: Int,
+    minimumDeposit: Int,
   ) {
     const Script = cborToScript(
       applyParamsToScript(
-        "589f0101002229800aba2aba1aab9eaab9dab9a9bad0039bae0024888888966002646465300130073754003300900398048012444b30013370e9004001c4c928980618059baa0048acc004cdc3a401400713233224a26eb4c034004c034c038004c02cdd5002456600266e1d20060038991991251375a601a002601a601c00260166ea80122c8049009201218041804800980400098029baa0088a4d13656400c1",
+        "58d20101002229800aba2aba1aab9eaab9dab9a9bad0039bad002488888896600264646530013007375400330090039b87375a60120049112cc004cdc3a40100071598009800804456600266e1d2002300a3754601860166ea801229462941009452820128acc004cdc3a40140071323259800980180544cdc48049bad300e300d3754601c601e00514a08058dd6980680098059baa0048acc004cdc3a400c0071323322300400b375a601a002601a601c00260166ea80122c8049009201218041804800980400098029baa0088a4d13656400c1",
         Type.Tuple([
           Type.BigInt(),
-          Type.String(),
+          Type.BigInt(),
         ]),
         [
-          _param1,
-          _param2,
+          expectedRedeemer,
+          minimumDeposit,
         ],
       ),
       "PlutusV3"
     );
-    super(Script, "always_true.script.else");
+    super(Script, "governance.guard.else");
   }
 
-  redeemer(value: __AlwaysTrueScriptElseRedeemerInput): __AlwaysTrueScriptElseRedeemerData {
-    return serializeContractData<__AlwaysTrueScriptElseRedeemerData>(__AlwaysTrueScriptElseRedeemerSchema, value);
+  redeemer(value: __GovernanceGuardElseRedeemerInput): __GovernanceGuardElseRedeemerData {
+    return serializeContractData<__GovernanceGuardElseRedeemerData>(__GovernanceGuardElseRedeemerSchema, value);
   }
 }

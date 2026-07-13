@@ -173,6 +173,18 @@ const voteAsDRep = async (
 };
 ```
 
+## Script-managed DReps and proposal policies
+
+Script credentials use the same emulator flow, but the transaction must include the PlutusV3 script and a redeemer for the relevant governance purpose. Register the script credential as a DRep, delegate stake to it, then use `addVote` with the script DRep as the voter. A constitution proposal policy uses `addProposal` with its own redeemer.
+
+The repository includes a complete example based on an Aiken validator that checks its redeemer, rejects non-DRep voters, and enforces a minimum proposal deposit. Run it with:
+
+```sh
+bun docs/catalyst/1200040/governance-demo.ts
+```
+
+The output shows each transaction, the rejected vote with an invalid redeemer, the accepted script DRep vote, and the enacted protocol-parameter change. The corresponding integration tests are in `packages/blaze-emulator/test/Governance.test.ts`.
+
 ## Example: Parameter Change Enactment
 
 Now, let's use these helpers to test a parameter change proposal. A DRep who registers stake, votes “yes”, and advances two epochs should trigger the enactment of the proposal.
