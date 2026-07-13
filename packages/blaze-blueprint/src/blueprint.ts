@@ -29,6 +29,13 @@ type Parameter = {
   schema: Declaration<Schema>;
 };
 
+/** Low-level TypeScript writer used by {@link generateBlueprint}.
+ *
+ * Most applications should use the CLI or `generateBlueprint`. This class is
+ * available for tools that need to control individual generation stages.
+ *
+ * @public
+ */
 export class Generator {
   buffer: string[] = [];
   line: string = "";
@@ -770,23 +777,43 @@ export class Generator {
   }
 }
 
-export type BlueprintArgs = {
-  infile?: string;
-  tracedBlueprint?: string;
-  outfile?: string;
-  useSdk?: boolean;
-  recursiveType?: string;
-};
-
-/**
- * Example documentation for this function.
+/** Options for generating a TypeScript module from a Plutus blueprint.
+ *
+ * @public
  */
-export async function generateBlueprint({
-  infile = "plutus.json",
-  tracedBlueprint = undefined,
-  outfile = "plutus.ts",
-  useSdk = false,
-}: BlueprintArgs) {
+export interface BlueprintArgs {
+  /** Path to the CIP-57 Plutus blueprint. Defaults to `plutus.json`. */
+  infile?: string;
+  /** Optional path to a traced blueprint containing the same validator titles. */
+  tracedBlueprint?: string;
+  /** TypeScript file to write. Defaults to `plutus.ts`. */
+  outfile?: string;
+  /** Import Blaze functionality from `@blaze-cardano/sdk` in the generated module. */
+  useSdk?: boolean;
+  /** Legacy recursive-type option. The generator does not use this field.
+   *
+   * @deprecated This option is ignored.
+   */
+  recursiveType?: string;
+}
+
+/** Generates a TypeScript module from a CIP-57 Plutus blueprint.
+ *
+ * The generated module contains typed validator classes, contract data schemas,
+ * and datum and redeemer serializers. Existing output is replaced.
+ *
+ * @param input - Input, output, import, and optional tracing settings.
+ * @returns A promise that resolves after the TypeScript module has been written.
+ *
+ * @public
+ */
+export async function generateBlueprint(input: BlueprintArgs) {
+  const {
+    infile = "plutus.json",
+    tracedBlueprint = undefined,
+    outfile = "plutus.ts",
+    useSdk = false,
+  } = input;
   const plutusJson: Blueprint = JSON.parse(await fs.readFile(infile, "utf8"));
 
   let plutusJsonWithTrace: Blueprint | undefined;

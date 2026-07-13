@@ -4,12 +4,20 @@
 
 ```ts
 
-// Warning: (ae-forgotten-export) The symbol "BlueprintArgs" needs to be exported by the entry point index.d.ts
-//
+// @public
+export interface BlueprintArgs {
+    infile?: string;
+    outfile?: string;
+    // @deprecated
+    recursiveType?: string;
+    tracedBlueprint?: string;
+    useSdk?: boolean;
+}
+
 // @public
 export function generateBlueprint(input: BlueprintArgs): Promise<void>;
 
-// @public (undocumented)
+// @public
 class Generator_2 {
     // (undocumented)
     buffer: string[];

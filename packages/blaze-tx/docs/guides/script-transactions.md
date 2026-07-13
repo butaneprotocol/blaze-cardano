@@ -23,6 +23,8 @@ const orderValidator = new TypedScript<OrderDatum, CancelRedeemer>(
 
 The wrapper keeps the original `Script` at `orderValidator.Script`. The generic datum and redeemer types are only used by TypeScript.
 
+`@blaze-cardano/blueprint` generates this wrapper directly from an Aiken `plutus.json`. Generated validator classes extend `TypedScript` and include schema-based `datum()` and `redeemer()` methods, so applications do not need to define the wrapper or serialize contract data by hand. See [Generate typed validators](/blueprint/guides/introduction) for the build and generation workflow.
+
 ## Lock Assets With a Typed Datum
 
 ```ts
@@ -68,7 +70,7 @@ The builder rejects several common transaction-construction mistakes before they
 
 ### Mismatched datum or redeemer types
 
-`addInput<T>`, `lockScriptAssets`, and the generated blueprint validators bind a datum type and a redeemer type to one script. Passing a value that belongs to a different script is a compile-time error, not a runtime one:
+`addInput<T>`, `lockScriptAssets`, and the generated Blueprint validators bind a datum type and a redeemer type to one script. Passing a value that belongs to a different script is a compile-time error, not a runtime one:
 
 ```ts
 // @ts-expect-error redeemer belongs to a different validator
