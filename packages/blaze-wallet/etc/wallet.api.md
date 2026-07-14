@@ -87,7 +87,7 @@ export class HotSingleWallet implements Wallet {
     readonly networkId: NetworkId;
     postTransaction(tx: Transaction): Promise<TransactionId>;
     signData(address: Address, payload: string): Promise<CIP30DataSignature>;
-    signTransaction(tx: Transaction, partialSign?: boolean): Promise<TransactionWitnessSet>;
+    signTransaction(tx: Transaction, partialSign?: boolean, signWithStakeKey?: boolean): Promise<TransactionWitnessSet>;
 }
 
 // @public
@@ -95,7 +95,8 @@ export class HotWallet implements Wallet {
     // (undocumented)
     readonly address: Address;
     // (undocumented)
-    static fromMasterkey(masterkey: Bip32PrivateKeyHex, provider: Provider, networkId?: NetworkId, addressType?: AddressType): Promise<HotWallet>;
+    static fromMasterkey(masterkey: Bip32PrivateKeyHex, provider: Provider,
+    networkId?: NetworkId, addressType?: AddressType): Promise<HotWallet>;
     // (undocumented)
     static generateAccountAddressFromMasterkey(masterkey: Bip32PrivateKey, networkId?: NetworkId, addressType?: AddressType): Promise<{
         address: Address;

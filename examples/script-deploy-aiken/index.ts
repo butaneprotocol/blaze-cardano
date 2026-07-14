@@ -1,42 +1,14 @@
-import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import {
-  HexBlob,
-  PlutusV2Script,
-  Script,
-  type Address,
-} from "@blaze-cardano/core";
-import { Emulator, EmulatorProvider } from "@blaze-cardano/emulator";
-import { makeValue } from "@blaze-cardano/tx";
+import { createEmulatorNetworkConfig, Emulator } from "@blaze-cardano/emulator";
+import { Core, makeValue } from "@blaze-cardano/sdk";
 import {
   MemoryScriptDeploymentCache,
   defineScriptDeployment,
   deployScriptRefs,
 } from "@blaze-cardano/deploy";
+import { AlwaysTrueAlwaysTrueSpend } from "./plutus";
 
-type AikenBlueprint = {
-  validators: readonly {
-    title: string;
-    compiledCode: string;
-  }[];
-};
-
-const loadValidator = async (
-  title = "always_true.always_true.spend",
-): Promise<Script> => {
-  const blueprint = JSON.parse(
-    await readFile(new URL("./plutus.json", import.meta.url), "utf8"),
-  ) as AikenBlueprint;
-  const validator = blueprint.validators.find((item) => item.title === title);
-  if (!validator) {
-    throw new Error(`Aiken validator "${title}" was not found in plutus.json.`);
-  }
-  return Script.newPlutusV2Script(
-    new PlutusV2Script(HexBlob(validator.compiledCode)),
-  );
-};
-
-const manifest = (address: Address, script: Script) =>
+const manifest = (address: Core.Address, script: Core.Script) =>
   defineScriptDeployment({
     id: "aiken-reference-script-demo",
     network: "cardano-preview",
@@ -55,8 +27,8 @@ const manifest = (address: Address, script: Script) =>
   });
 
 export const runAikenScriptDeploymentDemo = async () => {
-  const script = await loadValidator();
-  const emulator = new Emulator([]);
+  const validator = new AlwaysTrueAlwaysTrueSpend();
+  const emulator = new Emulator([], createEmulatorNetworkConfig("preview"));
   const deploymentAddress = await emulator.register(
     "deployer",
     makeValue(100_000_000n),
@@ -64,19 +36,65 @@ export const runAikenScriptDeploymentDemo = async () => {
   const cache = new MemoryScriptDeploymentCache();
 
   await emulator.as("deployer", async (blaze) => {
-    const provider = blaze.provider as EmulatorProvider;
+    const provider = blaze.provider;
     const result = await deployScriptRefs({
-      manifest: manifest(deploymentAddress, script),
+      manifest: manifest(deploymentAddress, validator.Script),
       provider,
       wallet: blaze.wallet,
       cache,
     });
 
-    console.log("aiken deployment transactions", result.transactions);
-    console.log(
-      "aiken deployment cache",
-      JSON.stringify(cache.snapshot(result.manifestHash), null, 2),
+    const referenceUtxo = result.records.find(
+      (record) => record.status === "matched",
+    )?.utxo;
+    if (!referenceUtxo) {
+      throw new Error("The deployed reference script could not be resolved.");
+    }
+
+    const scriptAddress = Core.addressFromCredential(
+      provider.network,
+      Core.Credential.fromCore({
+        type: Core.CredentialType.ScriptHash,
+        hash: validator.Script.hash(),
+      }),
     );
+    const data = Core.PlutusData.fromCbor(Core.HexBlob("00"));
+    const datum = validator.datum(data);
+    const redeemer = validator.redeemer(data);
+
+    const lockTx = await blaze
+      .newTransaction()
+      .lockScriptAssets(validator, makeValue(3_000_000n), datum)
+      .complete();
+    const lockTxId = await blaze.submitTransaction(
+      await blaze.signTransaction(lockTx),
+      true,
+    );
+    emulator.awaitTransactionConfirmation(lockTxId);
+
+    const scriptUtxos = await provider.getUnspentOutputs(scriptAddress);
+    const scriptUtxo = scriptUtxos.find(
+      (utxo) => utxo.input().transactionId() === lockTxId,
+    );
+    if (!scriptUtxo) {
+      throw new Error("The script output was not returned by the provider.");
+    }
+
+    const spendTx = await blaze
+      .newTransaction()
+      .addReferenceInput(referenceUtxo)
+      .addInput<typeof validator>(scriptUtxo, redeemer)
+      .complete();
+    const spendTxId = await blaze.submitTransaction(
+      await blaze.signTransaction(spendTx),
+      true,
+    );
+    emulator.awaitTransactionConfirmation(spendTxId);
+
+    console.log(`Deployed reference script: ${result.transactions[0]}`);
+    console.log(`Locked script output: ${lockTxId}`);
+    console.log(`Provider query returned ${scriptUtxos.length} script UTxO.`);
+    console.log(`Spent script output: ${spendTxId}`);
   });
 };
 

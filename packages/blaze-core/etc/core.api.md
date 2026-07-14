@@ -158,6 +158,29 @@ export const CertificateType: typeof C.Cardano.CertificateType;
 // @public (undocumented)
 export type CertificateType = C.Cardano.CertificateType;
 
+// @public
+export type ChainId = C.Cardano.ChainId;
+
+// @public
+export const ChainIds: {
+    Mainnet: {
+        networkId: C.Cardano.NetworkId;
+        networkMagic: C.Cardano.NetworkMagics;
+    };
+    Preprod: {
+        networkId: C.Cardano.NetworkId;
+        networkMagic: C.Cardano.NetworkMagics;
+    };
+    Preview: {
+        networkId: C.Cardano.NetworkId;
+        networkMagic: C.Cardano.NetworkMagics;
+    };
+    Sanchonet: {
+        networkId: C.Cardano.NetworkId;
+        networkMagic: C.Cardano.NetworkMagics;
+    };
+};
+
 // @public (undocumented)
 export type Committee = C.Cardano.Committee;
 

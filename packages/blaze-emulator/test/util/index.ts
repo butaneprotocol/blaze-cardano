@@ -17,7 +17,7 @@ import {
 import type { Provider } from "@blaze-cardano/query";
 import type { Blaze } from "@blaze-cardano/sdk";
 import { makeValue } from "@blaze-cardano/tx";
-import { HotWallet } from "@blaze-cardano/wallet";
+import { HotSingleWallet, HotWallet } from "@blaze-cardano/wallet";
 
 export const generateSeedPhrase = () => generateMnemonic(wordlist);
 
@@ -62,9 +62,11 @@ export async function generateAccount(
   };
 }
 
-export async function signAndSubmit(
+export async function signAndSubmit<
+  WalletType extends HotWallet | HotSingleWallet,
+>(
   tx: Transaction,
-  blaze: Blaze<Provider, HotWallet>,
+  blaze: Blaze<Provider, WalletType>,
   signWithStakeKey: boolean = false,
 ): Promise<TransactionId> {
   const signed = await blaze.wallet.signTransaction(tx, true, signWithStakeKey);

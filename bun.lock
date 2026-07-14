@@ -53,12 +53,13 @@
       "name": "script-deploy-aiken",
       "version": "0.1.0",
       "dependencies": {
-        "@blaze-cardano/core": "workspace:*",
+        "@blaze-cardano/data": "workspace:*",
         "@blaze-cardano/deploy": "workspace:*",
         "@blaze-cardano/emulator": "workspace:*",
-        "@blaze-cardano/tx": "workspace:*",
+        "@blaze-cardano/sdk": "workspace:*",
       },
       "devDependencies": {
+        "@blaze-cardano/blueprint": "workspace:*",
         "@blaze-cardano/tsconfig": "workspace:*",
         "typescript": "^5.7.3",
       },
@@ -160,6 +161,9 @@
     "packages/blaze-emulator": {
       "name": "@blaze-cardano/emulator",
       "version": "0.4.5",
+      "bin": {
+        "blaze-emulator-rpc": "./dist/rpc/cli.mjs",
+      },
       "dependencies": {
         "@blaze-cardano/core": "workspace:*",
         "@blaze-cardano/query": "workspace:*",

@@ -18,7 +18,7 @@
     <a href="https://twitter.com/butaneprotocol">
       <img src="https://img.shields.io/twitter/follow/butaneprotocol?style=for-the-badge&logo=twitter" />
     </a>
-    <a href="https://discord.gg/4hUAdHAexb">
+    <a href="https://discord.gg/eVc6HJrYmP">
       <img src="https://img.shields.io/discord/946071061567529010?style=for-the-badge&logo=discord&label=chat%20with%20us" />
     </a>
   </p>
@@ -46,9 +46,7 @@ import * as readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 const rl = readline.createInterface({ input: stdin, output: stdout });
 
-await setTimeout(() => {}, 1000);
-
-let address = Core.addressFromBech32(
+const address = Core.addressFromBech32(
   await rl.question("Please enter your bech32 cardano address: "),
 );
 
@@ -61,7 +59,10 @@ const provider = new Maestro({
   network: "mainnet",
   apiKey: await rl.question("Please enter your mainnet maestro key: "),
 });
-const wallet = new ColdWallet(address, 0, provider);
+if (address.getNetworkId() !== provider.network) {
+  throw new Error("The wallet address and provider must use the same network.");
+}
+const wallet = new ColdWallet(address, provider.network, provider);
 
 console.log("Your blaze address: ", wallet.address.toBech32());
 const blaze = await Blaze.from(provider, wallet);
@@ -89,7 +90,7 @@ Blaze supports multiple providers for interacting with the Cardano blockchain. B
 
 ### Docs
 
-Blaze channel is in the [TxPipe Discord](https://discord.gg/FAeAR6jX)!
+Join the Blaze channel in the [TxPipe Discord](https://discord.gg/eVc6HJrYmP).
 
 ### Runs on Blaze
 

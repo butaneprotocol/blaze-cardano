@@ -7,10 +7,17 @@ import {
   TransactionInput,
   TransactionId,
   Datum,
+  ChainIds,
+  SLOT_CONFIG_NETWORK,
 } from "@blaze-cardano/core";
 import { HotWallet } from "@blaze-cardano/wallet";
-import { Emulator, EmulatorProvider } from "../src";
 import {
+  createEmulatorNetworkConfig,
+  Emulator,
+  EmulatorProvider,
+} from "../src";
+import {
+  alwaysTrueScript,
   generateAccount,
   generateGenesisOutputs,
   signAndSubmit,
@@ -75,6 +82,65 @@ describe("Provider", () => {
   test("getSlotConfig", () => {
     const result = provider.getSlotConfig();
     expect(result).not.toBeUndefined();
+  });
+
+  test("uses emulator network and timing configuration", () => {
+    const configuredEmulator = new Emulator([], {
+      chainId: ChainIds.Mainnet,
+      slotConfig: {
+        zeroTime: 1000,
+        zeroSlot: 5,
+        slotLength: 2000,
+      },
+    });
+    const configuredProvider = new EmulatorProvider(configuredEmulator);
+
+    expect(configuredProvider.network).toBe(ChainIds.Mainnet.networkId);
+    expect(configuredProvider.networkName).toBe("cardano-mainnet");
+    expect(configuredProvider.getSlotConfig()).toEqual({
+      zeroTime: 1000,
+      zeroSlot: 5,
+      slotLength: 2000,
+    });
+  });
+
+  test("uses the configured network for generated addresses", async () => {
+    const configuredEmulator = new Emulator([], {
+      chainId: ChainIds.Mainnet,
+    });
+    const address = await configuredEmulator.register("mainnet");
+    configuredEmulator.publishScript(alwaysTrueScript);
+    const referenceAddress = configuredEmulator
+      .lookupScript(alwaysTrueScript)
+      .output()
+      .address();
+
+    expect(address.getNetworkId()).toBe(ChainIds.Mainnet.networkId);
+    expect(referenceAddress.getNetworkId()).toBe(ChainIds.Mainnet.networkId);
+  });
+
+  test("creates network presets with partial timing overrides", () => {
+    const config = createEmulatorNetworkConfig({
+      preset: "preview",
+      slotConfig: { slotLength: 2000 },
+      slotsPerBlock: 5,
+    });
+
+    expect(config.chainId).toEqual(ChainIds.Preview);
+    expect(config.slotConfig).toEqual({
+      ...SLOT_CONFIG_NETWORK.Preview,
+      slotLength: 2000,
+    });
+    expect(config.slotsPerEpoch).toBe(86400);
+    expect(config.slotsPerBlock).toBe(5);
+    expect(() => createEmulatorNetworkConfig({ slotsPerEpoch: 0 })).toThrow(
+      "slotsPerEpoch must be a positive integer",
+    );
+    expect(() =>
+      createEmulatorNetworkConfig({
+        slotConfig: { zeroSlot: -1, slotLength: 1000 },
+      }),
+    ).toThrow("zeroSlot must be a non-negative integer");
   });
 
   test("getUnspentOutputs", async () => {

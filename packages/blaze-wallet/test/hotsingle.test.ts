@@ -27,7 +27,7 @@ describe("HotSingleWallet", () => {
     expect(wallet.address.toBech32().toString()).toBe(expectedAddress);
   });
 
-  it("correctly signs transaction", async () => {
+  it("signs data with payment and stake keys", async () => {
     const text = "Hello, World!";
 
     const payload = toHex(Buffer.from(text));
@@ -46,6 +46,16 @@ describe("HotSingleWallet", () => {
     expect(signedWithStake.signature).toEqual(
       "84582aa201276761646472657373581de15b61fb5d431927d67eabfaa1600571c68f9cd7ba5db2b61e609bcf06a166686173686564f44d48656c6c6f2c20576f726c642158407f1f1b93f73951174f8b796f84a84c86c6337cd9fc793ee8708f8d91550c341319cc3f659e6360593c4216b90f1b47813607460fc1d740782119e6747ced5f01",
     );
+  });
+
+  it("signs transactions with both keys when requested", async () => {
+    const tx = {
+      getId: () => Core.TransactionId("00".repeat(32)),
+      body: () => ({ requiredSigners: () => undefined }),
+    } as unknown as Core.Transaction;
+
+    const witnesses = await wallet.signTransaction(tx, true, true);
+    expect(witnesses.vkeys()?.toCore()).toHaveLength(2);
   });
 
   it("gets reward address correctly", async () => {

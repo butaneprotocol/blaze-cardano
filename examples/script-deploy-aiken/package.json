@@ -1,21 +1,24 @@
 {
   "name": "script-deploy-aiken",
-  "description": "Compile an Aiken validator and deploy it as a reference script with Blaze",
+  "description": "Generate, deploy, and use a typed Aiken validator with Blaze",
   "version": "0.1.0",
   "dependencies": {
-    "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/data": "workspace:*",
     "@blaze-cardano/deploy": "workspace:*",
     "@blaze-cardano/emulator": "workspace:*",
-    "@blaze-cardano/tx": "workspace:*"
+    "@blaze-cardano/sdk": "workspace:*"
   },
   "devDependencies": {
+    "@blaze-cardano/blueprint": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
     "typescript": "^5.7.3"
   },
   "private": true,
   "scripts": {
     "build:aiken": "aiken build",
-    "start": "bun run build:aiken && bun run index.ts",
+    "generate": "bunx @blaze-cardano/blueprint plutus.json --outfile plutus.ts --use-sdk",
+    "start": "bun run build:aiken && bun run generate && bun run index.ts",
+    "test": "bun run index.ts",
     "typecheck": "tsc --noEmit"
   },
   "type": "module"

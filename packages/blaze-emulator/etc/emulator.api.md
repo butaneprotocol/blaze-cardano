@@ -11,6 +11,7 @@ import { Blaze } from '@blaze-cardano/sdk/blaze';
 import type { Cardano } from '@blaze-cardano/core';
 import type { CertificateCore } from '@blaze-cardano/core';
 import { CertificateType } from '@blaze-cardano/core';
+import { ChainId } from '@blaze-cardano/core';
 import { Committee } from '@blaze-cardano/core';
 import { CommitteeMember } from '@blaze-cardano/core';
 import { ConstitutionCore } from '@blaze-cardano/core';
@@ -22,6 +23,7 @@ import { Evaluator } from '@blaze-cardano/core';
 import { GovernanceActionId } from '@blaze-cardano/core';
 import { Hash28ByteBase16 } from '@blaze-cardano/core';
 import { HexBlob } from '@blaze-cardano/core';
+import { HotSingleWallet } from '@blaze-cardano/wallet';
 import { PlutusData } from '@blaze-cardano/core';
 import { PoolId } from '@blaze-cardano/core';
 import { PoolParameters } from '@blaze-cardano/core';
@@ -58,6 +60,9 @@ export type CertificateWithDeposit = CertificateCore & {
 // @public (undocumented)
 export const committeeMemberTermActive: (member: CommitteeMember, currentEpoch: number) => boolean;
 
+// @public
+export const createEmulatorNetworkConfig: (input?: EmulatorNetworkConfigInput | EmulatorNetworkPreset) => EmulatorNetworkConfig;
+
 // @public (undocumented)
 export const deserialiseInput: (input: SerialisedInput) => TransactionInput;
 
@@ -92,12 +97,13 @@ export class Emulator {
     activePools: Record<PoolId, PoolParameters>;
     addressOf(label: string): Promise<Address>;
     addUtxo(utxo: TransactionUnspentOutput): void;
-    as<T = void>(label: string, callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>): Promise<T>;
+    as<T = void>(label: string, callback: (blaze: Blaze<EmulatorProvider, HotSingleWallet>, address: Address) => Promise<T>): Promise<T>;
     awaitTransactionConfirmation(txId: TransactionId): void;
     // (undocumented)
     bootstrapMode: boolean;
     // (undocumented)
     cc: Committee;
+    readonly chainId: ChainId;
     clock: LedgerTimer;
     // (undocumented)
     constitution: ConstitutionCore;
@@ -115,7 +121,7 @@ export class Emulator {
     expectValidTransaction(blaze: Blaze<Provider, Wallet>, tx: TxBuilder): Promise<void>;
     // (undocumented)
     feePot: bigint;
-    fund(label: string, value?: Value, datum?: PlutusData): Promise<void>;
+    fund(label: string, value?: Value, datum?: PlutusData): Promise<Address>;
     getCommitteeHotCredential(coldCredentialHash: Hash28ByteBase16 | string): CredentialCore | undefined;
     getCurrentTreasuryFeeShare(): bigint;
     getGovernanceProposalStatus(actionId: GovernanceActionId | SerialisedGovId): ProposalStatus | undefined;
@@ -127,9 +133,9 @@ export class Emulator {
     // (undocumented)
     isKnownStakePool(keyHash: Ed25519KeyHashHex): boolean;
     lookupScript(script: Script): TransactionUnspentOutput;
-    mockedWallets: Map<string, Wallet>;
+    mockedWallets: Map<string, HotSingleWallet>;
     params: ProtocolParameters;
-    publishScript(script: Script): Promise<void>;
+    publishScript(script: Script): void;
     register(label: string, value?: Value, datum?: PlutusData): Promise<Address>;
     removeUtxo(inp: TransactionInput): void;
     setCommitteeHotCredential(coldCredentialHash: Hash28ByteBase16 | string, credential?: CredentialCore): void;
@@ -152,18 +158,44 @@ export class Emulator {
     utxos(): TransactionUnspentOutput[];
 }
 
+// @public
+export interface EmulatorNetworkConfig {
+    chainId: ChainId;
+    params: ProtocolParameters;
+    preset: EmulatorNetworkPreset;
+    slotConfig: SlotConfig;
+    slotsPerBlock: number;
+    slotsPerEpoch: number;
+}
+
+// @public
+export interface EmulatorNetworkConfigInput {
+    chainId?: ChainId;
+    params?: ProtocolParameters;
+    preset?: EmulatorNetworkPreset;
+    slotConfig?: Partial<SlotConfig>;
+    slotsPerBlock?: number;
+    slotsPerEpoch?: number;
+}
+
+// @public
+export type EmulatorNetworkPreset = "mainnet" | "preprod" | "preview" | "custom";
+
 // @public (undocumented)
 export interface EmulatorOptions {
     // (undocumented)
     cc?: Committee;
     // (undocumented)
     ccHotCredentials?: Record<string, CredentialCore | undefined>;
+    chainId?: ChainId;
     // (undocumented)
     evaluator?: Evaluator;
     // (undocumented)
     params?: ProtocolParameters;
     // (undocumented)
     slotConfig?: SlotConfig;
+    // (undocumented)
+    slotsPerBlock?: number;
     // (undocumented)
     slotsPerEpoch?: number;
     // (undocumented)
@@ -257,7 +289,7 @@ export const isParameterUpdatePresent: (update: Record<string, unknown>, field: 
 
 // @public
 export class LedgerTimer {
-    constructor(slotConfig?: SlotConfig, slotsPerEpoch?: number);
+    constructor(slotConfig?: SlotConfig, slotsPerEpoch?: number, slotsPerBlock?: number);
     // (undocumented)
     block: number;
     // (undocumented)
@@ -266,6 +298,8 @@ export class LedgerTimer {
     slot: number;
     // (undocumented)
     slotLength: number;
+    // (undocumented)
+    slotsPerBlock: number;
     // (undocumented)
     slotsPerEpoch: number;
     // (undocumented)

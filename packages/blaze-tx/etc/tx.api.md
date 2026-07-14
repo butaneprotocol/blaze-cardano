@@ -244,10 +244,10 @@ export class TxBuilderReuseError extends Error {
 
 // @public
 export class TypedScript<DatumType extends PlutusData, RedeemerType extends PlutusData> {
-    constructor(Script: Script, name?: string | undefined);
+    constructor(Script: Script,
+    name?: string | undefined);
     protected readonly __datum?: DatumType;
     protected readonly __redeemer?: RedeemerType;
-    // (undocumented)
     readonly name?: string | undefined;
     // (undocumented)
     readonly Script: Script;
