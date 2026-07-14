@@ -11,14 +11,19 @@ import type {
   Script,
 } from "@blaze-cardano/core";
 import {
+  ChainIds,
   getBurnAddress,
+  NetworkId,
   TransactionInput,
   PlutusData,
   TransactionOutput,
-  NetworkId,
 } from "@blaze-cardano/core";
 import { TransactionUnspentOutput } from "@blaze-cardano/core";
-import { findScriptRefInAddressUtxos, Provider } from "@blaze-cardano/query";
+import {
+  findScriptRefInAddressUtxos,
+  type NetworkName,
+  Provider,
+} from "@blaze-cardano/query";
 import type { Emulator } from "./emulator";
 
 /**
@@ -32,15 +37,32 @@ export class EmulatorProvider extends Provider {
   private emulator: Emulator;
 
   constructor(emulator: Emulator) {
-    // TODO: dedicated emulator environment?
-    super(NetworkId.Testnet, "unknown");
+    const { networkId, networkMagic } = emulator.chainId;
+    let networkName: NetworkName = "unknown";
+    if (
+      networkId === NetworkId.Mainnet &&
+      networkMagic === ChainIds.Mainnet.networkMagic
+    ) {
+      networkName = "cardano-mainnet";
+    } else if (
+      networkId === NetworkId.Testnet &&
+      networkMagic === ChainIds.Preprod.networkMagic
+    ) {
+      networkName = "cardano-preprod";
+    } else if (
+      networkId === NetworkId.Testnet &&
+      networkMagic === ChainIds.Preview.networkMagic
+    ) {
+      networkName = "cardano-preview";
+    }
+    super(networkId, networkName);
     this.emulator = emulator;
   }
 
   override getSlotConfig(): SlotConfig {
     return {
       slotLength: this.emulator.clock.slotLength,
-      zeroSlot: 0,
+      zeroSlot: this.emulator.clock.zeroSlot,
       zeroTime: this.emulator.clock.zeroTime,
     };
   }

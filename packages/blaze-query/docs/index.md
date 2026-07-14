@@ -15,7 +15,7 @@ Use this package when an application needs to read chain data, evaluate transact
 ## Main API surface
 
 - `Provider` defines the shared chain-query surface used across Blaze.
-- `ProviderRouter` delegates provider methods to configured backends and supports per-method routing.
+- `RoutedProvider` delegates provider methods to configured backends and supports per-method routing.
 - `CachedProvider` wraps any provider with cache-aware read helpers while preserving the provider interface.
 - `QueryCache` stores chain-query results with explicit invalidation.
 - `OgmiosChainSync` and polling event helpers provide chain-event sources for applications that need to react to ledger changes.

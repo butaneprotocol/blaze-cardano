@@ -4,6 +4,7 @@ import {
   type Committee,
   type ConstitutionCore,
   type CredentialCore,
+  type ChainId,
   type DatumHash,
   Datum,
   type Evaluator,
@@ -30,10 +31,10 @@ import {
   Voter,
   Address,
   AssetId,
-  Bip32PrivateKey,
   CertificateType,
   CredentialType,
   DRep,
+  Ed25519PrivateNormalKeyHex,
   Ed25519KeyHashHex,
   Ed25519PublicKey,
   Ed25519Signature,
@@ -41,7 +42,6 @@ import {
   GovernanceActionKind,
   Hash28ByteBase16,
   HexBlob,
-  NetworkId,
   PolicyIdToHash,
   RewardAccount,
   StakeCredentialCertificateTypes,
@@ -63,7 +63,7 @@ import {
   type TxBuilder,
   Value as V,
 } from "@blaze-cardano/tx";
-import { HotWallet, type Wallet } from "@blaze-cardano/wallet";
+import { HotSingleWallet, type Wallet } from "@blaze-cardano/wallet";
 import { makeUplcEvaluator } from "@blaze-cardano/vm";
 import { randomBytes } from "crypto";
 import {
@@ -92,6 +92,7 @@ import {
   type StakeSnapshot,
   type Tallies,
 } from "./types";
+import { DEFAULT_EMULATOR_CHAIN_ID } from "./config";
 import {
   fractionAtLeast,
   fractionMax,
@@ -110,32 +111,6 @@ import {
   serialiseDrepCredential,
   serialiseVoter,
 } from "./governance";
-
-/**
- * Clamp a scalar according to Ed25519 requirements for BIP32-Ed25519.
- *
- * For extended Ed25519 keys (used by @cardano-sdk/crypto), the scalar must be
- * "clamped" to be valid:
- * - Bits 0, 1, 2 must be 0 (divisible by cofactor 8)
- * - Bit 255 must be 0
- * - Bit 254 must be 1
- *
- * When using libsodium's _noclamp signing functions (as the SDK does for
- * extended keys), unclamped scalars produce signatures that don't verify
- * correctly against the derived public key.
- *
- * @param bytes - The raw bytes to clamp (at least 32 bytes, typically 96 for Bip32 keys)
- * @returns The clamped bytes (mutates in place and returns the same array)
- */
-function clampScalar(bytes: Uint8Array): Uint8Array {
-  // Clear bits 0, 1, 2 of first byte (ensure divisible by cofactor 8)
-  bytes[0] = bytes[0]! & 248; // 248 = 0b11111000
-
-  // Clear bit 7 (255), set bit 6 (254) of byte 31
-  bytes[31] = (bytes[31]! & 63) | 64; // 63 = 0b00111111, 64 = 0b01000000
-
-  return bytes;
-}
 
 /**
  * The Emulator class is used to simulate the behavior of a ledger.
@@ -172,12 +147,17 @@ export class Emulator {
   /**
    * A map from label to blaze instance for that wallet
    */
-  mockedWallets: Map<string, Wallet> = new Map();
+  mockedWallets: Map<string, HotSingleWallet> = new Map();
 
   /**
    * The protocol parameters of the ledger.
    */
   params: ProtocolParameters;
+
+  /**
+   * Chain id used by wallets and addresses created by the emulator.
+   */
+  readonly chainId: ChainId;
 
   /**
    * The clock of the ledger.
@@ -239,9 +219,11 @@ export class Emulator {
     genesisOutputs: TransactionOutput[],
     {
       evaluator,
+      chainId = DEFAULT_EMULATOR_CHAIN_ID,
       slotConfig,
       trace: traceGovernance,
       slotsPerEpoch,
+      slotsPerBlock,
       params = hardCodedProtocolParams,
       treasury = 0n,
       cc = { members: [], quorumThreshold: { numerator: 0, denominator: 1 } },
@@ -254,6 +236,7 @@ export class Emulator {
     };
     this.constitution = constitution;
     this.cc = cc;
+    this.chainId = { ...chainId };
     this.treasury = treasury;
     this.ccHotCredentials = ccHotCredentials ?? {};
     this.#nextGenesisUtxo = 0;
@@ -265,7 +248,7 @@ export class Emulator {
       this.#nextGenesisUtxo += 1;
       this.#ledger[serialiseInput(txIn)] = genesisOutputs[i]!;
     }
-    this.clock = new LedgerTimer(slotConfig, slotsPerEpoch);
+    this.clock = new LedgerTimer(slotConfig, slotsPerEpoch, slotsPerBlock);
     this.params = params;
     this.govTraceEnabled = Boolean(traceGovernance);
     this.evaluator =
@@ -284,15 +267,19 @@ export class Emulator {
     this.removeUtxo = this.removeUtxo.bind(this);
   }
 
-  private async getOrAddWallet(label: string): Promise<Wallet> {
-    if (!this.mockedWallets.has(label)) {
-      const provider = new EmulatorProvider(this);
-      const entropy = clampScalar(new Uint8Array(randomBytes(96)));
-      const masterkey = Bip32PrivateKey.fromBytes(entropy);
-      const wallet = await HotWallet.fromMasterkey(masterkey.hex(), provider);
-      this.mockedWallets.set(label, wallet);
-    }
-    return this.mockedWallets.get(label)!;
+  private async getOrAddWallet(label: string): Promise<HotSingleWallet> {
+    const existing = this.mockedWallets.get(label);
+    if (existing) return existing;
+
+    const provider = new EmulatorProvider(this);
+    const wallet = new HotSingleWallet(
+      Ed25519PrivateNormalKeyHex(randomBytes(32).toString("hex")),
+      this.chainId.networkId,
+      provider,
+      Ed25519PrivateNormalKeyHex(randomBytes(32).toString("hex")),
+    );
+    this.mockedWallets.set(label, wallet);
+    return wallet;
   }
 
   /**
@@ -308,9 +295,7 @@ export class Emulator {
     value?: Value,
     datum?: PlutusData,
   ): Promise<Address> {
-    await this.fund(label, value, datum);
-    const wallet = await this.getOrAddWallet(label);
-    return wallet.getChangeAddress();
+    return this.fund(label, value, datum);
   }
 
   /**
@@ -330,12 +315,17 @@ export class Emulator {
    * @param {string} label - Wallet identifier to fund.
    * @param {Value} [value] - Optional custom value (defaults to 100 ADA equivalent).
    * @param {PlutusData} [datum] - Optional inline datum to attach to the output.
-   * @returns {Promise<void>} Resolves once the UTxO has been added to the ledger.
+   * @returns {Promise<Address>} Resolves to the funded wallet address.
    */
-  public async fund(label: string, value?: Value, datum?: PlutusData) {
+  public async fund(
+    label: string,
+    value?: Value,
+    datum?: PlutusData,
+  ): Promise<Address> {
     const wallet = await this.getOrAddWallet(label);
+    const address = await wallet.getChangeAddress();
     const output = new TransactionOutput(
-      await wallet.getChangeAddress(),
+      address,
       value ?? makeValue(100_000_000n),
     );
     if (datum) {
@@ -351,6 +341,7 @@ export class Emulator {
       ),
     );
     this.#nextGenesisUtxo += 1;
+    return address;
   }
 
   /**
@@ -363,7 +354,10 @@ export class Emulator {
    */
   public async as<T = void>(
     label: string,
-    callback: (blaze: Blaze<Provider, Wallet>, address: Address) => Promise<T>,
+    callback: (
+      blaze: Blaze<EmulatorProvider, HotSingleWallet>,
+      address: Address,
+    ) => Promise<T>,
   ): Promise<T> {
     const provider = new EmulatorProvider(this);
     const wallet = await this.getOrAddWallet(label);
@@ -378,9 +372,9 @@ export class Emulator {
    * @param {Script} script - Script to publish as a reference UTxO.
    * @returns {Promise<void>} Resolves once the script reference has been added.
    */
-  public async publishScript(script: Script) {
+  public publishScript(script: Script): void {
     const utxo = new TransactionOutput(
-      getBurnAddress(NetworkId.Testnet),
+      getBurnAddress(this.chainId.networkId),
       makeValue(5_000_001n),
     );
     utxo.setScriptRef(script);
@@ -495,9 +489,10 @@ export class Emulator {
    */
   unixToSlot(unixMillis: bigint | number): Slot {
     return Slot(
-      Math.ceil(
-        (Number(unixMillis) - this.clock.zeroTime) / this.clock.slotLength,
-      ),
+      this.clock.zeroSlot +
+        Math.ceil(
+          (Number(unixMillis) - this.clock.zeroTime) / this.clock.slotLength,
+        ),
     );
   }
 
@@ -508,7 +503,10 @@ export class Emulator {
    * @returns {number} Unix timestamp in milliseconds.
    */
   slotToUnix(slot: Slot | number | bigint): number {
-    return Number(slot.valueOf()) * this.clock.slotLength + this.clock.zeroTime;
+    return (
+      (Number(slot.valueOf()) - this.clock.zeroSlot) * this.clock.slotLength +
+      this.clock.zeroTime
+    );
   }
 
   /**
@@ -524,7 +522,9 @@ export class Emulator {
     }
     const prevEpoch = this.clock.epoch;
     this.clock.slot = Number(slot);
-    this.clock.block = Math.ceil(Number(slot) / 20);
+    this.clock.block = Math.ceil(
+      (Number(slot) - this.clock.zeroSlot) / this.clock.slotsPerBlock,
+    );
     this.clock.time = this.slotToUnix(slot);
     this.clock.epoch = Math.floor(
       (this.clock.slot - this.clock.zeroSlot) / this.clock.slotsPerEpoch,
@@ -565,12 +565,12 @@ export class Emulator {
   }
 
   /**
-   * Advances exactly one block (20 slots) according to the emulator clock.
+   * Advances exactly one block according to the emulator clock.
    *
    * @returns {void}
    */
   stepForwardBlock(): void {
-    this.stepForwardToSlot(this.clock.slot + 20);
+    this.stepForwardToSlot(this.clock.slot + this.clock.slotsPerBlock);
   }
 
   /**
@@ -588,7 +588,7 @@ export class Emulator {
   /**
    * Starts the event loop for the ledger.
    * If the event loop is already running, it is cleared and restarted.
-   * The event loop calls the stepForwardBlock method every 20 slots.
+   * The event loop advances one block at the configured block interval.
    *
    * @returns {void}
    */
@@ -598,7 +598,7 @@ export class Emulator {
     }
     this.eventLoop = setInterval(() => {
       this.stepForwardBlock();
-    }, 20 * this.clock.slotLength);
+    }, this.clock.slotsPerBlock * this.clock.slotLength);
   }
 
   /**
@@ -667,9 +667,12 @@ export class Emulator {
     const body = tx.body();
     const witnessSet = tx.witnessSet();
 
-    // TODO: Potential bug with js SDK where setting the network to testnet causes the tx body CBOR to fail
-    // if (body.networkId() !== NetworkId.Testnet)
-    //   throw new Error("Invalid network ID, Emulator must use Testnet.");
+    const networkId = body.networkId();
+    if (networkId !== undefined && networkId !== this.chainId.networkId) {
+      throw new Error(
+        "Transaction network does not match the emulator network",
+      );
+    }
 
     const validFrom = body.validityStartInterval() ?? -Infinity;
     const validUntil = body.ttl() ?? Infinity;
@@ -1415,7 +1418,7 @@ export class Emulator {
   }
 
   private rewardAccount(cred: CredentialCore): RewardAccount {
-    return RewardAccount.fromCredential(cred, NetworkId.Testnet);
+    return RewardAccount.fromCredential(cred, this.chainId.networkId);
   }
 
   private increaseProposalDepositStake(
@@ -1669,7 +1672,7 @@ export class Emulator {
     }
 
     const rewardAccount = procedure.rewardAccount();
-    if (RewardAccount.toNetworkId(rewardAccount) !== NetworkId.Testnet) {
+    if (RewardAccount.toNetworkId(rewardAccount) !== this.chainId.networkId) {
       throw new Error("Proposal reward account network mismatch");
     }
 

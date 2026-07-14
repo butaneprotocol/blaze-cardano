@@ -382,6 +382,29 @@ export interface ChainEventSource {
 // @public (undocumented)
 export type ChainEventType = ChainEvent["type"];
 
+// @public
+type ChainId = C.Cardano.ChainId;
+
+// @public
+const ChainIds: {
+    Mainnet: {
+        networkId: C.Cardano.NetworkId;
+        networkMagic: C.Cardano.NetworkMagics;
+    };
+    Preprod: {
+        networkId: C.Cardano.NetworkId;
+        networkMagic: C.Cardano.NetworkMagics;
+    };
+    Preview: {
+        networkId: C.Cardano.NetworkId;
+        networkMagic: C.Cardano.NetworkMagics;
+    };
+    Sanchonet: {
+        networkId: C.Cardano.NetworkId;
+        networkMagic: C.Cardano.NetworkMagics;
+    };
+};
+
 // @public (undocumented)
 export type ChainPoint = {
     slot: number;
@@ -491,6 +514,8 @@ declare namespace Core {
         Certificate,
         CertificateCore,
         CertificateType,
+        ChainId,
+        ChainIds,
         Committee,
         CommitteeMember,
         Constitution,
@@ -869,7 +894,7 @@ export class HotSingleWallet implements Wallet {
     readonly networkId: NetworkId;
     postTransaction(tx: Transaction): Promise<TransactionId>;
     signData(address: Address, payload: string): Promise<CIP30DataSignature>;
-    signTransaction(tx: Transaction, partialSign?: boolean): Promise<TransactionWitnessSet>;
+    signTransaction(tx: Transaction, partialSign?: boolean, signWithStakeKey?: boolean): Promise<TransactionWitnessSet>;
 }
 
 // @public

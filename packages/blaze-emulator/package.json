@@ -2,6 +2,9 @@
   "name": "@blaze-cardano/emulator",
   "description": "Blaze cardano emulator library",
   "version": "0.4.5",
+  "bin": {
+    "blaze-emulator-rpc": "./dist/rpc/cli.mjs"
+  },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/query": "workspace:*",
@@ -34,6 +37,10 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
+    "./rpc": {
+      "import": "./dist/rpc/index.mjs",
+      "require": "./dist/rpc/index.cjs"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -55,6 +62,7 @@
     "coverage": "vitest run --coverage",
     "dev": "tsdown --watch",
     "lint": "eslint \"src/**/*.ts*\"",
+    "serve:rpc": "bun src/rpc/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

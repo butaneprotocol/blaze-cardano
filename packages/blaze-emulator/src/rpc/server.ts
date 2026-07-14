@@ -7,20 +7,34 @@ export interface RpcServerOptions {
 }
 
 export interface RpcServer {
+  ready: Promise<void>;
   stop: () => void;
 }
 
 export const startRpcServer = ({
   port = 8787,
-  hostname = "0.0.0.0",
+  hostname = "127.0.0.1",
 }: RpcServerOptions = {}): RpcServer => {
   const server = serve({
     fetch: app.fetch,
     port,
     hostname,
   });
+  const ready = new Promise<void>((resolve, reject) => {
+    const onListening = () => {
+      server.off("error", onError);
+      resolve();
+    };
+    const onError = (error: Error) => {
+      server.off("listening", onListening);
+      reject(error);
+    };
+    server.once("listening", onListening);
+    server.once("error", onError);
+  });
 
   return {
+    ready,
     stop: () => {
       server.close();
     },

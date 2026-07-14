@@ -46,15 +46,20 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
    * @returns {TxBuilder} - The newly created transaction builder.
    */
   newTransaction() {
-    return new TxBuilder(this.params).addPreCompleteHook(async (tx) => {
-      const myUtxos = await this.wallet.getUnspentOutputs();
-      const changeAddress = await this.wallet.getChangeAddress();
-      tx.setNetworkId(await this.wallet.getNetworkId())
-        .addUnspentOutputs(myUtxos)
-        // We do not want to override the change address if it was already set
-        .setChangeAddress(changeAddress, false)
-        .useEvaluator((x, y) => this.provider.evaluateTransaction(x, y), false);
-    });
+    return new TxBuilder(this.params)
+      .setNetworkId(this.provider.network)
+      .addPreCompleteHook(async (tx) => {
+        const myUtxos = await this.wallet.getUnspentOutputs();
+        const changeAddress = await this.wallet.getChangeAddress();
+        tx.setNetworkId(await this.wallet.getNetworkId())
+          .addUnspentOutputs(myUtxos)
+          // We do not want to override the change address if it was already set
+          .setChangeAddress(changeAddress, false)
+          .useEvaluator(
+            (x, y) => this.provider.evaluateTransaction(x, y),
+            false,
+          );
+      });
   }
 
   /**

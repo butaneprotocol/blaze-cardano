@@ -66,6 +66,30 @@ describe("Emulator", () => {
     expect(emulator.mockedWallets.get("0")).toBeDefined();
   });
 
+  test("generated wallets can submit transactions", async () => {
+    const generatedEmulator = new Emulator([]);
+    const addresses = await Promise.all(
+      Array.from({ length: 10 }, (_, index) =>
+        generatedEmulator.register(
+          `wallet-${index}`,
+          makeValue(10_000_000_000n),
+        ),
+      ),
+    );
+
+    for (let index = 0; index < addresses.length; index += 1) {
+      await generatedEmulator.as(`wallet-${index}`, async (blaze) => {
+        const recipient = addresses[(index + 1) % addresses.length]!;
+        const tx = await blaze
+          .newTransaction()
+          .payLovelace(recipient, 1_000_000n)
+          .complete();
+        const txId = await signAndSubmit(tx, blaze);
+        generatedEmulator.awaitTransactionConfirmation(txId);
+      });
+    }
+  });
+
   test("as", async () => {
     await emulator.as("1", async (blaze, address) => {
       expect(await blaze.wallet?.getChangeAddress()).toEqual(address);
@@ -74,7 +98,7 @@ describe("Emulator", () => {
 
   test("should be able to publish and lookup a script", async () => {
     expect(() => emulator.lookupScript(alwaysTrueScript)).toThrow();
-    await emulator.publishScript(alwaysTrueScript);
+    emulator.publishScript(alwaysTrueScript);
     expect(() => emulator.lookupScript(alwaysTrueScript)).not.toThrow();
   });
 
@@ -150,6 +174,28 @@ describe("Emulator", () => {
     expect(emulator.eventLoop).toBeDefined();
     emulator.stopEventLoop();
     expect(emulator.eventLoop).toBeUndefined();
+  });
+
+  test("uses configured slot, block, and epoch timing", () => {
+    const timedEmulator = new Emulator([], {
+      slotConfig: { zeroSlot: 100, zeroTime: 1_000, slotLength: 2_000 },
+      slotsPerBlock: 5,
+      slotsPerEpoch: 20,
+    });
+
+    expect(timedEmulator.unixToSlot(1_000)).toBe(100);
+    expect(timedEmulator.slotToUnix(100)).toBe(1_000);
+
+    timedEmulator.stepForwardBlock();
+    expect(timedEmulator.clock.slot).toBe(105);
+    expect(timedEmulator.clock.block).toBe(1);
+    expect(timedEmulator.clock.time).toBe(11_000);
+
+    timedEmulator.stepForwardToNextEpoch();
+    expect(timedEmulator.clock.slot).toBe(120);
+    expect(timedEmulator.clock.block).toBe(4);
+    expect(timedEmulator.clock.epoch).toBe(1);
+    expect(timedEmulator.clock.time).toBe(41_000);
   });
 
   test("Should be able to get a genesis UTxO", async () => {

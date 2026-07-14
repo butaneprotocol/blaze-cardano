@@ -1,17 +1,25 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   Address,
-  Bip32PrivateKey,
+  ChainIds,
   CborSet,
+  derivePublicKey,
+  Ed25519PrivateNormalKeyHex,
+  Ed25519SignatureHex,
   Hash28ByteBase16,
   HexBlob,
   NetworkId,
+  SLOT_CONFIG_NETWORK,
+  signMessage,
+  Transaction,
+  TransactionBody,
+  TransactionInput,
+  TransactionOutput,
+  TransactionWitnessSet,
   TransactionUnspentOutput,
+  Value,
   VkeyWitness,
-  hardCodedProtocolParams,
 } from "@blaze-cardano/core";
-import { TxBuilder } from "@blaze-cardano/tx";
-import { HotWallet } from "@blaze-cardano/wallet";
 import { alwaysTrueScript } from "../util";
 
 const jsonHeaders = {
@@ -21,12 +29,6 @@ const jsonHeaders = {
 async function loadApp() {
   const module = await import("../../src/rpc/app");
   return module.default;
-}
-
-function clampScalar(bytes: Uint8Array): Uint8Array {
-  bytes[0] = bytes[0]! & 248;
-  bytes[31] = (bytes[31]! & 63) | 64;
-  return bytes;
 }
 
 async function listUtxos(
@@ -44,41 +46,44 @@ async function listUtxos(
   );
 }
 
-async function buildSignedPaymentCbor(
+async function buildSignedPaymentCborWithCoreSerialization(
   app: Awaited<ReturnType<typeof loadApp>>,
-  payerSeed: Buffer,
+  payerKey: Ed25519PrivateNormalKeyHex,
   payerAddress: Address,
   receiverAddress: Address,
 ): Promise<{ cbor: string; txId: string; outputCbors: string[] }> {
-  const masterkey = Bip32PrivateKey.fromBytes(
-    clampScalar(new Uint8Array(payerSeed)),
-  );
-  const wallet = await HotWallet.fromMasterkey(masterkey.hex(), {
-    network: NetworkId.Testnet,
-  } as never);
-  expect(wallet.address.toBech32()).toBe(payerAddress.toBech32());
-
   const payerUtxo = (await listUtxos(app)).find(
     (utxo) => utxo.output().address().toBech32() === payerAddress.toBech32(),
   );
   expect(payerUtxo).toBeDefined();
 
-  const tx = await new TxBuilder(hardCodedProtocolParams)
-    .addUnspentOutputs([payerUtxo!])
-    .setNetworkId(NetworkId.Testnet)
-    .setChangeAddress(payerAddress)
-    .payLovelace(receiverAddress, 1_500_000n)
-    .complete();
+  const payment = 1_500_000n;
+  const fee = 200_000n;
+  const inputLovelace = payerUtxo!.output().amount().coin();
+  const change = inputLovelace - payment - fee;
+  expect(change).toBeGreaterThan(0n);
 
-  const signed = await wallet.signTransaction(tx, true);
-  const signedKeys = signed.vkeys();
-  expect(signedKeys).toBeDefined();
+  const outputs = [
+    new TransactionOutput(receiverAddress, new Value(payment)),
+    new TransactionOutput(payerAddress, new Value(change)),
+  ];
+  const body = new TransactionBody(
+    CborSet.fromCore([payerUtxo!.input().toCore()], TransactionInput.fromCore),
+    outputs,
+    fee,
+  );
+  body.setNetworkId(NetworkId.Testnet);
+  const tx = new Transaction(body, new TransactionWitnessSet());
 
   const witnessSet = tx.witnessSet();
-  const existingKeys = witnessSet.vkeys()?.toCore() ?? [];
   witnessSet.setVkeys(
     CborSet.fromCore(
-      [...signedKeys!.toCore(), ...existingKeys],
+      [
+        new VkeyWitness(
+          derivePublicKey(payerKey),
+          Ed25519SignatureHex(signMessage(HexBlob(tx.getId()), payerKey)),
+        ).toCore(),
+      ],
       VkeyWitness.fromCore,
     ),
   );
@@ -112,9 +117,190 @@ describe("emulator RPC app", () => {
     });
 
     expect(advanceResponse.status).toBe(200);
-    const advancePayload = (await advanceResponse.json()) as { slot: number };
-    const { slot } = advancePayload;
-    expect(slot).toBeGreaterThanOrEqual(2);
+    const advancePayload = (await advanceResponse.json()) as {
+      slot: number;
+      block: number;
+    };
+    expect(advancePayload.slot).toBe(40);
+    expect(advancePayload.block).toBe(2);
+  });
+
+  it("resets with explicit network and timing configuration", async () => {
+    const app = await loadApp();
+    const resetResponse = await app.request("/emulator/reset", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({
+        networkPreset: "mainnet",
+        slotConfig: {
+          slotLength: 2000,
+        },
+        slotsPerEpoch: 10,
+        slotsPerBlock: 4,
+      }),
+    });
+    expect(resetResponse.status).toBe(200);
+
+    const configResponse = await app.request("/emulator/config");
+    expect(configResponse.status).toBe(200);
+    const config = (await configResponse.json()) as {
+      preset: string;
+      chainId: {
+        networkId: string;
+        networkMagic: number;
+      };
+      slotConfig: {
+        zeroTime: number;
+        zeroSlot: number;
+        slotLength: number;
+      };
+      slotsPerEpoch: number;
+      slotsPerBlock: number;
+    };
+    expect(config).toEqual({
+      preset: "mainnet",
+      chainId: {
+        networkId: "mainnet",
+        networkMagic: ChainIds.Mainnet.networkMagic,
+      },
+      slotConfig: {
+        zeroTime: SLOT_CONFIG_NETWORK.Mainnet.zeroTime,
+        zeroSlot: SLOT_CONFIG_NETWORK.Mainnet.zeroSlot,
+        slotLength: 2000,
+      },
+      slotsPerEpoch: 10,
+      slotsPerBlock: 4,
+    });
+
+    const timeResponse = await app.request("/emulator/time");
+    expect(timeResponse.status).toBe(200);
+    const time = (await timeResponse.json()) as {
+      slot: number;
+      epoch: number;
+      block: number;
+      currentUnix: number;
+      slotLength: number;
+    };
+    expect(time.slot).toBe(SLOT_CONFIG_NETWORK.Mainnet.zeroSlot);
+    expect(time.epoch).toBe(0);
+    expect(time.block).toBe(0);
+    expect(time.currentUnix).toBe(SLOT_CONFIG_NETWORK.Mainnet.zeroTime);
+    expect(time.slotLength).toBe(2000);
+
+    const advanceResponse = await app.request("/emulator/advance", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ blocks: 2 }),
+    });
+    expect(advanceResponse.status).toBe(200);
+    const advanced = (await advanceResponse.json()) as {
+      slot: number;
+      block: number;
+    };
+    expect(advanced.slot).toBe(SLOT_CONFIG_NETWORK.Mainnet.zeroSlot + 8);
+    expect(advanced.block).toBe(2);
+
+    const advancedTimeResponse = await app.request("/emulator/time");
+    const advancedTime = (await advancedTimeResponse.json()) as {
+      currentUnix: number;
+    };
+    expect(advancedTime.currentUnix).toBe(
+      SLOT_CONFIG_NETWORK.Mainnet.zeroTime + 16_000,
+    );
+
+    const registerResponse = await app.request("/emulator/register", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ label: "mainnet" }),
+    });
+    const registered = (await registerResponse.json()) as { address: string };
+    expect(registered.address).toMatch(/^addr1/);
+  });
+
+  it("resets with a custom chain id", async () => {
+    const app = await loadApp();
+    const resetResponse = await app.request("/emulator/reset", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({
+        networkPreset: "custom",
+        chainId: {
+          networkId: "testnet",
+          networkMagic: 42,
+        },
+      }),
+    });
+    expect(resetResponse.status).toBe(200);
+
+    const configResponse = await app.request("/emulator/config");
+    expect(configResponse.status).toBe(200);
+    const config = (await configResponse.json()) as {
+      preset: string;
+      chainId: { networkId: string; networkMagic: number };
+    };
+    expect(config.preset).toBe("custom");
+    expect(config.chainId).toEqual({
+      networkId: "testnet",
+      networkMagic: 42,
+    });
+  });
+
+  it("round-trips protocol parameters through JSON", async () => {
+    const app = await loadApp();
+    await app.request("/emulator/reset", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({}),
+    });
+
+    const initialResponse = await app.request("/emulator/parameters");
+    expect(initialResponse.status).toBe(200);
+    const initial = (await initialResponse.json()) as {
+      minFeeCoefficient: number;
+      costModels: Record<string, number[]>;
+    };
+    expect(initial.costModels["0"]).toBeInstanceOf(Array);
+
+    const resetResponse = await app.request("/emulator/reset", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({
+        protocolParams: {
+          minFeeCoefficient: 99,
+          costModels: initial.costModels,
+        },
+      }),
+    });
+    expect(resetResponse.status).toBe(200);
+
+    const updatedResponse = await app.request("/emulator/parameters");
+    const updated = (await updatedResponse.json()) as {
+      minFeeCoefficient: number;
+      costModels: Record<string, number[]>;
+    };
+    expect(updated.minFeeCoefficient).toBe(99);
+    expect(updated.costModels).toEqual(initial.costModels);
+  });
+
+  it("rejects invalid timing configuration", async () => {
+    const app = await loadApp();
+    const response = await app.request("/emulator/reset", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ slotsPerBlock: 0 }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: { message: "Number must be greater than 0" },
+    });
+
+    const slotLengthResponse = await app.request("/emulator/reset", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ slotConfig: { slotLength: 0 } }),
+    });
+    expect(slotLengthResponse.status).toBe(400);
   });
 
   it("registers a wallet and exposes its address", async () => {
@@ -181,7 +367,12 @@ describe("emulator RPC app", () => {
   it("accepts pre-built transaction CBOR", async () => {
     const actualCrypto =
       await vi.importActual<typeof import("crypto")>("crypto");
-    const seeds = [Buffer.alloc(96, 1), Buffer.alloc(96, 2)];
+    const seeds = [
+      Buffer.alloc(32, 1),
+      Buffer.alloc(32, 2),
+      Buffer.alloc(32, 3),
+      Buffer.alloc(32, 4),
+    ];
     let calls = 0;
     const randomBytes = ((size: number) => {
       const next = seeds[calls];
@@ -223,9 +414,9 @@ describe("emulator RPC app", () => {
         address: string;
       };
 
-      const prebuilt = await buildSignedPaymentCbor(
+      const prebuilt = await buildSignedPaymentCborWithCoreSerialization(
         app,
-        seeds[0]!,
+        Ed25519PrivateNormalKeyHex(seeds[0]!.toString("hex")),
         Address.fromBech32(payerPayload.address),
         Address.fromBech32(receiverPayload.address),
       );

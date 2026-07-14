@@ -24,7 +24,7 @@ import {
   Cardano,
 } from "@blaze-cardano/core";
 import { Blaze, makeValue, Provider } from "@blaze-cardano/sdk";
-import { HotWallet } from "@blaze-cardano/wallet";
+import { HotSingleWallet } from "@blaze-cardano/wallet";
 import { Emulator } from "../src";
 import { signAndSubmit } from "./util";
 import { GovernanceGuardPropose, GovernanceGuardVote } from "./aiken/plutus";
@@ -48,7 +48,7 @@ if (!(BigInt.prototype as unknown as { toJSON?: () => string }).toJSON) {
 
 describe("Emulator governance", () => {
   let emulator: Emulator;
-  let blaze: Blaze<Provider, HotWallet>;
+  let blaze: Blaze<Provider, HotSingleWallet>;
   let address: Address;
 
   beforeEach(async () => {
@@ -93,7 +93,7 @@ describe("Emulator governance", () => {
     }
     await emulator.register("dRep", makeValue(1_000_000_000_000n));
     emulator.as("dRep", async (thisBlaze, thisAddress) => {
-      blaze = thisBlaze as Blaze<Provider, HotWallet>;
+      blaze = thisBlaze;
       address = thisAddress;
     });
   });
@@ -911,9 +911,9 @@ describe("Emulator governance", () => {
       makeValue(1_000_000_000n),
     );
 
-    let ccHotBlaze!: Blaze<Provider, HotWallet>;
+    let ccHotBlaze!: Blaze<Provider, HotSingleWallet>;
     await emulator.as("ccHot", async (thisBlaze) => {
-      ccHotBlaze = thisBlaze as Blaze<Provider, HotWallet>;
+      ccHotBlaze = thisBlaze;
     });
 
     const coldStakeCred = coldAddress.getProps().delegationPart!;

@@ -1,0 +1,43 @@
+name: Blaze issue
+description: Report a bug, provider compatibility issue, docs gap, or feature request.
+title: ""
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Issue type
+      options:
+        - Bug
+        - Provider compatibility
+        - Documentation
+        - Feature request
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the behavior, request, or docs gap.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction or example
+      description: Include a small code sample, provider/network details, or links to the relevant docs/API.
+    validations:
+      required: false
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Explain what you expected Blaze to do.
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: "@blaze-cardano/sdk@..."
+    validations:
+      required: false

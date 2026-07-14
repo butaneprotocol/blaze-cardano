@@ -2,6 +2,10 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
 import { Emulator } from "../emulator";
 import { type EmulatorOptions } from "../types";
+import {
+  createEmulatorNetworkConfig,
+  type EmulatorNetworkConfig,
+} from "../config";
 import type { Context } from "hono";
 import { makeValue } from "@blaze-cardano/tx";
 import {
@@ -21,31 +25,64 @@ import {
   Transaction,
   TransactionId,
   TxCBOR,
+  NetworkId,
+  type ProtocolParameters,
+  type CostModels,
 } from "@blaze-cardano/core";
 
-const bigIntSchema = z
-  .union([z.string(), z.number(), z.bigint()])
-  .transform((value: string | number | bigint) => {
-    if (typeof value === "bigint") return value;
-    if (typeof value === "number") return BigInt(value);
-    return BigInt(value);
+const networkPresetValues = [
+  "mainnet",
+  "preprod",
+  "preview",
+  "custom",
+] as const;
+
+const networkIdValues = ["mainnet", "testnet"] as const;
+
+const protocolParametersSchema = z
+  .object({
+    costModels: z
+      .record(z.array(z.number()))
+      .refine(
+        (models) => Object.keys(models).every((key) => /^\d+$/.test(key)),
+        "cost model keys must be numeric language versions",
+      )
+      .optional(),
   })
+  .passthrough()
+  .openapi("ProtocolParametersInput");
+
+const nonNegativeBigIntSchema = z
+  .union([
+    z.string().regex(/^\d+$/, "must be a non-negative integer"),
+    z.number().int().safe().nonnegative(),
+  ])
+  .transform((value: string | number) => BigInt(value))
   .openapi({
-    description: "Integer encoded as string or number.",
+    description: "Non-negative integer encoded as a string or safe number.",
     example: "1000000",
   });
 
 const resetSchema = z
   .object({
-    protocolParams: z.any().optional(),
-    slotConfig: z
+    protocolParams: protocolParametersSchema.optional(),
+    networkPreset: z.enum(networkPresetValues).optional(),
+    chainId: z
       .object({
-        zeroTime: z.number().optional(),
-        zeroSlot: z.number().optional(),
-        slotLength: z.number().optional(),
+        networkId: z.enum(networkIdValues),
+        networkMagic: z.number().int().nonnegative().max(0xffffffff),
       })
       .optional(),
-    treasury: bigIntSchema.optional(),
+    slotConfig: z
+      .object({
+        zeroTime: z.number().finite().optional(),
+        zeroSlot: z.number().int().safe().nonnegative().optional(),
+        slotLength: z.number().positive().optional(),
+      })
+      .optional(),
+    slotsPerEpoch: z.number().int().safe().positive().optional(),
+    slotsPerBlock: z.number().int().safe().positive().optional(),
+    treasury: nonNegativeBigIntSchema.optional(),
   })
   .openapi("ResetRequest");
 
@@ -77,7 +114,7 @@ const advanceSchema = z
 const registerSchema = z
   .object({
     label: z.string().min(1, "label is required"),
-    lovelace: bigIntSchema.optional(),
+    lovelace: nonNegativeBigIntSchema.optional(),
   })
   .openapi("WalletRequest");
 
@@ -140,6 +177,30 @@ const clockResponse = z
     slotLength: z.number(),
   })
   .openapi("ClockResponse");
+
+const configResponse = z
+  .object({
+    preset: z.enum(networkPresetValues),
+    chainId: z.object({
+      networkId: z.enum(networkIdValues),
+      networkMagic: z.number().int().nonnegative(),
+    }),
+    slotConfig: z.object({
+      zeroTime: z.number(),
+      zeroSlot: z.number(),
+      slotLength: z.number(),
+    }),
+    slotsPerEpoch: z.number(),
+    slotsPerBlock: z.number(),
+  })
+  .openapi("ConfigResponse");
+
+const protocolParametersResponse = z
+  .object({
+    costModels: z.record(z.array(z.number())),
+  })
+  .passthrough()
+  .openapi("ProtocolParametersResponse");
 
 const okResponse = z
   .object({
@@ -205,14 +266,20 @@ const drepsResponse = z
   )
   .openapi("DRepList");
 
-const parseJson = async <T>(c: Context, schema: z.ZodSchema<T>): Promise<T> =>
-  schema.parse(await c.req.json());
+const parseJson = async <Schema extends z.ZodTypeAny>(
+  c: Context,
+  schema: Schema,
+): Promise<z.output<Schema>> => schema.parse(await c.req.json());
 
-const parseQuery = <T>(c: Context, schema: z.ZodSchema<T>): T =>
-  schema.parse(c.req.query());
+const parseQuery = <Schema extends z.ZodTypeAny>(
+  c: Context,
+  schema: Schema,
+): z.output<Schema> => schema.parse(c.req.query());
 
-const parseParams = <T>(c: Context, schema: z.ZodSchema<T>): T =>
-  schema.parse(c.req.param());
+const parseParams = <Schema extends z.ZodTypeAny>(
+  c: Context,
+  schema: Schema,
+): z.output<Schema> => schema.parse(c.req.param());
 
 const proposalStatusResponse = z
   .object({
@@ -289,10 +356,25 @@ type AppEnv = {
   };
 };
 
-let emulator = new Emulator([]);
+let activeNetworkConfig = createEmulatorNetworkConfig("custom");
+let emulator = new Emulator([], activeNetworkConfig);
 const scriptRegistry = new Map<string, Script>();
 
-const app = new OpenAPIHono<AppEnv>();
+const app = new OpenAPIHono<AppEnv>({
+  defaultHook: (result, c) => {
+    if (!result.success) {
+      return c.json(
+        {
+          error: {
+            message: result.error.issues[0]?.message ?? "Invalid request",
+          },
+        },
+        400,
+      );
+    }
+    return undefined;
+  },
+});
 
 const toErrorPayload = (error: unknown) => ({
   error:
@@ -300,6 +382,10 @@ const toErrorPayload = (error: unknown) => ({
       ? { message: error.message }
       : { message: "Unexpected error" },
 });
+
+app.onError((error, c) =>
+  c.json(toErrorPayload(error), error instanceof z.ZodError ? 400 : 500),
+);
 
 const parseIncludeQuery = (input?: string | string[]) => {
   if (!input) return new Set<string>();
@@ -386,6 +472,57 @@ const serializeTallies = (
     },
     activeCcMembers: result.activeCcMembers.toString(),
   };
+};
+
+const parseChainId = (
+  chainId:
+    | { networkId: (typeof networkIdValues)[number]; networkMagic: number }
+    | undefined,
+) =>
+  chainId
+    ? {
+        networkId:
+          chainId.networkId === "mainnet"
+            ? NetworkId.Mainnet
+            : NetworkId.Testnet,
+        networkMagic: chainId.networkMagic,
+      }
+    : undefined;
+
+const serializeNetworkConfig = (config: EmulatorNetworkConfig) => {
+  const networkId: (typeof networkIdValues)[number] =
+    config.chainId.networkId === NetworkId.Mainnet ? "mainnet" : "testnet";
+  return {
+    preset: config.preset,
+    chainId: {
+      networkId,
+      networkMagic: config.chainId.networkMagic,
+    },
+    slotConfig: config.slotConfig,
+    slotsPerEpoch: config.slotsPerEpoch,
+    slotsPerBlock: config.slotsPerBlock,
+  };
+};
+
+const serializeProtocolParameters = (params: ProtocolParameters) => ({
+  ...params,
+  costModels: Object.fromEntries(params.costModels),
+});
+
+const mergeProtocolParameters = (
+  base: ProtocolParameters,
+  overrides: z.infer<typeof protocolParametersSchema> | undefined,
+): ProtocolParameters => {
+  if (!overrides) return base;
+  const costModels: CostModels = overrides.costModels
+    ? new Map(
+        Object.entries(overrides.costModels).map(([version, costs]) => [
+          Number(version),
+          costs,
+        ]),
+      )
+    : base.costModels;
+  return { ...base, ...overrides, costModels };
 };
 
 app.openapi(
@@ -483,6 +620,40 @@ app.openapi(
 
 app.openapi(
   createRoute({
+    method: "get",
+    path: "/emulator/config",
+    tags: ["health"],
+    responses: {
+      200: {
+        description: "Current emulator network and timing configuration.",
+        content: {
+          "application/json": { schema: configResponse },
+        },
+      },
+    },
+  }),
+  (c: Context) => c.json(serializeNetworkConfig(activeNetworkConfig), 200),
+);
+
+app.openapi(
+  createRoute({
+    method: "get",
+    path: "/emulator/parameters",
+    tags: ["health"],
+    responses: {
+      200: {
+        description: "Current protocol parameters.",
+        content: {
+          "application/json": { schema: protocolParametersResponse },
+        },
+      },
+    },
+  }),
+  (c: Context) => c.json(serializeProtocolParameters(emulator.params), 200),
+);
+
+app.openapi(
+  createRoute({
     method: "post",
     path: "/emulator/reset",
     tags: ["wallets"],
@@ -504,21 +675,25 @@ app.openapi(
   }),
   async (c: Context) => {
     const body = await parseJson(c, resetSchema);
-    const options: EmulatorOptions = {};
-    if (body.protocolParams) {
-      options.params = body.protocolParams;
-    }
-    if (body.slotConfig) {
-      options.slotConfig = {
-        zeroTime: body.slotConfig.zeroTime ?? 0,
-        zeroSlot: body.slotConfig.zeroSlot ?? 0,
-        slotLength: body.slotConfig.slotLength ?? 1000,
-      };
-    }
-    if (body.treasury !== undefined) {
-      options.treasury = BigInt(body.treasury);
-    }
-    emulator = new Emulator([], options);
+    const networkConfig = createEmulatorNetworkConfig({
+      preset: body.networkPreset,
+      chainId: parseChainId(body.chainId),
+      slotConfig: body.slotConfig,
+      slotsPerEpoch: body.slotsPerEpoch,
+      slotsPerBlock: body.slotsPerBlock,
+    });
+    networkConfig.params = mergeProtocolParameters(
+      networkConfig.params,
+      body.protocolParams,
+    );
+    const options: EmulatorOptions = {
+      ...networkConfig,
+      treasury: body.treasury,
+    };
+    const nextEmulator = new Emulator([], options);
+    emulator.stopEventLoop();
+    emulator = nextEmulator;
+    activeNetworkConfig = networkConfig;
     scriptRegistry.clear();
     return c.json({ ok: true }, 200);
   },
@@ -619,8 +794,7 @@ app.openapi(
   async (c: Context) => {
     const { label, lovelace } = await parseJson(c, registerSchema);
     try {
-      const value =
-        lovelace !== undefined ? makeValue(BigInt(lovelace)) : undefined;
+      const value = lovelace !== undefined ? makeValue(lovelace) : undefined;
       const address = await emulator.register(label, value);
       return c.json({ address: address.toBech32() }, 200);
     } catch (error) {
@@ -659,8 +833,7 @@ app.openapi(
   async (c: Context) => {
     const { label, lovelace } = await parseJson(c, registerSchema);
     try {
-      const value =
-        lovelace !== undefined ? makeValue(BigInt(lovelace)) : undefined;
+      const value = lovelace !== undefined ? makeValue(lovelace) : undefined;
       await emulator.fund(label, value);
       return c.json({ ok: true }, 200);
     } catch (error) {
@@ -807,7 +980,7 @@ app.openapi(
     },
   }),
   async (c: Context) => {
-    const { cbor } = await parseJson(c, transactionPayload);
+    const { cbor } = await parseJson(c, scriptPayload);
     try {
       const script = Script.fromCbor(HexBlob(normaliseHex(cbor)));
       emulator.publishScript(script);
@@ -887,7 +1060,7 @@ app.openapi(
     },
   }),
   async (c: Context) => {
-    const { cbor } = await parseJson(c, scriptPayload);
+    const { cbor } = await parseJson(c, transactionPayload);
     try {
       const tx = Transaction.fromCbor(TxCBOR(normaliseHex(cbor)));
       const txId = await emulator.submitTransaction(tx);

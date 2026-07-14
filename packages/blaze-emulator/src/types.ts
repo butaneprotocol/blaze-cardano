@@ -10,6 +10,7 @@ import {
   type SlotConfig,
   type Voter,
   type Vote,
+  type ChainId,
 } from "@blaze-cardano/core";
 import { type HexBlob, type TransactionId } from "@blaze-cardano/core";
 
@@ -31,11 +32,14 @@ export interface RegisteredAccount {
 }
 
 export interface EmulatorOptions {
+  /** Chain id used for addresses and provider metadata. */
+  chainId?: ChainId;
   params?: ProtocolParameters;
   evaluator?: Evaluator;
   slotConfig?: SlotConfig;
   trace?: boolean;
   slotsPerEpoch?: number;
+  slotsPerBlock?: number;
   treasury?: bigint;
   cc?: Committee;
   ccHotCredentials?: Record<string, CredentialCore | undefined>;

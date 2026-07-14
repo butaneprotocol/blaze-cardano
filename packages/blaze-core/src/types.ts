@@ -361,6 +361,10 @@ export const ExUnits = C.Serialization.ExUnits;
 
 export const NetworkId = C.Cardano.NetworkId;
 export type NetworkId = C.Cardano.ChainId["networkId"];
+/** Known Cardano network identifiers. @public */
+export const ChainIds = C.Cardano.ChainIds;
+/** A Cardano network id and network magic pair. @public */
+export type ChainId = C.Cardano.ChainId;
 
 export const DatumKind = C.Serialization.DatumKind;
 

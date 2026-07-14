@@ -1,158 +1,213 @@
 ---
-title: Emulator RPC Server
+title: Emulator RPC server
 ---
 
-# Emulator RPC Server
-The emulator ships with an optional JSON RPC server that mirrors the in-process APIs. This guide explains how to start the server, seed wallets, and submit transactions without pulling the `Emulator` class into your own process.
+# Emulator RPC server
 
-## Start the Server
-The server exports a helper that wraps Hono’s request handler. You can embed it directly into a test runner or a standalone script.
+The emulator includes an optional HTTP server. It is useful when a test process, demo, or external tool needs to control the emulator without importing the `Emulator` class.
+
+## Start the server
+
+Import the server from `@blaze-cardano/emulator/rpc` to run it inside a test runner or standalone script.
 
 ```ts
 import { startRpcServer } from "@blaze-cardano/emulator/rpc";
 
 const server = startRpcServer({
-    port: 8787,
-    hostname: "127.0.0.1",
+  port: 8787,
+  hostname: "127.0.0.1",
 });
+await server.ready;
 
 // ... run your flow ...
 
 server.stop();
 ```
 
-The server defaults to `0.0.0.0:8787` and responds immediately once `startRpcServer` returns.
+The server defaults to `127.0.0.1:8787`. Pass `--host 0.0.0.0` only when another machine or container needs to connect.
 
-## Health and Clock Endpoints
-Two read-only endpoints expose basic diagnostics. They require no payload.
+You can also start the packaged command:
+
+```sh
+blaze-emulator-rpc --host 127.0.0.1 --port 8787
+```
+
+During development, run the same entrypoint through the package script:
+
+```sh
+bun --filter @blaze-cardano/emulator serve:rpc -- --host 127.0.0.1 --port 8787
+```
+
+The server publishes OpenAPI JSON at `/doc` and Swagger UI at `/ui`.
+
+## Health and clock endpoints
+
+Use these read-only endpoints to check the server and inspect its clock. Neither takes a payload.
 
 ```ts
 await fetch("http://127.0.0.1:8787/health"); // { status: "ok", version: "Emulator" }
 await fetch("http://127.0.0.1:8787/emulator/time"); // slot, epoch, block, currentUnix, slotLength
 ```
 
-Use these in readiness checks or to snapshot the current ledger clock before scheduling transactions.
+They are also useful for readiness checks and transaction scheduling.
 
-## Managing Wallets
-Wallet endpoints let you bootstrap deterministic addresses and query their UTxOs without touching the in-memory API.
+## Network and timing configuration
+
+The reset endpoint accepts a network preset and optional timing overrides. Each preset supplies the chain ID, slot configuration, and default epoch and block lengths. Use custom values when a validity interval, epoch, or wallet test should not follow mainnet, preprod, or preview.
 
 ```ts
 await fetch("http://127.0.0.1:8787/emulator/reset", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({}),
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    networkPreset: "preview",
+    slotConfig: {
+      zeroTime: 1666656000000,
+      zeroSlot: 0,
+      slotLength: 1000,
+    },
+    slotsPerEpoch: 432000,
+    slotsPerBlock: 20,
+  }),
+});
+
+const config = await fetch("http://127.0.0.1:8787/emulator/config").then((res) =>
+  res.json(),
+);
+const parameters = await fetch(
+  "http://127.0.0.1:8787/emulator/parameters",
+).then((res) => res.json());
+```
+
+The available presets are `mainnet`, `preprod`, `preview`, and `custom`. A reset request may override `chainId`, individual `slotConfig` fields, `slotsPerEpoch`, `slotsPerBlock`, and `protocolParams`. Omitted fields keep the preset values.
+
+Protocol cost models use a JSON object keyed by Plutus language version. This means a client can read `/emulator/parameters`, change selected fields, and send the result in another reset request. `slotLength` is measured in milliseconds. `slotsPerBlock` controls how many slots the emulator advances for each block.
+
+The same presets are available to in-process tests:
+
+```ts
+import { Emulator, createEmulatorNetworkConfig } from "@blaze-cardano/emulator";
+
+const emulator = new Emulator(
+  [],
+  createEmulatorNetworkConfig({
+    preset: "preview",
+    slotConfig: { slotLength: 2_000 },
+    slotsPerBlock: 5,
+  }),
+);
+```
+
+## Manage wallets
+
+Wallet endpoints create funded addresses and return their UTxOs without using the in-memory API.
+
+```ts
+await fetch("http://127.0.0.1:8787/emulator/reset", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({}),
 });
 
 await fetch("http://127.0.0.1:8787/emulator/register", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ label: "carol", lovelace: "2000000" }),
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ label: "carol", lovelace: "2000000" }),
 });
 
 const address = await fetch("http://127.0.0.1:8787/emulator/address/carol")
-    .then((res) => res.json())
-    .then((json) => json.address);
+  .then((res) => res.json())
+  .then((json) => json.address);
 
 const utxos = await fetch("http://127.0.0.1:8787/emulator/wallets/carol/utxos")
-    .then((res) => res.json()); // Array of CBOR-encoded UTxOs
+  .then((res) => res.json()); // Array of CBOR-encoded UTxOs
 ```
 
-The `/emulator/fund` endpoint accepts the same payload as `/emulator/register` and mints additional genesis-style outputs. Registry endpoints honour wallet labels; requesting an unknown label returns a `404`.
+The `/emulator/fund` endpoint accepts the same payload as `/emulator/register` and mints extra genesis-style outputs. Wallet endpoints use labels. Unknown labels return `404`.
 
-## Submitting Raw Transactions
-Because the RPC server accepts raw CBOR, you can build transactions in any environment, extract the hex, and forward it to the emulator without the SDK.
+## Submit raw transactions
+
+The transaction endpoint accepts raw CBOR, so the transaction can come from Blaze, another TypeScript builder, Haskell code, or `cardano-cli`.
 
 ```ts
 const cbor = "84a300d9010281825820...f5f6"; // from tx.toCbor()
 
 await fetch("http://127.0.0.1:8787/emulator/transactions", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ cbor }),
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ cbor }),
 });
 ```
 
-The response includes the transaction ID. To confirm settlement, advance the clock by at least one block:
+The response includes the transaction ID. To confirm settlement, advance the clock by at least one block.
 
 ```ts
 await fetch("http://127.0.0.1:8787/emulator/advance", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ blocks: 1 }),
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ blocks: 1 }),
 });
 ```
 
-Finally, query `/emulator/state?include=utxos` and decode the CBOR outputs to verify balances.
+Query `/emulator/state?include=utxos` and decode the CBOR outputs to verify balances. `/emulator/parameters` returns the values an external builder needs for fee calculation, transaction limits, and script execution budgets.
 
-## Generating API Documentation
-If you want the RPC server to publish OpenAPI metadata, wrap the Hono application before starting the server. Combine `@hono/zod-openapi` with `@hono/swagger-ui` to expose both the JSON spec and an interactive explorer.
+Transaction submission does not depend on Blaze `TxBuilder`. The RPC test suite assembles and signs a transaction with the lower-level Cardano serialization primitives, then submits its CBOR through the same endpoint.
+
+`cardano-cli transaction sign` writes a JSON text envelope. Read its `cborHex` field before sending it to the emulator:
 
 ```ts
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { swaggerUI } from "@hono/swagger-ui";
-import rpcApp from "@blaze-cardano/emulator/rpc/app";
+import { readFile } from "node:fs/promises";
 
-const app = new OpenAPIHono();
+const envelope = JSON.parse(await readFile("tx.signed", "utf8")) as {
+  cborHex: string;
+};
 
-app.route("/", rpcApp);
+await fetch("http://127.0.0.1:8787/emulator/transactions", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ cbor: envelope.cborHex }),
+});
+```
 
-app.openapi(
-    createRoute({
-        method: "get",
-        path: "/health",
-        responses: {
-            200: {
-                description: "Health check status",
-                content: {
-                    "application/json": {
-                        schema: z.object({ status: z.string() }),
-                    },
-                },
-            },
-        },
-    }),
-    (c) => rpcApp.fetch(c.req.raw),
+## Publish scripts and governance data
+
+The HTTP API can publish reference scripts and change the governance committee. Its payloads match the in-memory API.
+
+```ts
+import {
+  Hash28ByteBase16,
+  HexBlob,
+  PlutusV2Script,
+  Script,
+} from "@blaze-cardano/core";
+
+const alwaysTrueScript = Script.newPlutusV2Script(
+  new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
 );
 
-app.get("/ui", swaggerUI({ url: "/doc" }));
-
-app.doc("/doc", {
-    openapi: "3.1.0",
-    info: { title: "Emulator RPC", version: "1.0.0" },
-});
-```
-
-The snippet above mounts the existing RPC routes, documents the health endpoint, serves the OpenAPI JSON at `/doc`, and hosts Swagger UI at `/ui`. Extend `createRoute` definitions to describe additional endpoints, and add hooks when you need to surface validation failures to clients.
-
-## Publishing Scripts and Governance Utilities
-Tests can inject reference scripts and adjust the governance committee over HTTP. The payloads mirror the in-memory API.
-
-```ts
-import { alwaysTrueScript } from "@blaze-cardano/emulator/testing";
-import { HexBlob, Hash28ByteBase16 } from "@blaze-cardano/core";
-
 await fetch("http://127.0.0.1:8787/emulator/scripts", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ cbor: alwaysTrueScript.toCbor() }),
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ cbor: alwaysTrueScript.toCbor() }),
 });
 
 await fetch("http://127.0.0.1:8787/emulator/governance/committee", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-        quorumThreshold: { numerator: 1, denominator: 1 },
-        members: [
-            {
-                coldCredentialHash: Hash28ByteBase16("11".repeat(28)).toString(),
-                epoch: 5,
-            },
-        ],
-    }),
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    quorumThreshold: { numerator: 1, denominator: 1 },
+    members: [
+      {
+        coldCredentialHash: Hash28ByteBase16("11".repeat(28)).toString(),
+        epoch: 5,
+      },
+    ],
+  }),
 });
 ```
 
-Committee hot credentials can be set by posting to `/emulator/governance/committee/hot` and providing the cold credential hash plus the new key or script hash. Governance lookups (`/emulator/governance/dreps`, `/emulator/governance/proposal-status/:id`, `/emulator/governance/tallies/:id`) return the same structures as their in-memory counterparts and emit 400- or 404-level responses for malformed or unknown action IDs.
+Set committee hot credentials by posting to `/emulator/governance/committee/hot` with the cold credential hash and the new key or script hash. Governance lookups (`/emulator/governance/dreps`, `/emulator/governance/proposal-status/:id`, `/emulator/governance/tallies/:id`) return the same structures as the in-memory API. Malformed or unknown action IDs return `400` or `404`.
 
-## Cleaning Up
-Call `/emulator/reset` whenever you want to discard ledger state between scenarios, or invoke `server.stop()` to shut down the HTTP listener entirely. This keeps test runs isolated and ensures benchmarks stay deterministic.
+## Clean up
+
+Call `/emulator/reset` to discard ledger state between scenarios, or call `server.stop()` to shut down the HTTP listener.

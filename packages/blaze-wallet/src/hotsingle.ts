@@ -162,11 +162,13 @@ export class HotSingleWallet implements Wallet {
    * Requests a transaction signature from the wallet.
    * @param {string} tx - The transaction to sign.
    * @param {boolean} partialSign - Whether to partially sign the transaction.
+   * @param {boolean} signWithStakeKey - Whether to also sign with the stake key.
    * @returns {Promise<TransactionWitnessSet>} - The signed transaction.
    */
   async signTransaction(
     tx: Transaction,
     partialSign: boolean = true,
+    signWithStakeKey: boolean = false,
   ): Promise<TransactionWitnessSet> {
     if (partialSign == false) {
       throw new Error(
@@ -174,13 +176,43 @@ export class HotSingleWallet implements Wallet {
       );
     }
 
-    const signature = signMessage(HexBlob(tx.getId()), this.paymentSigningKey);
     const tws = new TransactionWitnessSet();
-    const vkw = new VkeyWitness(
-      this.paymentPublicKey.hex(),
-      Ed25519SignatureHex(signature),
-    );
-    tws.setVkeys(CborSet.fromCore([vkw.toCore()], VkeyWitness.fromCore));
+    const vkeys = [
+      new VkeyWitness(
+        this.paymentPublicKey.hex(),
+        Ed25519SignatureHex(
+          signMessage(HexBlob(tx.getId()), this.paymentSigningKey),
+        ),
+      ).toCore(),
+    ];
+
+    if (!signWithStakeKey && this.stakePublicKey) {
+      const stakeKeyHash = blake2b_224(HexBlob(this.stakePublicKey.hex()));
+      signWithStakeKey =
+        tx
+          .body()
+          .requiredSigners()
+          ?.values()
+          .some((required) => required.value() === stakeKeyHash) ?? false;
+    }
+
+    if (signWithStakeKey) {
+      if (!this.stakeSigningKey || !this.stakePublicKey) {
+        throw new Error(
+          "signTx: Signing with stake key requested but no stake key is available",
+        );
+      }
+      vkeys.push(
+        new VkeyWitness(
+          this.stakePublicKey.hex(),
+          Ed25519SignatureHex(
+            signMessage(HexBlob(tx.getId()), this.stakeSigningKey),
+          ),
+        ).toCore(),
+      );
+    }
+
+    tws.setVkeys(CborSet.fromCore(vkeys, VkeyWitness.fromCore));
     return tws;
   }
 
