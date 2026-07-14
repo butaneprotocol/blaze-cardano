@@ -1351,11 +1351,10 @@ export class TxBuilder {
       }
 
       if (key.type == CredentialType.ScriptHash) {
-        const nativeScript = output.scriptRef()?.asNative() !== undefined;
-        if (nativeScript) {
-          this.requiredNativeScripts.add(key.hash);
-        } else {
-          this.requiredPlutusScripts.add(key.hash);
+        if (!Array.from(this.scriptScope).some(script => script.hash() === key.hash)) {
+          throw new Error(
+            `updateRequiredWitnesses: could not resolve script hash ${key.hash} for input ${input.transactionId()}#${input.index()}`,
+          );
         }
       } else {
         this.requiredWitnesses.add(HashAsPubKeyHex(key.hash));
