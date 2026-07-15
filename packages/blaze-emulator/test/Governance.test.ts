@@ -26,11 +26,12 @@ import {
 import { Blaze, makeValue, Provider } from "@blaze-cardano/sdk";
 import { HotWallet } from "@blaze-cardano/wallet";
 import { Emulator } from "../src";
-import { signAndSubmit, VOID_PLUTUS_DATA } from "./util";
-import { AlwaysTrueScriptPropose, AlwaysTrueScriptVote } from "./aiken/plutus";
+import { signAndSubmit } from "./util";
+import { GovernanceGuardPropose, GovernanceGuardVote } from "./aiken/plutus";
 
 const DEPOSIT = BigInt(hardCodedProtocolParams.governanceActionDeposit!);
 const STAKE_KEY_DEPOSIT = BigInt(hardCodedProtocolParams.stakeKeyDeposit!);
+const GOVERNANCE_REDEEMER = 42n;
 
 declare global {
   interface BigInt {
@@ -1182,20 +1183,34 @@ describe("Emulator governance", () => {
       "Active",
     );
   });
-  test("script drep should be able to vote and propose", async () => {
+  test("PlutusV3 script DRep validates registration and voting redeemers", async () => {
     emulator.stepForwardToNextEpoch();
 
-    const scriptVote = new AlwaysTrueScriptVote(0n, "");
+    const scriptVote = new GovernanceGuardVote(GOVERNANCE_REDEEMER, DEPOSIT);
+    const governanceRedeemer = scriptVote.redeemer(GOVERNANCE_REDEEMER);
 
     const scriptDrepCredential = Credential.fromCore({
       type: CredentialType.ScriptHash,
       hash: scriptVote.Script.hash(),
     });
 
+    await expect(
+      blaze
+        .newTransaction()
+        .provideScript(scriptVote.Script)
+        .addRegisterDRep(
+          scriptDrepCredential,
+          0n,
+          undefined,
+          scriptVote.redeemer(GOVERNANCE_REDEEMER - 1n),
+        )
+        .complete(),
+    ).rejects.toThrow();
+
     const registerBuilder = blaze
       .newTransaction()
       .provideScript(scriptVote.Script)
-      .addRegisterDRep(scriptDrepCredential, 0n, undefined, VOID_PLUTUS_DATA);
+      .addRegisterDRep(scriptDrepCredential, 0n, undefined, governanceRedeemer);
 
     const registerTx = await registerBuilder.complete();
     const registerHash = await signAndSubmit(registerTx, blaze);
@@ -1242,6 +1257,19 @@ describe("Emulator governance", () => {
     const actionId = new GovernanceActionId(TransactionId(proposalHash), 0n);
     const voter = Voter.newDrep(scriptDrepCredential.toCore());
 
+    await expect(
+      blaze
+        .newTransaction()
+        .provideScript(scriptVote.Script)
+        .addVote({
+          voter,
+          actionId,
+          vote: Vote.yes,
+          redeemer: scriptVote.redeemer(GOVERNANCE_REDEEMER - 1n),
+        })
+        .complete(),
+    ).rejects.toThrow();
+
     const voteBuilder = blaze
       .newTransaction()
       .provideScript(scriptVote.Script)
@@ -1249,7 +1277,7 @@ describe("Emulator governance", () => {
         voter,
         actionId,
         vote: Vote.yes,
-        redeemer: VOID_PLUTUS_DATA,
+        redeemer: governanceRedeemer,
       });
     const voteTx = await voteBuilder.complete();
     const voteHash = await signAndSubmit(voteTx, blaze);
@@ -1262,10 +1290,13 @@ describe("Emulator governance", () => {
     expect(tallies.tallies.drep.yes).toBeGreaterThan(0n);
   });
 
-  test("parameter change proposals invoke proposal policy when constitution script is set", async () => {
+  test("PlutusV3 proposal policy validates parameter change redeemers", async () => {
     emulator.stepForwardToNextEpoch();
 
-    const policyScript = new AlwaysTrueScriptPropose(0n, "");
+    const policyScript = new GovernanceGuardPropose(
+      GOVERNANCE_REDEEMER,
+      DEPOSIT,
+    );
     const previousScriptHash = emulator.constitution.scriptHash;
     emulator.constitution.scriptHash = policyScript.Script.hash();
 
@@ -1297,10 +1328,21 @@ describe("Emulator governance", () => {
           .addProposal(policyProposal),
       ).toThrow(/proposal policy requires a redeemer/i);
 
+      await expect(
+        blaze
+          .newTransaction()
+          .provideScript(policyScript.Script)
+          .addProposal(
+            policyProposal,
+            policyScript.redeemer(GOVERNANCE_REDEEMER - 1n),
+          )
+          .complete(),
+      ).rejects.toThrow();
+
       const policyTx = await blaze
         .newTransaction()
         .provideScript(policyScript.Script)
-        .addProposal(policyProposal, VOID_PLUTUS_DATA)
+        .addProposal(policyProposal, policyScript.redeemer(GOVERNANCE_REDEEMER))
         .complete();
       const policyHash = await signAndSubmit(policyTx, blaze);
       emulator.awaitTransactionConfirmation(policyHash);

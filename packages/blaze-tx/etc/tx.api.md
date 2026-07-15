@@ -141,6 +141,13 @@ export const isEqualOutput: (self: TransactionOutput, that: TransactionOutput) =
 export const isEqualUTxO: (self: TransactionUnspentOutput, that: TransactionUnspentOutput) => boolean;
 
 // @public
+export interface LockScriptAssetsOptions {
+    address?: Address;
+    scriptReference?: Script;
+    stakeCredential?: Credential;
+}
+
+// @public
 export function makeValue(lovelace: bigint, ...assets: [string, bigint][]): Value_2;
 
 // @public
@@ -193,12 +200,17 @@ function sub(a: Value_2, b: Value_2): Value_2;
 function sum(values: Value_2[]): Value_2;
 
 // @public
+export class TransactionSafetyError extends Error {
+    constructor(message: string);
+}
+
+// @public
 export class TxBuilder {
     constructor(params: ProtocolParameters, tracing?: boolean);
     addAdditionalSigners(amount: number): TxBuilder;
     addDelegation(delegator: Credential, poolId: PoolId, redeemer?: PlutusData): TxBuilder;
     addDeregisterStake(credential: Credential, redeemer?: PlutusData): TxBuilder;
-    addInput(utxo: TransactionUnspentOutput, redeemer?: PlutusData | DeferredRedeemer, unhashDatum?: PlutusData): TxBuilder;
+    addInput<T extends TypedScript<PlutusData, PlutusData> = TypedScript<PlutusData, PlutusData>>(utxo: TransactionUnspentOutput, redeemer?: TypedScriptRedeemer<T> | DeferredRedeemer, unhashDatum?: TypedScriptDatum<T>): TxBuilder;
     addMint(policy: PolicyId, assets: Map<AssetName, bigint>, redeemer?: PlutusData | DeferredRedeemer): this;
     addOutput(output: TransactionOutput): TxBuilder;
     addPreCompleteHook(hook: (tx: TxBuilder) => Promise<void>): TxBuilder;
@@ -225,6 +237,7 @@ export class TxBuilder {
     protected buildFinalWitnessSet(signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][]): TransactionWitnessSet;
     protected buildPlaceholderWitnessSet(): TransactionWitnessSet;
     get burnAddress(): Address;
+    burnAssets(policy: PolicyId, assets: Map<AssetName, bigint>, redeemer?: PlutusData): TxBuilder;
     protected calculateFees(): void;
     complete(params?: UseCoinSelectionArgs): Promise<Transaction>;
     delegate(poolId: PoolId, redeemer?: PlutusData): this;
@@ -233,6 +246,8 @@ export class TxBuilder {
     protected getScriptData(tw: TransactionWitnessSet): IScriptData | undefined;
     lockAssets(address: Address, value: Value_2, datum: Datum, scriptReference?: Script): TxBuilder;
     lockLovelace(address: Address, lovelace: bigint, datum: Datum, scriptReference?: Script): TxBuilder;
+    lockScriptAssets<T extends TypedScript<PlutusData, PlutusData>>(typedScript: T, value: Value_2, datum: TypedScriptDatum<T>, options?: LockScriptAssetsOptions): TxBuilder;
+    mintAssets(policy: PolicyId, assets: Map<AssetName, bigint>, redeemer?: PlutusData): TxBuilder;
     get outputsCount(): number;
     // (undocumented)
     readonly params: ProtocolParameters;
@@ -259,6 +274,28 @@ export class TxBuilder {
     useEvaluator(evaluator: Evaluator, override?: boolean): TxBuilder;
     useScriptSubstitutions(subs: Map<ScriptHash, Script>): TxBuilder;
 }
+
+// @public
+export class TxBuilderReuseError extends Error {
+    constructor(message: string);
+}
+
+// @public
+export class TypedScript<DatumType extends PlutusData, RedeemerType extends PlutusData> {
+    constructor(Script: Script,
+    name?: string | undefined);
+    protected readonly __datum?: DatumType;
+    protected readonly __redeemer?: RedeemerType;
+    readonly name?: string | undefined;
+    // (undocumented)
+    readonly Script: Script;
+}
+
+// @public
+export type TypedScriptDatum<T> = T extends TypedScript<infer DatumType, PlutusData> ? DatumType : never;
+
+// @public
+export type TypedScriptRedeemer<T> = T extends TypedScript<PlutusData, infer RedeemerType> ? RedeemerType : never;
 
 // @public (undocumented)
 export interface UseCoinSelectionArgs {

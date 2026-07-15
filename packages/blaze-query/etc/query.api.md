@@ -25,6 +25,16 @@ import { TransactionUnspentOutput } from '@blaze-cardano/core';
 import type { Unwrapped } from '@blaze-cardano/ogmios';
 
 // @public (undocumented)
+export class AsyncEventQueue<T> implements AsyncIterable<T> {
+    // (undocumented)
+    [Symbol.asyncIterator](): AsyncIterator<T>;
+    // (undocumented)
+    close(): void;
+    // (undocumented)
+    push(value: T): void;
+}
+
+// @public (undocumented)
 export class Blockfrost extends Provider {
     constructor(params: {
         network: NetworkName;
@@ -128,6 +138,88 @@ export interface BlockfrostProtocolParametersResponse {
 }
 
 // @public (undocumented)
+export class CachedProvider extends Provider {
+    constructor(provider: Provider, options?: CachedProviderOptions);
+    // (undocumented)
+    awaitTransactionConfirmation(txId: TransactionId, timeout?: number): Promise<boolean>;
+    // (undocumented)
+    cache(): QueryCache<string, unknown>;
+    // (undocumented)
+    chain<T>(query: (provider: CachedProvider) => Promise<T>): Promise<T>;
+    // (undocumented)
+    evaluateTransaction(tx: Transaction, additionalUtxos: TransactionUnspentOutput[]): Promise<Redeemers>;
+    // (undocumented)
+    getParameters(): Promise<ProtocolParameters>;
+    // (undocumented)
+    getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
+    // (undocumented)
+    getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    postTransactionToChain(tx: Transaction): Promise<TransactionId>;
+    // (undocumented)
+    provider(): Provider;
+    // (undocumented)
+    resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+    // (undocumented)
+    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
+    // (undocumented)
+    resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
+    // (undocumented)
+    withCache(cache: QueryCache<string, unknown>): CachedProvider;
+}
+
+// @public (undocumented)
+export type CachedProviderOptions = {
+    cache?: QueryCache<string, unknown>;
+};
+
+// @public (undocumented)
+export type ChainEvent = {
+    type: "rollForward";
+    point: ChainPoint;
+    block: unknown;
+} | {
+    type: "rollBackward";
+    point: ChainPoint | "origin";
+} | {
+    type: "utxoProduced";
+    address: Address;
+    input: TransactionInput;
+} | {
+    type: "utxoSpent";
+    address: Address;
+    input: TransactionInput;
+};
+
+// @public (undocumented)
+export type ChainEventFilter = {
+    types?: readonly ChainEventType[];
+};
+
+// @public (undocumented)
+export const chainEventMatches: (event: ChainEvent, filter?: ChainEventFilter) => boolean;
+
+// @public (undocumented)
+export interface ChainEventSource {
+    // (undocumented)
+    events(filter?: ChainEventFilter, signal?: AbortSignal): AsyncIterable<ChainEvent>;
+}
+
+// @public (undocumented)
+export type ChainEventType = ChainEvent["type"];
+
+// @public (undocumented)
+export type ChainPoint = {
+    slot: number;
+    hash: string;
+};
+
+// @public (undocumented)
+export const findScriptRefInAddressUtxos: (provider: Provider, script: Script | Hash28ByteBase16, address?: Address) => Promise<TransactionUnspentOutput | undefined>;
+
+// @public (undocumented)
 export const fromBlockfrostLanguageVersion: (x: BlockfrostLanguageVersions) => PlutusLanguageVersion;
 
 // @public (undocumented)
@@ -137,6 +229,8 @@ export class Kupmios extends Provider {
     // (undocumented)
     static readonly confirmationTimeout: number;
     evaluateTransaction(tx: Transaction, additionalUtxos: TransactionUnspentOutput[]): Promise<Redeemers>;
+    // (undocumented)
+    events(filter?: ChainEventFilter, signal?: AbortSignal): AsyncIterable<ChainEvent>;
     getParameters(): Promise<ProtocolParameters>;
     getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
     getUnspentOutputs(address: Address): Promise<TransactionUnspentOutput[]>;
@@ -149,6 +243,8 @@ export class Kupmios extends Provider {
     static readonly plutusVersions: string[];
     postTransactionToChain(tx: Transaction): Promise<TransactionId>;
     resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+    // (undocumented)
+    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
     resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
     static serializeUtxos(unspentOutputs: TransactionUnspentOutput[]): Schema.Utxo;
 }
@@ -175,11 +271,39 @@ export class Maestro extends Provider {
     // (undocumented)
     resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
     // (undocumented)
+    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
+    // (undocumented)
     resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
 }
 
 // @public (undocumented)
 export type NetworkName = "cardano-mainnet" | "cardano-preprod" | "cardano-preview" | "cardano-sanchonet" | "unknown";
+
+// @public (undocumented)
+export type OgmiosChainSyncClient = {
+    findIntersection(points?: Schema.PointOrOrigin[]): Promise<Schema.IntersectionFound["result"]>;
+    nextBlock(): Promise<Schema.NextBlockResponse["result"]>;
+};
+
+// @public (undocumented)
+export const ogmiosChainSyncEvents: (input: OgmiosChainSyncOptions) => AsyncIterable<ChainEvent>;
+
+// @public (undocumented)
+export type OgmiosChainSyncOptions = {
+    ogmios: OgmiosChainSyncClient;
+    filter?: ChainEventFilter;
+    signal?: AbortSignal;
+};
+
+// @public (undocumented)
+export function pollAddressEvents(provider: Provider, options: PollingAddressEventOptions): AsyncIterable<ChainEvent>;
+
+// @public (undocumented)
+export type PollingAddressEventOptions = ChainEventFilter & {
+    address: Address;
+    intervalMs?: number;
+    signal?: AbortSignal;
+};
 
 // @public
 export abstract class Provider {
@@ -197,11 +321,14 @@ export abstract class Provider {
     networkName: NetworkName;
     abstract postTransactionToChain(tx: Transaction): Promise<TransactionId>;
     abstract resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
-    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
+    abstract resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
     abstract resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
     slotToUnix(slot: Slot | number | bigint): number;
     unixToSlot(unix_millis: bigint | number): Slot;
 }
+
+// @public (undocumented)
+export const providerCacheKey: (operation: string, params: readonly unknown[]) => string;
 
 // @public (undocumented)
 export type ProviderDebugEvent = {
@@ -245,6 +372,47 @@ export const purposeToTag: {
     [key: string]: number;
 };
 
+// @public (undocumented)
+export class QueryCache<K, V> {
+    constructor(options?: QueryCacheOptions);
+    // (undocumented)
+    clear(): void;
+    // (undocumented)
+    delete(key: K): boolean;
+    // (undocumented)
+    get(key: K): V | undefined;
+    // (undocumented)
+    prune(): void;
+    // (undocumented)
+    read(key: K): QueryCacheLookup<V>;
+    // (undocumented)
+    set(key: K, value: V, ttlMs?: number): void;
+    // (undocumented)
+    get size(): number;
+}
+
+// @public (undocumented)
+export type QueryCacheEntry<V> = {
+    value: V;
+    expiresAt: number;
+};
+
+// @public (undocumented)
+export type QueryCacheLookup<V> = {
+    hit: true;
+    value: V;
+} | {
+    hit: false;
+    value?: undefined;
+};
+
+// @public (undocumented)
+export type QueryCacheOptions = {
+    ttlMs?: number;
+    maxEntries?: number;
+    now?: () => number;
+};
+
 // @public
 export class RoutedProvider extends Provider {
     constructor(config: ProviderRoutingConfig);
@@ -269,6 +437,12 @@ export class RoutedProvider extends Provider {
     // (undocumented)
     resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
 }
+
+// @public (undocumented)
+export const stableQueryValue: (value: unknown) => unknown;
+
+// @public (undocumented)
+export const transactionInputKey: (input: TransactionInput) => string;
 
 // (No @packageDocumentation comment for this package)
 

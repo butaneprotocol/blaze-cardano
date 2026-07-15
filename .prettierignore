@@ -7,6 +7,7 @@ dist/
 .next/
 out/
 plutus.ts
+plutus.json
 docs/
 !docs/src/theme/**
 etc/

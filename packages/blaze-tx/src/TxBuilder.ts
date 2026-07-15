@@ -83,6 +83,7 @@ import {
   VoterKind,
   PoolRegistration,
   PoolRetirement,
+  addressFromCredentials,
 } from "@blaze-cardano/core";
 import * as value from "./value";
 import { micahsSelector } from "./coinSelectors/micahsSelector";
@@ -109,6 +110,11 @@ import {
   isEqualUTxO,
   assertValidOutput,
 } from "./utils";
+import type {
+  TypedScript,
+  TypedScriptDatum,
+  TypedScriptRedeemer,
+} from "./typed-script";
 
 /*
 methods we want to implement somewhere in new blaze (from haskell codebase):
@@ -156,6 +162,60 @@ export interface AddVoteOptions {
   /** Redeemer for script DRep votes. */
   redeemer?: PlutusData;
 }
+
+/**
+ * Options for locking assets at a typed script.
+ *
+ * @public
+ */
+export interface LockScriptAssetsOptions {
+  /** Full script address to lock at. If omitted, the builder creates one from the script and optional stake credential. */
+  address?: Address;
+  /** Optional stake credential used when constructing the script address. */
+  stakeCredential?: Credential;
+  /** Optional reference script attached to the output. */
+  scriptReference?: Script;
+}
+
+/** Error thrown when a completed transaction builder is completed again.
+ *
+ * @public
+ */
+export class TxBuilderReuseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TxBuilderReuseError";
+  }
+}
+
+/** Error thrown when a transaction safety check rejects unsafe input.
+ *
+ * @public
+ */
+export class TransactionSafetyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TransactionSafetyError";
+  }
+}
+
+const assertPositiveAssetQuantities = (
+  operation: string,
+  assets: ReadonlyMap<AssetName, bigint>,
+): void => {
+  for (const [assetName, quantity] of assets) {
+    if (quantity <= 0n) {
+      throw new TransactionSafetyError(
+        `${operation}: asset "${assetName}" quantity must be positive.`,
+      );
+    }
+  }
+};
+
+const negateAssetQuantities = (
+  assets: ReadonlyMap<AssetName, bigint>,
+): Map<AssetName, bigint> =>
+  new Map([...assets].map(([assetName, quantity]) => [assetName, -quantity]));
 
 /**
  * A builder class for constructing Cardano transactions with various components like inputs, outputs, and scripts.
@@ -212,6 +272,7 @@ export class TxBuilder {
   private coinSelector: CoinSelectionFunc = micahsSelector;
   private _burnAddress?: Address;
   private deferredRedeemers: Map<string, DeferredRedeemer> = new Map();
+  private completedTransaction?: Transaction;
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -237,10 +298,41 @@ export class TxBuilder {
    * @returns {Address}
    */
   get burnAddress(): Address {
+    if (this.networkId === undefined) {
+      throw new Error("Cannot use burn address without setting a network id.");
+    }
     if (!this._burnAddress) {
-      this._burnAddress = getBurnAddress(this.networkId!);
+      this._burnAddress = getBurnAddress(this.networkId);
     }
     return this._burnAddress;
+  }
+
+  private typedScriptCredential(
+    typedScript: TypedScript<PlutusData, PlutusData>,
+  ): Credential {
+    return Credential.fromCore({
+      hash: typedScript.Script.hash(),
+      type: CredentialType.ScriptHash,
+    });
+  }
+
+  private addressFromTypedScript(
+    typedScript: TypedScript<PlutusData, PlutusData>,
+    stakeCredential?: Credential,
+  ): Address {
+    if (this.networkId === undefined) {
+      const script = typedScript.name
+        ? `typed script "${typedScript.name}"`
+        : "typed script";
+      throw new Error(
+        `lockScriptAssets: locking at ${script} requires a network id. Call setNetworkId first or pass an explicit address.`,
+      );
+    }
+    return addressFromCredentials(
+      this.networkId,
+      this.typedScriptCredential(typedScript),
+      stakeCredential,
+    );
   }
 
   /**
@@ -372,6 +464,9 @@ export class TxBuilder {
    * @returns {TxBuilder} The same transaction builder
    */
   setNetworkId(networkId: NetworkId): TxBuilder {
+    if (this.networkId !== networkId) {
+      this._burnAddress = undefined;
+    }
     this.networkId = networkId;
     return this;
   }
@@ -475,16 +570,21 @@ export class TxBuilder {
    * a redeemer and an unhashed datum can be provided for script validation purposes.
    *
    * @param {TransactionUnspentOutput} utxo - The UTxO to be consumed as an input.
-   * @param {PlutusData} [redeemer] - Optional. The redeemer data for script validation, required for spending Plutus script-locked UTxOs.
-   * @param {PlutusData} [unhashDatum] - Optional. The unhashed datum, required if the UTxO being spent includes a datum hash instead of inline datum.
+   * @param {TypedScriptRedeemer<T>} [redeemer] - Optional. The redeemer data for script validation, required for spending Plutus script-locked UTxOs.
+   * @param {TypedScriptDatum<T>} [unhashDatum] - Optional. The unhashed datum, required if the UTxO being spent includes a datum hash instead of inline datum.
    * @returns {TxBuilder} The same transaction builder
    * @throws {Error} If attempting to add a duplicate input, if the UTxO payment key is missing, if attempting to spend with a redeemer for a KeyHash credential,
    *                 if attempting to spend without a datum when required, or if providing both an inline datum and an unhashed datum.
    */
-  addInput(
+  addInput<
+    T extends TypedScript<PlutusData, PlutusData> = TypedScript<
+      PlutusData,
+      PlutusData
+    >,
+  >(
     utxo: TransactionUnspentOutput,
-    redeemer?: PlutusData | DeferredRedeemer,
-    unhashDatum?: PlutusData,
+    redeemer?: TypedScriptRedeemer<T> | DeferredRedeemer,
+    unhashDatum?: TypedScriptDatum<T>,
   ): TxBuilder {
     // Retrieve the current inputs from the transaction body for manipulation.
     const inputs = this.body.inputs();
@@ -584,7 +684,6 @@ export class TxBuilder {
 
     return this;
   }
-
   /**
    * Adds unspent transaction outputs (UTxOs) to the set of UTxOs available for this transaction.
    * These UTxOs can then be used for balancing the transaction, ensuring that inputs and outputs are equal.
@@ -688,6 +787,40 @@ export class TxBuilder {
       this.requiredNativeScripts.add(PolicyIdToHash(policy));
     }
     return this;
+  }
+
+  /**
+   * Mints assets while requiring positive asset quantities at the call site.
+   *
+   * @param policy - The policy id whose assets are minted.
+   * @param assets - Asset names and positive quantities to mint.
+   * @param redeemer - Optional redeemer for Plutus minting policies.
+   * @returns The same transaction builder.
+   */
+  mintAssets(
+    policy: PolicyId,
+    assets: Map<AssetName, bigint>,
+    redeemer?: PlutusData,
+  ): TxBuilder {
+    assertPositiveAssetQuantities("mintAssets", assets);
+    return this.addMint(policy, assets, redeemer);
+  }
+
+  /**
+   * Burns assets by accepting positive quantities at the call site and converting them into negative mint entries.
+   *
+   * @param policy - The policy id whose assets are burned.
+   * @param assets - Asset names and positive quantities to burn.
+   * @param redeemer - Optional redeemer for Plutus minting policies.
+   * @returns The same transaction builder.
+   */
+  burnAssets(
+    policy: PolicyId,
+    assets: Map<AssetName, bigint>,
+    redeemer?: PlutusData,
+  ): TxBuilder {
+    assertPositiveAssetQuantities("burnAssets", assets);
+    return this.addMint(policy, negateAssetQuantities(assets), redeemer);
   }
 
   /**
@@ -864,6 +997,27 @@ export class TxBuilder {
         scriptReference: scriptReference?.toCore(),
       }),
     );
+  }
+
+  /**
+   * Locks assets at a typed script, constructing the script address unless one is supplied explicitly.
+   *
+   * @param typedScript - Script wrapper that fixes the datum and redeemer types.
+   * @param value - The value to lock.
+   * @param datum - Datum matching the typed script.
+   * @param options - Optional address, stake credential, or reference script.
+   * @returns The same transaction builder.
+   */
+  lockScriptAssets<T extends TypedScript<PlutusData, PlutusData>>(
+    typedScript: T,
+    value: Value,
+    datum: TypedScriptDatum<T>,
+    options: LockScriptAssetsOptions = {},
+  ): TxBuilder {
+    const address =
+      options.address ??
+      this.addressFromTypedScript(typedScript, options.stakeCredential);
+    return this.lockAssets(address, value, datum, options.scriptReference);
   }
 
   /**
@@ -1882,6 +2036,11 @@ export class TxBuilder {
   async complete(
     params: UseCoinSelectionArgs = { useCoinSelection: true },
   ): Promise<Transaction> {
+    if (this.completedTransaction) {
+      throw new TxBuilderReuseError(
+        "TxBuilder complete: this builder has already completed a transaction. Create a new TxBuilder for the next transaction.",
+      );
+    }
     const { useCoinSelection = true } = params;
     // Execute pre-complete hooks
     if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
@@ -2133,9 +2292,24 @@ export class TxBuilder {
     }
 
     this.trace("Transaction succesfully balanced");
-    // Return the fully constructed transaction.
     const finalWitnessSet = this.buildFinalWitnessSet([]);
-    return new Transaction(this.body, finalWitnessSet, this.auxiliaryData);
+    this.completedTransaction = new Transaction(
+      this.body,
+      finalWitnessSet,
+      this.auxiliaryData,
+    );
+    // Hand exclusive ownership of the mutable structures to the completed
+    // transaction. The builder gets fresh empty ones, so further use of this
+    // (already dead) builder cannot alter the transaction it produced.
+    this.body = new TransactionBody(
+      CborSet.fromCore([], TransactionInput.fromCore),
+      [],
+      0n,
+      undefined,
+    );
+    this.redeemers = Redeemers.fromCore([]);
+    this.auxiliaryData = undefined;
+    return this.completedTransaction;
   }
 
   /**

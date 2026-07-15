@@ -15,6 +15,7 @@ import {
 } from "@blaze-cardano/core";
 import { Provider } from "./provider";
 
+/** @public */
 export type ProviderOperation =
   | "getParameters"
   | "getUnspentOutputs"
@@ -27,6 +28,7 @@ export type ProviderOperation =
   | "evaluateTransaction"
   | "resolveScriptRef";
 
+/** @public */
 export type ProviderDebugEvent =
   | {
       operation: ProviderOperation;
@@ -50,8 +52,10 @@ export type ProviderDebugEvent =
       error: unknown;
     };
 
+/** @public */
 export type ProviderDebugLogger = (event: ProviderDebugEvent) => void;
 
+/** @public */
 export type ProviderRoutingConfig = {
   /**
    * Fallback provider used for any operation that is not explicitly routed.
@@ -80,6 +84,49 @@ export type ProviderRoutingConfig = {
   debugLogger?: ProviderDebugLogger;
 };
 
+const configuredProviders = (
+  config: ProviderRoutingConfig,
+): readonly [string, Provider][] => {
+  const providers: [string, Provider][] = [
+    ["defaultProvider", config.defaultProvider],
+  ];
+  if (config.queryProvider) {
+    providers.push(["queryProvider", config.queryProvider]);
+  }
+  if (config.evaluationProvider) {
+    providers.push(["evaluationProvider", config.evaluationProvider]);
+  }
+  if (config.submissionProvider) {
+    providers.push(["submissionProvider", config.submissionProvider]);
+  }
+  for (const [operation, provider] of Object.entries(
+    config.perOperation ?? {},
+  )) {
+    providers.push([`perOperation.${operation}`, provider]);
+  }
+  return providers;
+};
+
+const assertSameNetwork = (config: ProviderRoutingConfig): void => {
+  const defaultProvider = config.defaultProvider;
+  for (const [label, provider] of configuredProviders(config)) {
+    if (provider.network !== defaultProvider.network) {
+      throw new Error(
+        `RoutedProvider ${label} network does not match defaultProvider network.`,
+      );
+    }
+    if (
+      defaultProvider.networkName !== "unknown" &&
+      provider.networkName !== "unknown" &&
+      provider.networkName !== defaultProvider.networkName
+    ) {
+      throw new Error(
+        `RoutedProvider ${label} network "${provider.networkName}" does not match defaultProvider network "${defaultProvider.networkName}".`,
+      );
+    }
+  }
+};
+
 /**
  * Provider that routes calls to separate underlying providers.
  *
@@ -87,6 +134,8 @@ export type ProviderRoutingConfig = {
  * This is useful when one backend is preferred for chain queries while another
  * backend is preferred for transaction evaluation or submission. Individual
  * operations can also be overridden with `perOperation`.
+ *
+ * @public
  */
 export class RoutedProvider extends Provider {
   private readonly defaultProvider: Provider;
@@ -97,6 +146,7 @@ export class RoutedProvider extends Provider {
   private readonly debugLogger?: ProviderDebugLogger;
 
   constructor(config: ProviderRoutingConfig) {
+    assertSameNetwork(config);
     super(config.defaultProvider.network, config.defaultProvider.networkName);
     this.defaultProvider = config.defaultProvider;
     this.queryProvider = config.queryProvider;

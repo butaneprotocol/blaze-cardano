@@ -1,12 +1,14 @@
 import type {
   AssetId,
   DatumHash,
+  Hash28ByteBase16,
   Transaction,
   ProtocolParameters,
   CostModels,
   Credential,
+  Script,
 } from "@blaze-cardano/core";
-import { NetworkId, RedeemerTag } from "@blaze-cardano/core";
+import { getBurnAddress, NetworkId, RedeemerTag } from "@blaze-cardano/core";
 import {
   TransactionUnspentOutput,
   Address,
@@ -21,8 +23,9 @@ import {
   Redeemers,
   ExUnits,
 } from "@blaze-cardano/core";
-import { Provider } from "./provider";
+import { findScriptRefInAddressUtxos, Provider } from "./provider";
 
+/** @public */
 export class Maestro extends Provider {
   private url: string;
   private apiKey: string;
@@ -332,6 +335,13 @@ export class Maestro extends Provider {
         }
         throw new Error("resolveDatum: Could not parse response json");
       });
+  }
+
+  override resolveScriptRef(
+    script: Script | Hash28ByteBase16,
+    address: Address = getBurnAddress(this.network),
+  ): Promise<TransactionUnspentOutput | undefined> {
+    return findScriptRefInAddressUtxos(this, script, address);
   }
 
   async awaitTransactionConfirmation(

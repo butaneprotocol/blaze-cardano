@@ -4,6 +4,7 @@ const plugins: [string, string[]][] = [
   ["blueprint", ["current"]],
   ["core", ["current"]],
   ["data", ["current"]],
+  ["deploy", ["current"]],
   ["emulator", ["current", "0.3.30"]],
   ["ogmios", ["current"]],
   ["query", ["current"]],

@@ -5,6 +5,7 @@
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/query": "workspace:*",
+    "@blaze-cardano/sdk": "workspace:*",
     "@blaze-cardano/tx": "workspace:*",
     "@blaze-cardano/vm": "workspace:*",
     "@blaze-cardano/wallet": "workspace:*",
@@ -19,7 +20,6 @@
     "@blaze-cardano/blueprint": "workspace:*",
     "@blaze-cardano/data": "workspace:*",
     "@blaze-cardano/eslint-config": "workspace:*",
-    "@blaze-cardano/sdk": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
     "@blaze-cardano/uplc": "workspace:*",
     "eslint": "^9.22.0",
@@ -39,9 +39,6 @@
   "files": [
     "dist"
   ],
-  "inlinedDependencies": {
-    "@sinclair/typebox": "0.34.48"
-  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "publishConfig": {

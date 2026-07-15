@@ -213,6 +213,32 @@ describe("Kupmios", () => {
     expect(utxo?.output().scriptRef()?.hash()).toBe(scriptHash);
   });
 
+  test("resolves script references through the provider fallback", async () => {
+    const ogmios = makeOgmios();
+    const scriptHash = alwaysTrueScript.hash();
+    const fetchMock = mockFetch(
+      textResponse([
+        kupoUtxo({
+          script_hash: scriptHash,
+        }),
+      ]),
+      jsonResponse({
+        language: "plutus:v2",
+        script: alwaysTrueScript.asPlutusV2()!.rawBytes(),
+      }),
+    );
+
+    const utxo = await provider(ogmios).resolveScriptRef(
+      alwaysTrueScript,
+      address,
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://kupo.test/matches/${address.toBech32()}?unspent`,
+    );
+    expect(utxo?.output().scriptRef()?.hash()).toBe(scriptHash);
+  });
+
   test("submits transactions through Ogmios", async () => {
     const ogmios = makeOgmios();
     ogmios.submitTransaction.mockResolvedValue({

@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import * as fs from "fs";
+import { HexBlob, PlutusData } from "@blaze-cardano/core";
+import { TypedScript } from "@blaze-cardano/tx";
 import {
   AlwaysTrueWithGenericScriptSpend,
   AlwaysTrueWithGenericScriptElse,
@@ -14,6 +16,15 @@ describe("Generated code", () => {
     const generatedCode = fs.readFileSync("./plutus.ts", "utf-8");
     expect(generatedCode).not.toContain("Type.Unsafe<PlutusData>");
     expect(generatedCode).toContain("type Data = Exact<typeof TPlutusData>");
+  });
+
+  it("should emit typed script classes and data serializers", () => {
+    const generatedCode = fs.readFileSync("./plutus.ts", "utf-8");
+    expect(generatedCode).toContain("extends TypedScript<");
+    expect(generatedCode).toContain("super(Script, ");
+    expect(generatedCode).toContain("datum(value:");
+    expect(generatedCode).toContain("redeemer(value:");
+    expect(generatedCode).not.toContain("public Script: Script");
   });
 
   it("should generate generic types with clean underscore-separated names", () => {
@@ -43,9 +54,13 @@ describe("Blueprint", () => {
       },
     });
     expect(alwaysTrueSpend).toBeDefined();
+    expect(alwaysTrueSpend).toBeInstanceOf(TypedScript);
     expect(alwaysTrueSpend.Script.hash()).toBeDefined();
     expect(alwaysTrueSpend.Script.asPlutusV3()?.rawBytes()).toBeDefined();
+    expect(alwaysTrueSpend.datum([1n]).toCbor()).toBeDefined();
+    expect(alwaysTrueSpend.redeemer(1n).toCbor()).toBeDefined();
   });
+
   it("Should have a valid else validator without a redeemer", async () => {
     const alwaysTrueElse = new AlwaysTrueWithGenericScriptElse(1n, "test", {
       action: {
@@ -54,8 +69,12 @@ describe("Blueprint", () => {
       },
     });
     expect(alwaysTrueElse).toBeDefined();
+    expect(alwaysTrueElse).toBeInstanceOf(TypedScript);
     expect(alwaysTrueElse.Script.hash()).toBeDefined();
     expect(alwaysTrueElse.Script.asPlutusV3()?.rawBytes()).toBeDefined();
+    expect(
+      alwaysTrueElse.redeemer(PlutusData.fromCbor(HexBlob("d87980"))).toCbor(),
+    ).toBeDefined();
   });
 
   it("Should generate the correct generic types", async () => {
@@ -96,10 +115,13 @@ describe("Blueprint no params", () => {
     const alwaysTrueNoParamsSpend =
       new AlwaysTrueWithGenericScriptNoParamsSpend();
     expect(alwaysTrueNoParamsSpend).toBeDefined();
+    expect(alwaysTrueNoParamsSpend).toBeInstanceOf(TypedScript);
     expect(alwaysTrueNoParamsSpend.Script.hash()).toBeDefined();
     expect(
       alwaysTrueNoParamsSpend.Script.asPlutusV3()?.rawBytes(),
     ).toBeDefined();
+    expect(alwaysTrueNoParamsSpend.datum([1n]).toCbor()).toBeDefined();
+    expect(alwaysTrueNoParamsSpend.redeemer(1n).toCbor()).toBeDefined();
   });
 });
 
@@ -107,8 +129,13 @@ describe("Nested blueprint", () => {
   it("Should be able to construct nested script", async () => {
     const sometimesTrueSpend = new NestedSometimesTrueScriptSpend(1n);
     expect(sometimesTrueSpend).toBeDefined();
+    expect(sometimesTrueSpend).toBeInstanceOf(TypedScript);
     expect(sometimesTrueSpend.Script.hash()).toBeDefined();
     expect(sometimesTrueSpend.Script.asPlutusV3()?.rawBytes()).toBeDefined();
+    expect(
+      sometimesTrueSpend.datum(PlutusData.fromCbor(HexBlob("d87980"))).toCbor(),
+    ).toBeDefined();
+    expect(sometimesTrueSpend.redeemer(1n).toCbor()).toBeDefined();
   });
 });
 

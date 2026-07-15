@@ -1,0 +1,17 @@
+{
+  "name": "advanced-querying",
+  "dependencies": {
+    "@blaze-cardano/core": "workspace:*",
+    "@blaze-cardano/query": "workspace:*"
+  },
+  "devDependencies": {
+    "@blaze-cardano/tsconfig": "workspace:*",
+    "typescript": "^5.7.3"
+  },
+  "private": true,
+  "scripts": {
+    "start": "bun index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module"
+}

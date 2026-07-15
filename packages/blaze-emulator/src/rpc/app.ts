@@ -3,7 +3,7 @@ import { swaggerUI } from "@hono/swagger-ui";
 import { Emulator } from "../emulator";
 import { type EmulatorOptions } from "../types";
 import type { Context } from "hono";
-import { makeValue } from "@blaze-cardano/sdk";
+import { makeValue } from "@blaze-cardano/tx";
 import {
   serializeState,
   toUtxoSnapshot,

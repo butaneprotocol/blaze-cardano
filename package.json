@@ -21,7 +21,7 @@
     "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.18"
   },
-  "packageManager": "bun@1.3.10",
+  "packageManager": "bun@1.3.14",
   "scripts": {
     "build": "turbo run build",
     "changeset": "changeset",
@@ -40,6 +40,9 @@
   },
   "workspaces": [
     "packages/*",
-    "!**/examples/**"
+    "docs/catalyst/1200040",
+    "examples/advanced-querying",
+    "examples/script-deploy-aiken",
+    "examples/script-deploy-ci"
   ]
 }

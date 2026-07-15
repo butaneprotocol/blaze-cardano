@@ -1,8 +1,8 @@
 ---
-title: Provider Routing
+title: Provider routing
 ---
 
-# Provider Routing
+# Provider routing
 
 `RoutedProvider` lets an application use different providers for chain queries,
 transaction evaluation, and transaction submission while still passing a single
@@ -35,7 +35,13 @@ const provider = new RoutedProvider({
 });
 ```
 
-## Debug Logging
+All routed providers must target the same Cardano network. `RoutedProvider`
+rejects mixed network IDs and also rejects mismatched known network names, such
+as routing a `cardano-preview` default provider to a `cardano-preprod`
+submission provider. Providers with an `unknown` network name can still be used
+when the network ID matches.
+
+## Debug logging
 
 Pass `debugLogger` to observe provider calls. The logger receives the operation,
 target provider, params, status, duration, and error when a provider throws.

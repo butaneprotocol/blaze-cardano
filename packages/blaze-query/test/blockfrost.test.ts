@@ -225,18 +225,53 @@ describe("Blockfrost", () => {
     });
   });
 
-  test("resolves script refs from script objects or hashes", async () => {
-    const provider = blockfrost();
-    const spy = vi.spyOn(provider, "getUnspentOutputs").mockResolvedValue([]);
+  test("resolves script refs from the script reference index", async () => {
+    const fetchMock = mockFetch(
+      jsonResponse([]),
+      jsonResponse([
+        blockfrostUtxo({
+          reference_script_hash: alwaysTrueScript.hash(),
+        }),
+      ]),
+      jsonResponse({ type: "plutusV2" }),
+      jsonResponse({ cbor: alwaysTrueScript.asPlutusV2()!.rawBytes() }),
+    );
 
     await expect(
-      provider.resolveScriptRef(Hash28ByteBase16("0".repeat(56))),
-    ).resolves.not.toThrow();
-    await expect(
-      provider.resolveScriptRef(alwaysTrueScript),
-    ).resolves.not.toThrow();
+      blockfrost().resolveScriptRef(Hash28ByteBase16("0".repeat(56))),
+    ).resolves.toBeUndefined();
+    const refUtxo = await blockfrost().resolveScriptRef(alwaysTrueScript);
 
-    expect(spy).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `https://cardano-preview.blockfrost.io/api/v0//scripts/${"0".repeat(56)}/utxos?count=100&page=1`,
+      { headers: { project_id: "project-id" } },
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `https://cardano-preview.blockfrost.io/api/v0//scripts/${alwaysTrueScript.hash()}/utxos?count=100&page=1`,
+      { headers: { project_id: "project-id" } },
+    );
+    expect(refUtxo?.input().transactionId()).toBe(txHash);
+    expect(refUtxo?.input().index()).toBe(1n);
+    expect(refUtxo?.output().scriptRef()?.hash()).toBe(alwaysTrueScript.hash());
+  });
+
+  test("resolves script refs to undefined for scripts Blockfrost has never seen", async () => {
+    mockFetch(
+      jsonResponse(
+        {
+          status_code: 404,
+          error: "Not Found",
+          message: "The requested component has not been found.",
+        },
+        { status: 404 },
+      ),
+    );
+
+    await expect(
+      blockfrost().resolveScriptRef(alwaysTrueScript),
+    ).resolves.toBeUndefined();
   });
 
   test("propagates Blockfrost API error messages", async () => {

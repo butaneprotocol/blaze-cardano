@@ -7,7 +7,7 @@
 import { Address } from '@blaze-cardano/core';
 import { AnchorCore } from '@blaze-cardano/core';
 import type { AssetId } from '@blaze-cardano/core';
-import { Blaze } from '@blaze-cardano/sdk';
+import { Blaze } from '@blaze-cardano/sdk/blaze';
 import type { Cardano } from '@blaze-cardano/core';
 import type { CertificateCore } from '@blaze-cardano/core';
 import { CertificateType } from '@blaze-cardano/core';
@@ -27,8 +27,7 @@ import { PoolId } from '@blaze-cardano/core';
 import { PoolParameters } from '@blaze-cardano/core';
 import { ProposalProcedure } from '@blaze-cardano/core';
 import { ProtocolParameters } from '@blaze-cardano/core';
-import { Provider } from '@blaze-cardano/sdk';
-import { Provider as Provider_2 } from '@blaze-cardano/query';
+import { Provider } from '@blaze-cardano/query';
 import type { Redeemers } from '@blaze-cardano/core';
 import { RewardAccount } from '@blaze-cardano/core';
 import { Script } from '@blaze-cardano/core';
@@ -43,7 +42,7 @@ import { TxBuilder } from '@blaze-cardano/tx';
 import { Value } from '@blaze-cardano/core';
 import { Vote } from '@blaze-cardano/core';
 import { Voter } from '@blaze-cardano/core';
-import { Wallet } from '@blaze-cardano/sdk';
+import { Wallet } from '@blaze-cardano/wallet';
 
 // @public (undocumented)
 export const buildStakeSnapshot: (accounts: Map<RewardAccount, RegisteredAccount>) => StakeSnapshot;
@@ -174,7 +173,7 @@ export interface EmulatorOptions {
 }
 
 // @public
-export class EmulatorProvider extends Provider_2 {
+export class EmulatorProvider extends Provider {
     constructor(emulator: Emulator);
     // (undocumented)
     awaitTransactionConfirmation(txId: TransactionId, _timeout?: number | undefined): Promise<boolean>;
@@ -194,6 +193,8 @@ export class EmulatorProvider extends Provider_2 {
     postTransactionToChain(tx: Transaction): Promise<TransactionId>;
     // (undocumented)
     resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
+    // (undocumented)
+    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
     // (undocumented)
     resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
 }

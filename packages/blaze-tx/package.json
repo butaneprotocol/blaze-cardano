@@ -12,6 +12,7 @@
     "@blaze-cardano/tsconfig": "workspace:*",
     "@sinclair/typebox": "^0.34.28",
     "eslint": "^9.22.0",
+    "fast-check": "^4.4.0",
     "ts-node": "^10.9.2",
     "tsdown": "^0.21.0",
     "typescript": "^5.7.3",

@@ -1,1 +1,1 @@
-export { generateBlueprint, Generator } from "./blueprint";
+export { generateBlueprint, Generator, type BlueprintArgs } from "./blueprint";
