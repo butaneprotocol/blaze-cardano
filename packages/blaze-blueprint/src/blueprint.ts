@@ -2,6 +2,10 @@ import * as fs from "fs/promises";
 import type { Schema, Unit } from "./schema";
 import type { Annotated, Declaration } from "./shared";
 import type { Constructor, Data } from "./data";
+import {
+  parseDoubleAngleGeneric,
+  parseSingleAngleGeneric,
+} from "./generic-names";
 
 type Blueprint = {
   preamble: {
@@ -241,29 +245,6 @@ export class Generator {
   }
 
   /**
-   * Splits a string of comma-separated generic type parameters, respecting
-   * nesting depth of `<` / `>`. Used to parse Aiken's
-   *   SignedRedeemer<Void,SignedPayload<CommitteeAction>>
-   * style into [`Void`, `SignedPayload<CommitteeAction>`].
-   */
-  private splitTopLevelCommasImpl(inner: string): string[] {
-    const out: string[] = [];
-    let depth = 0;
-    let start = 0;
-    for (let i = 0; i < inner.length; i++) {
-      const ch = inner[i]!;
-      if (ch === "<") depth++;
-      else if (ch === ">") depth--;
-      else if (ch === "," && depth === 0) {
-        out.push(inner.substring(start, i));
-        start = i + 1;
-      }
-    }
-    out.push(inner.substring(start));
-    return out;
-  }
-
-  /**
    * Normalizes a full definition name into a valid TypeScript identifier.
    * Handles generic types by extracting type parameters from the schema when available,
    * falling back to parsing the definition name string.
@@ -278,53 +259,25 @@ export class Generator {
   ): string {
     const parts = fullDefinitionName.split("/");
 
-    // Find the part containing "$" (indicates generic type instantiation)
-    // e.g., "v0_3/types/SignedPayload$v0_3/types/ProtocolRedeemer"
-    // e.g., "Tuple$aiken/crypto/VerificationKey_sundae/cose/COSESign1"
-    // Handle Aiken's angle-bracket tuple/generic syntax: Tuple<<types/AssetClass,Int>>
+    // Aiken's double-angle tuple/generic syntax, e.g. "Tuple<<types/AssetClass,Int>>".
     // These don't use "$" but rather "<<" and ">>" with comma-separated type params.
-    const angleBracketMatch = fullDefinitionName.match(/^(\w+)<<(.+)>>$/);
-    if (angleBracketMatch) {
-      const baseName = angleBracketMatch[1]!;
-      const innerParams = angleBracketMatch[2]!;
-      // Split on comma to get individual type params, then take last path segment
-      const typeParamNames = innerParams.split(",").map((param) => {
-        const segments = param.trim().split("/");
-        return segments[segments.length - 1]!.replace(/~/g, "_");
-      });
-      return `${baseName}_${typeParamNames.join("_")}`;
+    const doubleAngleName = parseDoubleAngleGeneric(fullDefinitionName);
+    if (doubleAngleName !== null) {
+      return doubleAngleName;
     }
 
-    // Handle Aiken's single-angle-bracket generic syntax:
-    // e.g. "types/SignedRedeemer<Void,types/CommitteeAction>"
-    // base name = last "/"-segment before "<"; type params = top-level
-    // comma-separated values inside <...>, each reduced to its last segment.
-    // Distinguish from "<<...>>" (handled above) by requiring exactly one
-    // opening "<" at the top level. We do this by checking that the name
-    // doesn't end in ">>".
-    if (
-      fullDefinitionName.includes("<") &&
-      !fullDefinitionName.endsWith(">>")
-    ) {
-      // Equivalent to /^(.+?)<(.+)>$/ but without the polynomial backtracking
-      // that regex has on adversarial input (e.g. "a<a<a<..."): split on the
-      // first "<" and require a closing ">" as the final character, with a
-      // non-empty base and inner section.
-      const openIdx = fullDefinitionName.indexOf("<");
-      const closeIdx = fullDefinitionName.length - 1;
-      if (
-        openIdx > 0 &&
-        fullDefinitionName.endsWith(">") &&
-        closeIdx - openIdx > 1
-      ) {
-        const beforeAngle = fullDefinitionName.slice(0, openIdx);
-        const innerParams = fullDefinitionName.slice(openIdx + 1, closeIdx);
-        const baseName = beforeAngle.split("/").pop()!;
-        const typeParamNames = this.splitTopLevelCommasImpl(innerParams).map(
-          (param) => this.normalizeTypeName(param.trim()),
-        );
-        return `${baseName}_${typeParamNames.join("_")}`.replace(/~/g, "_");
-      }
+    // Aiken's single-angle generic syntax, e.g.
+    // "types/SignedRedeemer<Void,types/CommitteeAction>". Each type param is
+    // normalized recursively (params may themselves be nested generics).
+    const singleAngle = parseSingleAngleGeneric(fullDefinitionName);
+    if (singleAngle !== null) {
+      const typeParamNames = singleAngle.rawParams.map((param) =>
+        this.normalizeTypeName(param),
+      );
+      return `${singleAngle.baseName}_${typeParamNames.join("_")}`.replace(
+        /~/g,
+        "_",
+      );
     }
 
     const genericBaseName = this.extractGenericBaseName(fullDefinitionName);
