@@ -412,4 +412,5 @@ export const SLOT_CONFIG_NETWORK = {
     zeroSlot: 86400,
     slotLength: 1000,
   },
+  Sanchonet: { zeroTime: 1686789000000, zeroSlot: 0, slotLength: 1000 },
 };

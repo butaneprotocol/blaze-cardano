@@ -786,6 +786,11 @@ export const SLOT_CONFIG_NETWORK: {
         zeroSlot: number;
         slotLength: number;
     };
+    Sanchonet: {
+        zeroTime: number;
+        zeroSlot: number;
+        slotLength: number;
+    };
 };
 
 // @public

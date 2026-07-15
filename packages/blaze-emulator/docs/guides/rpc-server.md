@@ -53,7 +53,7 @@ They are also useful for readiness checks and transaction scheduling.
 
 ## Network and timing configuration
 
-The reset endpoint accepts a network preset and optional timing overrides. Each preset supplies the chain ID, slot configuration, and default epoch and block lengths. Use custom values when a validity interval, epoch, or wallet test should not follow mainnet, preprod, or preview.
+The reset endpoint accepts a network preset and optional timing overrides. Each preset supplies the chain ID, slot configuration, and default epoch and block lengths. Use custom values when a validity interval, epoch, or wallet test should not follow mainnet, preprod, preview, or SanchoNet.
 
 ```ts
 await fetch("http://127.0.0.1:8787/emulator/reset", {
@@ -79,7 +79,7 @@ const parameters = await fetch(
 ).then((res) => res.json());
 ```
 
-The available presets are `mainnet`, `preprod`, `preview`, and `custom`. A reset request may override `chainId`, individual `slotConfig` fields, `slotsPerEpoch`, `slotsPerBlock`, and `protocolParams`. Omitted fields keep the preset values.
+The available presets are `mainnet`, `preprod`, `preview`, `sanchonet`, and `custom`. A reset request may override `chainId`, individual `slotConfig` fields, `slotsPerEpoch`, `slotsPerBlock`, and `protocolParams`. Omitted fields keep the preset values.
 
 Protocol cost models use a JSON object keyed by Plutus language version. This means a client can read `/emulator/parameters`, change selected fields, and send the result in another reset request. `slotLength` is measured in milliseconds. `slotsPerBlock` controls how many slots the emulator advances for each block.
 
