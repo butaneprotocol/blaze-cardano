@@ -65,7 +65,6 @@ import {
   StakeDelegation,
   CertificateType,
   RedeemerTag,
-  StakeRegistration,
   StakeDeregistration,
   // Conway-style stake registration cert (type 7) with explicit deposit.
   // Required on Dijkstra-era ledger where the legacy Shelley-cert-0 form is no
@@ -920,7 +919,8 @@ export class TxBuilder {
     );
     // todo: filter utxoscope to only include inputs, reference inputs, collateral inputs, not excess junk
 
-    const subs = this.scriptSubstitutions.size > 0 ? this.scriptSubstitutions : undefined;
+    const subs =
+      this.scriptSubstitutions.size > 0 ? this.scriptSubstitutions : undefined;
     const redeemers = await this.evaluator!(draft_tx, allUtxos, subs);
     let fee = 0;
     // Iterate over the results from the UPLC evaluator.
@@ -980,8 +980,7 @@ export class TxBuilder {
         { rewardAccount: RewardAccount; amount: bigint }
       >();
       for (const [account, amount] of withdrawals.entries()) {
-        const hash =
-          Address.fromBech32(account).getProps().paymentPart?.hash;
+        const hash = Address.fromBech32(account).getProps().paymentPart?.hash;
         if (hash) byHash.set(hash, { rewardAccount: account, amount });
       }
       for (const hash of this.consumedWithdrawalHashes) {

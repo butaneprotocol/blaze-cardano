@@ -470,7 +470,9 @@ export class Generator {
               this.buildLine(typeName);
             }
           } else {
-            console.log("???", param);
+            throw new Error(
+              `Unsupported parameter schema for "${param.title}": expected a $ref or a primitive dataType`,
+            );
           }
           this.finishLine(",");
         }
@@ -514,7 +516,9 @@ export class Generator {
               this.buildLine(typeName);
             }
           } else {
-            console.log("???", param);
+            throw new Error(
+              `Unsupported parameter schema for "${param.title}": expected a $ref or a primitive dataType`,
+            );
           }
           this.finishLine(",");
         }

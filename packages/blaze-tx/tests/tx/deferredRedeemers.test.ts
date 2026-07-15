@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import {
   Address,
   Credential,
@@ -125,11 +126,7 @@ describe("Deferred Redeemers", () => {
     // Two script UTxOs — one with deferred redeemer, one with static
     const scriptUtxo1 = makeScriptUtxo("1".padStart(64, "0"), 0n, 10_000_000n);
     const scriptUtxo2 = makeScriptUtxo("2".padStart(64, "0"), 0n, 10_000_000n);
-    const walletUtxo = makeWalletUtxo(
-      "f".repeat(64),
-      0n,
-      50_000_000n,
-    );
+    const walletUtxo = makeWalletUtxo("f".repeat(64), 0n, 50_000_000n);
 
     let deferredOwnIndex: number | undefined;
 

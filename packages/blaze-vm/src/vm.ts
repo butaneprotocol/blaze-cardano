@@ -18,6 +18,12 @@ import {
 import * as U from "@blaze-cardano/uplc/wasm";
 
 /**
+ * Optional sink for evaluator debug messages. Passed to {@link makeUplcEvaluator}
+ * to observe internal behaviour such as script substitutions during evaluation.
+ */
+export type EvaluatorDebugLogger = (message: string) => void;
+
+/**
  * Extracts the raw script bytes from a Script object.
  * Returns the inner flat-encoded UPLC bytes (not CBOR-wrapped).
  */
@@ -32,7 +38,9 @@ function getScriptRawBytes(script: Script): Uint8Array {
     rawHex = script.asPlutusV3()?.rawBytes();
   }
   if (!rawHex) {
-    throw new Error(`Cannot extract raw bytes from script with language ${lang}`);
+    throw new Error(
+      `Cannot extract raw bytes from script with language ${lang}`,
+    );
   }
   return fromHex(rawHex);
 }
@@ -44,6 +52,8 @@ function getScriptRawBytes(script: Script): Uint8Array {
  * @param overEstimateSteps - The overestimation factor for execution steps.
  * @param overEstimateMem - The overestimation factor for memory.
  * @param slotConfig - The slot configuration to be used. Defaults to Mainnet.
+ * @param debugLogger - Optional sink for evaluator debug messages (e.g. script
+ * substitutions applied during evaluation). No-op when omitted.
  * @returns An evaluator function.
  */
 export function makeUplcEvaluator(
@@ -51,31 +61,27 @@ export function makeUplcEvaluator(
   overEstimateSteps: number,
   overEstimateMem: number,
   slotConfig: SlotConfig = SLOT_CONFIG_NETWORK.Mainnet,
-  debug: boolean = false,
+  debugLogger?: EvaluatorDebugLogger,
 ): Evaluator {
   return (
     draft_tx: Transaction,
     allUtxos: TransactionUnspentOutput[],
     scriptSubstitutions?: Map<string, Script>,
   ): Promise<Redeemers> => {
-    // Debug: print what we're passing to the evaluator
-    if (debug) {
-    }
-
     const txBytes = fromHex(draft_tx.toCbor());
     const inputRefs = allUtxos.map((x) => fromHex(x.input().toCbor()));
     const outputBytes = allUtxos.map((x) => fromHex(x.output().toCbor()));
-    const costMdlsBytes = fromHex(Costmdls.fromCore(params.costModels).toCbor());
+    const costMdlsBytes = fromHex(
+      Costmdls.fromCore(params.costModels).toCbor(),
+    );
     const cpuBudget = BigInt(
       Math.floor(
-        params.maxExecutionUnitsPerTransaction.steps /
-          (overEstimateSteps ?? 1),
+        params.maxExecutionUnitsPerTransaction.steps / (overEstimateSteps ?? 1),
       ),
     );
     const memBudget = BigInt(
       Math.floor(
-        params.maxExecutionUnitsPerTransaction.memory /
-          (overEstimateMem ?? 1),
+        params.maxExecutionUnitsPerTransaction.memory / (overEstimateMem ?? 1),
       ),
     );
     const zeroTime = BigInt(slotConfig.zeroTime);
@@ -91,10 +97,13 @@ export function makeUplcEvaluator(
       const overrideLangs: number[] = [];
 
       for (const [hash, script] of scriptSubstitutions) {
+        const rawBytes = getScriptRawBytes(script);
         overrideHashes.push(fromHex(hash));
-        overrideBytes.push(getScriptRawBytes(script));
+        overrideBytes.push(rawBytes);
         overrideLangs.push(script.language());
-        console.log(`[vm override] hash=${hash} lang=${script.language()} bytes=${getScriptRawBytes(script).length}`);
+        debugLogger?.(
+          `[vm override] hash=${hash} lang=${script.language()} bytes=${rawBytes.length}`,
+        );
       }
 
       uplcResults = U.eval_phase_two_raw_with_override(
