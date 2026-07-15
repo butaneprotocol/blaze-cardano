@@ -157,131 +157,114 @@ export function _serialize<T extends TSchema>(
   if ("type" in type) {
     switch (type["type"]) {
       case "bigint":
-      case "number":
-        {
-          if (data instanceof BigInt || typeof data === "bigint") {
-            return PlutusData.newInteger(data as bigint);
-          } else if (typeof data === "number") {
-            return PlutusData.newInteger(BigInt(data));
-          } else if (typeof data === "string") {
-            return PlutusData.newInteger(BigInt(data));
-          }
-          throw new Error(
-            `Invalid data for plutus integer at path ${path.join(".")}: ${typeof data}`,
-          );
+      case "number": {
+        if (data instanceof BigInt || typeof data === "bigint") {
+          return PlutusData.newInteger(data as bigint);
+        } else if (typeof data === "number") {
+          return PlutusData.newInteger(BigInt(data));
+        } else if (typeof data === "string") {
+          return PlutusData.newInteger(BigInt(data));
         }
-        break;
-      case "string":
-        {
-          return PlutusData.newBytes(fromHex(data as string));
-        }
-        break;
-      case "boolean":
-        {
-          return _serialize(BOOLEAN_ENUM_SCHEMA, data as boolean, path, defs);
-        }
-        break;
-      case "array":
-        {
-          // Handle tuple-enums
-          if ("ctor" in type) {
-            const constructor = extractCtor(type, path);
-            const fieldData = new PlutusList();
-
-            const array = data as Array<any>;
-            for (let idx = 0; idx < array.length; idx++) {
-              let fieldType: any = undefined;
-              if (Array.isArray(type["items"])) {
-                // A tuple will be a schema with an array of item types
-                fieldType = type["items"][idx];
-              } else {
-                // Otherwise it's just a homogeneous array, reusing the same type each time
-                fieldType = type["items"];
-              }
-              fieldData.add(
-                _serialize(
-                  fieldType,
-                  array[idx],
-                  [...path, idx.toString()],
-                  defs,
-                ),
-              );
-            }
-
-            return PlutusData.newConstrPlutusData(
-              new ConstrPlutusData(constructor, fieldData),
-            );
-          } else {
-            const items = new PlutusList();
-            const array = data as Array<any>;
-            for (let idx = 0; idx < array.length; idx++) {
-              let itemType: any = undefined;
-              if (Array.isArray(type["items"])) {
-                // A tuple will be a schema with an array of item types
-                itemType = type["items"][idx];
-              } else {
-                // Otherwise it's just a homogeneous array, reusing the same type each time
-                itemType = type["items"];
-              }
-              items.add(
-                _serialize(
-                  itemType,
-                  array[idx],
-                  [...path, idx.toString()],
-                  defs,
-                ),
-              );
-            }
-            return PlutusData.newList(items);
-          }
-        }
-        break;
-      case "object":
-        {
-          // Deal with maps
-          if ("patternProperties" in type) {
-            const numericType = type["patternProperties"][PatternNumberExact];
-            const valueType = type["patternProperties"][PatternStringExact];
-            const dataMap = new PlutusMap();
-            const object = data as Record<string, any>;
-            for (const key in object) {
-              const plutusKey = numericType
-                ? PlutusData.newInteger(BigInt(key))
-                : PlutusData.newBytes(fromHex(key));
-              const plutusValue = _serialize(
-                numericType ?? valueType,
-                object[key],
-                [...path, key],
-                defs,
-              );
-              dataMap.insert(plutusKey, plutusValue);
-            }
-            return PlutusData.newMap(dataMap);
-          }
+        throw new Error(
+          `Invalid data for plutus integer at path ${path.join(".")}: ${typeof data}`,
+        );
+      }
+      case "string": {
+        return PlutusData.newBytes(fromHex(data as string));
+      }
+      case "boolean": {
+        return _serialize(BOOLEAN_ENUM_SCHEMA, data as boolean, path, defs);
+      }
+      case "array": {
+        // Handle tuple-enums
+        if ("ctor" in type) {
           const constructor = extractCtor(type, path);
-          const object = data as Record<string, any>;
-          const fields = type["properties"] as Record<string, T>;
           const fieldData = new PlutusList();
-          for (const [field, fieldType] of Object.entries(fields)) {
+
+          const array = data as Array<any>;
+          for (let idx = 0; idx < array.length; idx++) {
+            let fieldType: any = undefined;
+            if (Array.isArray(type["items"])) {
+              // A tuple will be a schema with an array of item types
+              fieldType = type["items"][idx];
+            } else {
+              // Otherwise it's just a homogeneous array, reusing the same type each time
+              fieldType = type["items"];
+            }
             fieldData.add(
-              _serialize(fieldType, object[field], [...path, field], defs),
+              _serialize(
+                fieldType,
+                array[idx],
+                [...path, idx.toString()],
+                defs,
+              ),
             );
           }
+
           return PlutusData.newConstrPlutusData(
             new ConstrPlutusData(constructor, fieldData),
           );
+        } else {
+          const items = new PlutusList();
+          const array = data as Array<any>;
+          for (let idx = 0; idx < array.length; idx++) {
+            let itemType: any = undefined;
+            if (Array.isArray(type["items"])) {
+              // A tuple will be a schema with an array of item types
+              itemType = type["items"][idx];
+            } else {
+              // Otherwise it's just a homogeneous array, reusing the same type each time
+              itemType = type["items"];
+            }
+            items.add(
+              _serialize(itemType, array[idx], [...path, idx.toString()], defs),
+            );
+          }
+          return PlutusData.newList(items);
         }
-        break;
+      }
+      case "object": {
+        // Deal with maps
+        if ("patternProperties" in type) {
+          const numericType = type["patternProperties"][PatternNumberExact];
+          const valueType = type["patternProperties"][PatternStringExact];
+          const dataMap = new PlutusMap();
+          const object = data as Record<string, any>;
+          for (const key in object) {
+            const plutusKey = numericType
+              ? PlutusData.newInteger(BigInt(key))
+              : PlutusData.newBytes(fromHex(key));
+            const plutusValue = _serialize(
+              numericType ?? valueType,
+              object[key],
+              [...path, key],
+              defs,
+            );
+            dataMap.insert(plutusKey, plutusValue);
+          }
+          return PlutusData.newMap(dataMap);
+        }
+        const constructor = extractCtor(type, path);
+        const object = data as Record<string, any>;
+        const fields = type["properties"] as Record<string, T>;
+        const fieldData = new PlutusList();
+        for (const [field, fieldType] of Object.entries(fields)) {
+          fieldData.add(
+            _serialize(fieldType, object[field], [...path, field], defs),
+          );
+        }
+        return PlutusData.newConstrPlutusData(
+          new ConstrPlutusData(constructor, fieldData),
+        );
+      }
       // Aiken's `Void` type — codegen emits `Type.Undefined()` for it; this
       // must serialize to `Constr 0 []` to match the on-chain decoder.
       case "undefined":
-      case "null":
-        {
-          return PlutusData.newConstrPlutusData(
-            new ConstrPlutusData(0n, new PlutusList()),
-          );
-        }
-        break;
+      case "null": {
+        return PlutusData.newConstrPlutusData(
+          new ConstrPlutusData(0n, new PlutusList()),
+        );
+      }
       default: {
         console.log("Unhandled: ", type["type"]);
       }
