@@ -16,8 +16,8 @@ const Contracts = Type.Module({
 export class AlwaysTrueScriptSpend {
   public Script: Script
   constructor(
-    _param1: Int,
-    _param2: ByteArray,
+    _param1: bigint,
+    _param2: string,
     trace?: boolean = false,
   ) {
     this.Script = cborToScript(
@@ -43,8 +43,8 @@ export class AlwaysTrueScriptSpend {
 export class AlwaysTrueScriptElse {
   public Script: Script
   constructor(
-    _param1: Int,
-    _param2: ByteArray,
+    _param1: bigint,
+    _param2: string,
     trace?: boolean = false,
   ) {
     this.Script = cborToScript(
@@ -100,7 +100,7 @@ export class AlwaysTrueScriptNoParamsElse {
 export class NestedSometimesTrueScriptSpend {
   public Script: Script
   constructor(
-    param: Int,
+    param: bigint,
     trace?: boolean = false,
   ) {
     this.Script = cborToScript(
@@ -124,7 +124,7 @@ export class NestedSometimesTrueScriptSpend {
 export class NestedSometimesTrueScriptElse {
   public Script: Script
   constructor(
-    param: Int,
+    param: bigint,
     trace?: boolean = false,
   ) {
     this.Script = cborToScript(

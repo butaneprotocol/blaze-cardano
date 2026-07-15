@@ -24,8 +24,8 @@ export type GenericType_OutputReference = Exact<typeof GenericType_OutputReferen
 export class AlwaysTrueWithGenericScriptSpend {
   public Script: Script
   constructor(
-    _param1: Int,
-    _param2: ByteArray,
+    _param1: bigint,
+    _param2: string,
     _param3: GenericType_OutputReference,
     trace?: boolean = false,
   ) {
@@ -54,8 +54,8 @@ export class AlwaysTrueWithGenericScriptSpend {
 export class AlwaysTrueWithGenericScriptElse {
   public Script: Script
   constructor(
-    _param1: Int,
-    _param2: ByteArray,
+    _param1: bigint,
+    _param2: string,
     _param3: GenericType_OutputReference,
     trace?: boolean = false,
   ) {
@@ -114,7 +114,7 @@ export class AlwaysTrueWithGenericScriptNoParamsElse {
 export class NestedSometimesTrueScriptSpend {
   public Script: Script
   constructor(
-    param: Int,
+    param: bigint,
     trace?: boolean = false,
   ) {
     this.Script = cborToScript(
@@ -138,7 +138,7 @@ export class NestedSometimesTrueScriptSpend {
 export class NestedSometimesTrueScriptElse {
   public Script: Script
   constructor(
-    param: Int,
+    param: bigint,
     trace?: boolean = false,
   ) {
     this.Script = cborToScript(

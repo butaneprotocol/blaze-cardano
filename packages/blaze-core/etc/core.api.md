@@ -303,7 +303,7 @@ export type EpochNo = C.Cardano.EpochNo;
 export const EpochNo: (value: number) => C.Cardano.EpochNo;
 
 // @public (undocumented)
-export type Evaluator = (tx: Transaction, additionalUtxos: TransactionUnspentOutput[]) => Promise<Redeemers>;
+export type Evaluator = (tx: Transaction, additionalUtxos: TransactionUnspentOutput[], scriptSubstitutions?: Map<string, Script>) => Promise<Redeemers>;
 
 // @public (undocumented)
 export type ExUnits = C.Serialization.ExUnits;
