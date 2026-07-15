@@ -306,10 +306,19 @@ export class Generator {
       fullDefinitionName.includes("<") &&
       !fullDefinitionName.endsWith(">>")
     ) {
-      const singleAngleMatch = fullDefinitionName.match(/^(.+?)<(.+)>$/);
-      if (singleAngleMatch) {
-        const beforeAngle = singleAngleMatch[1]!;
-        const innerParams = singleAngleMatch[2]!;
+      // Equivalent to /^(.+?)<(.+)>$/ but without the polynomial backtracking
+      // that regex has on adversarial input (e.g. "a<a<a<..."): split on the
+      // first "<" and require a closing ">" as the final character, with a
+      // non-empty base and inner section.
+      const openIdx = fullDefinitionName.indexOf("<");
+      const closeIdx = fullDefinitionName.length - 1;
+      if (
+        openIdx > 0 &&
+        fullDefinitionName.endsWith(">") &&
+        closeIdx - openIdx > 1
+      ) {
+        const beforeAngle = fullDefinitionName.slice(0, openIdx);
+        const innerParams = fullDefinitionName.slice(openIdx + 1, closeIdx);
         const baseName = beforeAngle.split("/").pop()!;
         const typeParamNames = this.splitTopLevelCommasImpl(innerParams).map(
           (param) => this.normalizeTypeName(param.trim()),
