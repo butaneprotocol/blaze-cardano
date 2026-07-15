@@ -245,6 +245,37 @@ describe("emulator RPC app", () => {
     });
   });
 
+  it("resets with the SanchoNet preset", async () => {
+    const app = await loadApp();
+    const resetResponse = await app.request("/emulator/reset", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ networkPreset: "sanchonet" }),
+    });
+    expect(resetResponse.status).toBe(200);
+
+    const configResponse = await app.request("/emulator/config");
+    const config = (await configResponse.json()) as {
+      preset: string;
+      chainId: { networkId: string; networkMagic: number };
+      slotConfig: {
+        zeroTime: number;
+        zeroSlot: number;
+        slotLength: number;
+      };
+      slotsPerEpoch: number;
+    };
+    expect(config).toMatchObject({
+      preset: "sanchonet",
+      chainId: {
+        networkId: "testnet",
+        networkMagic: ChainIds.Sanchonet.networkMagic,
+      },
+      slotConfig: SLOT_CONFIG_NETWORK.Sanchonet,
+      slotsPerEpoch: 86400,
+    });
+  });
+
   it("round-trips protocol parameters through JSON", async () => {
     const app = await loadApp();
     await app.request("/emulator/reset", {

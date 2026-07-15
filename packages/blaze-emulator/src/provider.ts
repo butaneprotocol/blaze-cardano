@@ -54,6 +54,11 @@ export class EmulatorProvider extends Provider {
       networkMagic === ChainIds.Preview.networkMagic
     ) {
       networkName = "cardano-preview";
+    } else if (
+      networkId === NetworkId.Testnet &&
+      networkMagic === ChainIds.Sanchonet.networkMagic
+    ) {
+      networkName = "cardano-sanchonet";
     }
     super(networkId, networkName);
     this.emulator = emulator;

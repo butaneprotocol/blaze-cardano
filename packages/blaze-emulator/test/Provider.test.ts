@@ -143,6 +143,16 @@ describe("Provider", () => {
     ).toThrow("zeroSlot must be a non-negative integer");
   });
 
+  test("creates a SanchoNet preset", () => {
+    const config = createEmulatorNetworkConfig("sanchonet");
+    const configuredProvider = new EmulatorProvider(new Emulator([], config));
+
+    expect(config.chainId).toEqual(ChainIds.Sanchonet);
+    expect(config.slotConfig).toEqual(SLOT_CONFIG_NETWORK.Sanchonet);
+    expect(config.slotsPerEpoch).toBe(86400);
+    expect(configuredProvider.networkName).toBe("cardano-sanchonet");
+  });
+
   test("getUnspentOutputs", async () => {
     const providerUtxos = await provider.getUnspentOutputs(wallet1.address);
     for (const providerUtxo of providerUtxos) {

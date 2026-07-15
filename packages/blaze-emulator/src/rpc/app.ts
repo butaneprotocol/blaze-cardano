@@ -34,6 +34,7 @@ const networkPresetValues = [
   "mainnet",
   "preprod",
   "preview",
+  "sanchonet",
   "custom",
 ] as const;
 

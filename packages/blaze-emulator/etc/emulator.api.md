@@ -179,7 +179,7 @@ export interface EmulatorNetworkConfigInput {
 }
 
 // @public
-export type EmulatorNetworkPreset = "mainnet" | "preprod" | "preview" | "custom";
+export type EmulatorNetworkPreset = "mainnet" | "preprod" | "preview" | "sanchonet" | "custom";
 
 // @public (undocumented)
 export interface EmulatorOptions {

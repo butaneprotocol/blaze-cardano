@@ -13,6 +13,7 @@ export type EmulatorNetworkPreset =
   | "mainnet"
   | "preprod"
   | "preview"
+  | "sanchonet"
   | "custom";
 
 /** Resolved network, protocol, and clock settings for an emulator. @public */
@@ -74,6 +75,11 @@ const networkPresets = {
   preview: {
     chainId: ChainIds.Preview,
     slotConfig: SLOT_CONFIG_NETWORK.Preview,
+    slotsPerEpoch: 86400,
+  },
+  sanchonet: {
+    chainId: ChainIds.Sanchonet,
+    slotConfig: SLOT_CONFIG_NETWORK.Sanchonet,
     slotsPerEpoch: 86400,
   },
 } satisfies Record<
