@@ -53,10 +53,11 @@
     "dev": "tsdown --watch",
     "dev:cli": "tsdown --watch",
     "lint": "eslint .",
-    "test": "bun run test:simple && bun run test:complex && bun run test:generic",
+    "test": "bun run test:unit && bun run test:simple && bun run test:complex && bun run test:generic",
     "test:complex": "cd tests/complex && tsx blueprint_generate.ts && vitest run complex.test.ts",
     "test:generic": "cd tests/generic && tsx blueprint_generate.ts && vitest run generic.test.ts",
     "test:simple": "cd tests/simple && tsx blueprint_generate.ts && vitest run simple.test.ts",
+    "test:unit": "vitest run tests/generic-names.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "type": "module",

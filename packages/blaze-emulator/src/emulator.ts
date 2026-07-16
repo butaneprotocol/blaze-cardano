@@ -966,8 +966,12 @@ export class Emulator {
         if (
           (isCertType(core, StakeCredentialCertificateTypes) ||
             isCertType(core, VoteDelegationCredentialCertificateTypes)) &&
-          // Legacy stake registration cert doesn't require redeemer, new version in conway does
-          certType !== CertificateType.StakeRegistration
+          // Registration certs never require the credential's witness — this
+          // holds for both the legacy Shelley StakeRegistration (type 0) and the
+          // Conway Registration (type 7) with explicit deposit. Only
+          // deregistration and delegation authorize against the credential.
+          certType !== CertificateType.StakeRegistration &&
+          certType !== CertificateType.Registration
         ) {
           const stakeCred = core.stakeCredential;
           if (stakeCred) {

@@ -9,7 +9,10 @@ import type { ProtocolParameters } from '@blaze-cardano/core';
 import type { SlotConfig } from '@blaze-cardano/core';
 
 // @public
-export function makeUplcEvaluator(params: ProtocolParameters, overEstimateSteps: number, overEstimateMem: number, slotConfig?: SlotConfig): Evaluator;
+export type EvaluatorDebugLogger = (message: string) => void;
+
+// @public
+export function makeUplcEvaluator(params: ProtocolParameters, overEstimateSteps: number, overEstimateMem: number, slotConfig?: SlotConfig, debugLogger?: EvaluatorDebugLogger): Evaluator;
 
 // (No @packageDocumentation comment for this package)
 

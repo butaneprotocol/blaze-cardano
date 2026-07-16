@@ -33,6 +33,7 @@ import { ProtocolParameters } from '@blaze-cardano/core';
 import type { Redeemers } from '@blaze-cardano/core';
 import type { RewardAccount } from '@blaze-cardano/core';
 import { Script } from '@blaze-cardano/core';
+import type { ScriptHash } from '@blaze-cardano/core';
 import type { Slot } from '@blaze-cardano/core';
 import { Transaction } from '@blaze-cardano/core';
 import { TransactionInput } from '@blaze-cardano/core';
@@ -81,6 +82,9 @@ export function calculateReferenceScriptFee(refScripts: Script[], params: Protoc
 // @public
 export function calculateRequiredCollateral(fee: bigint, collateralPercentage: number): bigint;
 
+// @public
+export type CoinSelectionFunc = (inputs: TransactionUnspentOutput[], collectedAssets: Value_2, preliminaryFee?: number, externalAssets?: Value_2, coinsPerUtxoByte?: number) => SelectionResult;
+
 declare namespace CoinSelector {
     export {
         hvfSelector,
@@ -88,11 +92,12 @@ declare namespace CoinSelector {
     }
 }
 
-// Warning: (ae-forgotten-export) The symbol "IScriptData" needs to be exported by the entry point index.d.ts
-//
 // @public
 export function computeScriptData(redeemers: Redeemers, datums: ReturnType<TransactionWitnessSet["plutusData"]>, // TODO: weird import shenanigans
 usedCostModels: Costmdls): IScriptData | undefined;
+
+// @public
+export type DeferredRedeemer = (context: RedeemerContext) => PlutusData;
 
 // @public
 function empty(v: Value_2): boolean;
@@ -103,8 +108,6 @@ export const getAuxiliaryDataHash: (data: AuxiliaryData) => Hash32ByteBase16;
 // @public (undocumented)
 export function getScriptSize(script: Script): number;
 
-// Warning: (ae-forgotten-export) The symbol "CoinSelectionFunc" needs to be exported by the entry point index.d.ts
-//
 // @public
 const hvfSelector: CoinSelectionFunc;
 
@@ -113,6 +116,20 @@ export const insertSorted: (arr: string[], el: string) => number;
 
 // @public
 function intersect(a: Value_2, b: Value_2): number;
+
+// @public
+export interface IScriptData {
+    // (undocumented)
+    costModelsEncoded: string;
+    // (undocumented)
+    datumsEncoded: string | undefined;
+    // (undocumented)
+    hashedData: HexBlob;
+    // (undocumented)
+    redeemersEncoded: string;
+    // (undocumented)
+    scriptDataHash: Hash32ByteBase16;
+}
 
 // @public
 export const isEqualInput: (self: TransactionInput, that: TransactionInput) => boolean;
@@ -149,6 +166,28 @@ function negatives(v: Value_2): Value_2;
 function positives(v: Value_2): Value_2;
 
 // @public
+export interface RedeemerContext {
+    fee: bigint;
+    ownIndex: number;
+    sortedMints: Array<{
+        policyId: string;
+        assets: Map<string, bigint>;
+    }>;
+    sortedSpendInputs: TransactionInput[];
+    sortedWithdrawals: Array<{
+        rewardAccount: RewardAccount;
+        amount: bigint;
+    }>;
+}
+
+// @public
+export type SelectionResult = {
+    leftoverInputs: TransactionUnspentOutput[];
+    selectedInputs: TransactionUnspentOutput[];
+    selectedValue: Value_2;
+};
+
+// @public
 export function sortLargestFirst(inputs: TransactionUnspentOutput[]): TransactionUnspentOutput[];
 
 // @public
@@ -171,8 +210,8 @@ export class TxBuilder {
     addAdditionalSigners(amount: number): TxBuilder;
     addDelegation(delegator: Credential, poolId: PoolId, redeemer?: PlutusData): TxBuilder;
     addDeregisterStake(credential: Credential, redeemer?: PlutusData): TxBuilder;
-    addInput<T extends TypedScript<PlutusData, PlutusData> = TypedScript<PlutusData, PlutusData>>(utxo: TransactionUnspentOutput, redeemer?: TypedScriptRedeemer<T>, unhashDatum?: TypedScriptDatum<T>): TxBuilder;
-    addMint(policy: PolicyId, assets: Map<AssetName, bigint>, redeemer?: PlutusData): this;
+    addInput<T extends TypedScript<PlutusData, PlutusData> = TypedScript<PlutusData, PlutusData>>(utxo: TransactionUnspentOutput, redeemer?: TypedScriptRedeemer<T> | DeferredRedeemer, unhashDatum?: TypedScriptDatum<T>): TxBuilder;
+    addMint(policy: PolicyId, assets: Map<AssetName, bigint>, redeemer?: PlutusData | DeferredRedeemer): this;
     addOutput(output: TransactionOutput): TxBuilder;
     addPreCompleteHook(hook: (tx: TxBuilder) => Promise<void>): TxBuilder;
     addProposal(proposal: ProposalProcedure, redeemer?: PlutusData): TxBuilder;
@@ -186,7 +225,7 @@ export class TxBuilder {
     addReferenceInput(utxo: TransactionUnspentOutput): TxBuilder;
     addRegisterDRep(drep: Credential, deposit: bigint, anchor?: Anchor, redeemer?: PlutusData): TxBuilder;
     addRegisterPool(poolParameters: PoolParameters): TxBuilder;
-    addRegisterStake(credential: Credential): this;
+    addRegisterStake(credential: Credential, redeemer?: PlutusData): this;
     addRequiredSigner(signer: Ed25519KeyHashHex): TxBuilder;
     addRetirePool(poolId: PoolId, epoch: EpochNo): TxBuilder;
     addUnregisterDRep(drep: Credential, refund: bigint, redeemer?: PlutusData): TxBuilder;
@@ -194,7 +233,7 @@ export class TxBuilder {
     addUpdateDRep(drep: Credential, anchor?: Anchor, redeemer?: PlutusData): TxBuilder;
     addVote(options: AddVoteOptions): TxBuilder;
     addVoteDelegation(delegator: Credential, drep: Credential | "alwaysAbstain" | "alwaysNoConfidence", redeemer?: PlutusData): TxBuilder;
-    addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData): TxBuilder;
+    addWithdrawal(address: RewardAccount, amount: bigint, redeemer?: PlutusData | DeferredRedeemer): TxBuilder;
     protected buildFinalWitnessSet(signatures: [Ed25519PublicKeyHex, Ed25519SignatureHex][]): TransactionWitnessSet;
     protected buildPlaceholderWitnessSet(): TransactionWitnessSet;
     get burnAddress(): Address;
@@ -214,7 +253,6 @@ export class TxBuilder {
     readonly params: ProtocolParameters;
     payAssets(address: Address, value: Value_2, datum?: Datum): TxBuilder;
     payLovelace(address: Address, lovelace: bigint, datum?: Datum): TxBuilder;
-    // Warning: (ae-forgotten-export) The symbol "UseCoinSelectionArgs" needs to be exported by the entry point index.d.ts
     protected prepareCollateral(params?: UseCoinSelectionArgs): void;
     provideCollateral(utxos: TransactionUnspentOutput[]): TxBuilder;
     provideDatum(datum: PlutusData): TxBuilder;
@@ -232,9 +270,9 @@ export class TxBuilder {
     setValidUntil(validUntil: Slot): TxBuilder;
     setVotingProcedures(votingProcedures: VotingProcedures, voteRedeemers?: Map<string, PlutusData>): TxBuilder;
     toCbor(): string;
-    // Warning: (ae-forgotten-export) The symbol "SelectionResult" needs to be exported by the entry point index.d.ts
     useCoinSelector(selector: (inputs: TransactionUnspentOutput[], dearth: Value_2) => SelectionResult): TxBuilder;
     useEvaluator(evaluator: Evaluator, override?: boolean): TxBuilder;
+    useScriptSubstitutions(subs: Map<ScriptHash, Script>): TxBuilder;
 }
 
 // @public
@@ -244,10 +282,10 @@ export class TxBuilderReuseError extends Error {
 
 // @public
 export class TypedScript<DatumType extends PlutusData, RedeemerType extends PlutusData> {
-    constructor(Script: Script, name?: string | undefined);
+    constructor(Script: Script,
+    name?: string | undefined);
     protected readonly __datum?: DatumType;
     protected readonly __redeemer?: RedeemerType;
-    // (undocumented)
     readonly name?: string | undefined;
     // (undocumented)
     readonly Script: Script;
@@ -258,6 +296,12 @@ export type TypedScriptDatum<T> = T extends TypedScript<infer DatumType, PlutusD
 
 // @public
 export type TypedScriptRedeemer<T> = T extends TypedScript<PlutusData, infer RedeemerType> ? RedeemerType : never;
+
+// @public (undocumented)
+export interface UseCoinSelectionArgs {
+    // (undocumented)
+    useCoinSelection: boolean;
+}
 
 declare namespace Value {
     export {

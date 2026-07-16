@@ -28,8 +28,8 @@ type __AlwaysTrueScriptSpendRedeemerInput = Exact<typeof __AlwaysTrueScriptSpend
 
 export class AlwaysTrueScriptSpend extends TypedScript<__AlwaysTrueScriptSpendDatumData, __AlwaysTrueScriptSpendRedeemerData> {
   constructor(
-    _param1: Int,
-    _param2: ByteArray,
+    _param1: bigint,
+    _param2: string,
     trace?: boolean = false,
   ) {
     const Script = cborToScript(
@@ -67,8 +67,8 @@ type __AlwaysTrueScriptElseRedeemerInput = Exact<typeof __AlwaysTrueScriptElseRe
 
 export class AlwaysTrueScriptElse extends TypedScript<PlutusData, __AlwaysTrueScriptElseRedeemerData> {
   constructor(
-    _param1: Int,
-    _param2: ByteArray,
+    _param1: bigint,
+    _param2: string,
     trace?: boolean = false,
   ) {
     const Script = cborToScript(
@@ -162,7 +162,7 @@ type __NestedSometimesTrueScriptSpendRedeemerInput = Exact<typeof __NestedSometi
 
 export class NestedSometimesTrueScriptSpend extends TypedScript<__NestedSometimesTrueScriptSpendDatumData, __NestedSometimesTrueScriptSpendRedeemerData> {
   constructor(
-    param: Int,
+    param: bigint,
     trace?: boolean = false,
   ) {
     const Script = cborToScript(
@@ -198,7 +198,7 @@ type __NestedSometimesTrueScriptElseRedeemerInput = Exact<typeof __NestedSometim
 
 export class NestedSometimesTrueScriptElse extends TypedScript<PlutusData, __NestedSometimesTrueScriptElseRedeemerData> {
   constructor(
-    param: Int,
+    param: bigint,
     trace?: boolean = false,
   ) {
     const Script = cborToScript(

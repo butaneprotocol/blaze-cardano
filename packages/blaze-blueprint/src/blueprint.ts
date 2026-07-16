@@ -2,6 +2,10 @@ import * as fs from "fs/promises";
 import type { Schema, Unit } from "./schema";
 import type { Annotated, Declaration } from "./shared";
 import type { Constructor, Data } from "./data";
+import {
+  parseDoubleAngleGeneric,
+  parseSingleAngleGeneric,
+} from "./generic-names";
 
 type Blueprint = {
   preamble: {
@@ -255,9 +259,27 @@ export class Generator {
   ): string {
     const parts = fullDefinitionName.split("/");
 
-    // Find the part containing "$" (indicates generic type instantiation)
-    // e.g., "v0_3/types/SignedPayload$v0_3/types/ProtocolRedeemer"
-    // e.g., "Tuple$aiken/crypto/VerificationKey_sundae/cose/COSESign1"
+    // Aiken's double-angle tuple/generic syntax, e.g. "Tuple<<types/AssetClass,Int>>".
+    // These don't use "$" but rather "<<" and ">>" with comma-separated type params.
+    const doubleAngleName = parseDoubleAngleGeneric(fullDefinitionName);
+    if (doubleAngleName !== null) {
+      return doubleAngleName;
+    }
+
+    // Aiken's single-angle generic syntax, e.g.
+    // "types/SignedRedeemer<Void,types/CommitteeAction>". Each type param is
+    // normalized recursively (params may themselves be nested generics).
+    const singleAngle = parseSingleAngleGeneric(fullDefinitionName);
+    if (singleAngle !== null) {
+      const typeParamNames = singleAngle.rawParams.map((param) =>
+        this.normalizeTypeName(param),
+      );
+      return `${singleAngle.baseName}_${typeParamNames.join("_")}`.replace(
+        /~/g,
+        "_",
+      );
+    }
+
     const genericBaseName = this.extractGenericBaseName(fullDefinitionName);
 
     if (genericBaseName !== null) {
@@ -483,10 +505,27 @@ export class Generator {
         for (const param of params) {
           this.buildLine(`${Generator.snakeToCamel(param.title)}: `);
           if ("$ref" in param.schema) {
-            const typeName = this.typeName(param.schema, blueprint.definitions);
-            this.buildLine(typeName);
+            const refName = this.definitionName(param.schema);
+            const definition = blueprint.definitions[refName];
+            const primitive =
+              definition && "dataType" in definition
+                ? definition.dataType
+                : undefined;
+            if (primitive === "bytes") {
+              this.buildLine("string");
+            } else if (primitive === "integer") {
+              this.buildLine("bigint");
+            } else {
+              const typeName = this.typeName(
+                param.schema,
+                blueprint.definitions,
+              );
+              this.buildLine(typeName);
+            }
           } else {
-            console.log("???", param);
+            throw new Error(
+              `Unsupported parameter schema for "${param.title}": expected a $ref or a primitive dataType`,
+            );
           }
           this.finishLine(",");
         }
@@ -522,14 +561,17 @@ export class Generator {
         this.indent();
         for (const param of params) {
           if ("$ref" in param.schema) {
+            const refName = this.definitionName(param.schema);
             const typeName = this.typeName(param.schema, blueprint.definitions);
-            if (this.isStandardType(typeName)) {
+            if (this.isStandardType(refName) || this.isStandardType(typeName)) {
               this.writeTypeboxType(param.schema, blueprint.definitions);
             } else {
               this.buildLine(typeName);
             }
           } else {
-            console.log("???", param);
+            throw new Error(
+              `Unsupported parameter schema for "${param.title}": expected a $ref or a primitive dataType`,
+            );
           }
           this.finishLine(",");
         }
