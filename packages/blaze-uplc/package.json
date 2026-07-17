@@ -1,7 +1,7 @@
 {
   "name": "@blaze-cardano/uplc",
   "description": "Blaze untyped plutus core library",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/data": "workspace:*",

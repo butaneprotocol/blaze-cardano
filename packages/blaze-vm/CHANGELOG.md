@@ -1,5 +1,26 @@
 # @blaze-cardano/vm
 
+## 0.3.0
+
+### Minor Changes
+
+- 30d93af: Aiken v1.1.21 blueprint compatibility (angle-bracket generics parsed
+  without polynomial-backtracking regex, primitive type aliases), serialize
+  `undefined`/`null` as `Constr 0 []` (Aiken Void),
+  Conway-era Registration certs with script-credential redeemers, and
+  `useScriptSubstitutions()` for evaluating transactions with substitute
+  (e.g. trace-enabled) scripts. The emulator now accepts the Conway
+  Registration cert (type 7), which — like the legacy Shelley form — does not
+  require the stake credential's witness.
+
+### Patch Changes
+
+- Updated dependencies [30d93af]
+- Updated dependencies [3b1520e]
+- Updated dependencies [ed30731]
+  - @blaze-cardano/core@0.9.0
+  - @blaze-cardano/uplc@0.5.0
+
 ## 0.2.3
 
 ### Patch Changes

@@ -1,5 +1,23 @@
 # @blaze-cardano/wallet
 
+## 0.6.0
+
+### Minor Changes
+
+- 3b1520e: Add configurable emulator network and timing presets and a standalone RPC server. Mock wallets now use lightweight keys with stake signing, and new transaction builders start with the provider network.
+
+### Patch Changes
+
+- Updated dependencies [30d93af]
+- Updated dependencies [30d93af]
+- Updated dependencies [3b1520e]
+- Updated dependencies [ed30731]
+- Updated dependencies [bfe08b2]
+- Updated dependencies [e3cb028]
+  - @blaze-cardano/tx@0.15.0
+  - @blaze-cardano/core@0.9.0
+  - @blaze-cardano/query@0.6.0
+
 ## 0.5.3
 
 ### Patch Changes

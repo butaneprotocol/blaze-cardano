@@ -1,7 +1,7 @@
 {
   "name": "@blaze-cardano/wallet",
   "description": "Blaze cardano wallet library",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/query": "workspace:*",

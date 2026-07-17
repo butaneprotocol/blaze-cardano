@@ -1,7 +1,7 @@
 {
   "name": "script-deploy-aiken",
   "description": "Generate, deploy, and use a typed Aiken validator with Blaze",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "dependencies": {
     "@blaze-cardano/data": "workspace:*",
     "@blaze-cardano/deploy": "workspace:*",
