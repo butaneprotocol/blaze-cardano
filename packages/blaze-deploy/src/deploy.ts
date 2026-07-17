@@ -1,5 +1,5 @@
 import { NetworkId, type TransactionId } from "@blaze-cardano/core";
-import { Blaze } from "@blaze-cardano/sdk/blaze";
+import { Blaze } from "@blaze-cardano/sdk";
 import type { Wallet } from "@blaze-cardano/wallet";
 import { MemoryScriptDeploymentCache } from "./cache";
 import { ScriptDeploymentManifestError } from "./errors";
