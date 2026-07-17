@@ -1,5 +1,19 @@
 # @blaze-cardano/query
 
+## 0.6.0
+
+### Minor Changes
+
+- ed30731: Add Catalyst M1 SDK and emulator work: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
+- bfe08b2: Add Catalyst M2 querying and script management utilities: query caching, event sources, query benchmarks, script deployment management, and transaction-builder support for explicit reference-script output ADA.
+
+### Patch Changes
+
+- Updated dependencies [30d93af]
+- Updated dependencies [3b1520e]
+- Updated dependencies [ed30731]
+  - @blaze-cardano/core@0.9.0
+
 ## 0.5.6
 
 ### Patch Changes

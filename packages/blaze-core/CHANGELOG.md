@@ -1,5 +1,23 @@
 # @blaze-cardano/core
 
+## 0.9.0
+
+### Minor Changes
+
+- 3b1520e: Add configurable emulator network and timing presets and a standalone RPC server. Mock wallets now use lightweight keys with stake signing, and new transaction builders start with the provider network.
+- ed30731: Add Catalyst M1 SDK and emulator work: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
+
+### Patch Changes
+
+- 30d93af: Aiken v1.1.21 blueprint compatibility (angle-bracket generics parsed
+  without polynomial-backtracking regex, primitive type aliases), serialize
+  `undefined`/`null` as `Constr 0 []` (Aiken Void),
+  Conway-era Registration certs with script-credential redeemers, and
+  `useScriptSubstitutions()` for evaluating transactions with substitute
+  (e.g. trace-enabled) scripts. The emulator now accepts the Conway
+  Registration cert (type 7), which — like the legacy Shelley form — does not
+  require the stake credential's witness.
+
 ## 0.8.0
 
 ### Minor Changes

@@ -1,7 +1,7 @@
 {
   "name": "@blaze-cardano/vm",
   "description": "Blaze cardano plutus virtual machine",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/uplc": "workspace:*"

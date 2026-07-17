@@ -1,7 +1,7 @@
 {
   "name": "@blaze-cardano/sdk",
   "description": "Blaze cardano sdk library",
-  "version": "0.2.48",
+  "version": "0.3.0",
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/query": "workspace:*",

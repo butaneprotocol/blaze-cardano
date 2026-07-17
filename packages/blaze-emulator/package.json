@@ -1,7 +1,7 @@
 {
   "name": "@blaze-cardano/emulator",
   "description": "Blaze cardano emulator library",
-  "version": "0.4.5",
+  "version": "0.5.0",
   "bin": {
     "blaze-emulator-rpc": "./dist/rpc/cli.mjs"
   },
