@@ -5,9 +5,7 @@
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/query": "workspace:*",
-    "@blaze-cardano/tx": "workspace:*",
-    "@emurgo/cardano-message-signing-browser": "^1.1.0",
-    "@emurgo/cardano-message-signing-nodejs": "^1.1.0"
+    "@blaze-cardano/tx": "workspace:*"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
