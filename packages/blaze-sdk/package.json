@@ -2,6 +2,10 @@
   "name": "@blaze-cardano/sdk",
   "description": "Blaze cardano sdk library",
   "version": "0.3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
+  },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/query": "workspace:*",

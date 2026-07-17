@@ -2,6 +2,10 @@
   "name": "@blaze-cardano/plutus",
   "description": "Pure TypeScript UPLC implementation (parser, name→DeBruijn, CEK machine, budgeting)",
   "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
+  },
   "dependencies": {
     "@noble/curves": "^1.8.1",
     "@noble/hashes": "^1.7.1"

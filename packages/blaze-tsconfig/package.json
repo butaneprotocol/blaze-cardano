@@ -1,6 +1,10 @@
 {
   "name": "@blaze-cardano/tsconfig",
   "version": "0.0.3",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
+  },
   "license": "MIT",
   "publishConfig": {
     "access": "public"

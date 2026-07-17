@@ -16,29 +16,32 @@ jobs:
     permissions:
       contents: write # to create release (changesets/action)
       pull-requests: write # to create pull request (changesets/action)
+      id-token: write # to authenticate to npm with trusted publishing
     name: Release
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 📦 Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.14"
       - name: 📦 Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "latest"
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
 
       - name: ♻️ Cache Bun install
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.bun/install/cache
           key: bun-install-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-install-${{ runner.os }}-
 
       - name: ♻️ Cache Turbo
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .turbo
           key: turbo-${{ runner.os }}-${{ github.sha }}
@@ -54,5 +57,4 @@ jobs:
           publish: bun run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_ENV: production

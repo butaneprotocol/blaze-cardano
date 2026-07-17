@@ -2,6 +2,10 @@
   "name": "@blaze-cardano/blueprint",
   "description": "CIP-57 implementation and generator",
   "version": "0.9.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
+  },
   "bin": "./dist/cli.cjs",
   "devDependencies": {
     "@blaze-cardano/core": "workspace:*",

@@ -2,6 +2,10 @@
   "name": "@blaze-cardano/data",
   "description": "Plutus Data parsing and serialization",
   "version": "0.6.7",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
+  },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@sinclair/typebox": "^0.34.28"

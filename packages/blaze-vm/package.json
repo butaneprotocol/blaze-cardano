@@ -2,6 +2,10 @@
   "name": "@blaze-cardano/vm",
   "description": "Blaze cardano plutus virtual machine",
   "version": "0.3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
+  },
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/uplc": "workspace:*"
