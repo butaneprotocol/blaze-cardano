@@ -2,10 +2,6 @@
   "name": "@blaze-cardano/ogmios",
   "description": "Blaze cardano ogmios library",
   "version": "0.0.7",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
-  },
   "dependencies": {
     "@cardano-ogmios/schema": "^6.6.1",
     "isomorphic-ws": "^5.0.0"
@@ -32,6 +28,10 @@
   "module": "./dist/index.mjs",
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
   },
   "scripts": {
     "api:extract": "api-extractor run --local --verbose",

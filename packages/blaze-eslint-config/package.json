@@ -1,10 +1,6 @@
 {
   "name": "@blaze-cardano/eslint-config",
   "version": "0.0.2",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
-  },
   "dependencies": {
     "@eslint/js": "^9.22.0",
     "eslint-config-prettier": "^10.1.8",
@@ -14,6 +10,10 @@
   "main": "index.js",
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
   },
   "scripts": {
     "clean": "rm -rf .turbo && rm -rf node_modules"

@@ -2,10 +2,6 @@
   "name": "@blaze-cardano/emulator",
   "description": "Blaze cardano emulator library",
   "version": "0.5.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
-  },
   "bin": {
     "blaze-emulator-rpc": "./dist/rpc/cli.mjs"
   },
@@ -54,6 +50,10 @@
   "module": "./dist/index.mjs",
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
   },
   "scripts": {
     "api:extract": "api-extractor run --local --verbose",

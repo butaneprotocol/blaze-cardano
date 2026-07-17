@@ -2,10 +2,6 @@
   "name": "@blaze-cardano/core",
   "description": "Blaze cardano core library",
   "version": "0.9.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
-  },
   "dependencies": {
     "@cardano-sdk/core": "^0.46",
     "@cardano-sdk/crypto": "^0.4",
@@ -38,6 +34,10 @@
   "module": "./dist/index.mjs",
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/butaneprotocol/blaze-cardano.git"
   },
   "scripts": {
     "api:extract": "api-extractor run --local --verbose",
