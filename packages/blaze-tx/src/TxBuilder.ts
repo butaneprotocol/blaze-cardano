@@ -1351,7 +1351,11 @@ export class TxBuilder {
       }
 
       if (key.type == CredentialType.ScriptHash) {
-        if (!Array.from(this.scriptScope).some(script => script.hash() === key.hash)) {
+        if (
+          !Array.from(this.scriptScope).some(
+            (script) => script.hash() === key.hash,
+          )
+        ) {
           throw new Error(
             `updateRequiredWitnesses: could not resolve script hash ${key.hash} for input ${input.transactionId()}#${input.index()}`,
           );
