@@ -33,10 +33,11 @@
     "fmt": "prettier -w .",
     "lint": "turbo run lint",
     "release": "turbo run build && changeset publish",
-    "release-dev": "turbo run build && changeset version --snapshot && changeset publish --tag dev",
+    "release-dev": "turbo run build && changeset version --snapshot && bun install --lockfile-only && changeset publish --tag dev",
     "test": "turbo run test --filter=\"!@blaze-cardano/e2e\"",
     "test:e2e": "turbo run test --filter=\"@blaze-cardano/e2e\"",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "version-packages": "changeset version && bun install --lockfile-only"
   },
   "workspaces": [
     "packages/*",

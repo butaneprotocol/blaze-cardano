@@ -125,7 +125,7 @@
       "name": "@blaze-cardano/data",
       "version": "0.6.7",
       "dependencies": {
-        "@blaze-cardano/core": "workspace:*",
+        "@blaze-cardano/core": "^0.9.0",
         "@sinclair/typebox": "^0.34.28",
       },
       "devDependencies": {
@@ -169,12 +169,12 @@
         "blaze-emulator-rpc": "./dist/rpc/cli.mjs",
       },
       "dependencies": {
-        "@blaze-cardano/core": "workspace:*",
-        "@blaze-cardano/query": "workspace:*",
-        "@blaze-cardano/sdk": "workspace:*",
-        "@blaze-cardano/tx": "workspace:*",
-        "@blaze-cardano/vm": "workspace:*",
-        "@blaze-cardano/wallet": "workspace:*",
+        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/query": "^0.6.0",
+        "@blaze-cardano/sdk": "^0.3.0",
+        "@blaze-cardano/tx": "^0.15.0",
+        "@blaze-cardano/vm": "^0.3.0",
+        "@blaze-cardano/wallet": "^0.6.0",
         "@hono/node-server": "^1.4.0",
         "@hono/swagger-ui": "^0.4.1",
         "@hono/zod-openapi": "^0.15.3",
@@ -242,8 +242,8 @@
       "name": "@blaze-cardano/query",
       "version": "0.6.0",
       "dependencies": {
-        "@blaze-cardano/core": "workspace:*",
-        "@blaze-cardano/ogmios": "workspace:*",
+        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/ogmios": "^0.0.7",
         "@cardano-ogmios/schema": "^6.6.1",
         "@cardanosolutions/json-bigint": "^1.0.2",
         "ws": "^8.17.1",
@@ -264,11 +264,11 @@
       "name": "@blaze-cardano/sdk",
       "version": "0.3.0",
       "dependencies": {
-        "@blaze-cardano/core": "workspace:*",
-        "@blaze-cardano/query": "workspace:*",
-        "@blaze-cardano/tx": "workspace:*",
-        "@blaze-cardano/uplc": "workspace:*",
-        "@blaze-cardano/wallet": "workspace:*",
+        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/query": "^0.6.0",
+        "@blaze-cardano/tx": "^0.15.0",
+        "@blaze-cardano/uplc": "^0.5.0",
+        "@blaze-cardano/wallet": "^0.6.0",
       },
       "devDependencies": {
         "@blaze-cardano/eslint-config": "workspace:*",
@@ -286,8 +286,8 @@
       "name": "@blaze-cardano/tx",
       "version": "0.15.0",
       "dependencies": {
-        "@blaze-cardano/core": "workspace:*",
-        "@blaze-cardano/vm": "workspace:*",
+        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/vm": "^0.3.0",
       },
       "devDependencies": {
         "@blaze-cardano/data": "workspace:*",
@@ -306,8 +306,8 @@
       "name": "@blaze-cardano/uplc",
       "version": "0.5.0",
       "dependencies": {
-        "@blaze-cardano/core": "workspace:*",
-        "@blaze-cardano/data": "workspace:*",
+        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/data": "^0.6.7",
         "hex-encoding": "^2.0.2",
       },
       "devDependencies": {
@@ -325,8 +325,8 @@
       "name": "@blaze-cardano/vm",
       "version": "0.3.0",
       "dependencies": {
-        "@blaze-cardano/core": "workspace:*",
-        "@blaze-cardano/uplc": "workspace:*",
+        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/uplc": "^0.5.0",
       },
       "devDependencies": {
         "@blaze-cardano/eslint-config": "workspace:*",
@@ -340,9 +340,9 @@
       "name": "@blaze-cardano/wallet",
       "version": "0.6.0",
       "dependencies": {
-        "@blaze-cardano/core": "workspace:*",
-        "@blaze-cardano/query": "workspace:*",
-        "@blaze-cardano/tx": "workspace:*",
+        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/query": "^0.6.0",
+        "@blaze-cardano/tx": "^0.15.0",
         "@emurgo/cardano-message-signing-browser": "^1.1.0",
         "@emurgo/cardano-message-signing-nodejs": "^1.1.0",
       },

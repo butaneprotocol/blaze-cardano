@@ -6,12 +6,12 @@
     "blaze-emulator-rpc": "./dist/rpc/cli.mjs"
   },
   "dependencies": {
-    "@blaze-cardano/core": "workspace:*",
-    "@blaze-cardano/query": "workspace:*",
-    "@blaze-cardano/sdk": "workspace:*",
-    "@blaze-cardano/tx": "workspace:*",
-    "@blaze-cardano/vm": "workspace:*",
-    "@blaze-cardano/wallet": "workspace:*",
+    "@blaze-cardano/core": "^0.9.0",
+    "@blaze-cardano/query": "^0.6.0",
+    "@blaze-cardano/sdk": "^0.3.0",
+    "@blaze-cardano/tx": "^0.15.0",
+    "@blaze-cardano/vm": "^0.3.0",
+    "@blaze-cardano/wallet": "^0.6.0",
     "@hono/node-server": "^1.4.0",
     "@hono/swagger-ui": "^0.4.1",
     "@hono/zod-openapi": "^0.15.3",

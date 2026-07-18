@@ -10,10 +10,23 @@
   ],
   "versionGroups": [
     {
-      "label": "Use workspace protocol for internal packages",
+      "label": "Use workspace protocol for internal development dependencies",
       "packages": ["**"],
       "dependencies": ["@blaze-cardano/**"],
-      "dependencyTypes": ["dev", "prod"],
+      "dependencyTypes": ["dev"],
+      "pinVersion": "workspace:*"
+    },
+    {
+      "label": "Use workspace protocol for private packages",
+      "packages": [
+        "@blaze-cardano/e2e",
+        "advanced-querying",
+        "catalyst-1200040-evidence",
+        "script-deploy-aiken",
+        "script-deploy-ci"
+      ],
+      "dependencies": ["@blaze-cardano/**"],
+      "dependencyTypes": ["prod"],
       "pinVersion": "workspace:*"
     }
   ]

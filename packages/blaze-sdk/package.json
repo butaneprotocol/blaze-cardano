@@ -3,11 +3,11 @@
   "description": "Blaze cardano sdk library",
   "version": "0.3.0",
   "dependencies": {
-    "@blaze-cardano/core": "workspace:*",
-    "@blaze-cardano/query": "workspace:*",
-    "@blaze-cardano/tx": "workspace:*",
-    "@blaze-cardano/uplc": "workspace:*",
-    "@blaze-cardano/wallet": "workspace:*"
+    "@blaze-cardano/core": "^0.9.0",
+    "@blaze-cardano/query": "^0.6.0",
+    "@blaze-cardano/tx": "^0.15.0",
+    "@blaze-cardano/uplc": "^0.5.0",
+    "@blaze-cardano/wallet": "^0.6.0"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",

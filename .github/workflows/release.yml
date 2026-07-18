@@ -55,6 +55,7 @@ jobs:
         uses: changesets/action@v1
         with:
           publish: bun run release
+          version: bun run version-packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_ENV: production

@@ -3,8 +3,8 @@
   "description": "Blaze untyped plutus core library",
   "version": "0.5.0",
   "dependencies": {
-    "@blaze-cardano/core": "workspace:*",
-    "@blaze-cardano/data": "workspace:*",
+    "@blaze-cardano/core": "^0.9.0",
+    "@blaze-cardano/data": "^0.6.7",
     "hex-encoding": "^2.0.2"
   },
   "devDependencies": {
