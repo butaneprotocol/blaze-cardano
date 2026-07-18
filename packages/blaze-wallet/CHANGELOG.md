@@ -1,5 +1,14 @@
 # @blaze-cardano/wallet
 
+## 0.6.1
+
+### Patch Changes
+
+- fe17dab: Fix internal dependency ranges so published packages install correctly.
+- Updated dependencies [fe17dab]
+  - @blaze-cardano/query@0.6.1
+  - @blaze-cardano/tx@0.15.1
+
 ## 0.6.0
 
 ### Minor Changes

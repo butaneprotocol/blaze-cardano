@@ -1,5 +1,13 @@
 # @blaze-cardano/uplc
 
+## 0.5.1
+
+### Patch Changes
+
+- fe17dab: Fix internal dependency ranges so published packages install correctly.
+- Updated dependencies [fe17dab]
+  - @blaze-cardano/data@0.6.8
+
 ## 0.5.0
 
 ### Minor Changes

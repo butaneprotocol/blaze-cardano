@@ -1,5 +1,11 @@
 # @blaze-cardano/query
 
+## 0.6.1
+
+### Patch Changes
+
+- fe17dab: Fix internal dependency ranges so published packages install correctly.
+
 ## 0.6.0
 
 ### Minor Changes

@@ -1,11 +1,11 @@
 {
   "name": "@blaze-cardano/wallet",
   "description": "Blaze cardano wallet library",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "dependencies": {
     "@blaze-cardano/core": "^0.9.0",
-    "@blaze-cardano/query": "^0.6.0",
-    "@blaze-cardano/tx": "^0.15.0",
+    "@blaze-cardano/query": "^0.6.1",
+    "@blaze-cardano/tx": "^0.15.1",
     "@emurgo/cardano-message-signing-browser": "^1.1.0",
     "@emurgo/cardano-message-signing-nodejs": "^1.1.0"
   },
