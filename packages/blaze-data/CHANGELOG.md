@@ -1,5 +1,11 @@
 # @blaze-cardano/data
 
+## 0.6.8
+
+### Patch Changes
+
+- fe17dab: Fix internal dependency ranges so published packages install correctly.
+
 ## 0.6.7
 
 ### Patch Changes

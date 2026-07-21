@@ -1,5 +1,14 @@
 # script-deploy-ci
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [fe17dab]
+  - @blaze-cardano/deploy@0.1.1
+  - @blaze-cardano/query@0.6.1
+  - @blaze-cardano/wallet@0.6.1
+
 ## 0.1.1
 
 ### Patch Changes
