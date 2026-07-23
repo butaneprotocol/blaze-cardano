@@ -1,0 +1,22 @@
+export var CertificateKind;
+(function (CertificateKind) {
+    CertificateKind[CertificateKind["StakeRegistration"] = 0] = "StakeRegistration";
+    CertificateKind[CertificateKind["StakeDeregistration"] = 1] = "StakeDeregistration";
+    CertificateKind[CertificateKind["StakeDelegation"] = 2] = "StakeDelegation";
+    CertificateKind[CertificateKind["PoolRegistration"] = 3] = "PoolRegistration";
+    CertificateKind[CertificateKind["PoolRetirement"] = 4] = "PoolRetirement";
+    CertificateKind[CertificateKind["GenesisKeyDelegation"] = 5] = "GenesisKeyDelegation";
+    CertificateKind[CertificateKind["MoveInstantaneousRewards"] = 6] = "MoveInstantaneousRewards";
+    CertificateKind[CertificateKind["Registration"] = 7] = "Registration";
+    CertificateKind[CertificateKind["Unregistration"] = 8] = "Unregistration";
+    CertificateKind[CertificateKind["VoteDelegation"] = 9] = "VoteDelegation";
+    CertificateKind[CertificateKind["StakeVoteDelegation"] = 10] = "StakeVoteDelegation";
+    CertificateKind[CertificateKind["StakeRegistrationDelegation"] = 11] = "StakeRegistrationDelegation";
+    CertificateKind[CertificateKind["VoteRegistrationDelegation"] = 12] = "VoteRegistrationDelegation";
+    CertificateKind[CertificateKind["StakeVoteRegistrationDelegation"] = 13] = "StakeVoteRegistrationDelegation";
+    CertificateKind[CertificateKind["AuthCommitteeHot"] = 14] = "AuthCommitteeHot";
+    CertificateKind[CertificateKind["ResignCommitteeCold"] = 15] = "ResignCommitteeCold";
+    CertificateKind[CertificateKind["DrepRegistration"] = 16] = "DrepRegistration";
+    CertificateKind[CertificateKind["DrepUnregistration"] = 17] = "DrepUnregistration";
+    CertificateKind[CertificateKind["UpdateDrep"] = 18] = "UpdateDrep";
+})(CertificateKind || (CertificateKind = {}));

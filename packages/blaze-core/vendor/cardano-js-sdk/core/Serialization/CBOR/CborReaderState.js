@@ -1,0 +1,24 @@
+export var CborReaderState;
+(function (CborReaderState) {
+    CborReaderState[CborReaderState["Undefined"] = 0] = "Undefined";
+    CborReaderState[CborReaderState["UnsignedInteger"] = 1] = "UnsignedInteger";
+    CborReaderState[CborReaderState["NegativeInteger"] = 2] = "NegativeInteger";
+    CborReaderState[CborReaderState["ByteString"] = 3] = "ByteString";
+    CborReaderState[CborReaderState["StartIndefiniteLengthByteString"] = 4] = "StartIndefiniteLengthByteString";
+    CborReaderState[CborReaderState["EndIndefiniteLengthByteString"] = 5] = "EndIndefiniteLengthByteString";
+    CborReaderState[CborReaderState["TextString"] = 6] = "TextString";
+    CborReaderState[CborReaderState["StartIndefiniteLengthTextString"] = 7] = "StartIndefiniteLengthTextString";
+    CborReaderState[CborReaderState["EndIndefiniteLengthTextString"] = 8] = "EndIndefiniteLengthTextString";
+    CborReaderState[CborReaderState["StartArray"] = 9] = "StartArray";
+    CborReaderState[CborReaderState["EndArray"] = 10] = "EndArray";
+    CborReaderState[CborReaderState["StartMap"] = 11] = "StartMap";
+    CborReaderState[CborReaderState["EndMap"] = 12] = "EndMap";
+    CborReaderState[CborReaderState["Tag"] = 13] = "Tag";
+    CborReaderState[CborReaderState["SimpleValue"] = 14] = "SimpleValue";
+    CborReaderState[CborReaderState["HalfPrecisionFloat"] = 15] = "HalfPrecisionFloat";
+    CborReaderState[CborReaderState["SinglePrecisionFloat"] = 16] = "SinglePrecisionFloat";
+    CborReaderState[CborReaderState["DoublePrecisionFloat"] = 17] = "DoublePrecisionFloat";
+    CborReaderState[CborReaderState["Null"] = 18] = "Null";
+    CborReaderState[CborReaderState["Boolean"] = 19] = "Boolean";
+    CborReaderState[CborReaderState["Finished"] = 20] = "Finished";
+})(CborReaderState || (CborReaderState = {}));

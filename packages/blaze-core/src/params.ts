@@ -1,4 +1,4 @@
-import type { Cardano } from "@cardano-sdk/core";
+import type { Cardano } from "../vendor/cardano-js-sdk/index.js";
 
 /**
  * Cardano ledger protocol parameters.

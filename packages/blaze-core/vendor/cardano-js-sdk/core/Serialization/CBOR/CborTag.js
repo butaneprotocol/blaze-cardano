@@ -1,0 +1,21 @@
+export var CborTag;
+(function (CborTag) {
+    CborTag[CborTag["DateTimeString"] = 0] = "DateTimeString";
+    CborTag[CborTag["UnixTimeSeconds"] = 1] = "UnixTimeSeconds";
+    CborTag[CborTag["UnsignedBigNum"] = 2] = "UnsignedBigNum";
+    CborTag[CborTag["NegativeBigNum"] = 3] = "NegativeBigNum";
+    CborTag[CborTag["DecimalFraction"] = 4] = "DecimalFraction";
+    CborTag[CborTag["BigFloat"] = 5] = "BigFloat";
+    CborTag[CborTag["Base64UrlLaterEncoding"] = 21] = "Base64UrlLaterEncoding";
+    CborTag[CborTag["Base64StringLaterEncoding"] = 22] = "Base64StringLaterEncoding";
+    CborTag[CborTag["Base16StringLaterEncoding"] = 23] = "Base16StringLaterEncoding";
+    CborTag[CborTag["EncodedCborDataItem"] = 24] = "EncodedCborDataItem";
+    CborTag[CborTag["RationalNumber"] = 30] = "RationalNumber";
+    CborTag[CborTag["Uri"] = 32] = "Uri";
+    CborTag[CborTag["Base64Url"] = 33] = "Base64Url";
+    CborTag[CborTag["Base64"] = 34] = "Base64";
+    CborTag[CborTag["Regex"] = 35] = "Regex";
+    CborTag[CborTag["MimeMessage"] = 36] = "MimeMessage";
+    CborTag[CborTag["Set"] = 258] = "Set";
+    CborTag[CborTag["SelfDescribeCbor"] = 55799] = "SelfDescribeCbor";
+})(CborTag || (CborTag = {}));
