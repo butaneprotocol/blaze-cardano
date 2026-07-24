@@ -3,9 +3,9 @@
   "description": "Blaze cardano core library",
   "version": "0.9.0",
   "dependencies": {
-    "@cardano-sdk/core": "^0.46",
-    "@cardano-sdk/crypto": "^0.4",
-    "@cardano-sdk/util": "^0.17",
+    "@cardano-sdk/core": "^0.46.15",
+    "@cardano-sdk/crypto": "^0.4.7",
+    "@cardano-sdk/util": "^0.17.2",
     "@noble/curves": "^1.8.1",
     "@noble/ed25519": "^2.2.3",
     "@noble/hashes": "^1.7.1",

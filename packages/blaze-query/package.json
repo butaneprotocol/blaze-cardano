@@ -7,7 +7,7 @@
     "@blaze-cardano/ogmios": "^0.0.7",
     "@cardano-ogmios/schema": "^6.6.1",
     "@cardanosolutions/json-bigint": "^1.0.2",
-    "ws": "^8.17.1"
+    "ws": "^8.21.1"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
