@@ -1,5 +1,14 @@
 # @blaze-cardano/emulator
 
+## 0.5.2
+
+### Patch Changes
+
+- 56bfcbc: Update runtime dependencies to patched releases.
+- Updated dependencies [56bfcbc]
+  - @blaze-cardano/core@0.9.1
+  - @blaze-cardano/query@0.6.2
+
 ## 0.5.1
 
 ### Patch Changes

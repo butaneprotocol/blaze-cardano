@@ -1,9 +1,9 @@
 {
   "name": "@blaze-cardano/query",
   "description": "Blaze Cardano chain-query provider library",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "dependencies": {
-    "@blaze-cardano/core": "^0.9.0",
+    "@blaze-cardano/core": "^0.9.1",
     "@blaze-cardano/ogmios": "^0.0.7",
     "@cardano-ogmios/schema": "^6.6.1",
     "@cardanosolutions/json-bigint": "^1.0.2",

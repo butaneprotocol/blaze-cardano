@@ -51,7 +51,7 @@
     },
     "examples/script-deploy-aiken": {
       "name": "script-deploy-aiken",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@blaze-cardano/data": "workspace:*",
         "@blaze-cardano/deploy": "workspace:*",
@@ -66,7 +66,7 @@
     },
     "examples/script-deploy-ci": {
       "name": "script-deploy-ci",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@blaze-cardano/core": "workspace:*",
         "@blaze-cardano/deploy": "workspace:*",
@@ -101,7 +101,7 @@
     },
     "packages/blaze-core": {
       "name": "@blaze-cardano/core",
-      "version": "0.9.0",
+      "version": "0.9.1",
       "dependencies": {
         "@cardano-sdk/core": "^0.46.15",
         "@cardano-sdk/crypto": "^0.4.7",
@@ -156,21 +156,21 @@
         "vitest": "^4.0.18",
       },
       "peerDependencies": {
-        "@blaze-cardano/core": "^0.9.0",
-        "@blaze-cardano/query": "^0.6.1",
+        "@blaze-cardano/core": "^0.9.1",
+        "@blaze-cardano/query": "^0.6.2",
         "@blaze-cardano/sdk": "^0.3.1",
         "@blaze-cardano/wallet": "^0.6.1",
       },
     },
     "packages/blaze-emulator": {
       "name": "@blaze-cardano/emulator",
-      "version": "0.5.1",
+      "version": "0.5.2",
       "bin": {
         "blaze-emulator-rpc": "./dist/rpc/cli.mjs",
       },
       "dependencies": {
-        "@blaze-cardano/core": "^0.9.0",
-        "@blaze-cardano/query": "^0.6.1",
+        "@blaze-cardano/core": "^0.9.1",
+        "@blaze-cardano/query": "^0.6.2",
         "@blaze-cardano/sdk": "^0.3.1",
         "@blaze-cardano/tx": "^0.15.1",
         "@blaze-cardano/vm": "^0.3.1",
@@ -240,9 +240,9 @@
     },
     "packages/blaze-query": {
       "name": "@blaze-cardano/query",
-      "version": "0.6.1",
+      "version": "0.6.2",
       "dependencies": {
-        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/core": "^0.9.1",
         "@blaze-cardano/ogmios": "^0.0.7",
         "@cardano-ogmios/schema": "^6.6.1",
         "@cardanosolutions/json-bigint": "^1.0.2",
