@@ -1,5 +1,13 @@
 # @blaze-cardano/query
 
+## 0.6.2
+
+### Patch Changes
+
+- 56bfcbc: Update runtime dependencies to patched releases.
+- Updated dependencies [56bfcbc]
+  - @blaze-cardano/core@0.9.1
+
 ## 0.6.1
 
 ### Patch Changes

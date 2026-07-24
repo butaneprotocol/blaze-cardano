@@ -1,5 +1,14 @@
 # script-deploy-ci
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [56bfcbc]
+  - @blaze-cardano/core@0.9.1
+  - @blaze-cardano/query@0.6.2
+  - @blaze-cardano/deploy@0.1.1
+
 ## 0.1.2
 
 ### Patch Changes

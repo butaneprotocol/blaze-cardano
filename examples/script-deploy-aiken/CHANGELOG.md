@@ -1,5 +1,13 @@
 # script-deploy-aiken
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [56bfcbc]
+  - @blaze-cardano/emulator@0.5.2
+  - @blaze-cardano/deploy@0.1.1
+
 ## 0.1.2
 
 ### Patch Changes
