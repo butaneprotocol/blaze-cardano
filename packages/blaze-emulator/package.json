@@ -16,7 +16,7 @@
     "@hono/swagger-ui": "^0.4.1",
     "@hono/zod-openapi": "^0.15.3",
     "@hono/zod-validator": "^0.2.1",
-    "hono": "^4.6.6",
+    "hono": "^4.12.31",
     "zod": "^3.23.8"
   },
   "devDependencies": {
