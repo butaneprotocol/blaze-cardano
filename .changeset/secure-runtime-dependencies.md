@@ -4,4 +4,4 @@
 "@blaze-cardano/query": patch
 ---
 
-Update runtime dependencies to patched releases and enforce critical and high dependency auditing in CI.
+Update runtime dependencies to patched releases.
