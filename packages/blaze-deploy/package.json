@@ -28,8 +28,8 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "peerDependencies": {
-    "@blaze-cardano/core": "^0.9.0",
-    "@blaze-cardano/query": "^0.6.1",
+    "@blaze-cardano/core": "^0.9.1",
+    "@blaze-cardano/query": "^0.6.2",
     "@blaze-cardano/sdk": "^0.3.1",
     "@blaze-cardano/wallet": "^0.6.1"
   },

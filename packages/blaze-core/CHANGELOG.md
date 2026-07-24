@@ -1,5 +1,11 @@
 # @blaze-cardano/core
 
+## 0.9.1
+
+### Patch Changes
+
+- 56bfcbc: Update runtime dependencies to patched releases.
+
 ## 0.9.0
 
 ### Minor Changes

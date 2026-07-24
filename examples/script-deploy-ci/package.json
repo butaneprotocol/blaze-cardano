@@ -1,7 +1,7 @@
 {
   "name": "script-deploy-ci",
   "description": "CI deployment command for Blaze reference scripts",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "dependencies": {
     "@blaze-cardano/core": "workspace:*",
     "@blaze-cardano/deploy": "workspace:*",
