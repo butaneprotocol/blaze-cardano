@@ -1,5 +1,11 @@
 # @blaze-cardano/sdk
 
+## 1.0.0
+
+### Major Changes
+
+- 6be9f2e: Publish the Blaze SDK as version 1.0.0.
+
 ## 0.3.1
 
 ### Patch Changes
