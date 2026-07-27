@@ -125,7 +125,7 @@
       "name": "@blaze-cardano/data",
       "version": "0.6.8",
       "dependencies": {
-        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/core": "^0.9.1",
         "@sinclair/typebox": "^0.34.28",
       },
       "devDependencies": {
@@ -264,8 +264,8 @@
       "name": "@blaze-cardano/sdk",
       "version": "0.3.1",
       "dependencies": {
-        "@blaze-cardano/core": "^0.9.0",
-        "@blaze-cardano/query": "^0.6.1",
+        "@blaze-cardano/core": "^0.9.1",
+        "@blaze-cardano/query": "^0.6.2",
         "@blaze-cardano/tx": "^0.15.1",
         "@blaze-cardano/uplc": "^0.5.1",
         "@blaze-cardano/wallet": "^0.6.1",
@@ -286,7 +286,7 @@
       "name": "@blaze-cardano/tx",
       "version": "0.15.1",
       "dependencies": {
-        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/core": "^0.9.1",
         "@blaze-cardano/vm": "^0.3.1",
       },
       "devDependencies": {
@@ -306,7 +306,7 @@
       "name": "@blaze-cardano/uplc",
       "version": "0.5.1",
       "dependencies": {
-        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/core": "^0.9.1",
         "@blaze-cardano/data": "^0.6.8",
         "hex-encoding": "^2.0.2",
       },
@@ -325,7 +325,7 @@
       "name": "@blaze-cardano/vm",
       "version": "0.3.1",
       "dependencies": {
-        "@blaze-cardano/core": "^0.9.0",
+        "@blaze-cardano/core": "^0.9.1",
         "@blaze-cardano/uplc": "^0.5.1",
       },
       "devDependencies": {
@@ -340,8 +340,8 @@
       "name": "@blaze-cardano/wallet",
       "version": "0.6.1",
       "dependencies": {
-        "@blaze-cardano/core": "^0.9.0",
-        "@blaze-cardano/query": "^0.6.1",
+        "@blaze-cardano/core": "^0.9.1",
+        "@blaze-cardano/query": "^0.6.2",
         "@blaze-cardano/tx": "^0.15.1",
         "@emurgo/cardano-message-signing-browser": "^1.1.0",
         "@emurgo/cardano-message-signing-nodejs": "^1.1.0",
