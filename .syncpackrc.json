@@ -1,13 +1,6 @@
 {
   "semverGroups": [
     {
-      "label": "Support SDK 0.3 and 1.x",
-      "packages": ["@blaze-cardano/emulator", "@blaze-cardano/deploy"],
-      "dependencies": ["@blaze-cardano/sdk"],
-      "dependencyTypes": ["prod", "peer"],
-      "isIgnored": true
-    },
-    {
       "label": "Use ^ for dependencies",
       "packages": ["**"],
       "dependencies": ["**"],
@@ -16,13 +9,6 @@
     }
   ],
   "versionGroups": [
-    {
-      "label": "Support SDK 0.3 and 1.x",
-      "packages": ["@blaze-cardano/emulator", "@blaze-cardano/deploy"],
-      "dependencies": ["@blaze-cardano/sdk"],
-      "dependencyTypes": ["prod", "peer"],
-      "isIgnored": true
-    },
     {
       "label": "Use workspace protocol for internal development dependencies",
       "packages": ["**"],
