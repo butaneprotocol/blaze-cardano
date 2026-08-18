@@ -17,10 +17,6 @@ use wasm_bindgen::prelude::*;
 mod js_types;
 use js_types::*;
 
-// Use `wee_alloc` as the global allocator.
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
 #[wasm_bindgen]
 pub fn eval_phase_two_raw(
     tx_bytes: &[u8],
