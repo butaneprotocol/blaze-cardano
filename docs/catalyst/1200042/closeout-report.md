@@ -51,7 +51,7 @@ The three milestones built on each other. M1 added the core deployment and looku
 
 ## Next steps
 
-- Grow real-world adoption beyond the initial Butane usage and gather download and usage figures now that the package is on npm.
+- Continue adoption beyond the initial Butane and Token Launch integrations, and keep tracking package downloads and usage.
 - Extend provider compatibility notes as the tooling is exercised against more live-network setups.
 - Fold operator feedback from CI usage back into the manifest format, for example explicit dependency ordering between scripts if projects ask for it.
 
@@ -64,8 +64,8 @@ Script deployment was one of those workflow gaps every Cardano team papered over
 - Source repository: https://github.com/butaneprotocol/blaze-cardano
 - Deployment package source: https://github.com/butaneprotocol/blaze-cardano/tree/main/packages/blaze-deploy
 - Milestone evidence: https://github.com/butaneprotocol/blaze-cardano/tree/main/docs/catalyst/1200042
-- Documentation: https://blaze.butane.dev/deploy/guides/script-management, https://blaze.butane.dev/deploy/guides/ci-cd, https://blaze.butane.dev/deploy/guides/provider-compatibility
+- Documentation: [script management](https://blaze.butane.dev/deploy/guides/script-management), [CI/CD](https://blaze.butane.dev/deploy/guides/ci-cd), and [provider compatibility](https://blaze.butane.dev/deploy/guides/provider-compatibility)
 - CI/CD example: https://github.com/butaneprotocol/blaze-cardano/tree/main/examples/script-deploy-ci
 - Aiken application example: https://github.com/butaneprotocol/blaze-cardano/tree/main/examples/script-deploy-aiken
 - npm package: https://www.npmjs.com/package/@blaze-cardano/deploy
-- Close-out video: [VIDEO URL — fill in before submission]
+- Close-out video: https://youtu.be/ZgaYz_r-rk8
