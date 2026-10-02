@@ -35,7 +35,7 @@ export * from "@sinclair/typebox";
 export const Void = (): PlutusData =>
   PlutusData.newConstrPlutusData(new ConstrPlutusData(0n, new PlutusList()));
 
-export const TPlutusData: TSchema = Type.Unsafe<PlutusData>(Type.Any());
+export const TPlutusData = Type.Unsafe<PlutusData>(Type.Any());
 
 export type Exact<T> = T extends TSchema ? Static<T> : T;
 

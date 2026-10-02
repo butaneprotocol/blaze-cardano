@@ -230,12 +230,21 @@ describe("serialize", () => {
     expect(out2.toCbor()).toEqual(newConstr(0n, [newConstr(1n, [])]).toCbor());
   });
 
+  it("Should pass plutus data through untouched", () => {
+    const schema = TPlutusData;
+    const data = PlutusData.newBytes(new Uint8Array([1, 2, 3, 4]));
+    const defs = {};
+
+    expect(serialize(schema, data, defs)).toBe(data);
+  });
+
   it("Should throw when serializing wrong plutus data as plutus data", () => {
     const schema = TPlutusData;
     class PlutusData {}
     const data = new PlutusData();
     const defs = {};
 
+    // @ts-expect-error
     expect(() => serialize(schema, data, defs)).toThrow();
   });
 });
