@@ -230,7 +230,6 @@ describe("serialize", () => {
     expect(out2.toCbor()).toEqual(newConstr(0n, [newConstr(1n, [])]).toCbor());
   });
 
-
   it("Should throw when serializing wrong plutus data as plutus data", () => {
     const schema = TPlutusData;
     class PlutusData {}
