@@ -271,7 +271,7 @@ export function _serialize<T extends TSchema>(
     }
   }
 
-  return PlutusData.fromCbor(HexBlob("01"));
+  throw new Error("Unrecognized type: " + data);
 }
 
 function extractCtor(type: TSchema, path: string[]): bigint {
