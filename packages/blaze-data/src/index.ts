@@ -25,7 +25,6 @@ import {
 import {
   ConstrPlutusData,
   fromHex,
-  HexBlob,
   PlutusData,
   PlutusList,
   PlutusMap,
