@@ -244,7 +244,7 @@ describe("serialize", () => {
     const data = new PlutusData();
     const defs = {};
 
-    // @ts-expect-error
+    // @ts-expect-error this should fail at compile-time AND runtime
     expect(() => serialize(schema, data, defs)).toThrow();
   });
 });
