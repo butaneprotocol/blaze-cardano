@@ -1,5 +1,11 @@
 # @blaze-cardano/uplc
 
+## 0.5.2
+
+### Patch Changes
+
+- de62406: Bump @blaze-cardano/data dependency to ^0.6.9
+
 ## 0.5.1
 
 ### Patch Changes

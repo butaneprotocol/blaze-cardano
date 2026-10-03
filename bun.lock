@@ -304,7 +304,7 @@
     },
     "packages/blaze-uplc": {
       "name": "@blaze-cardano/uplc",
-      "version": "0.5.1",
+      "version": "0.5.2",
       "dependencies": {
         "@blaze-cardano/core": "^0.9.1",
         "@blaze-cardano/data": "^0.6.9",
