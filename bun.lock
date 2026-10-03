@@ -51,7 +51,7 @@
     },
     "examples/script-deploy-aiken": {
       "name": "script-deploy-aiken",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "dependencies": {
         "@blaze-cardano/data": "workspace:*",
         "@blaze-cardano/deploy": "workspace:*",
@@ -123,7 +123,7 @@
     },
     "packages/blaze-data": {
       "name": "@blaze-cardano/data",
-      "version": "0.6.8",
+      "version": "0.6.9",
       "dependencies": {
         "@blaze-cardano/core": "^0.9.1",
         "@sinclair/typebox": "^0.34.28",

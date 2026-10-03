@@ -1,7 +1,7 @@
 {
   "name": "@blaze-cardano/data",
   "description": "Plutus Data parsing and serialization",
-  "version": "0.6.8",
+  "version": "0.6.9",
   "dependencies": {
     "@blaze-cardano/core": "^0.9.1",
     "@sinclair/typebox": "^0.34.28"
