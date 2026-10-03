@@ -1,5 +1,11 @@
 # @blaze-cardano/data
 
+## 0.6.9
+
+### Patch Changes
+
+- 48beec8: Throw when serializing unexpected data types
+
 ## 0.6.8
 
 ### Patch Changes
