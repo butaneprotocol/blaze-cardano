@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Type } from "@sinclair/typebox";
-import { parse, serialize } from "../src";
+import { parse, serialize, TPlutusData } from "../src";
 import {
   ConstrPlutusData,
   fromHex,
@@ -228,6 +228,24 @@ describe("serialize", () => {
     const inp2 = { MyOption: undefined };
     const out2 = serialize(schema, inp2, defs);
     expect(out2.toCbor()).toEqual(newConstr(0n, [newConstr(1n, [])]).toCbor());
+  });
+
+  it("Should pass plutus data through untouched", () => {
+    const schema = TPlutusData;
+    const data = PlutusData.newBytes(new Uint8Array([1, 2, 3, 4]));
+    const defs = {};
+
+    expect(serialize(schema, data, defs)).toBe(data);
+  });
+
+  it("Should throw when serializing wrong plutus data as plutus data", () => {
+    const schema = TPlutusData;
+    class PlutusData {}
+    const data = new PlutusData();
+    const defs = {};
+
+    // @ts-expect-error this should fail at compile-time AND runtime
+    expect(() => serialize(schema, data, defs)).toThrow();
   });
 });
 
