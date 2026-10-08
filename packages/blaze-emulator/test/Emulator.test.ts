@@ -118,6 +118,28 @@ describe("Emulator", () => {
     });
   });
 
+  test("a script transaction from a wallet holding a few ADA", async () => {
+    // Collateral covers 150% of the evaluated fee, about 0.3 ADA here. The
+    // builder's first pass prices the redeemer at the per-transaction maximum
+    // budget, which would ask for about 2.5 ADA and leave too little of the
+    // wallet's 3 ADA for the collateral return.
+    await emulator.register("small", makeValue(3_000_000n));
+    await emulator.as("small", async (smallBlaze) => {
+      const tx = smallBlaze
+        .newTransaction()
+        .provideScript(alwaysTrueScript)
+        .addMint(
+          PolicyId(alwaysTrueScript.hash()),
+          new Map([[AssetName("74657374"), 1n]]),
+          VOID_PLUTUS_DATA,
+        );
+
+      await expect(
+        emulator.expectValidTransaction(smallBlaze, tx),
+      ).resolves.not.toThrow();
+    });
+  });
+
   test("a valid multisig transaction", async () => {
     const wallet3 = await emulator.register("3", makeValue(100_000_000n));
     const wallet4 = await emulator.register("4", makeValue(10_000_000n));
