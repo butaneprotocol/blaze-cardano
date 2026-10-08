@@ -2198,13 +2198,8 @@ export class TxBuilder {
         this.trace(" - ", output.amount().coin());
       }
 
-      // Prepare and balance the collateral, once the scripts have been evaluated.
-      // Until then every redeemer carries the per-transaction maximum budget as a
-      // placeholder, so the fee (and the collateral derived from it) is many times
-      // what the transaction will need. Sizing collateral from that rejects wallets
-      // that can cover the real requirement and replaces collateral the caller
-      // provided. Coin selection and the change output give the next pass inputs
-      // and outputs, so it evaluates, and the loop does not settle before then.
+      // Until the scripts are evaluated, redeemers carry placeholder maximum budgets
+      // that inflate the fee, so only size collateral from an evaluated pass.
       if (evaluated || this.redeemers.size() === 0) {
         this.prepareCollateral({ useCoinSelection });
       } else {
