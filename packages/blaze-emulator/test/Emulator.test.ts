@@ -134,9 +134,7 @@ describe("Emulator", () => {
           VOID_PLUTUS_DATA,
         );
 
-      await expect(
-        emulator.expectValidTransaction(smallBlaze, tx),
-      ).resolves.not.toThrow();
+      await emulator.expectValidTransaction(smallBlaze, tx);
     });
   });
 
