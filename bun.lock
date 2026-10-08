@@ -284,7 +284,7 @@
     },
     "packages/blaze-tx": {
       "name": "@blaze-cardano/tx",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": {
         "@blaze-cardano/core": "^0.9.1",
         "@blaze-cardano/vm": "^0.3.1",
