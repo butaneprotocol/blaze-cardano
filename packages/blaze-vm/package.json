@@ -4,7 +4,7 @@
   "version": "0.3.1",
   "dependencies": {
     "@blaze-cardano/core": "^0.9.1",
-    "@blaze-cardano/uplc": "^0.5.1"
+    "@blaze-cardano/uplc": "^0.5.2"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",

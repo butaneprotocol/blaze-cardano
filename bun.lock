@@ -267,7 +267,7 @@
         "@blaze-cardano/core": "^0.9.1",
         "@blaze-cardano/query": "^0.6.2",
         "@blaze-cardano/tx": "^0.15.1",
-        "@blaze-cardano/uplc": "^0.5.1",
+        "@blaze-cardano/uplc": "^0.5.2",
         "@blaze-cardano/wallet": "^0.6.1",
       },
       "devDependencies": {
@@ -326,7 +326,7 @@
       "version": "0.3.1",
       "dependencies": {
         "@blaze-cardano/core": "^0.9.1",
-        "@blaze-cardano/uplc": "^0.5.1",
+        "@blaze-cardano/uplc": "^0.5.2",
       },
       "devDependencies": {
         "@blaze-cardano/eslint-config": "workspace:*",
