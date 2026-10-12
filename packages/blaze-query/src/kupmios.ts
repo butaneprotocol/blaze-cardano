@@ -419,8 +419,11 @@ export class Kupmios extends Provider {
 
       // Serialize additional UTXOs to JSON format
       const additional_utxos = Kupmios.serializeUtxos(
+        // resolveUnspentOutputs returns new objects, so compare by output reference
         additionalUtxos.filter((utxo) => {
-          return !utxosToDrop.includes(utxo);
+          return !utxosToDrop.some(
+            (dropped) => dropped.input().toCbor() === utxo.input().toCbor(),
+          );
         }),
       );
 
@@ -448,7 +451,10 @@ export class Kupmios extends Provider {
                 (x.tag() === purposeToTag[redeemerData.validator.purpose] ||
                   // Ogmios returns "withdraw" but RedeemerPurpose enum uses "withdrawal"
                   (redeemerData.validator.purpose === "withdraw" &&
-                    x.tag() === RedeemerTag.Reward)),
+                    x.tag() === RedeemerTag.Reward) ||
+                  // Ogmios returns "publish" but RedeemerPurpose enum uses "certificate"
+                  (redeemerData.validator.purpose === "publish" &&
+                    x.tag() === RedeemerTag.Cert)),
             );
 
             if (!redeemer) {

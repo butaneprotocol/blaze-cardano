@@ -13,6 +13,9 @@ import {
   Script,
   TransactionId,
   TransactionInput,
+  TransactionOutput,
+  TransactionUnspentOutput,
+  Value,
   type Transaction,
 } from "@blaze-cardano/core";
 import { Kupmios } from "../src/kupmios";
@@ -105,10 +108,10 @@ const protocolParameters = () => ({
   minFeeReferenceScripts: { base: 1, range: 1, multiplier: 1 },
 });
 
-const txWithRedeemers = () => {
+const txWithRedeemers = (purpose = RedeemerPurpose.spend) => {
   const redeemer = Redeemer.fromCore({
     index: 0,
-    purpose: RedeemerPurpose.spend,
+    purpose,
     data: PlutusData.fromCbor(HexBlob(datumCbor)).toCore(),
     executionUnits: ExUnits.fromCore({ memory: 0, steps: 0 }).toCore(),
   });
@@ -270,6 +273,45 @@ describe("Kupmios", () => {
       memory: 123,
       steps: 456,
     });
+  });
+
+  test("matches Ogmios publish results to certificate redeemers", async () => {
+    const ogmios = makeOgmios();
+    ogmios.evaluateTransaction.mockResolvedValue([
+      {
+        validator: { purpose: "publish", index: 0 },
+        budget: { memory: 123, cpu: 456 },
+      },
+    ]);
+    const tx = txWithRedeemers(RedeemerPurpose.certificate);
+
+    const evaluated = await provider(ogmios).evaluateTransaction(tx, []);
+    const [evaluatedRedeemer] = evaluated.values();
+
+    expect(evaluatedRedeemer?.exUnits().toCore()).toEqual({
+      memory: 123,
+      steps: 456,
+    });
+  });
+
+  test("drops additional UTxOs that already exist on chain", async () => {
+    const ogmios = makeOgmios();
+    ogmios.evaluateTransaction.mockResolvedValue([
+      {
+        validator: { purpose: "spend", index: 0 },
+        budget: { memory: 123, cpu: 456 },
+      },
+    ]);
+    // Kupo knows the output, so it must not be sent to Ogmios as additional.
+    mockFetch(textResponse([kupoUtxo()]));
+    const onChain = new TransactionUnspentOutput(
+      new TransactionInput(txHash, 1n),
+      new TransactionOutput(address, new Value(5_000_000n)),
+    );
+
+    await provider(ogmios).evaluateTransaction(txWithRedeemers(), [onChain]);
+
+    expect(ogmios.evaluateTransaction).toHaveBeenCalledWith({ cbor: "00" }, []);
   });
 
   test("throws when Kupo cannot resolve every requested input", async () => {
