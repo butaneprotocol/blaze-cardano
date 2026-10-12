@@ -1,5 +1,11 @@
 # @blaze-cardano/tx
 
+## 0.15.2
+
+### Patch Changes
+
+- c2ec661: Size collateral from the evaluated fee. `complete()` no longer prepares collateral on a pass that skipped script evaluation, where every redeemer still carries the per-transaction maximum budget: that placeholder fee rejected wallets able to cover the real collateral and replaced collateral passed to `provideCollateral`.
+
 ## 0.15.1
 
 ### Patch Changes

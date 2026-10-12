@@ -172,7 +172,7 @@
         "@blaze-cardano/core": "^0.9.1",
         "@blaze-cardano/query": "^0.6.2",
         "@blaze-cardano/sdk": "^0.3.1",
-        "@blaze-cardano/tx": "^0.15.1",
+        "@blaze-cardano/tx": "^0.15.2",
         "@blaze-cardano/vm": "^0.3.1",
         "@blaze-cardano/wallet": "^0.6.1",
         "@hono/node-server": "^1.4.0",
@@ -266,8 +266,8 @@
       "dependencies": {
         "@blaze-cardano/core": "^0.9.1",
         "@blaze-cardano/query": "^0.6.2",
-        "@blaze-cardano/tx": "^0.15.1",
-        "@blaze-cardano/uplc": "^0.5.1",
+        "@blaze-cardano/tx": "^0.15.2",
+        "@blaze-cardano/uplc": "^0.5.2",
         "@blaze-cardano/wallet": "^0.6.1",
       },
       "devDependencies": {
@@ -284,7 +284,7 @@
     },
     "packages/blaze-tx": {
       "name": "@blaze-cardano/tx",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": {
         "@blaze-cardano/core": "^0.9.1",
         "@blaze-cardano/vm": "^0.3.1",
@@ -326,7 +326,7 @@
       "version": "0.3.1",
       "dependencies": {
         "@blaze-cardano/core": "^0.9.1",
-        "@blaze-cardano/uplc": "^0.5.1",
+        "@blaze-cardano/uplc": "^0.5.2",
       },
       "devDependencies": {
         "@blaze-cardano/eslint-config": "workspace:*",
@@ -342,7 +342,7 @@
       "dependencies": {
         "@blaze-cardano/core": "^0.9.1",
         "@blaze-cardano/query": "^0.6.2",
-        "@blaze-cardano/tx": "^0.15.1",
+        "@blaze-cardano/tx": "^0.15.2",
         "@emurgo/cardano-message-signing-browser": "^1.1.0",
         "@emurgo/cardano-message-signing-nodejs": "^1.1.0",
       },

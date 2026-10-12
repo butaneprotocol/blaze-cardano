@@ -2100,6 +2100,7 @@ export class TxBuilder {
       }
 
       // Evaluate each of the scripts to determine a evaluation fee
+      let evaluated = false;
       if (
         this.redeemers.size() > 0 &&
         this.body.inputs().size() > 0 &&
@@ -2112,6 +2113,7 @@ export class TxBuilder {
           // TODO: in practice, this seems to be *slightly* overestimating the CPU steps
           this.trace(`Evaluating transaction CBOR: ${tx.toCbor()}`);
           await this.evaluate(tx);
+          evaluated = true;
         } catch (e) {
           // TODO: just throw a custom error type with the traces + txCbor
           this.trace(
@@ -2197,8 +2199,15 @@ export class TxBuilder {
         this.trace(" - ", output.amount().coin());
       }
 
-      // Prepare and balance the collateral.
-      this.prepareCollateral({ useCoinSelection });
+      // Until the scripts are evaluated, redeemers carry placeholder maximum budgets
+      // that inflate the fee, so only size collateral from an evaluated pass.
+      if (evaluated || this.redeemers.size() === 0) {
+        this.prepareCollateral({ useCoinSelection });
+      } else {
+        this.trace(
+          "Deferring collateral until the scripts have been evaluated.",
+        );
+      }
 
       if (!value.empty(surplusAndDeficits)) {
         this.trace(`Transaction is imbalanced`, surplusAndDeficits.toCore());
@@ -2288,7 +2297,9 @@ export class TxBuilder {
         this.addInput(spareInputs[0]!);
       }
 
-      if (lastFee === this.fee) {
+      // Never settle on a pass that skipped evaluation: its fee is a placeholder,
+      // and collateral has not been prepared yet.
+      if (lastFee === this.fee && (evaluated || this.redeemers.size() === 0)) {
         break;
       }
 
