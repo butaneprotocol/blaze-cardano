@@ -15,6 +15,8 @@ import {
   Script,
   PlutusV1Script,
   PlutusV2Script,
+  PlutusV3Script,
+  PlutusLanguageVersion,
   addressFromValidator,
   NetworkId,
 } from "@blaze-cardano/core";
@@ -33,6 +35,57 @@ class TestTxBuilder extends TxBuilder {
 }
 
 describe("TxBuilder.getScriptData", () => {
+  it.each([
+    [
+      PlutusLanguageVersion.V1,
+      Script.newPlutusV1Script(
+        new PlutusV1Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
+      ),
+    ],
+    [
+      PlutusLanguageVersion.V2,
+      Script.newPlutusV2Script(
+        new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
+      ),
+    ],
+    [
+      PlutusLanguageVersion.V3,
+      Script.newPlutusV3Script(
+        new PlutusV3Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
+      ),
+    ],
+  ] as const)(
+    "requires the cost model for used language %i",
+    (language, script) => {
+      const costModels = new Map(hardCodedProtocolParams.costModels);
+      costModels.delete(language);
+      const tx = new TestTxBuilder({ ...hardCodedProtocolParams, costModels });
+      const datum = PlutusData.fromCbor(HexBlob("d87980"));
+      const output = new TransactionOutput(
+        addressFromValidator(NetworkId.Testnet, script),
+        value.makeValue(1_000_000n),
+      );
+      output.setDatum(Datum.newDataHash(datum.hash()));
+      tx.addInput(
+        new TransactionUnspentOutput(
+          new TransactionInput(
+            TransactionId(
+              "a7d0a23abf5f0389a2b17df1125539a0e43ee8b1f13c56d6ba406aa557ade1d2",
+            ),
+            0n,
+          ),
+          output,
+        ),
+        datum,
+        datum,
+      );
+      tx.provideScript(script);
+      expect(() => tx.test__getScriptData()).toThrow(
+        `complete: Could not find cost model for Plutus Language Version ${language + 1}`,
+      );
+    },
+  );
+
   it("should return undefined for no datums and no redeemers", async () => {
     const tx = new TestTxBuilder(hardCodedProtocolParams);
 
