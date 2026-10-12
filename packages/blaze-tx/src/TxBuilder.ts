@@ -1571,8 +1571,9 @@ export class TxBuilder {
     // Initialize a container for used cost models.
     const usedCostModels = new Costmdls();
     // Populate the used cost models based on the languages used in the transaction.
-    for (let i = 0; i <= Object.keys(this.usedLanguages).length; i++) {
-      if (this.usedLanguages[i as PlutusLanguageVersion]) {
+    for (const [language, used] of Object.entries(this.usedLanguages)) {
+      if (used) {
+        const i = Number(language);
         // Retrieve the cost model for the current language version.
         const cm = this.params.costModels.get(i);
         // Throw an error if the cost model is missing. Note that we add one to the language version for the sake of the error message

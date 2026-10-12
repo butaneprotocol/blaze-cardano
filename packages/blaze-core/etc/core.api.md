@@ -752,7 +752,7 @@ export type SelectionPhase = "wide" | "deep" | "final";
 export { Serialization }
 
 // @public
-export const setInConwayEra: (value: boolean) => false;
+export const setInConwayEra: (value: boolean) => boolean;
 
 // @public
 export function sha2_256(data: HexBlob): Hash32ByteBase16;
