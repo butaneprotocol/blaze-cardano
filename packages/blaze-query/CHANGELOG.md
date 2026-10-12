@@ -1,5 +1,13 @@
 # @blaze-cardano/query
 
+## 0.6.3
+
+### Patch Changes
+
+- 7922e35: Kupmios: match Ogmios "publish" evaluation results to certificate redeemers, and drop additional UTxOs that already exist on chain by output reference.
+- Updated dependencies [0f09e50]
+  - @blaze-cardano/core@0.10.0
+
 ## 0.6.2
 
 ### Patch Changes
