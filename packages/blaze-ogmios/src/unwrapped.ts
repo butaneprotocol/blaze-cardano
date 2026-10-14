@@ -30,7 +30,13 @@ export class Ogmios {
         if (parsedMessage.id && parsedMessage.id in this.requests) {
           const { resolve, reject } = this.requests[parsedMessage.id]!;
           if (parsedMessage.error) {
-            reject(new Error(JSON.stringify(parsedMessage.error)));
+            // The JSON-RPC code tells a ledger rejection (3xxx on submit) from other failures.
+            reject(
+              Object.assign(new Error(JSON.stringify(parsedMessage.error)), {
+                code: parsedMessage.error.code,
+                data: parsedMessage.error.data,
+              }),
+            );
           } else {
             resolve(parsedMessage.result);
           }
@@ -42,7 +48,19 @@ export class Ogmios {
         console.error("WebSocket error:", error);
         reject(error);
       };
+
+      // A request in flight when the socket closes would otherwise never settle.
+      this.ws.onclose = () => {
+        this.rejectPending("WebSocket connection closed");
+      };
     });
+  }
+
+  private rejectPending(reason: string): void {
+    for (const { reject } of Object.values(this.requests)) {
+      reject(new Error(reason));
+    }
+    this.requests = {};
   }
 
   public static async new(url: string): Promise<Ogmios> {
@@ -94,15 +112,13 @@ export class Ogmios {
 
   public kill(): Promise<void> {
     return new Promise<void>((resolve) => {
-      if (this.ws) {
+      if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
+        // One listener per call, added before close(): concurrent kills each
+        // resolve, and the shared onclose still rejects pending requests.
+        this.ws.addEventListener("close", () => resolve(), { once: true });
         this.ws.close();
-        this.ws.onclose = (event) => {
-          console.log("WebSocket connection closed:", event);
-          // Clear any pending requests
-          this.requests = {};
-        };
       } else {
-        // If there's no WebSocket, resolve immediately
+        // If there's no open WebSocket, resolve immediately
         resolve();
       }
     });

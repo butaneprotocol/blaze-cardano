@@ -24,6 +24,7 @@ import {
   getBurnAddress,
 } from "@blaze-cardano/core";
 import { findScriptRefInAddressUtxos, Provider } from "./provider";
+import { fetchOrThrow, isTransient } from "./http";
 import WebSocket from "ws";
 
 export class HydraProvider extends Provider {
@@ -61,7 +62,7 @@ export class HydraProvider extends Provider {
   }
 
   async getParameters(): Promise<ProtocolParameters> {
-    const resp = await fetch(`${this.url}protocol-parameters`);
+    const resp = await fetchOrThrow(`${this.url}protocol-parameters`, "Hydra");
     const rawParams = (await resp.json()) as any;
     return {
       minFeeConstant: rawParams.txFeeFixed,
@@ -226,14 +227,23 @@ export class HydraProvider extends Provider {
       new Promise((resolve) => setTimeout(resolve, ms));
 
     const checkConfirmation = async () => {
-      const resp = await fetch(`${this.url}snapshot/utxo`);
+      const resp = await fetchOrThrow(`${this.url}snapshot/utxo`, "Hydra");
       const rawUtxo = (await resp.json()) as any;
       return !!Object.keys(rawUtxo).find(
         (txRef) => txRef.split("#")[0] === txId,
       );
     };
+    // Within the timeout a 429 or 5xx is one more "not yet"; once time is up,
+    // or on any other failure, it throws with its status.
+    const lookup = () =>
+      checkConfirmation().catch((error: unknown) => {
+        if (isTransient(error) && Date.now() - startTime < (timeout ?? 0)) {
+          return false;
+        }
+        throw error;
+      });
 
-    if (await checkConfirmation()) {
+    if (await lookup()) {
       return true;
     }
 
@@ -241,7 +251,7 @@ export class HydraProvider extends Provider {
       while (Date.now() - startTime < timeout) {
         await delay(500);
 
-        if (await checkConfirmation()) {
+        if (await lookup()) {
           return true;
         }
       }
@@ -273,7 +283,7 @@ export class HydraProvider extends Provider {
 
   async fetchUTxOs(): Promise<{ [txRef: string]: TransactionUnspentOutput }> {
     const utxos: { [txRef: string]: TransactionUnspentOutput } = {};
-    const resp = await fetch(`${this.url}snapshot/utxo`);
+    const resp = await fetchOrThrow(`${this.url}snapshot/utxo`, "Hydra");
     const rawUtxo = (await resp.json()) as any;
     for (const key in rawUtxo) {
       const [txHash, idx] = key.split("#");

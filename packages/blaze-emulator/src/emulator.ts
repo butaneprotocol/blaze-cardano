@@ -137,6 +137,11 @@ export class Emulator {
     }
   > = {};
 
+  /**
+   * Transactions that left the mempool into a block.
+   */
+  #confirmed: Set<TransactionId> = new Set();
+
   #nextGenesisUtxo: number;
 
   /**
@@ -530,6 +535,9 @@ export class Emulator {
       (this.clock.slot - this.clock.zeroSlot) / this.clock.slotsPerEpoch,
     );
 
+    Object.keys(this.#mempool).forEach((txId) =>
+      this.#confirmed.add(TransactionId(txId)),
+    );
     Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
       inputs.forEach(this.removeUtxo);
       outputs.forEach(this.addUtxo);
@@ -577,12 +585,13 @@ export class Emulator {
    * Forces block production until the referenced transaction leaves the mempool.
    *
    * @param {TransactionId} txId - Identifier of the transaction awaiting confirmation.
-   * @returns {void}
+   * @returns {boolean} Whether the transaction is in a block: false for one the emulator never accepted.
    */
-  awaitTransactionConfirmation(txId: TransactionId) {
+  awaitTransactionConfirmation(txId: TransactionId): boolean {
     if (this.#mempool[txId]) {
       this.stepForwardBlock();
     }
+    return this.#confirmed.has(txId);
   }
 
   /**
