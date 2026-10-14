@@ -260,11 +260,8 @@ export class TxBuilder {
   private evaluator?: Evaluator;
   private scriptSubstitutions: Map<ScriptHash, Script> = new Map();
 
-  private consumedDelegationHashes: Hash28ByteBase16[] = [];
   private consumedMintHashes: Hash28ByteBase16[] = [];
   private consumedWithdrawalHashes: Hash28ByteBase16[] = [];
-  private consumedDeregisterHashes: Hash28ByteBase16[] = [];
-  private consumedDrepHashes: Hash28ByteBase16[] = [];
   private consumedVoteHashes: Hash28ByteBase16[] = [];
   private consumedSpendInputs: string[] = [];
   private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
@@ -2353,24 +2350,13 @@ export class TxBuilder {
     const vals = [...certs.values(), delegationCertificate];
     certs.setValues(vals);
     this.body.setCerts(certs);
-    const credentialHash = delegator.toCore().hash;
-    const insertIdx = insertSorted(
-      this.consumedDelegationHashes,
-      credentialHash,
-    );
+    // A cert redeemer points at its certificate's position in the body.
+    const insertIdx = vals.length - 1;
     const delegatorCredential = delegator.toCore();
     if (delegatorCredential.type == CredentialType.ScriptHash) {
       if (redeemer) {
         this.requiredPlutusScripts.add(delegatorCredential.hash);
         const redeemers = [...this.redeemers.values()];
-        for (const redeemer of redeemers) {
-          if (
-            redeemer.tag() == RedeemerTag.Reward &&
-            redeemer.index() >= BigInt(insertIdx)
-          ) {
-            redeemer.setIndex(redeemer.index() + 1n);
-          }
-        }
         redeemers.push(
           Redeemer.fromCore({
             index: insertIdx,
@@ -2498,23 +2484,12 @@ export class TxBuilder {
     certs.setValues(vals);
     this.body.setCerts(certs);
     const credentialHash = credential.toCore().hash;
-    // TODO: is this insertSorted mechanism a lurking bug, since the order might change?
-    const insertIdx = insertSorted(
-      this.consumedDeregisterHashes,
-      credentialHash,
-    );
+    // A cert redeemer points at its certificate's position in the body.
+    const insertIdx = vals.length - 1;
     // TODO: this should probably be based on whether the credential is a script credential
     if (redeemer) {
       this.requiredPlutusScripts.add(credentialHash);
       const redeemers = [...this.redeemers.values()];
-      for (const redeemer of redeemers) {
-        if (
-          redeemer.tag() == RedeemerTag.Reward &&
-          redeemer.index() >= BigInt(insertIdx)
-        ) {
-          redeemer.setIndex(redeemer.index() + 1n);
-        }
-      }
       // Add the redeemer to the list of redeemers with execution units based on transaction parameters.
       redeemers.push(
         Redeemer.fromCore({
@@ -2559,7 +2534,7 @@ export class TxBuilder {
     const vals = [...certs.values(), cert];
     certs.setValues(vals);
     this.body.setCerts(certs);
-    this.handleDRepCertificateWitness(core, redeemer);
+    this.handleDRepCertificateWitness(core, vals.length - 1, redeemer);
     return this;
   }
 
@@ -2587,7 +2562,7 @@ export class TxBuilder {
     const vals = [...certs.values(), cert];
     certs.setValues(vals);
     this.body.setCerts(certs);
-    this.handleDRepCertificateWitness(drep.toCore(), redeemer);
+    this.handleDRepCertificateWitness(drep.toCore(), vals.length - 1, redeemer);
     return this;
   }
 
@@ -2615,16 +2590,17 @@ export class TxBuilder {
     const vals = [...certs.values(), cert];
     certs.setValues(vals);
     this.body.setCerts(certs);
-    this.handleDRepCertificateWitness(drep.toCore(), redeemer);
+    this.handleDRepCertificateWitness(drep.toCore(), vals.length - 1, redeemer);
     return this;
   }
 
+  /** Witnesses the dRep certificate at `insertIdx` in the body. */
   private handleDRepCertificateWitness(
     credential: CredentialCore,
+    insertIdx: number,
     redeemer?: PlutusData,
   ): void {
     const hash = credential.hash;
-    const insertIdx = insertSorted(this.consumedDrepHashes, hash);
     if (credential.type === CredentialType.ScriptHash) {
       if (!redeemer) {
         throw new Error(
@@ -2633,14 +2609,6 @@ export class TxBuilder {
       }
       this.requiredPlutusScripts.add(hash);
       const redeemers = [...this.redeemers.values()];
-      for (const redeemerEntry of redeemers) {
-        if (
-          redeemerEntry.tag() == RedeemerTag.Cert &&
-          redeemerEntry.index() >= BigInt(insertIdx)
-        ) {
-          redeemerEntry.setIndex(redeemerEntry.index() + 1n);
-        }
-      }
       redeemers.push(
         Redeemer.fromCore({
           index: insertIdx,
