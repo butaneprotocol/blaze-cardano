@@ -2421,16 +2421,20 @@ export class TxBuilder {
   /**
    * Adds a certificate to register a staker.
    *
-   * On Conway+ (Dijkstra) the cert form is `Registration { credential, deposit }`
-   * (cert type 7); the legacy Shelley `StakeRegistration` (type 0) is rejected.
+   * Emits the Conway `Registration { credential, deposit }` certificate (cert
+   * type 7). The legacy Shelley `StakeRegistration` (type 0) is still accepted
+   * in Conway and removed in Dijkstra.
    *
-   * When the credential is a script credential, Dijkstra requires a Plutus
-   * witness for the registration. Pass `redeemer` to attach a cert-purpose
-   * redeemer for this cert; the caller is responsible for supplying the
-   * validating script (e.g. as a reference input via {@link addReferenceInput}).
+   * The ledger requires the credential's witness for a type-7 registration,
+   * as for deregistration and delegation: a key credential's signature, or a
+   * script credential's script. For a Plutus script pass `redeemer` to attach
+   * a cert-purpose redeemer; the caller supplies the validating script (e.g.
+   * with {@link provideScript} or as a reference input via
+   * {@link addReferenceInput}). A script credential without a redeemer is
+   * taken to be a native script.
    *
    * @param credential — the credential to register (key or script).
-   * @param redeemer — optional Plutus redeemer when the credential is a script.
+   * @param redeemer — Plutus redeemer when the credential is a Plutus script.
    */
   addRegisterStake(credential: Credential, redeemer?: PlutusData) {
     const registration = new Serialization.Registration(
@@ -2446,22 +2450,32 @@ export class TxBuilder {
     certs.setValues(vals);
     this.body.setCerts(certs);
 
-    if (redeemer) {
-      const credentialHash = credential.toCore().hash;
-      this.requiredPlutusScripts.add(credentialHash);
-      const redeemers = [...this.redeemers.values()];
-      redeemers.push(
-        Redeemer.fromCore({
-          index: insertIdx,
-          purpose: RedeemerPurpose["certificate"],
-          data: redeemer.toCore(),
-          executionUnits: {
-            memory: this.params.maxExecutionUnitsPerTransaction.memory,
-            steps: this.params.maxExecutionUnitsPerTransaction.steps,
-          },
-        }),
+    const credentialCore = credential.toCore();
+    if (credentialCore.type == CredentialType.ScriptHash) {
+      if (redeemer) {
+        this.requiredPlutusScripts.add(credentialCore.hash);
+        const redeemers = [...this.redeemers.values()];
+        redeemers.push(
+          Redeemer.fromCore({
+            index: insertIdx,
+            purpose: RedeemerPurpose["certificate"],
+            data: redeemer.toCore(),
+            executionUnits: {
+              memory: this.params.maxExecutionUnitsPerTransaction.memory,
+              steps: this.params.maxExecutionUnitsPerTransaction.steps,
+            },
+          }),
+        );
+        this.redeemers.setValues(redeemers);
+      } else {
+        this.requiredNativeScripts.add(credentialCore.hash);
+      }
+    } else if (redeemer) {
+      throw new Error(
+        "TxBuilder addRegisterStake: failing to attach redeemer to a non-script registration!",
       );
-      this.redeemers.setValues(redeemers);
+    } else {
+      this.requiredWitnesses.add(HashAsPubKeyHex(credentialCore.hash));
     }
     return this;
   }

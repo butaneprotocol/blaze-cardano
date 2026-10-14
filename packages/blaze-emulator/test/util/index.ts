@@ -12,6 +12,7 @@ import {
   Address,
   Script,
   PlutusV2Script,
+  PlutusV3Script,
   PlutusData,
 } from "@blaze-cardano/core";
 import type { Provider } from "@blaze-cardano/query";
@@ -37,6 +38,11 @@ export async function masterkeyFromMnenomic(mnemonic: string) {
 
 export const alwaysTrueScript = Script.newPlutusV2Script(
   new PlutusV2Script(HexBlob("510100003222253330044a229309b2b2b9a1")),
+);
+
+/** `(program 1.1.0 (lam ctx (con unit ())))`: a Conway-only certificate (type 7) needs a V3 script context. */
+export const alwaysTrueV3Script = Script.newPlutusV3Script(
+  new PlutusV3Script(HexBlob("450101002499")),
 );
 
 export function generateGenesisOutputs(address: Address): TransactionOutput[] {

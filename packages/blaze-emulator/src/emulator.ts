@@ -969,12 +969,12 @@ export class Emulator {
         if (
           (isCertType(core, StakeCredentialCertificateTypes) ||
             isCertType(core, VoteDelegationCredentialCertificateTypes)) &&
-          // Registration certs never require the credential's witness — this
-          // holds for both the legacy Shelley StakeRegistration (type 0) and the
-          // Conway Registration (type 7) with explicit deposit. Only
-          // deregistration and delegation authorize against the credential.
-          certType !== CertificateType.StakeRegistration &&
-          certType !== CertificateType.Registration
+          // The legacy Shelley StakeRegistration (type 0, no deposit) needs no
+          // witness. The Conway Registration (type 7, explicit deposit) does,
+          // like deregistration and delegation: cardano-ledger
+          // getScriptWitnessConwayTxCert / getVKeyWitnessConwayTxCert map
+          // `ConwayRegCert cred (SJust _)` to the credential's witness.
+          certType !== CertificateType.StakeRegistration
         ) {
           const stakeCred = core.stakeCredential;
           if (stakeCred) {
