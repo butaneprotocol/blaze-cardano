@@ -185,6 +185,14 @@ describe("Kupmios", () => {
     expect(utxo?.input().index()).toBe(2n);
   });
 
+  test("a failed Kupo read carries the HTTP status", async () => {
+    mockFetch(new Response("upstream unavailable", { status: 503 }));
+
+    await expect(
+      provider(makeOgmios()).getUnspentOutputs(address),
+    ).rejects.toMatchObject({ status: 503 });
+  });
+
   test("resolves datum CBOR bytes", async () => {
     const ogmios = makeOgmios();
     mockFetch(jsonResponse({ datum: datumCbor }));
@@ -312,6 +320,78 @@ describe("Kupmios", () => {
     await provider(ogmios).evaluateTransaction(txWithRedeemers(), [onChain]);
 
     expect(ogmios.evaluateTransaction).toHaveBeenCalledWith({ cbor: "00" }, []);
+  });
+
+  test("sends additional UTxOs that are not on chain yet to Ogmios", async () => {
+    const ogmios = makeOgmios();
+    ogmios.evaluateTransaction.mockResolvedValue([
+      {
+        validator: { purpose: "spend", index: 0 },
+        budget: { memory: 123, cpu: 456 },
+      },
+    ]);
+    // Kupo knows the first output; the second comes from an unsubmitted transaction.
+    mockFetch(textResponse([kupoUtxo()]), textResponse([]));
+    const onChain = new TransactionUnspentOutput(
+      new TransactionInput(txHash, 1n),
+      new TransactionOutput(address, new Value(5_000_000n)),
+    );
+    const chained = new TransactionUnspentOutput(
+      new TransactionInput(TransactionId("2".repeat(64)), 0n),
+      new TransactionOutput(address, new Value(7_000_000n)),
+    );
+
+    await provider(ogmios).evaluateTransaction(txWithRedeemers(), [
+      onChain,
+      chained,
+    ]);
+
+    expect(ogmios.evaluateTransaction).toHaveBeenCalledWith(
+      { cbor: "00" },
+      Kupmios.serializeUtxos([chained]),
+    );
+  });
+
+  test("confirms a transaction Kupo has indexed", async () => {
+    mockFetch(textResponse([kupoUtxo({ output_index: 0 })]));
+
+    await expect(
+      provider(makeOgmios()).awaitTransactionConfirmation(txHash, 0),
+    ).resolves.toBe(true);
+  });
+
+  test("does not confirm a transaction Kupo has no match for", async () => {
+    // Kupo answers 200 with [] for a transaction it has not indexed.
+    mockFetch(textResponse([]));
+
+    await expect(
+      provider(makeOgmios()).awaitTransactionConfirmation(txHash, 0),
+    ).resolves.toBe(false);
+  });
+
+  test("a failed single confirmation lookup carries the HTTP status", async () => {
+    mockFetch(new Response("upstream unavailable", { status: 503 }));
+
+    await expect(
+      provider(makeOgmios()).awaitTransactionConfirmation(txHash, 0),
+    ).rejects.toMatchObject({ status: 503 });
+  });
+
+  test("an outage within the timeout is polled through", async () => {
+    vi.useFakeTimers();
+    mockFetch(
+      new Response("upstream unavailable", { status: 503 }),
+      textResponse([kupoUtxo({ output_index: 0 })]),
+    );
+
+    const confirmed = provider(makeOgmios()).awaitTransactionConfirmation(
+      txHash,
+      60_000,
+    );
+    await vi.advanceTimersByTimeAsync(Kupmios.confirmationTimeout);
+
+    await expect(confirmed).resolves.toBe(true);
+    vi.useRealTimers();
   });
 
   test("throws when Kupo cannot resolve every requested input", async () => {

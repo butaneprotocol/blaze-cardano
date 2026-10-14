@@ -151,8 +151,7 @@ export class EmulatorProvider extends Provider {
     txId: TransactionId,
     _timeout?: number | undefined,
   ): Promise<boolean> {
-    this.emulator.awaitTransactionConfirmation(txId);
-    return Promise.resolve(true);
+    return Promise.resolve(this.emulator.awaitTransactionConfirmation(txId));
   }
 
   postTransactionToChain(tx: Transaction): Promise<TransactionId> {

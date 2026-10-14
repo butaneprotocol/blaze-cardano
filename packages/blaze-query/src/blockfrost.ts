@@ -34,6 +34,7 @@ import {
   Value,
 } from "@blaze-cardano/core";
 import { purposeToTag, Provider, type NetworkName } from "./provider";
+import { isTransient } from "./http";
 
 /** @public */
 export class Blockfrost extends Provider {
@@ -84,7 +85,10 @@ export class Blockfrost extends Provider {
       json as BlockfrostResponse<BlockfrostProtocolParametersResponse>;
 
     if ("message" in response) {
-      throw new Error(`getParameters: Blockfrost threw "${response.message}"`);
+      throw blockfrostError(
+        `getParameters: Blockfrost threw "${response.message}"`,
+        response,
+      );
     }
     // Build cost models
     const costModels: CostModels = new Map();
@@ -184,8 +188,9 @@ export class Blockfrost extends Provider {
       const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
 
       if ("message" in response) {
-        throw new Error(
+        throw blockfrostError(
           `getUnspentOutputs: Blockfrost threw "${response.message}" for query: ${query}`,
+          response,
         );
       }
 
@@ -255,8 +260,9 @@ export class Blockfrost extends Provider {
       const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
 
       if ("message" in response) {
-        throw new Error(
+        throw blockfrostError(
           `getUnspentOutputsWithAsset: Blockfrost threw "${response.message}"`,
+          response,
         );
       }
 
@@ -299,8 +305,9 @@ export class Blockfrost extends Provider {
     const response = json as BlockfrostResponse<BlockfrostAssetAddress[]>;
 
     if ("message" in response) {
-      throw new Error(
+      throw blockfrostError(
         `getUnspentOutputByNFT: Blockfrost threw "${response.message}"`,
+        response,
       );
     }
     // Ensures a single asset address is returned
@@ -357,8 +364,9 @@ export class Blockfrost extends Provider {
         json as BlockfrostResponse<BlockfrostUnspentOutputResolution>;
 
       if ("message" in response) {
-        throw new Error(
+        throw blockfrostError(
           `resolveUnspentOutputs: Blockfrost threw "${response.message}"`,
+          response,
         );
       }
 
@@ -405,7 +413,10 @@ export class Blockfrost extends Provider {
     const response = json as BlockfrostResponse<BlockfrostDatumHashResolution>;
 
     if ("message" in response) {
-      throw new Error(`resolveDatum: Blockfrost threw "${response.message}"`);
+      throw blockfrostError(
+        `resolveDatum: Blockfrost threw "${response.message}"`,
+        response,
+      );
     }
 
     return PlutusData.fromCbor(HexBlob(response.cbor));
@@ -445,10 +456,30 @@ export class Blockfrost extends Provider {
         headers: this.headers(),
       });
 
-      return response.ok;
+      // 404: Blockfrost has not seen the transaction yet. Any other failure is
+      // not an answer, so it carries its status.
+      if (response.ok || response.status === 404) {
+        return response.ok;
+      }
+      throw Object.assign(
+        new Error(
+          `awaitTransactionConfirmation: Blockfrost returned status ${response.status}: ${await response.text()}`,
+        ),
+        { status: response.status },
+      );
     };
+    // Within the timeout a 429 or 5xx is one more "not yet"; once time is up,
+    // or on any other failure (401, 403), it throws: `false` only ever means
+    // the lookup succeeded and the transaction is not there.
+    const lookup = () =>
+      checkConfirmation().catch((error: unknown) => {
+        if (isTransient(error) && Date.now() - startTime < (timeout ?? 0)) {
+          return false;
+        }
+        throw error;
+      });
 
-    if (await checkConfirmation()) {
+    if (await lookup()) {
       return true;
     }
 
@@ -456,7 +487,7 @@ export class Blockfrost extends Provider {
       while (Date.now() - startTime < timeout) {
         await delay(averageBlockTime);
 
-        if (await checkConfirmation()) {
+        if (await lookup()) {
           return true;
         }
       }
@@ -483,8 +514,11 @@ export class Blockfrost extends Provider {
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(
-        `postTransactionToChain: failed to submit transaction to Blockfrost endpoint.\nError ${error}`,
+      throw Object.assign(
+        new Error(
+          `postTransactionToChain: failed to submit transaction to Blockfrost endpoint.\nError ${error}`,
+        ),
+        { status: response.status },
       );
     }
 
@@ -556,16 +590,20 @@ export class Blockfrost extends Provider {
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(
-        `evaluateTransaction: failed to evaluate transaction with additional UTxO set in Blockfrost endpoint.\nError ${error}`,
+      throw Object.assign(
+        new Error(
+          `evaluateTransaction: failed to evaluate transaction with additional UTxO set in Blockfrost endpoint.\nError ${error}`,
+        ),
+        { status: response.status },
       );
     }
 
     const json =
       (await response.json()) as BlockfrostResponse<BlockfrostRedeemer>;
     if ("message" in json) {
-      throw new Error(
+      throw blockfrostError(
         `evaluateTransaction: Blockfrost threw "${json.message}"`,
+        json,
       );
     }
 
@@ -628,8 +666,9 @@ export class Blockfrost extends Provider {
     }>;
 
     if ("message" in typeResponse) {
-      throw new Error(
+      throw blockfrostError(
         `getScriptRef: Blockfrost threw "${typeResponse.message}"`,
+        typeResponse,
       );
     }
 
@@ -652,8 +691,9 @@ export class Blockfrost extends Provider {
     }>;
 
     if ("message" in cborResponse) {
-      throw new Error(
+      throw blockfrostError(
         `getScriptRef: Blockfrost threw "${cborResponse.message}"`,
+        cborResponse,
       );
     }
 
@@ -718,8 +758,9 @@ export class Blockfrost extends Provider {
       const response = json as BlockfrostResponse<BlockfrostUTxO[]>;
 
       if ("message" in response) {
-        throw new Error(
+        throw blockfrostError(
           `resolveScriptRef: Blockfrost threw "${response.message}"`,
+          response,
         );
       }
 
@@ -836,7 +877,14 @@ export interface BlockfrostProtocolParametersResponse {
   min_fee_ref_script_cost_per_byte?: number;
 }
 
-type BlockfrostResponse<SomeResponse> = SomeResponse | { message: string };
+/** Blockfrost's error body: `{ status_code, error, message }`. */
+type BlockfrostError = { message: string; status_code?: number };
+
+type BlockfrostResponse<SomeResponse> = SomeResponse | BlockfrostError;
+
+/** An Error for a Blockfrost API error, carrying its HTTP status so a caller can tell a rate limit (429), a missing resource (404) or an outage (5xx) apart. */
+const blockfrostError = (message: string, body: BlockfrostError) =>
+  Object.assign(new Error(message), { status: body.status_code });
 
 interface BlockfrostUTxO {
   address: string;

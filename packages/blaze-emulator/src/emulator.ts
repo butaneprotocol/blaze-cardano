@@ -137,6 +137,11 @@ export class Emulator {
     }
   > = {};
 
+  /**
+   * Transactions that left the mempool into a block.
+   */
+  #confirmed: Set<TransactionId> = new Set();
+
   #nextGenesisUtxo: number;
 
   /**
@@ -530,6 +535,9 @@ export class Emulator {
       (this.clock.slot - this.clock.zeroSlot) / this.clock.slotsPerEpoch,
     );
 
+    Object.keys(this.#mempool).forEach((txId) =>
+      this.#confirmed.add(TransactionId(txId)),
+    );
     Object.values(this.#mempool).forEach(({ inputs, outputs }) => {
       inputs.forEach(this.removeUtxo);
       outputs.forEach(this.addUtxo);
@@ -577,12 +585,13 @@ export class Emulator {
    * Forces block production until the referenced transaction leaves the mempool.
    *
    * @param {TransactionId} txId - Identifier of the transaction awaiting confirmation.
-   * @returns {void}
+   * @returns {boolean} Whether the transaction is in a block: false for one the emulator never accepted.
    */
-  awaitTransactionConfirmation(txId: TransactionId) {
+  awaitTransactionConfirmation(txId: TransactionId): boolean {
     if (this.#mempool[txId]) {
       this.stepForwardBlock();
     }
+    return this.#confirmed.has(txId);
   }
 
   /**
@@ -969,12 +978,12 @@ export class Emulator {
         if (
           (isCertType(core, StakeCredentialCertificateTypes) ||
             isCertType(core, VoteDelegationCredentialCertificateTypes)) &&
-          // Registration certs never require the credential's witness — this
-          // holds for both the legacy Shelley StakeRegistration (type 0) and the
-          // Conway Registration (type 7) with explicit deposit. Only
-          // deregistration and delegation authorize against the credential.
-          certType !== CertificateType.StakeRegistration &&
-          certType !== CertificateType.Registration
+          // The legacy Shelley StakeRegistration (type 0, no deposit) needs no
+          // witness. The Conway Registration (type 7, explicit deposit) does,
+          // like deregistration and delegation: cardano-ledger
+          // getScriptWitnessConwayTxCert / getVKeyWitnessConwayTxCert map
+          // `ConwayRegCert cred (SJust _)` to the credential's witness.
+          certType !== CertificateType.StakeRegistration
         ) {
           const stakeCred = core.stakeCredential;
           if (stakeCred) {

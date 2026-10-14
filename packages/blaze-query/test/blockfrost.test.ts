@@ -290,4 +290,74 @@ describe("Blockfrost", () => {
       "postTransactionToChain: failed to submit transaction to Blockfrost endpoint.\nError submit failed",
     );
   });
+
+  test("a failed submission carries the HTTP status", async () => {
+    mockFetch(textResponse("rate limited", { status: 429 }));
+    const tx = { toCbor: () => "00" } as unknown as Transaction;
+
+    await expect(blockfrost().postTransactionToChain(tx)).rejects.toMatchObject(
+      { status: 429 },
+    );
+  });
+
+  test("a read error carries the HTTP status from Blockfrost's error body", async () => {
+    mockFetch(
+      jsonResponse(
+        {
+          status_code: 429,
+          error: "Project Over Limit",
+          message: "Usage is over limit.",
+        },
+        { status: 429 },
+      ),
+    );
+
+    await expect(blockfrost().getUnspentOutputs(address)).rejects.toMatchObject(
+      { status: 429 },
+    );
+  });
+
+  test("a transaction Blockfrost has not seen is unconfirmed", async () => {
+    mockFetch(
+      jsonResponse(
+        { status_code: 404, error: "Not Found", message: "not found" },
+        { status: 404 },
+      ),
+    );
+
+    await expect(
+      blockfrost().awaitTransactionConfirmation(txHash),
+    ).resolves.toBe(false);
+  });
+
+  test("a failed single confirmation lookup carries the HTTP status", async () => {
+    mockFetch(textResponse("rate limited", { status: 429 }));
+
+    await expect(
+      blockfrost().awaitTransactionConfirmation(txHash),
+    ).rejects.toMatchObject({ status: 429 });
+  });
+
+  test("a rate limit within the timeout is polled through", async () => {
+    vi.useFakeTimers();
+    mockFetch(
+      textResponse("rate limited", { status: 429 }),
+      textResponse("[]"),
+    );
+
+    const confirmed = blockfrost().awaitTransactionConfirmation(txHash, 60_000);
+    await vi.advanceTimersByTimeAsync(20_000);
+
+    await expect(confirmed).resolves.toBe(true);
+    vi.useRealTimers();
+  });
+
+  test("a forbidden confirmation lookup fails without waiting out the timeout", async () => {
+    const fetchMock = mockFetch(textResponse("forbidden", { status: 403 }));
+
+    await expect(
+      blockfrost().awaitTransactionConfirmation(txHash, 60_000),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });

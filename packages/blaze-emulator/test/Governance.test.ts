@@ -119,7 +119,8 @@ describe("Emulator governance", () => {
     if (registerDRep) {
       tx = await blaze.signTransaction(tx);
     }
-    const txHash = await signAndSubmit(tx, blaze, registerDRep);
+    // A Conway (deposit) stake registration needs the stake key's witness.
+    const txHash = await signAndSubmit(tx, blaze, true);
     emulator.awaitTransactionConfirmation(txHash);
 
     const rewardAccount = RewardAccount.fromCredential(
@@ -433,7 +434,7 @@ describe("Emulator governance", () => {
       .newTransaction()
       .addRegisterStake(Credential.fromCore(stakeCred))
       .complete();
-    const setupHash = await signAndSubmit(setupTx, blaze);
+    const setupHash = await signAndSubmit(setupTx, blaze, true);
     emulator.awaitTransactionConfirmation(setupHash);
 
     const proposal = ProposalProcedure.fromCore({

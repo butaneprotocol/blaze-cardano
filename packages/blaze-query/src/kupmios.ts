@@ -35,6 +35,7 @@ import {
   purposeToTag,
   Provider,
 } from "./provider";
+import { fetchOrThrow, isTransient } from "./http";
 import { ogmiosChainSyncEvents } from "./ogmios-chain-sync";
 import type { ChainEvent, ChainEventFilter } from "./events";
 import type { Unwrapped } from "@blaze-cardano/ogmios";
@@ -112,7 +113,9 @@ export class Kupmios extends Provider {
       postfix ? postfix : ""
     }`;
     // Debug: console.log(`Fetching unspent outputs from ${url}`);
-    const resultText = await fetch(url).then((res) => res.text());
+    const resultText = await fetchOrThrow(url, "Kupo").then((res) =>
+      res.text(),
+    );
     const result: any[] = JSONbig.parse(resultText);
 
     return await Promise.all(
@@ -307,7 +310,9 @@ export class Kupmios extends Provider {
    */
   async resolveDatum(datumHash: DatumHash): Promise<PlutusData> {
     const url = `${this.kupoUrl}/datums/${datumHash}`;
-    const result: any = await fetch(url).then((res) => res.json());
+    const result: any = await fetchOrThrow(url, "Kupo").then((res) =>
+      res.json(),
+    );
     if (!result || !result.datum) {
       throw new Error(`No datum found for datum hash: ${datumHash}`);
     }
@@ -323,9 +328,12 @@ export class Kupmios extends Provider {
 
   /**
    * Awaits confirmation of a transaction.
+   * @remarks
+   * Polls Kupo every `Kupmios.confirmationTimeout` ms until the transaction is
+   * matched or `timeout` elapses. `timeout: 0` makes a single lookup.
    * @param txId - ID of the transaction to await confirmation for.
-   * @param timeout - Optional timeout in milliseconds.
-   * @returns A promise that resolves to a boolean indicating confirmation status.
+   * @param timeout - Polling window in milliseconds. Defaults to 5 × `Kupmios.confirmationTimeout`.
+   * @returns A promise that resolves to `true` once Kupo matches the transaction, `false` if the window ends first.
    */
   async awaitTransactionConfirmation(
     txId: TransactionId,
@@ -335,13 +343,22 @@ export class Kupmios extends Provider {
     const startTime = Date.now();
 
     const checkConfirmation = async (): Promise<boolean> => {
-      const response = await fetch(`${this.kupoUrl}/matches/0@${txId}`);
+      // Within the timeout a 429 or 5xx is one more "not yet"; once time is
+      // up, or on any other failure, it throws with its status.
+      const matches: unknown = await fetchOrThrow(
+        `${this.kupoUrl}/matches/0@${txId}`,
+        "Kupo",
+      )
+        .then((response) => response.json())
+        .catch((error: unknown) => {
+          if (isTransient(error) && Date.now() - startTime < timeout) {
+            return [];
+          }
+          throw error;
+        });
 
-      if (
-        response.ok &&
-        (await response.json().then((res: any) => res.length),
-        (_res: any) => false)
-      ) {
+      // Kupo answers 200 with [] until the transaction's first output is indexed.
+      if (Array.isArray(matches) && matches.length > 0) {
         return true;
       } else if (Date.now() - startTime < timeout) {
         await new Promise((resolve) =>
@@ -376,7 +393,9 @@ export class Kupmios extends Provider {
   private async resolveScript(scriptHash: ScriptHash): Promise<Script> {
     // Note: we should reconsider creating a class for this as it could be expensive operation
     const url = `${this.kupoUrl}/scripts/${scriptHash}`;
-    const result: any = await fetch(url).then((res) => res.json());
+    const result: any = await fetchOrThrow(url, "Kupo").then((res) =>
+      res.json(),
+    );
     if (!result || !result.language || !result.script) {
       throw new Error(`No script found for script hash: ${scriptHash}`);
     }
@@ -413,18 +432,23 @@ export class Kupmios extends Provider {
         throw new Error("Cannot evaluate without redeemers!");
       }
 
-      const additionalInputs = additionalUtxos.map((utxo) => utxo.input());
-
-      const utxosToDrop = await this.resolveUnspentOutputs(additionalInputs);
+      // Drop the additional UTxOs Kupo already has unspent (Ogmios refuses an
+      // overlap with the ledger). One lookup per reference: an input that is
+      // not on chain yet (a chained transaction) is kept, not an error.
+      const onLedger = new Set<TransactionUnspentOutput>();
+      await Promise.all(
+        additionalUtxos.map(async (utxo) => {
+          const input = utxo.input();
+          const prefix = `${input.index()}@${input.transactionId()}`;
+          if ((await this._getUnspentOutputs(prefix, null)).length === 1) {
+            onLedger.add(utxo);
+          }
+        }),
+      );
 
       // Serialize additional UTXOs to JSON format
       const additional_utxos = Kupmios.serializeUtxos(
-        // resolveUnspentOutputs returns new objects, so compare by output reference
-        additionalUtxos.filter((utxo) => {
-          return !utxosToDrop.some(
-            (dropped) => dropped.input().toCbor() === utxo.input().toCbor(),
-          );
-        }),
+        additionalUtxos.filter((utxo) => !onLedger.has(utxo)),
       );
 
       // Handle the response

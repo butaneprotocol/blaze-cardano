@@ -20,6 +20,7 @@ import {
   ONE_PLUTUS_DATA,
   VOID_PLUTUS_DATA,
   alwaysTrueScript,
+  alwaysTrueV3Script,
   generateAccount,
   generateGenesisOutputs,
   signAndSubmit,
@@ -105,16 +106,43 @@ describe("Emulator", () => {
   test("a valid transaction", async () => {
     await emulator.register("2", makeValue(100_000_000n));
     await emulator.as("2", async (blaze, address) => {
-      const tx = blaze.newTransaction().addRegisterStake(
-        Credential.fromCore({
-          hash: address.getProps().delegationPart!.hash,
-          type: CredentialType.KeyHash,
-        }),
-      );
+      const stakeKeyHash = address.getProps().delegationPart!.hash;
+      // A Conway (deposit) stake registration needs the stake key's witness;
+      // the required signer makes the wallet add it.
+      const tx = blaze
+        .newTransaction()
+        .addRegisterStake(
+          Credential.fromCore({
+            hash: stakeKeyHash,
+            type: CredentialType.KeyHash,
+          }),
+        )
+        .addRequiredSigner(Ed25519KeyHashHex(stakeKeyHash));
 
       await expect(
         emulator.expectValidTransaction(blaze, tx),
       ).resolves.not.toThrow();
+    });
+  });
+
+  test("a key stake registration without the stake key's witness is rejected", async () => {
+    await emulator.register("3", makeValue(100_000_000n));
+    await emulator.as("3", async (blaze, address) => {
+      const stakeKeyHash = address.getProps().delegationPart!.hash;
+      const tx = await blaze
+        .newTransaction()
+        .addRegisterStake(
+          Credential.fromCore({
+            hash: stakeKeyHash,
+            type: CredentialType.KeyHash,
+          }),
+        )
+        .complete();
+
+      // Payment key only: a Conway (deposit) registration needs the stake key too.
+      await expect(signAndSubmit(tx, blaze)).rejects.toThrow(
+        `Vkey (hash ${stakeKeyHash}) not found in witness set.`,
+      );
     });
   });
 
@@ -439,7 +467,7 @@ describe("Emulator", () => {
 
   test("Should be able to register and deregister stake for a script", async () => {
     const cred = {
-      hash: alwaysTrueScript.hash(),
+      hash: alwaysTrueV3Script.hash(),
       type: CredentialType.ScriptHash,
     };
     const rewardAccount = RewardAccount.fromCredential(cred, NetworkId.Testnet);
@@ -447,7 +475,8 @@ describe("Emulator", () => {
 
     const tx = await blaze
       .newTransaction()
-      .addRegisterStake(Credential.fromCore(cred))
+      .provideScript(alwaysTrueV3Script)
+      .addRegisterStake(Credential.fromCore(cred), VOID_PLUTUS_DATA)
       .complete();
 
     const txHash = await signAndSubmit(tx, blaze);
@@ -457,7 +486,7 @@ describe("Emulator", () => {
 
     const deregister = await blaze
       .newTransaction()
-      .provideScript(alwaysTrueScript)
+      .provideScript(alwaysTrueV3Script)
       .addDeregisterStake(Credential.fromCore(cred), VOID_PLUTUS_DATA)
       .complete();
 
