@@ -1,10 +1,10 @@
 {
   "name": "@blaze-cardano/vm",
   "description": "Blaze cardano plutus virtual machine",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "dependencies": {
-    "@blaze-cardano/core": "^0.10.0",
-    "@blaze-cardano/uplc": "^0.5.3"
+    "@blaze-cardano/core": "^0.10.1",
+    "@blaze-cardano/uplc": "^0.5.4"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",

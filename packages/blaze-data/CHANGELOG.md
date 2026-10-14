@@ -1,5 +1,13 @@
 # @blaze-cardano/data
 
+## 0.6.11
+
+### Patch Changes
+
+- 1ddec1f: Fixing patch dependency issue
+- Updated dependencies [1ddec1f]
+  - @blaze-cardano/core@0.10.1
+
 ## 0.6.10
 
 ### Patch Changes

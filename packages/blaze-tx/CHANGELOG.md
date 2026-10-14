@@ -1,5 +1,16 @@
 # @blaze-cardano/tx
 
+## 0.15.4
+
+### Patch Changes
+
+- a1cef73: Certificate redeemers point at their certificate's position in the body. `addDelegation`, `addDeregisterStake` and the dRep certificates indexed their redeemer among certificates of the same kind sorted by credential hash, so a transaction mixing certificate kinds got colliding `Cert` indices (registering then delegating gave two `Cert#0`). `addDelegation` and `addDeregisterStake` also shifted `Reward` redeemers, moving a withdrawal's redeemer off its withdrawal.
+- 1ddec1f: Fixing patch dependency issue
+- a1cef73: Conway stake registration (cert type 7, with deposit) requires the credential's witness, as cardano-ledger's `getScriptWitnessConwayTxCert` / `getVKeyWitnessConwayTxCert` do; only the legacy `StakeRegistration` (type 0) is exempt. The emulator now consumes the credential of a type-7 registration, so a script registration needs the script and its cert redeemer and a key registration needs the stake key's signature. `addRegisterStake` counts a key credential's witness in the fee estimate, takes a script credential without a redeemer as a native script, and rejects a redeemer on a key credential.
+- Updated dependencies [1ddec1f]
+  - @blaze-cardano/core@0.10.1
+  - @blaze-cardano/vm@0.3.3
+
 ## 0.15.3
 
 ### Patch Changes

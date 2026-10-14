@@ -1,7 +1,7 @@
 {
   "name": "@blaze-cardano/ogmios",
   "description": "Blaze cardano ogmios library",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "dependencies": {
     "@cardano-ogmios/schema": "^6.6.1",
     "isomorphic-ws": "^5.0.0"
