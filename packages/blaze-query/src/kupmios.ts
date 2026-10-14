@@ -328,9 +328,12 @@ export class Kupmios extends Provider {
 
   /**
    * Awaits confirmation of a transaction.
+   * @remarks
+   * Polls Kupo every `Kupmios.confirmationTimeout` ms until the transaction is
+   * matched or `timeout` elapses. `timeout: 0` makes a single lookup.
    * @param txId - ID of the transaction to await confirmation for.
-   * @param timeout - Optional timeout in milliseconds.
-   * @returns A promise that resolves to a boolean indicating confirmation status.
+   * @param timeout - Polling window in milliseconds. Defaults to 5 × `Kupmios.confirmationTimeout`.
+   * @returns A promise that resolves to `true` once Kupo matches the transaction, `false` if the window ends first.
    */
   async awaitTransactionConfirmation(
     txId: TransactionId,
