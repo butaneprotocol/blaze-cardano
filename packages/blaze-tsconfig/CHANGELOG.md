@@ -1,5 +1,11 @@
 # @blaze-cardano/tsconfig
 
+## 0.0.4
+
+### Patch Changes
+
+- 1ddec1f: Fixing patch dependency issue
+
 ## 0.0.3
 
 ### Patch Changes

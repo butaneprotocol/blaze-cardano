@@ -1,5 +1,17 @@
 # @blaze-cardano/deploy
 
+## 1.0.1
+
+### Patch Changes
+
+- 1ddec1f: Fixing patch dependency issue
+- Updated dependencies [1ddec1f]
+- Updated dependencies [a1cef73]
+  - @blaze-cardano/wallet@0.6.3
+  - @blaze-cardano/query@0.6.4
+  - @blaze-cardano/core@0.10.1
+  - @blaze-cardano/sdk@0.3.3
+
 ## 1.0.0
 
 ### Patch Changes

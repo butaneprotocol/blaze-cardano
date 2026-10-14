@@ -1,10 +1,10 @@
 {
   "name": "@blaze-cardano/tx",
   "description": "Blaze cardano transaction building library",
-  "version": "0.15.3",
+  "version": "0.15.4",
   "dependencies": {
-    "@blaze-cardano/core": "^0.10.0",
-    "@blaze-cardano/vm": "^0.3.2"
+    "@blaze-cardano/core": "^0.10.1",
+    "@blaze-cardano/vm": "^0.3.3"
   },
   "devDependencies": {
     "@blaze-cardano/data": "workspace:*",

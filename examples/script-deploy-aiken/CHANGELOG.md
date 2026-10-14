@@ -1,5 +1,18 @@
 # script-deploy-aiken
 
+## 0.1.6
+
+### Patch Changes
+
+- 1ddec1f: Fixing patch dependency issue
+- Updated dependencies [1ddec1f]
+- Updated dependencies [a1cef73]
+- Updated dependencies [a1cef73]
+  - @blaze-cardano/emulator@0.5.4
+  - @blaze-cardano/deploy@1.0.1
+  - @blaze-cardano/data@0.6.11
+  - @blaze-cardano/sdk@0.3.3
+
 ## 0.1.5
 
 ### Patch Changes

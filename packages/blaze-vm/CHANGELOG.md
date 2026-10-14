@@ -1,5 +1,14 @@
 # @blaze-cardano/vm
 
+## 0.3.3
+
+### Patch Changes
+
+- 1ddec1f: Fixing patch dependency issue
+- Updated dependencies [1ddec1f]
+  - @blaze-cardano/core@0.10.1
+  - @blaze-cardano/uplc@0.5.4
+
 ## 0.3.2
 
 ### Patch Changes
