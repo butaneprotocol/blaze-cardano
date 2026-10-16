@@ -261,7 +261,7 @@ export class TxBuilder {
   private scriptSubstitutions: Map<ScriptHash, Script> = new Map();
 
   private consumedMintHashes: Hash28ByteBase16[] = [];
-  private consumedWithdrawalHashes: Hash28ByteBase16[] = [];
+  private consumedWithdrawalAccounts: RewardAccount[] = [];
   private consumedVoteHashes: Hash28ByteBase16[] = [];
   private consumedSpendInputs: string[] = [];
   private minimumFee: bigint = 0n; // minimum fee for the transaction, in lovelace. For script eval purposes!
@@ -1119,26 +1119,13 @@ export class TxBuilder {
       return { policyId: hash, assets };
     });
 
-    // Build sorted withdrawals from consumedWithdrawalHashes + body withdrawals
     const withdrawals = this.body.withdrawals();
-    const sortedWithdrawals: Array<{
-      rewardAccount: RewardAccount;
-      amount: bigint;
-    }> = [];
-    if (withdrawals) {
-      const byHash = new Map<
-        string,
-        { rewardAccount: RewardAccount; amount: bigint }
-      >();
-      for (const [account, amount] of withdrawals.entries()) {
-        const hash = Address.fromBech32(account).getProps().paymentPart?.hash;
-        if (hash) byHash.set(hash, { rewardAccount: account, amount });
-      }
-      for (const hash of this.consumedWithdrawalHashes) {
-        const entry = byHash.get(hash);
-        if (entry) sortedWithdrawals.push(entry);
-      }
-    }
+    const sortedWithdrawals = this.consumedWithdrawalAccounts.map(
+      (rewardAccount) => ({
+        rewardAccount,
+        amount: withdrawals!.get(rewardAccount)!,
+      }),
+    );
 
     const fee = this.fee;
 
@@ -1163,9 +1150,9 @@ export class TxBuilder {
           break;
         }
         case RedeemerTag.Reward: {
-          const hash = this.consumedWithdrawalHashes[idx];
-          if (hash) {
-            identity = `reward:${hash}`;
+          const account = this.consumedWithdrawalAccounts[idx];
+          if (account) {
+            identity = `reward:${account}`;
           }
           break;
         }
@@ -3019,10 +3006,6 @@ export class TxBuilder {
         "addWithdrawal: The RewardAccount provided does not have an associated stake credential.",
       );
     }
-    const insertIdx = insertSorted(
-      this.consumedWithdrawalHashes,
-      withdrawalHash,
-    );
     // Retrieve existing withdrawals or initialize a new map if none exist.
     const withdrawals: Map<RewardAccount, bigint> =
       this.body.withdrawals() ?? new Map();
@@ -3032,6 +3015,32 @@ export class TxBuilder {
         "addWithdrawal: Withdrawal for this address already exists.",
       );
     }
+    // Ledger AccountAddress ordering is network, then credential kind (script
+    // before key), then hash. Include the full account so equal hashes with
+    // different credential kinds remain distinct.
+    const sortKey = (account: RewardAccount): string => {
+      const props = Address.fromBech32(account).getProps();
+      const credential = props.paymentPart!;
+      return `${props.networkId}:${credential.type === CredentialType.ScriptHash ? 0 : 1}:${credential.hash}`;
+    };
+    const key = sortKey(address);
+    let insertIdx = this.consumedWithdrawalAccounts.findIndex(
+      (account) => sortKey(account) > key,
+    );
+    if (insertIdx === -1) insertIdx = this.consumedWithdrawalAccounts.length;
+    this.consumedWithdrawalAccounts.splice(insertIdx, 0, address);
+
+    // Every inserted withdrawal occupies an index, even without a redeemer.
+    const redeemers = [...this.redeemers.values()];
+    for (const existing of redeemers) {
+      if (
+        existing.tag() === RedeemerTag.Reward &&
+        existing.index() >= BigInt(insertIdx)
+      ) {
+        existing.setIndex(existing.index() + 1n);
+      }
+    }
+    this.redeemers.setValues(redeemers);
     // Set the withdrawal amount for the specified address.
     withdrawals.set(address, amount);
     // Update the transaction body with the new or updated withdrawals map.
@@ -3039,19 +3048,10 @@ export class TxBuilder {
     // If a redeemer is provided, process it for script validation.
     if (redeemer) {
       this.requiredPlutusScripts.add(withdrawalHash);
-      const redeemers = [...this.redeemers.values()];
-      for (const redeemer of redeemers) {
-        if (
-          redeemer.tag() == RedeemerTag.Reward &&
-          redeemer.index() >= BigInt(insertIdx)
-        ) {
-          redeemer.setIndex(redeemer.index() + 1n);
-        }
-      }
       // Add the redeemer to the list of redeemers with execution units based on transaction parameters.
       let redeemerData: PlutusData;
       if (typeof redeemer === "function") {
-        this.deferredRedeemers.set(`reward:${withdrawalHash}`, redeemer);
+        this.deferredRedeemers.set(`reward:${address}`, redeemer);
         redeemerData = PlutusData.newInteger(0n);
       } else {
         redeemerData = redeemer;
