@@ -46,7 +46,7 @@ Bun workspaces + Turbo for orchestration. Build tool is `tsdown` (ESM + CJS + .d
 
 ```
 blaze-core          — Core types, crypto primitives, Cardano data structures
-  ↑                   Uses @cardano-sdk/*, @noble/*, blakejs
+  ↑                   Owns an attributed cardano-js-sdk source snapshot
 blaze-data          — Plutus Data serialization using @sinclair/typebox schemas
 blaze-ogmios        — Ogmios WebSocket client (standalone, only depends on ogmios schema)
   ↑
