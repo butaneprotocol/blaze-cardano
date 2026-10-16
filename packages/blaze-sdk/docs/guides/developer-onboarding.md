@@ -16,26 +16,14 @@ The SDK re-exports the query providers, transaction builder, wallet types, and c
 
 ## Pick a provider
 
-Use `Blockfrost`, `Maestro`, or `Kupmios` when talking to a real network. Use `RoutedProvider` when different backends should handle reads, evaluation, and submission.
+Use `Blockfrost` or `Kupmios` when talking to a real network. Use `RoutedProvider` when different backends should handle reads, evaluation, and submission.
 
 ```ts
-import { Blockfrost, Maestro, RoutedProvider } from "@blaze-cardano/sdk";
+import { Blockfrost } from "@blaze-cardano/sdk";
 
-const queryProvider = new Blockfrost({
+const provider = new Blockfrost({
   network: "cardano-preview",
   projectId: process.env.BLOCKFROST_PROJECT_ID!,
-});
-
-const submissionProvider = new Maestro({
-  network: "preview",
-  apiKey: process.env.MAESTRO_API_KEY!,
-});
-
-const provider = new RoutedProvider({
-  defaultProvider: queryProvider,
-  queryProvider,
-  evaluationProvider: submissionProvider,
-  submissionProvider,
 });
 ```
 
@@ -94,7 +82,7 @@ bun --filter script-deploy-aiken start
 
 Check the provider setup before connecting it to a UI or service:
 
-- One backend can handle every operation through Blockfrost, Maestro, or Kupmios directly.
+- One backend can handle every operation through Blockfrost or Kupmios directly.
 - `RoutedProvider` can send reads, evaluation, and submission to different backends.
 - Per-operation routing can send an individual query to a specific backend.
 - Route debug logs may contain addresses, transaction bodies, or provider parameters. Enable them only while investigating a problem and redact them before storing the output.

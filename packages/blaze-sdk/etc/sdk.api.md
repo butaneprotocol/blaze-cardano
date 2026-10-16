@@ -1039,33 +1039,6 @@ export interface LockScriptAssetsOptions {
     stakeCredential?: Credential;
 }
 
-// @public (undocumented)
-export class Maestro extends Provider {
-    constructor(input: {
-        network: "mainnet" | "preview" | "preprod";
-        apiKey: string;
-    });
-    // (undocumented)
-    awaitTransactionConfirmation(txId: TransactionId, timeout?: number): Promise<boolean>;
-    // (undocumented)
-    evaluateTransaction(tx: Transaction, additionalUtxos: TransactionUnspentOutput[]): Promise<Redeemers>;
-    getParameters(): Promise<ProtocolParameters>;
-    // (undocumented)
-    getUnspentOutputByNFT(unit: AssetId): Promise<TransactionUnspentOutput>;
-    // (undocumented)
-    getUnspentOutputs(address: Address | Credential): Promise<TransactionUnspentOutput[]>;
-    // (undocumented)
-    getUnspentOutputsWithAsset(address: Address, unit: AssetId): Promise<TransactionUnspentOutput[]>;
-    // (undocumented)
-    postTransactionToChain(tx: Transaction): Promise<TransactionId>;
-    // (undocumented)
-    resolveDatum(datumHash: DatumHash): Promise<PlutusData>;
-    // (undocumented)
-    resolveScriptRef(script: Script | Hash28ByteBase16, address?: Address): Promise<TransactionUnspentOutput | undefined>;
-    // (undocumented)
-    resolveUnspentOutputs(txIns: TransactionInput[]): Promise<TransactionUnspentOutput[]>;
-}
-
 // @public
 export function makeValue(lovelace: bigint, ...assets: [string, bigint][]): Value_2;
 
