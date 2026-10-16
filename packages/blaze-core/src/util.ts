@@ -1,6 +1,6 @@
-import * as C from "@cardano-sdk/core";
-import type { OpaqueString } from "@cardano-sdk/util";
-import { HexBlob, typedHex } from "@cardano-sdk/util";
+import * as C from "./internal/cardano-sdk/core-compat";
+import type { OpaqueString } from "./internal/cardano-sdk/util";
+import { HexBlob, typedHex } from "./internal/cardano-sdk/util";
 import type {
   PolicyId,
   PaymentAddress,

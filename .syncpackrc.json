@@ -1,6 +1,13 @@
 {
   "semverGroups": [
     {
+      "label": "Keep security overrides exact",
+      "packages": ["**"],
+      "dependencies": ["ip-address", "lodash"],
+      "dependencyTypes": ["prod"],
+      "isIgnored": true
+    },
+    {
       "label": "Use ^ for dependencies",
       "packages": ["**"],
       "dependencies": ["**"],
@@ -9,6 +16,13 @@
     }
   ],
   "versionGroups": [
+    {
+      "label": "Keep security overrides exact",
+      "packages": ["**"],
+      "dependencies": ["ip-address", "lodash"],
+      "dependencyTypes": ["overrides", "prod"],
+      "isIgnored": true
+    },
     {
       "label": "Use workspace protocol for internal development dependencies",
       "packages": ["**"],

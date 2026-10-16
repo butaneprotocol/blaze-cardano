@@ -1,0 +1,333 @@
+// Derived from cardano-js-sdk at 48019e49; modified for Blaze packaging.
+// @ts-nocheck -- pinned upstream source is covered by Blaze golden tests.
+import { Credential, CredentialType, RewardAccount } from '../Address';
+import { isNotNil } from '../../../util/index';
+import type * as Crypto from '../../../crypto/index';
+import type { Anchor, DelegateRepresentative } from './Governance';
+import type { EpochNo } from './Block';
+import type { Lovelace } from './Value';
+import type { PoolId, PoolParameters } from './StakePool';
+
+export enum CertificateType {
+  /**
+   * @deprecated Removed from the certificate union in the Dijkstra era (protocol version 12).
+   * Use Registration with an explicit deposit for new transactions. Retained for decoding
+   * historical chain data.
+   */
+  StakeRegistration = 'StakeRegistrationCertificate',
+  /**
+   * @deprecated Removed from the certificate union in the Dijkstra era (protocol version 12).
+   * Use Unregistration with an explicit deposit for new transactions. Retained for decoding
+   * historical chain data.
+   */
+  StakeDeregistration = 'StakeDeregistrationCertificate',
+  PoolRegistration = 'PoolRegistrationCertificate',
+  PoolRetirement = 'PoolRetirementCertificate',
+  StakeDelegation = 'StakeDelegationCertificate',
+  MIR = 'MirCertificate', // deprecated in conway
+  GenesisKeyDelegation = 'GenesisKeyDelegationCertificate', // deprecated in conway
+
+  // Conway Era Certs
+  Registration = 'RegistrationCertificate', // Replaces StakeRegistration in post-conway era
+  Unregistration = 'UnRegistrationCertificate', // Replaces StakeDeregistration in post-conway era
+  VoteDelegation = 'VoteDelegationCertificate',
+  StakeVoteDelegation = 'StakeVoteDelegationCertificate',
+  StakeRegistrationDelegation = 'StakeRegistrationDelegateCertificate', // delegate or delegation??
+  VoteRegistrationDelegation = 'VoteRegistrationDelegateCertificate', // same as above
+  StakeVoteRegistrationDelegation = 'StakeVoteRegistrationDelegateCertificate',
+  AuthorizeCommitteeHot = 'AuthorizeCommitteeHotCertificate',
+  ResignCommitteeCold = 'ResignCommitteeColdCertificate',
+  RegisterDelegateRepresentative = 'RegisterDelegateRepresentativeCertificate',
+  UnregisterDelegateRepresentative = 'UnregisterDelegateRepresentativeCertificate',
+  UpdateDelegateRepresentative = 'UpdateDelegateRepresentativeCertificate'
+}
+
+// Conway Certificates
+export interface NewStakeAddressCertificate {
+  __typename: CertificateType.Registration | CertificateType.Unregistration;
+  stakeCredential: Credential;
+  deposit: Lovelace;
+}
+
+// Delegation
+export interface VoteDelegationCertificate {
+  __typename: CertificateType.VoteDelegation;
+  stakeCredential: Credential;
+  dRep: DelegateRepresentative;
+}
+
+export interface StakeVoteDelegationCertificate {
+  __typename: CertificateType.StakeVoteDelegation;
+  stakeCredential: Credential;
+  poolId: PoolId;
+  dRep: DelegateRepresentative;
+}
+
+export interface StakeRegistrationDelegationCertificate {
+  __typename: CertificateType.StakeRegistrationDelegation;
+  stakeCredential: Credential;
+  poolId: PoolId;
+  deposit: Lovelace;
+}
+
+export interface VoteRegistrationDelegationCertificate {
+  __typename: CertificateType.VoteRegistrationDelegation;
+  stakeCredential: Credential;
+  dRep: DelegateRepresentative;
+  deposit: Lovelace;
+}
+
+export interface StakeVoteRegistrationDelegationCertificate {
+  __typename: CertificateType.StakeVoteRegistrationDelegation;
+  stakeCredential: Credential;
+  poolId: PoolId;
+  dRep: DelegateRepresentative;
+  deposit: Lovelace;
+}
+
+// Governance
+
+export interface AuthorizeCommitteeHotCertificate {
+  __typename: CertificateType.AuthorizeCommitteeHot;
+  coldCredential: Credential;
+  hotCredential: Credential;
+}
+
+export interface ResignCommitteeColdCertificate {
+  __typename: CertificateType.ResignCommitteeCold;
+  coldCredential: Credential;
+  anchor: Anchor | null;
+}
+
+export interface RegisterDelegateRepresentativeCertificate {
+  __typename: CertificateType.RegisterDelegateRepresentative;
+  dRepCredential: Credential;
+  deposit: Lovelace;
+  anchor: Anchor | null;
+}
+
+export interface UnRegisterDelegateRepresentativeCertificate {
+  __typename: CertificateType.UnregisterDelegateRepresentative;
+  dRepCredential: Credential;
+  deposit: Lovelace;
+}
+
+export interface UpdateDelegateRepresentativeCertificate {
+  __typename: CertificateType.UpdateDelegateRepresentative;
+  dRepCredential: Credential;
+  anchor: Anchor | null;
+}
+
+/**
+ * @deprecated Removed from the certificate union in the Dijkstra era (protocol version 12).
+ * Use NewStakeAddressCertificate (Registration/Unregistration with an explicit deposit) for
+ * new transactions. Retained for decoding historical chain data.
+ */
+export interface StakeAddressCertificate {
+  __typename: CertificateType.StakeRegistration | CertificateType.StakeDeregistration;
+  stakeCredential: Credential;
+}
+
+export interface PoolRegistrationCertificate {
+  __typename: CertificateType.PoolRegistration;
+  poolParameters: PoolParameters;
+}
+
+export interface PoolRetirementCertificate {
+  __typename: CertificateType.PoolRetirement;
+  poolId: PoolId;
+  epoch: EpochNo;
+}
+
+export interface StakeDelegationCertificate {
+  __typename: CertificateType.StakeDelegation;
+  stakeCredential: Credential;
+  poolId: PoolId;
+}
+
+export enum MirCertificatePot {
+  Reserves = 'reserve',
+  Treasury = 'treasury'
+}
+
+export enum MirCertificateKind {
+  ToOtherPot = 'toOtherPot',
+  ToStakeCreds = 'ToStakeCreds'
+}
+
+/** @deprecated in conway */
+export interface MirCertificate {
+  __typename: CertificateType.MIR;
+  kind: MirCertificateKind;
+  stakeCredential?: Credential;
+  quantity: Lovelace;
+  pot: MirCertificatePot;
+}
+
+/** @deprecated in conway */
+export interface GenesisKeyDelegationCertificate {
+  __typename: CertificateType.GenesisKeyDelegation;
+  genesisHash: Crypto.Hash28ByteBase16;
+  genesisDelegateHash: Crypto.Hash28ByteBase16;
+  vrfKeyHash: Crypto.Hash32ByteBase16;
+}
+
+export type Certificate =
+  | StakeAddressCertificate
+  | PoolRegistrationCertificate
+  | PoolRetirementCertificate
+  | StakeDelegationCertificate
+  | MirCertificate
+  | GenesisKeyDelegationCertificate
+  | NewStakeAddressCertificate
+  | VoteDelegationCertificate
+  | StakeVoteDelegationCertificate
+  | StakeRegistrationDelegationCertificate
+  | VoteRegistrationDelegationCertificate
+  | StakeVoteRegistrationDelegationCertificate
+  | AuthorizeCommitteeHotCertificate
+  | ResignCommitteeColdCertificate
+  | RegisterDelegateRepresentativeCertificate
+  | UnRegisterDelegateRepresentativeCertificate
+  | UpdateDelegateRepresentativeCertificate;
+
+export const PostConwayStakeRegistrationCertificateTypes = [
+  CertificateType.Registration,
+  CertificateType.VoteRegistrationDelegation,
+  CertificateType.StakeRegistrationDelegation,
+  CertificateType.StakeVoteRegistrationDelegation
+] as const;
+
+export const StakeRegistrationCertificateTypes = [
+  CertificateType.StakeRegistration,
+  ...PostConwayStakeRegistrationCertificateTypes
+] as const;
+
+export type StakeRegistrationCertificateTypes = typeof StakeRegistrationCertificateTypes[number];
+
+export const StakeDelegationCertificateTypes = [
+  CertificateType.StakeDelegation,
+  CertificateType.StakeVoteDelegation,
+  CertificateType.StakeRegistrationDelegation,
+  CertificateType.StakeVoteRegistrationDelegation
+] as const;
+
+export type StakeDelegationCertificateTypes = typeof StakeDelegationCertificateTypes[number];
+
+export const RegAndDeregCertificateTypes = [
+  ...StakeRegistrationCertificateTypes,
+  CertificateType.Unregistration,
+  CertificateType.StakeDeregistration
+] as const;
+
+export type RegAndDeregCertificateTypes = typeof RegAndDeregCertificateTypes[number];
+
+export const StakeCredentialCertificateTypes = [
+  ...RegAndDeregCertificateTypes,
+  ...StakeDelegationCertificateTypes,
+  CertificateType.VoteDelegation
+] as const;
+
+export const VoteDelegationCredentialCertificateTypes = [
+  CertificateType.VoteDelegation,
+  CertificateType.VoteRegistrationDelegation,
+  CertificateType.StakeVoteDelegation,
+  CertificateType.StakeVoteRegistrationDelegation
+] as const;
+
+type CertificateTypeMap = {
+  [CertificateType.AuthorizeCommitteeHot]: AuthorizeCommitteeHotCertificate;
+  [CertificateType.GenesisKeyDelegation]: GenesisKeyDelegationCertificate;
+  [CertificateType.MIR]: MirCertificate;
+  [CertificateType.PoolRegistration]: PoolRegistrationCertificate;
+  [CertificateType.PoolRetirement]: PoolRetirementCertificate;
+  [CertificateType.RegisterDelegateRepresentative]: RegisterDelegateRepresentativeCertificate;
+  [CertificateType.Registration]: NewStakeAddressCertificate;
+  [CertificateType.ResignCommitteeCold]: ResignCommitteeColdCertificate;
+  [CertificateType.StakeDelegation]: StakeDelegationCertificate;
+  [CertificateType.StakeDeregistration]: StakeAddressCertificate;
+  [CertificateType.StakeRegistration]: StakeAddressCertificate;
+  [CertificateType.StakeRegistrationDelegation]: StakeRegistrationDelegationCertificate;
+  [CertificateType.StakeVoteDelegation]: StakeVoteDelegationCertificate;
+  [CertificateType.StakeVoteRegistrationDelegation]: StakeVoteRegistrationDelegationCertificate;
+  [CertificateType.UnregisterDelegateRepresentative]: UnRegisterDelegateRepresentativeCertificate;
+  [CertificateType.Unregistration]: NewStakeAddressCertificate;
+  [CertificateType.UpdateDelegateRepresentative]: UpdateDelegateRepresentativeCertificate;
+  [CertificateType.VoteDelegation]: VoteDelegationCertificate;
+  [CertificateType.VoteRegistrationDelegation]: VoteRegistrationDelegationCertificate;
+};
+
+/** Checks if {@link certificate} is one {@link certificateTypes}, and narrows down its type */
+export const isCertType = <K extends keyof CertificateTypeMap>(
+  certificate: Certificate,
+  certificateTypes: readonly K[]
+): certificate is CertificateTypeMap[K] => certificateTypes.includes(certificate.__typename as K);
+
+// LW-10773 add the deposit and change StakeRegistration certificate into Registration certificate
+/**
+ * Creates a stake key registration certificate from a given reward account.
+ *
+ * @param rewardAccount The reward account to be registered.
+ * @deprecated Creates a StakeRegistration (kind 0) certificate, which is removed from the
+ * certificate union in the Dijkstra era (protocol version 12). Create a Registration (kind 7)
+ * certificate with an explicit deposit for new transactions.
+ */
+export const createStakeRegistrationCert = (rewardAccount: RewardAccount): Certificate => ({
+  __typename: CertificateType.StakeRegistration,
+  stakeCredential: {
+    hash: RewardAccount.toHash(rewardAccount),
+    type: CredentialType.KeyHash
+  }
+});
+
+// LW-10773 change deposit from optional to required and remove StakeDeregistration certificate
+/**
+ * Creates a stake key de-registration certificate from a given reward account.
+ *
+ * @param rewardAccount The reward account to be de-registered.
+ * @param deposit The deposit to be refunded. When provided, an Unregistration (kind 8)
+ * certificate is created.
+ * @deprecated Calling without deposit creates a StakeDeregistration (kind 1) certificate, which
+ * is removed from the certificate union in the Dijkstra era (protocol version 12). Always pass
+ * the deposit so an Unregistration (kind 8) certificate is created.
+ */
+export const createStakeDeregistrationCert = (rewardAccount: RewardAccount, deposit?: Lovelace): Certificate =>
+  deposit === undefined
+    ? {
+        __typename: CertificateType.StakeDeregistration,
+        stakeCredential: {
+          hash: RewardAccount.toHash(rewardAccount),
+          type: CredentialType.KeyHash
+        }
+      }
+    : {
+        __typename: CertificateType.Unregistration,
+        deposit,
+        stakeCredential: {
+          hash: RewardAccount.toHash(rewardAccount),
+          type: CredentialType.KeyHash
+        }
+      };
+
+/**
+ * Creates a delegation certificate from a given reward account and a pool id.
+ *
+ * @param rewardAccount The reward account to be registered.
+ * @param poolId The id of the pool that we are delegating to.
+ */
+export const createDelegationCert = (rewardAccount: RewardAccount, poolId: PoolId): Certificate => ({
+  __typename: CertificateType.StakeDelegation,
+  poolId,
+  stakeCredential: {
+    hash: RewardAccount.toHash(rewardAccount),
+    type: CredentialType.KeyHash
+  }
+});
+
+/** Filters certificates, returning only stake key register/deregister certificates */
+export const stakeKeyCertificates = (certificates?: Certificate[]) =>
+  certificates?.map((cert) => (isCertType(cert, RegAndDeregCertificateTypes) ? cert : undefined)).filter(isNotNil) ||
+  [];
+
+export const includesAnyCertificate = (haystack: Certificate[], needle: readonly CertificateType[]) =>
+  haystack.some(({ __typename }) => needle.includes(__typename)) || false;
