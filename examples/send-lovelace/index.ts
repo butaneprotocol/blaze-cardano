@@ -1,4 +1,4 @@
-import { ColdWallet, Core, Blaze, Maestro } from "@blaze-cardano/sdk";
+import { ColdWallet, Core, Blaze, Blockfrost } from "@blaze-cardano/sdk";
 import * as readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 const rl = readline.createInterface({ input: stdin, output: stdout });
@@ -14,11 +14,13 @@ const blazeWallet = Core.addressFromBech32(
   "addr1qye93uefq8r6ezk0kzq443u9zht7ylu5nelvw8eracd200ylzvhpxn9c4g2fyxe5rlmn6z5qmm3dtjqfjn2vvy58l88szlpjw4",
 );
 
-const provider = new Maestro({
-  network: "mainnet",
-  apiKey: await rl.question("Please enter your mainnet maestro key: "),
+const provider = new Blockfrost({
+  network: "cardano-mainnet",
+  projectId: await rl.question(
+    "Please enter your mainnet Blockfrost project ID: ",
+  ),
 });
-const wallet = new ColdWallet(address, 0, provider);
+const wallet = new ColdWallet(address, provider.network, provider);
 
 console.log("Your blaze address: ", wallet.address.toBech32());
 const blaze = await Blaze.from(provider, wallet);

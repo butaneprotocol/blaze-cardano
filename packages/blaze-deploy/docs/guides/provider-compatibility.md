@@ -11,7 +11,6 @@ Script deployment reconciliation depends on `Provider.resolveScriptRef`. The met
 | Provider | Behavior | Notes |
 | --- | --- | --- |
 | Blockfrost | Uses provider script-reference lookup where available and caches resolved scripts. | Good for public testnet CI because the deployment job can reuse existing Blockfrost credentials. |
-| Maestro | Explicitly scans deployment-address UTxOs and compares reference-script hashes. | Useful for parity checks and applications already using Maestro for submission or evaluation. |
 | Kupmios | Uses Kupo outputs and Ogmios script resolution. | Good for projects running their own infrastructure or needing websocket-backed chain state. |
 | Emulator | Resolves deterministic in-memory script-reference UTxOs for tests. | Useful for local integration tests and examples that should not require credentials. |
 
