@@ -25,6 +25,12 @@ export type TransactionBody = C.Serialization.TransactionBody;
 export const TransactionWitnessSet = C.Serialization.TransactionWitnessSet;
 export type TransactionWitnessSet = C.Serialization.TransactionWitnessSet;
 
+export const SubTransaction = C.Serialization.SubTransaction;
+export type SubTransaction = C.Serialization.SubTransaction;
+
+export const SubTransactionBody = C.Serialization.SubTransactionBody;
+export type SubTransactionBody = C.Serialization.SubTransactionBody;
+
 export const TransactionUnspentOutput =
   C.Serialization.TransactionUnspentOutput;
 export type TransactionUnspentOutput = C.Serialization.TransactionUnspentOutput;
