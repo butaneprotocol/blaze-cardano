@@ -3,7 +3,9 @@ import {
   fromHex,
   toHex,
   HexBlob,
+  CredentialType,
 } from "@blaze-cardano/core";
+import type { SubTransaction } from "@blaze-cardano/core";
 import { type CIP30DataSignature } from "./types";
 
 // This code was ported from lucid
@@ -65,4 +67,17 @@ export async function signData(
     signature: HexBlob(toHex(coseSign1.to_bytes())),
     key: HexBlob(toHex(key.to_bytes())),
   };
+}
+
+/** The key hashes a sub-transaction's guards name, whether given as key hashes or as credentials. */
+export function guardKeyHashes(subTx: SubTransaction): string[] {
+  const guards = subTx.body().guards();
+  return (
+    guards?.keyHashes() ??
+    guards
+      ?.credentials()
+      ?.filter((credential) => credential.type === CredentialType.KeyHash)
+      .map((credential) => credential.hash) ??
+    []
+  );
 }

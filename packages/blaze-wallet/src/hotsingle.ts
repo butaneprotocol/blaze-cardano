@@ -20,13 +20,14 @@ import type {
   TransactionUnspentOutput,
   Value,
   Transaction,
+  SubTransaction,
   Ed25519PrivateNormalKeyHex,
   NetworkId,
 } from "@blaze-cardano/core";
 import type { Provider } from "@blaze-cardano/query";
 import type { Wallet, CIP30DataSignature } from "./types";
 import * as value from "@blaze-cardano/tx/value";
-import { signData } from "./utils";
+import { guardKeyHashes, signData } from "./utils";
 
 /**
  * Wallet class that interacts with the HotSingleWallet.
@@ -170,50 +171,12 @@ export class HotSingleWallet implements Wallet {
     partialSign: boolean = true,
     signWithStakeKey: boolean = false,
   ): Promise<TransactionWitnessSet> {
-    if (partialSign == false) {
-      throw new Error(
-        "signTx: Hot single wallet only supports partial signing = true",
-      );
-    }
-
-    const tws = new TransactionWitnessSet();
-    const vkeys = [
-      new VkeyWitness(
-        this.paymentPublicKey.hex(),
-        Ed25519SignatureHex(
-          signMessage(HexBlob(tx.getId()), this.paymentSigningKey),
-        ),
-      ).toCore(),
-    ];
-
-    if (!signWithStakeKey && this.stakePublicKey) {
-      const stakeKeyHash = blake2b_224(HexBlob(this.stakePublicKey.hex()));
-      signWithStakeKey =
-        tx
-          .body()
-          .requiredSigners()
-          ?.values()
-          .some((required) => required.value() === stakeKeyHash) ?? false;
-    }
-
-    if (signWithStakeKey) {
-      if (!this.stakeSigningKey || !this.stakePublicKey) {
-        throw new Error(
-          "signTx: Signing with stake key requested but no stake key is available",
-        );
-      }
-      vkeys.push(
-        new VkeyWitness(
-          this.stakePublicKey.hex(),
-          Ed25519SignatureHex(
-            signMessage(HexBlob(tx.getId()), this.stakeSigningKey),
-          ),
-        ).toCore(),
-      );
-    }
-
-    tws.setVkeys(CborSet.fromCore(vkeys, VkeyWitness.fromCore));
-    return tws;
+    return this.witness(
+      tx.getId(),
+      (tx.body().requiredSigners()?.values() ?? []).map((rs) => rs.value()),
+      partialSign,
+      signWithStakeKey,
+    );
   }
 
   /**
@@ -269,5 +232,72 @@ export class HotSingleWallet implements Wallet {
    */
   async getCollateral(): Promise<TransactionUnspentOutput[]> {
     return [];
+  }
+
+  /**
+   * Requests signatures for a CIP-0118 sub-transaction.
+   * @param {SubTransaction} subTx - The sub-transaction to sign.
+   * @param {boolean} partialSign - Whether to partially sign the sub-transaction.
+   * @param {boolean} signWithStakeKey - Whether to also sign with the stake key.
+   * @returns {Promise<TransactionWitnessSet>} - The vkey witnesses.
+   */
+  async signSubTransaction(
+    subTx: SubTransaction,
+    partialSign: boolean = true,
+    signWithStakeKey: boolean = false,
+  ): Promise<TransactionWitnessSet> {
+    return this.witness(
+      subTx.getId(),
+      guardKeyHashes(subTx),
+      partialSign,
+      signWithStakeKey,
+    );
+  }
+
+  /**
+   * Signs `id` with the payment key, and with the stake key when requested or
+   * when `requiredKeyHashes` names it.
+   */
+  private async witness(
+    id: TransactionId,
+    requiredKeyHashes: string[],
+    partialSign: boolean,
+    signWithStakeKey: boolean,
+  ): Promise<TransactionWitnessSet> {
+    if (partialSign == false) {
+      throw new Error(
+        "signTx: Hot single wallet only supports partial signing = true",
+      );
+    }
+
+    const tws = new TransactionWitnessSet();
+    const vkeys = [
+      new VkeyWitness(
+        this.paymentPublicKey.hex(),
+        Ed25519SignatureHex(signMessage(HexBlob(id), this.paymentSigningKey)),
+      ).toCore(),
+    ];
+
+    if (!signWithStakeKey && this.stakePublicKey) {
+      const stakeKeyHash = blake2b_224(HexBlob(this.stakePublicKey.hex()));
+      signWithStakeKey = requiredKeyHashes.includes(stakeKeyHash);
+    }
+
+    if (signWithStakeKey) {
+      if (!this.stakeSigningKey || !this.stakePublicKey) {
+        throw new Error(
+          "signTx: Signing with stake key requested but no stake key is available",
+        );
+      }
+      vkeys.push(
+        new VkeyWitness(
+          this.stakePublicKey.hex(),
+          Ed25519SignatureHex(signMessage(HexBlob(id), this.stakeSigningKey)),
+        ).toCore(),
+      );
+    }
+
+    tws.setVkeys(CborSet.fromCore(vkeys, VkeyWitness.fromCore));
+    return tws;
   }
 }

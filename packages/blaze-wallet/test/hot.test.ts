@@ -62,4 +62,76 @@ describe("HotWallet", () => {
       "84582aa201276761646472657373581de124e90568979d86012f1ee49baf1e9a8e3e2f4995fa559ec0ce516fc3a166686173686564f44d48656c6c6f2c20576f726c6421584072766d627c0d3a1ecd4da2cc42b5b6b2cc4c44f97ca7f9f42cb0b5503a80778230594cffd3da6da9932f427768cf8eb8d4a0d8f114947f9634c4ce87f7bbb306",
     );
   });
+
+  describe("signing a sub-transaction", () => {
+    const subTransaction = (guards?: Core.Serialization.Guards) => {
+      const body = new Core.SubTransactionBody(
+        Core.CborSet.fromCore(
+          [
+            new Core.TransactionInput(
+              Core.TransactionId("ab".repeat(32)),
+              0n,
+            ).toCore(),
+          ],
+          Core.TransactionInput.fromCore,
+        ),
+        [
+          new Core.TransactionOutput(
+            Core.Address.fromBech32(expectedAddress),
+            new Core.Value(2_000_000n),
+          ),
+        ],
+      );
+      if (guards) body.setGuards(guards);
+      return new Core.SubTransaction(body, new Core.TransactionWitnessSet());
+    };
+    const verifies = (
+      [vkey, signature]: [Core.Ed25519PublicKeyHex, Core.Ed25519SignatureHex],
+      subTx: Core.SubTransaction,
+    ) =>
+      Core.Ed25519PublicKey.fromHex(vkey).verify(
+        Core.Ed25519Signature.fromHex(signature),
+        Core.HexBlob(subTx.getId()),
+      );
+
+    it("signs the sub-transaction id with the payment key", async () => {
+      const subTx = subTransaction();
+
+      const witnesses = await wallet.signSubTransaction(subTx, true);
+
+      const vkeys = witnesses.vkeys()!.toCore();
+      expect(vkeys).toHaveLength(1);
+      expect(verifies(vkeys[0]!, subTx)).toBe(true);
+    });
+
+    it("adds the stake key when a guard names it as a credential", async () => {
+      const stakeKeyHash = Core.Hash28ByteBase16(
+        wallet.address.getProps().delegationPart!.hash,
+      );
+      const subTx = subTransaction(
+        Core.Serialization.Guards.fromCredentials([
+          { type: Core.CredentialType.KeyHash, hash: stakeKeyHash },
+        ]),
+      );
+
+      const witnesses = await wallet.signSubTransaction(subTx, true);
+
+      expect(witnesses.vkeys()!.toCore()).toHaveLength(2);
+    });
+
+    it("adds the stake key when a key guard names it", async () => {
+      const stakeKeyHash = Core.Ed25519KeyHashHex(
+        wallet.address.getProps().delegationPart!.hash,
+      );
+      const subTx = subTransaction(
+        Core.Serialization.Guards.fromKeyHashes([stakeKeyHash]),
+      );
+
+      const witnesses = await wallet.signSubTransaction(subTx, true);
+
+      const vkeys = witnesses.vkeys()!.toCore();
+      expect(vkeys).toHaveLength(2);
+      expect(vkeys.every((vkey) => verifies(vkey, subTx))).toBe(true);
+    });
+  });
 });

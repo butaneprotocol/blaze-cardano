@@ -4,6 +4,7 @@ import type {
   TransactionUnspentOutput,
   Value,
   Transaction,
+  SubTransaction,
   Bip32PrivateKeyHex,
   Bip32PublicKey,
 } from "@blaze-cardano/core";
@@ -22,7 +23,7 @@ import {
 import type { Provider } from "@blaze-cardano/query";
 import type { Wallet, CIP30DataSignature } from "./types";
 import * as value from "@blaze-cardano/tx/value";
-import { signData } from "./utils";
+import { guardKeyHashes, signData } from "./utils";
 
 /**
  * Wallet class that interacts with the HotWallet.
@@ -228,54 +229,12 @@ export class HotWallet implements Wallet {
     partialSign: boolean = true,
     signWithStakeKey: boolean = false,
   ): Promise<TransactionWitnessSet> {
-    if (partialSign == false) {
-      throw new Error(
-        "signTx: Hot wallet only supports partial signing = true",
-      );
-    }
-
-    const signature = this.signingKey.toRawKey().sign(HexBlob(tx.getId()));
-
-    const tws = new TransactionWitnessSet();
-
-    const payemntVkw = new VkeyWitness(
-      this.publicKey.toRawKey().hex(),
-      signature.hex(),
+    return this.witness(
+      tx.getId(),
+      (tx.body().requiredSigners()?.values() ?? []).map((rs) => rs.value()),
+      partialSign,
+      signWithStakeKey,
     );
-
-    const vkeys = [payemntVkw.toCore()];
-
-    // Auto-detect: sign with stake key if requiredSigners includes our stake key hash
-    if (!signWithStakeKey && this.stakeSigningKey) {
-      const stakeKeyHash = (
-        await (await this.stakeSigningKey.toPublic()).toRawKey().hash()
-      ).hex();
-      const requiredSigners = tx.body().requiredSigners()?.values() ?? [];
-      for (const rs of requiredSigners) {
-        if (rs.value() === stakeKeyHash) {
-          signWithStakeKey = true;
-          break;
-        }
-      }
-    }
-
-    if (signWithStakeKey) {
-      if (!this.stakeSigningKey) {
-        throw new Error(
-          "signTx: Signing with stake key requested but no stake key is available",
-        );
-      }
-      const stakeSignature = this.stakeSigningKey
-        .toRawKey()
-        .sign(HexBlob(tx.getId()));
-      const stakePublicKey = this.stakeSigningKey.toPublic().toRawKey().hex();
-      const stakeVkw = new VkeyWitness(stakePublicKey, stakeSignature.hex());
-
-      vkeys.push(stakeVkw.toCore());
-    }
-
-    tws.setVkeys(CborSet.fromCore(vkeys, VkeyWitness.fromCore));
-    return tws;
   }
 
   /**
@@ -323,5 +282,77 @@ export class HotWallet implements Wallet {
    */
   async getCollateral(): Promise<TransactionUnspentOutput[]> {
     return [];
+  }
+
+  /**
+   * Requests signatures for a CIP-0118 sub-transaction.
+   * @param {SubTransaction} subTx - The sub-transaction to sign.
+   * @param {boolean} partialSign - Whether to partially sign the sub-transaction.
+   * @param {boolean} signWithStakeKey - Whether to also sign with the stake key.
+   * @returns {Promise<TransactionWitnessSet>} - The vkey witnesses.
+   */
+  async signSubTransaction(
+    subTx: SubTransaction,
+    partialSign: boolean = true,
+    signWithStakeKey: boolean = false,
+  ): Promise<TransactionWitnessSet> {
+    return this.witness(
+      subTx.getId(),
+      guardKeyHashes(subTx),
+      partialSign,
+      signWithStakeKey,
+    );
+  }
+
+  /**
+   * Signs `id` with the payment key, and with the stake key when requested or
+   * when `requiredKeyHashes` names it.
+   */
+  private async witness(
+    id: TransactionId,
+    requiredKeyHashes: string[],
+    partialSign: boolean,
+    signWithStakeKey: boolean,
+  ): Promise<TransactionWitnessSet> {
+    if (partialSign == false) {
+      throw new Error(
+        "signTx: Hot wallet only supports partial signing = true",
+      );
+    }
+
+    const signature = this.signingKey.toRawKey().sign(HexBlob(id));
+
+    const tws = new TransactionWitnessSet();
+
+    const payemntVkw = new VkeyWitness(
+      this.publicKey.toRawKey().hex(),
+      signature.hex(),
+    );
+
+    const vkeys = [payemntVkw.toCore()];
+
+    // Auto-detect: sign with the stake key if a required key hash names it
+    if (!signWithStakeKey && this.stakeSigningKey) {
+      const stakeKeyHash = (
+        await (await this.stakeSigningKey.toPublic()).toRawKey().hash()
+      ).hex();
+      signWithStakeKey = requiredKeyHashes.includes(stakeKeyHash);
+    }
+
+    if (signWithStakeKey) {
+      if (!this.stakeSigningKey) {
+        throw new Error(
+          "signTx: Signing with stake key requested but no stake key is available",
+        );
+      }
+      const stakeSignature = this.stakeSigningKey.toRawKey().sign(HexBlob(id));
+      const stakePublicKey = this.stakeSigningKey.toPublic().toRawKey().hex();
+      const stakeVkw = new VkeyWitness(stakePublicKey, stakeSignature.hex());
+
+      vkeys.push(stakeVkw.toCore());
+    }
+
+    tws.setVkeys(CborSet.fromCore(vkeys, VkeyWitness.fromCore));
+    return tws;
   }
 }

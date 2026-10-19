@@ -78,4 +78,68 @@ describe("HotSingleWallet", () => {
       "stake1u9dkr76agvvj04n740a2zcq9w8rgl8xhhfwm9ds7vzdu7psgp9u9d",
     );
   });
+
+  describe("signing a sub-transaction", () => {
+    const paymentKey = Core.Ed25519PrivateNormalKeyHex(
+      "02f984433fca5ccad486622ebdc5a43c2248fc6305bfec8d67b887dd1802861e",
+    );
+    const stakeKey = Core.Ed25519PrivateNormalKeyHex("11".repeat(32));
+    const subTransaction = (guards?: Core.Serialization.Guards) => {
+      const body = new Core.SubTransactionBody(
+        Core.CborSet.fromCore(
+          [
+            new Core.TransactionInput(
+              Core.TransactionId("ab".repeat(32)),
+              0n,
+            ).toCore(),
+          ],
+          Core.TransactionInput.fromCore,
+        ),
+        [
+          new Core.TransactionOutput(
+            Core.Address.fromBech32(expectedAddress),
+            new Core.Value(2_000_000n),
+          ),
+        ],
+      );
+      if (guards) body.setGuards(guards);
+      return new Core.SubTransaction(body, new Core.TransactionWitnessSet());
+    };
+    const verifies = (
+      [vkey, signature]: [Core.Ed25519PublicKeyHex, Core.Ed25519SignatureHex],
+      subTx: Core.SubTransaction,
+    ) =>
+      Core.Ed25519PublicKey.fromHex(vkey).verify(
+        Core.Ed25519Signature.fromHex(signature),
+        Core.HexBlob(subTx.getId()),
+      );
+
+    it("signs the sub-transaction id with the payment key, and the stake key when a key guard names it", async () => {
+      const wallet = new HotSingleWallet(
+        paymentKey,
+        Core.NetworkId.Mainnet,
+        mockProvider,
+        stakeKey,
+      );
+      const stakeKeyHash = Core.Ed25519KeyHashHex(
+        wallet.address.getProps().delegationPart!.hash,
+      );
+      const plain = subTransaction();
+      const guarded = subTransaction(
+        Core.Serialization.Guards.fromKeyHashes([stakeKeyHash]),
+      );
+
+      const plainVkeys = (await wallet.signSubTransaction(plain, true))
+        .vkeys()!
+        .toCore();
+      const guardedVkeys = (await wallet.signSubTransaction(guarded, true))
+        .vkeys()!
+        .toCore();
+
+      expect(plainVkeys).toHaveLength(1);
+      expect(verifies(plainVkeys[0]!, plain)).toBe(true);
+      expect(guardedVkeys).toHaveLength(2);
+      expect(guardedVkeys.every((vkey) => verifies(vkey, guarded))).toBe(true);
+    });
+  });
 });
