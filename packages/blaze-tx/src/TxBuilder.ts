@@ -35,6 +35,9 @@ import {
   TransactionInput,
   TransactionBody,
   Transaction,
+  SubTransaction,
+  SubTransactionBody,
+  UTxOSelectionError,
   Value,
   TransactionOutput,
   PlutusData,
@@ -270,6 +273,10 @@ export class TxBuilder {
   private _burnAddress?: Address;
   private deferredRedeemers: Map<string, DeferredRedeemer> = new Map();
   private completedTransaction?: Transaction;
+  private completedSubTransaction?: SubTransaction;
+  private preCompleteHooksRun = 0;
+  private requiredTopLevelGuards: Map<Credential, PlutusData | null> =
+    new Map();
 
   /**
    * Constructs a new instance of the TxBuilder class.
@@ -2037,17 +2044,17 @@ export class TxBuilder {
   async complete(
     params: UseCoinSelectionArgs = { useCoinSelection: true },
   ): Promise<Transaction> {
-    if (this.completedTransaction) {
+    if (this.completedTransaction || this.completedSubTransaction) {
       throw new TxBuilderReuseError(
         "TxBuilder complete: this builder has already completed a transaction. Create a new TxBuilder for the next transaction.",
       );
     }
     const { useCoinSelection = true } = params;
-    // Execute pre-complete hooks
-    if (this.preCompleteHooks && this.preCompleteHooks.length > 0) {
-      for (const hook of this.preCompleteHooks) {
-        await hook(this);
-      }
+    await this.runPreCompleteHooks();
+    if (this.requiredTopLevelGuards.size > 0) {
+      throw new Error(
+        "TxBuilder complete: required top-level guards belong to sub-transactions",
+      );
     }
     // Ensure a change address has been set before proceeding.
     if (!this.changeAddress) {
@@ -3168,5 +3175,327 @@ export class TxBuilder {
     }
     this.preCompleteHooks.push(hook);
     return this;
+  }
+
+  /**
+   * Completes the builder as a CIP-0118 sub-transaction: no fee and no
+   * collateral, since the enclosing top-level transaction pays both.
+   *
+   * @param {Value} imbalance - What the sub-transaction leaves for the rest of
+   *   the batch, per asset: positive for a surplus the batch collects, negative
+   *   for a deficit the batch supplies. Defaults to balanced.
+   * @returns {Promise<SubTransaction>} The sub-transaction, carrying its scripts and datums but no vkey witnesses.
+   * @throws {UTxOSelectionError} If the wallet can't cover what `imbalance` leaves to it.
+   * @experimental CIP-0118 is not live on mainnet; this API may change.
+   */
+  async completeSubTransaction(
+    imbalance: Value = value.zero(),
+  ): Promise<SubTransaction> {
+    if (this.completedTransaction || this.completedSubTransaction) {
+      throw new TxBuilderReuseError(
+        "TxBuilder completeSubTransaction: this builder has already completed a transaction. Create a new TxBuilder for the next transaction.",
+      );
+    }
+    await this.prepareSubTransaction();
+    const shortfall = this.spendTowards(imbalance);
+    if (!value.empty(shortfall)) {
+      throw new UTxOSelectionError("final", value.negate(shortfall));
+    }
+    this.signedSubTransactionSize();
+    const subTransaction = this.draftSubTransaction(
+      this.buildFinalWitnessSet([]),
+    );
+    this.completedSubTransaction = subTransaction;
+    // As in complete(): the sub-transaction owns the mutable structures now.
+    this.body = new TransactionBody(
+      CborSet.fromCore([], TransactionInput.fromCore),
+      [],
+      0n,
+      undefined,
+    );
+    this.auxiliaryData = undefined;
+    return subTransaction;
+  }
+
+  /**
+   * Estimates a sub-transaction without completing it. Runs the pre-complete
+   * hooks but otherwise leaves the builder unchanged.
+   *
+   * @param {Value} surplus - What the sub-transaction will leave for the batch
+   *   to collect (for example a payment), as it will be passed to
+   *   {@link completeSubTransaction}. Defaults to none.
+   * @returns The `deficit` the wallet can't cover (non-positive entries; pass
+   *   `value.merge(deficit, surplus)` to {@link completeSubTransaction}), the
+   *   `fee` this sub-transaction adds to the top-level transaction's minimum
+   *   fee at the builder's protocol parameters, and its `signedSize` in bytes
+   *   once its vkey witnesses are added.
+   *
+   *   `fee` counts this sub-transaction's reference scripts at the first price
+   *   tier; reference scripts elsewhere in the batch can raise it. It leaves out
+   *   costs that fall on the top-level transaction itself: its sub-transaction
+   *   list framing, vkey witnesses for key guards it is required to carry, and
+   *   guard script execution.
+   *
+   *   When the wallet can't cover the sub-transaction (or lacks an asset in
+   *   `surplus`), the estimate spends every spare UTxO, so `fee` and
+   *   `signedSize` can exceed what {@link completeSubTransaction} then builds.
+   * @experimental CIP-0118 is not live on mainnet; this API may change.
+   */
+  async estimateSubTransaction(surplus: Value = value.zero()): Promise<{
+    deficit: Value;
+    fee: bigint;
+    signedSize: number;
+  }> {
+    if (this.completedTransaction || this.completedSubTransaction) {
+      throw new TxBuilderReuseError(
+        "TxBuilder estimateSubTransaction: this builder has already completed a transaction.",
+      );
+    }
+    await this.prepareSubTransaction();
+    const restore = this.snapshotBalancingState();
+    try {
+      const deficit = this.spendTowards(surplus);
+      const signedSize = this.signedSubTransactionSize();
+      const referenceScripts = [
+        ...this.body.inputs().values(),
+        ...(this.body.referenceInputs()?.values() ?? []),
+      ]
+        .map((input) =>
+          [...this.utxoScope]
+            .find((utxo) => isEqualInput(utxo.input(), input))
+            ?.output()
+            .scriptRef(),
+        )
+        .filter((script) => script !== undefined);
+      const referenceScriptFee =
+        this.params.minFeeReferenceScripts && referenceScripts.length > 0
+          ? calculateReferenceScriptFee(referenceScripts, this.params)
+          : 0;
+      const fee = BigInt(
+        Math.ceil(
+          signedSize * this.params.minFeeCoefficient + referenceScriptFee,
+        ),
+      );
+      return { deficit, fee, signedSize };
+    } finally {
+      restore();
+    }
+  }
+
+  /**
+   * Requires the top-level transaction of any batch carrying this
+   * sub-transaction to list `credential` among its guards (CIP-0118
+   * `required_top_level_guards`), with `data` as the argument for a script
+   * guard. Sub-transactions only; {@link complete} refuses it.
+   *
+   * @param {Credential} credential - The guard the top-level transaction must carry.
+   * @param {PlutusData} [data] - The argument for a script guard.
+   * @returns {TxBuilder} The same transaction builder.
+   * @experimental CIP-0118 is not live on mainnet; this API may change.
+   */
+  addRequiredTopLevelGuard(
+    credential: Credential,
+    data?: PlutusData,
+  ): TxBuilder {
+    this.requiredTopLevelGuards.set(credential, data ?? null);
+    return this;
+  }
+
+  /** Runs the pre-complete hooks and checks the builder can become a sub-transaction. */
+  private async prepareSubTransaction(): Promise<void> {
+    await this.runPreCompleteHooks();
+    if (!this.changeAddress) {
+      throw new Error(
+        "Cannot complete sub-transaction without setting change address",
+      );
+    }
+    if (
+      this.requiredPlutusScripts.size > 0 ||
+      this.redeemers.size() > 0 ||
+      this.deferredRedeemers.size > 0
+    ) {
+      // CIP-0118 forbids PlutusV1-V3 in sub-transactions.
+      throw new Error(
+        "TxBuilder: a sub-transaction can't run PlutusV1-V3 scripts, and PlutusV4 is not supported yet",
+      );
+    }
+    if (this.feePadding > 0n || this.minimumFee > 0n) {
+      throw new Error(
+        "TxBuilder: a sub-transaction pays no fee; fee padding and a minimum fee belong to the top-level transaction",
+      );
+    }
+    if (this.collateralUtxos.size > 0) {
+      throw new Error(
+        "TxBuilder: a sub-transaction posts no collateral; it belongs to the top-level transaction",
+      );
+    }
+    // A failed complete() leaves its fee behind; a sub-transaction has none.
+    this.fee = 0n;
+    this.body.setFee(0n);
+  }
+
+  /**
+   * Captures everything balancing can change and returns a function that
+   * puts it back.
+   */
+  private snapshotBalancingState(): () => void {
+    const body = this.body.toCbor();
+    const fee = this.fee;
+    const changeOutputIndex = this.changeOutputIndex;
+    const utxoScope = new Set(this.utxoScope);
+    const requiredWitnesses = new Set(this.requiredWitnesses);
+    const requiredNativeScripts = new Set(this.requiredNativeScripts);
+    const requiredPlutusScripts = new Set(this.requiredPlutusScripts);
+    const plutusData = new Set(this.plutusData);
+    const scriptScope = new Set(this.scriptScope);
+    const scriptSeen = new Set(this.scriptSeen);
+    const consumedSpendInputs = [...this.consumedSpendInputs];
+    const deferredRedeemers = new Map(this.deferredRedeemers);
+    const redeemers = this.redeemers.toCbor();
+    return () => {
+      this.body = TransactionBody.fromCbor(body);
+      this.fee = fee;
+      this.changeOutputIndex = changeOutputIndex;
+      this.utxoScope = utxoScope;
+      this.requiredWitnesses = requiredWitnesses;
+      this.requiredNativeScripts = requiredNativeScripts;
+      this.requiredPlutusScripts = requiredPlutusScripts;
+      this.plutusData = plutusData;
+      this.scriptScope = scriptScope;
+      this.scriptSeen = scriptSeen;
+      this.consumedSpendInputs = consumedSpendInputs;
+      this.deferredRedeemers = deferredRedeemers;
+      this.redeemers = Redeemers.fromCbor(redeemers);
+    };
+  }
+
+  /**
+   * Spends spare UTxOs and adjusts change until the body's surplus equals
+   * `target`, returning the part of `target`'s deficit the wallet couldn't
+   * cover (zero when it could). Spends at least one input when the wallet has
+   * a spare one.
+   */
+  private spendTowards(target: Value): Value {
+    for (let iteration = 0; iteration < 20; iteration++) {
+      const surplus = value.sub(this.getAssetSurplus(), target);
+      const deficit = value.negatives(surplus);
+      if (deficit.coin() < 0n) {
+        const recovered = this.recoverLovelaceFromChangeOutput(-deficit.coin());
+        deficit.setCoin(deficit.coin() + recovered);
+      }
+      const spare = this.spareUtxos();
+      if (value.empty(deficit)) {
+        if (this.body.inputs().size() === 0 && spare.length > 0) {
+          this.addInput(spare[0]!);
+          continue;
+        }
+        this.adjustChangeOutput(
+          value.positives(value.sub(this.getAssetSurplus(), target)),
+        );
+        if (value.empty(value.sub(this.getAssetSurplus(), target))) {
+          return value.zero();
+        }
+        continue;
+      }
+      let selected: TransactionUnspentOutput[];
+      try {
+        selected = this.coinSelector(
+          spare,
+          value.negate(deficit),
+        ).selectedInputs;
+      } catch (e) {
+        if (!(e instanceof UTxOSelectionError)) throw e;
+        selected = e.selectedInputs?.length ? e.selectedInputs : spare;
+      }
+      for (const input of selected) {
+        this.addInput(input);
+      }
+      this.adjustChangeOutput(
+        value.positives(value.sub(this.getAssetSurplus(), target)),
+      );
+      if (selected.length === 0) {
+        return value.negatives(value.sub(this.getAssetSurplus(), target));
+      }
+    }
+    throw new Error("TxBuilder: sub-transaction balancing did not converge");
+  }
+
+  /**
+   * The balanced body's size once signed, refusing a body with no input (its
+   * id could repeat) or one over maxTxSize.
+   */
+  private signedSubTransactionSize(): number {
+    if (this.body.inputs().size() === 0) {
+      throw new Error(
+        "TxBuilder: a sub-transaction must spend at least one input, but there are no spare inputs to add",
+      );
+    }
+    const signedSize =
+      this.draftSubTransaction(this.buildPlaceholderWitnessSet()).toCbor()
+        .length / 2;
+    if (signedSize > this.params.maxTxSize) {
+      throw new Error(
+        `TxBuilder: the signed sub-transaction is ${signedSize} bytes, over maxTxSize (${this.params.maxTxSize})`,
+      );
+    }
+    return signedSize;
+  }
+
+  /** The builder's body and `witnessSet` as a sub-transaction, committing to its datums. */
+  private draftSubTransaction(
+    witnessSet: TransactionWitnessSet,
+  ): SubTransaction {
+    const body = this.subTransactionBody();
+    const scriptDataHash = this.getScriptDataHash(witnessSet);
+    if (scriptDataHash) body.setScriptDataHash(scriptDataHash);
+    return new SubTransaction(body, witnessSet, this.auxiliaryData);
+  }
+
+  /**
+   * The builder's body as a sub-transaction body: every field but fee and
+   * collateral, with required signers as key guards.
+   */
+  private subTransactionBody(): SubTransactionBody {
+    return SubTransactionBody.fromCore({
+      ...this.body.toCore(),
+      requiredTopLevelGuards: [...this.requiredTopLevelGuards].map(
+        ([credential, data]) => ({
+          credential: credential.toCore(),
+          datum: data?.toCore() ?? null,
+        }),
+      ),
+    });
+  }
+
+  /**
+   * UTxOs in scope that the body doesn't spend yet and coin selection may use:
+   * key-locked ones, or script-locked ones when the wallet holds nothing else.
+   */
+  private spareUtxos(): TransactionUnspentOutput[] {
+    const utxos = [...this.utxos.values()];
+    const scriptOnlyWallet = utxos.every(
+      (utxo) =>
+        utxo.output().address().getProps().paymentPart?.type !==
+        CredentialType.KeyHash,
+    );
+    const inputs = [...this.body.inputs().values()];
+    return utxos.filter(
+      (utxo) =>
+        !inputs.some((input) => isEqualInput(input, utxo.input())) &&
+        (scriptOnlyWallet ||
+          utxo.output().address().getProps().paymentPart?.type !==
+            CredentialType.ScriptHash),
+    );
+  }
+
+  /**
+   * Runs each pre-complete hook once per builder: a hook that throws runs again
+   * on the next call, and a hook added later runs then.
+   */
+  private async runPreCompleteHooks(): Promise<void> {
+    while (this.preCompleteHooksRun < this.preCompleteHooks.length) {
+      await this.preCompleteHooks[this.preCompleteHooksRun]!(this);
+      this.preCompleteHooksRun++;
+    }
   }
 }

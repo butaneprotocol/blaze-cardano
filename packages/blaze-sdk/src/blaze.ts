@@ -1,7 +1,9 @@
 import type {
   ProtocolParameters,
+  SubTransaction,
   Transaction,
   TransactionId,
+  TransactionWitnessSet,
 } from "@blaze-cardano/core";
 import { CborSet, VkeyWitness } from "@blaze-cardano/core";
 import type { Provider } from "@blaze-cardano/query";
@@ -69,30 +71,28 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
    */
   async signTransaction(tx: Transaction): Promise<Transaction> {
     const signed = await this.wallet.signTransaction(tx, true);
-    const ws = tx.witnessSet();
-    const vkeys = ws.vkeys()?.toCore() ?? [];
+    tx.setWitnessSet(mergeVkeys(tx.witnessSet(), signed, "signTransaction"));
+    return tx;
+  }
 
-    const signedKeys = signed.vkeys();
-    if (!signedKeys) {
+  /**
+   * Signs a CIP-0118 sub-transaction using the wallet.
+   * @param {SubTransaction} subTx - The sub-transaction to sign.
+   * @returns {Promise<SubTransaction>} - The signed sub-transaction.
+   * @throws {Error} If the wallet can't sign sub-transactions.
+   * @experimental CIP-0118 is not live on mainnet; this API may change.
+   */
+  async signSubTransaction(subTx: SubTransaction): Promise<SubTransaction> {
+    if (!this.wallet.signSubTransaction) {
       throw new Error(
-        "signTransaction: no signed keys in wallet witness response",
+        "signSubTransaction: this wallet can't sign sub-transactions",
       );
     }
-
-    if (
-      signedKeys.toCore().some(([vkey]) => vkeys.some(([key2]) => vkey == key2))
-    ) {
-      throw new Error("signTransaction: some keys were already signed");
-    }
-
-    ws.setVkeys(
-      CborSet.fromCore(
-        [...signedKeys.toCore(), ...vkeys],
-        VkeyWitness.fromCore,
-      ),
+    const signed = await this.wallet.signSubTransaction(subTx, true);
+    subTx.setWitnessSet(
+      mergeVkeys(subTx.witnessSet(), signed, "signSubTransaction"),
     );
-    tx.setWitnessSet(ws);
-    return tx;
+    return subTx;
   }
 
   /**
@@ -112,4 +112,26 @@ export class Blaze<ProviderType extends Provider, WalletType extends Wallet> {
       ? this.provider.postTransactionToChain(tx)
       : this.wallet.postTransaction(tx);
   }
+}
+
+/** Adds the wallet's vkey witnesses in `signed` to `witnessSet`, refusing keys it already has. */
+function mergeVkeys(
+  witnessSet: TransactionWitnessSet,
+  signed: TransactionWitnessSet,
+  caller: string,
+): TransactionWitnessSet {
+  const vkeys = witnessSet.vkeys()?.toCore() ?? [];
+  const signedKeys = signed.vkeys();
+  if (!signedKeys) {
+    throw new Error(`${caller}: no signed keys in wallet witness response`);
+  }
+  if (
+    signedKeys.toCore().some(([vkey]) => vkeys.some(([key2]) => vkey == key2))
+  ) {
+    throw new Error(`${caller}: some keys were already signed`);
+  }
+  witnessSet.setVkeys(
+    CborSet.fromCore([...signedKeys.toCore(), ...vkeys], VkeyWitness.fromCore),
+  );
+  return witnessSet;
 }

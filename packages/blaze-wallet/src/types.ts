@@ -3,6 +3,7 @@ import type {
   HexBlob,
   NetworkId,
   RewardAddress,
+  SubTransaction,
   Transaction,
   TransactionId,
   TransactionUnspentOutput,
@@ -152,6 +153,19 @@ export abstract class Wallet {
    */
   abstract signTransaction(
     tx: Transaction,
+    partialSign: boolean,
+  ): Promise<TransactionWitnessSet>;
+
+  /**
+   * Requests signatures for a CIP-0118 sub-transaction: vkey witnesses over
+   * its id. Wallets that can't sign sub-transactions leave this out.
+   * @param {SubTransaction} subTx - The sub-transaction to sign.
+   * @param {boolean} partialSign - Whether to partially sign the sub-transaction.
+   * @returns {Promise<TransactionWitnessSet>} - The vkey witnesses.
+   * @experimental CIP-0118 is not live on mainnet; this API may change.
+   */
+  signSubTransaction?(
+    subTx: SubTransaction,
     partialSign: boolean,
   ): Promise<TransactionWitnessSet>;
 
