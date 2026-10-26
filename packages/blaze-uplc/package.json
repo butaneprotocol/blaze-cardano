@@ -1,10 +1,10 @@
 {
   "name": "@blaze-cardano/uplc",
   "description": "Blaze untyped plutus core library",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "dependencies": {
-    "@blaze-cardano/core": "^0.10.1",
-    "@blaze-cardano/data": "^0.6.11",
+    "@blaze-cardano/core": "^0.11.0",
+    "@blaze-cardano/data": "^0.6.12",
     "hex-encoding": "^2.0.2"
   },
   "devDependencies": {

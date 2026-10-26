@@ -1,5 +1,23 @@
 # @blaze-cardano/tx
 
+## 0.16.0
+
+### Minor Changes
+
+- 08b4f89: Build and sign CIP-0118 sub-transactions.
+  - `TxBuilder.completeSubTransaction(imbalance?)` completes a builder as a sub-transaction: no fee and no collateral, leaving exactly `imbalance` for the rest of the batch (positive: a surplus the batch collects; negative: a deficit the batch supplies). Plutus scripts are refused: CIP-0118 forbids PlutusV1-V3 in sub-transactions, and PlutusV4 is not supported yet.
+  - `TxBuilder.estimateSubTransaction(surplus?)` estimates a sub-transaction without changing the builder: the deficit the wallet can't cover, the fee it adds to its top-level transaction, and its signed size.
+  - `TxBuilder.addRequiredTopLevelGuard(credential, data?)` sets a sub-transaction's `required_top_level_guards`.
+  - `Wallet.signSubTransaction` (optional; implemented by `HotWallet` and `HotSingleWallet`) and `Blaze.signSubTransaction` sign a sub-transaction.
+  - `@blaze-cardano/core` exports `SubTransaction` and `SubTransactionBody`.
+  - `TxBuilder` runs each pre-complete hook once per builder: after a failed completion, only hooks that didn't finish run again on the next call.
+
+### Patch Changes
+
+- Updated dependencies [08b4f89]
+  - @blaze-cardano/core@0.11.0
+  - @blaze-cardano/vm@0.3.4
+
 ## 0.15.4
 
 ### Patch Changes
