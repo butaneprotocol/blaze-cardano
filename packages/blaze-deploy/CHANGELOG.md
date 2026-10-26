@@ -1,5 +1,15 @@
 # @blaze-cardano/deploy
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [08b4f89]
+  - @blaze-cardano/core@0.11.0
+  - @blaze-cardano/wallet@0.7.0
+  - @blaze-cardano/sdk@0.4.0
+  - @blaze-cardano/query@0.6.5
+
 ## 1.0.1
 
 ### Patch Changes
