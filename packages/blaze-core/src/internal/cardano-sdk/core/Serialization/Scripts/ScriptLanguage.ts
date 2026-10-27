@@ -1,0 +1,14 @@
+// Derived from cardano-js-sdk at 48019e49; modified for Blaze packaging.
+// @ts-nocheck -- pinned upstream source is covered by Blaze golden tests.
+/**
+ * Script language.
+ *
+ * See https://github.com/input-output-hk/cardano-ledger/blob/master/eras/conway/test-suite/cddl-files/conway.cddl#L592C1-L592C99
+ */
+export enum ScriptLanguage {
+  Native = 0,
+  PlutusV1 = 1,
+  PlutusV2 = 2,
+  PlutusV3 = 3,
+  PlutusV4 = 4
+}

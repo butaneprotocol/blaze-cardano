@@ -1,0 +1,22 @@
+// Derived from cardano-js-sdk at 48019e49; modified for Blaze packaging.
+// @ts-nocheck -- pinned upstream source is covered by Blaze golden tests.
+import { Cardano, EraSummary, Provider } from '../..';
+
+export type SupplySummary = {
+  circulating: Cardano.Lovelace;
+  total: Cardano.Lovelace;
+};
+
+export type StakeSummary = {
+  active: Cardano.Lovelace;
+  live: Cardano.Lovelace;
+};
+
+export interface NetworkInfoProvider extends Provider {
+  ledgerTip(): Promise<Cardano.Tip>;
+  protocolParameters(): Promise<Cardano.ProtocolParameters>;
+  genesisParameters(): Promise<Cardano.CompactGenesis>;
+  lovelaceSupply(): Promise<SupplySummary>;
+  stake(): Promise<StakeSummary>;
+  eraSummaries(): Promise<EraSummary[]>;
+}

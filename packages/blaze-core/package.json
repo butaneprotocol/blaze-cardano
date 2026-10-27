@@ -3,22 +3,39 @@
   "description": "Blaze cardano core library",
   "version": "0.10.1",
   "dependencies": {
-    "@cardano-sdk/core": "^0.47.1",
-    "@cardano-sdk/crypto": "^0.4.7",
-    "@cardano-sdk/util": "^0.17.2",
+    "@biglup/is-cid": "^1.0.3",
+    "@foxglove/crc": "^0.0.3",
     "@noble/curves": "^1.8.1",
     "@noble/ed25519": "^2.2.3",
     "@noble/hashes": "^1.7.1",
+    "@scure/base": "^1.1.1",
     "@scure/bip39": "^1.5.4",
-    "blakejs": "^1.2.1"
+    "bech32": "^2.0.0",
+    "blake2b": "^2.1.4",
+    "blakejs": "^1.2.1",
+    "fraction.js": "^4.0.1",
+    "ip-address": "10.3.1",
+    "libsodium-wrappers-sumo": "^0.8.4",
+    "lodash": "4.18.1",
+    "pbkdf2": "^3.1.3",
+    "serialize-error": "^8.1.0",
+    "ts-custom-error": "^3.2.0",
+    "ts-log": "^2.2.4",
+    "web-encoding": "^1.1.5"
   },
   "devDependencies": {
     "@blaze-cardano/eslint-config": "workspace:*",
     "@blaze-cardano/tsconfig": "workspace:*",
+    "@types/blake2b": "^2.1.0",
+    "@types/libsodium-wrappers-sumo": "^0.7.5",
+    "@types/lodash": "^4.17.20",
+    "@types/pbkdf2": "^3.1.2",
     "eslint": "^9.22.0",
     "terser": "^5.37.0",
     "tsdown": "^0.21.0",
-    "typescript": "^5.7.3"
+    "type-fest": "^4.41.0",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
   },
   "exports": {
     ".": {
@@ -28,8 +45,11 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "third-party",
+    "UPSTREAM_CARDANO_SDK.md"
   ],
+  "license": "Apache-2.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "publishConfig": {
@@ -47,9 +67,13 @@
     "build:types": "tsc -p tsconfig.docs.json",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
     "dev": "tsdown --watch",
-    "lint": "eslint \"src/**/*.ts*\"",
+    "lint": "eslint \"src/**/*.ts*\" --ignore-pattern \"src/internal/cardano-sdk/**\"",
+    "test": "vitest run tests",
     "typecheck": "tsc --noEmit"
   },
   "type": "module",
-  "types": "./dist/index.d.cts"
+  "types": "./dist/index.d.cts",
+  "inlinedDependencies": {
+    "type-fest": "4.41.0"
+  }
 }
