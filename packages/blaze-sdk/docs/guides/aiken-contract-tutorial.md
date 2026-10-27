@@ -134,7 +134,7 @@ if (!scriptUtxo) {
 }
 ```
 
-Selecting by transaction ID avoids relying on output order or assuming the address contains only one UTxO. On a public network, the same query works through Blockfrost, Maestro, Kupmios, or a routed provider.
+Selecting by transaction ID avoids relying on output order or assuming the address contains only one UTxO. On a public network, the same query works through Blockfrost, Kupmios, or a routed provider.
 
 ## Spend with the typed redeemer
 

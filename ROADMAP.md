@@ -16,7 +16,7 @@ GitHub Issues is the public task system for Blaze. The [open issue list](https:/
 ## Ongoing maintenance
 
 - Track Cardano ledger, network, and protocol changes in the core, transaction, wallet, provider, and emulator packages.
-- Keep Blockfrost, Maestro, Kupmios, Ogmios, and external provider integrations compatible with their upstream APIs.
+- Keep Blockfrost, Kupmios, Ogmios, and external provider integrations compatible with their upstream APIs.
 - Expand transaction safety, emulator fidelity, test coverage, and developer documentation as public APIs change.
 - Publish package updates through Changesets after CI and review pass.
 

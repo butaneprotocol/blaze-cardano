@@ -42,10 +42,10 @@ npm i @blaze-cardano/sdk
 
 ```ts
 //  In this example we:
-//  - prepare the provider (Maestro), wallet, blaze,
+//  - prepare the provider (Blockfrost), wallet, blaze,
 //  - build a transaction paying out 5 ada to an external wallet
 //  - dump the transaction cbor
-import { ColdWallet, Core, Blaze, Maestro } from "@blaze-cardano/sdk";
+import { ColdWallet, Core, Blaze, Blockfrost } from "@blaze-cardano/sdk";
 import * as readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 const rl = readline.createInterface({ input: stdin, output: stdout });
@@ -59,9 +59,9 @@ const blazeWallet = Core.addressFromBech32(
   "addr1qye93uefq8r6ezk0kzq443u9zht7ylu5nelvw8eracd200ylzvhpxn9c4g2fyxe5rlmn6z5qmm3dtjqfjn2vvy58l88szlpjw4"
 );
 
-const provider = new Maestro({
-  network: "mainnet",
-  apiKey: await rl.question("Please enter your mainnet maestro key: "),
+const provider = new Blockfrost({
+  network: "cardano-mainnet",
+  projectId: await rl.question("Please enter your mainnet Blockfrost project ID: "),
 });
 if (address.getNetworkId() !== provider.network) {
   throw new Error("The wallet address and provider must use the same network.");
@@ -89,7 +89,6 @@ Blaze can use any of these built-in or external providers:
 | ------------- | -------- | ------------------------------------------------------------------------------------------------------------- |
 | Blockfrost    | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/blob/main/packages/blaze-query/src/blockfrost.ts) |
 | Kupmios       | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/blob/main/packages/blaze-query/src/kupmios.ts)    |
-| Maestro       | Built-in | [View File](https://github.com/butaneprotocol/blaze-cardano/blob/main/packages/blaze-query/src/maestro.ts)    |
 | UTxORPC (U5C) | External | [Repository](https://github.com/utxorpc/blaze-provider)                                                       |
 
 ### Docs
