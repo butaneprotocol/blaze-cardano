@@ -52,8 +52,8 @@
   (e.g. trace-enabled) scripts. The emulator now accepts the Conway
   Registration cert (type 7), which — like the legacy Shelley form — does not
   require the stake credential's witness.
-- ed30731: Add Catalyst M1 SDK and emulator work: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
-- bfe08b2: Add Catalyst M2 querying and script management utilities: query caching, event sources, query benchmarks, script deployment management, and transaction-builder support for explicit reference-script output ADA.
+- ed30731: Add SDK and emulator features: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
+- bfe08b2: Add querying and script management utilities: query caching, event sources, query benchmarks, script deployment management, and transaction-builder support for explicit reference-script output ADA.
 - e3cb028: Add transaction-construction safety features: a `TypedScript` wrapper that binds datum and redeemer types to a script, typed `addInput` and a `lockScriptAssets` helper, explicit `mintAssets`/`burnAssets` with positive-quantity enforcement, and a `TxBuilderReuseError` when a completed builder is completed again. Blueprint codegen now generates validators as `TypedScript` subclasses with branded datum/redeemer types and `datum()`/`redeemer()` serializers.
 
 ### Patch Changes

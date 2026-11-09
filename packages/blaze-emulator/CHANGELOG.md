@@ -62,7 +62,7 @@
 ### Minor Changes
 
 - 3b1520e: Add configurable emulator network and timing presets and a standalone RPC server. Mock wallets now use lightweight keys with stake signing, and new transaction builders start with the provider network.
-- ed30731: Add Catalyst M1 SDK and emulator work: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
+- ed30731: Add SDK and emulator features: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
 
 ### Patch Changes
 
