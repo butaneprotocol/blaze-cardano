@@ -21,7 +21,6 @@
       "packages": [
         "@blaze-cardano/e2e",
         "advanced-querying",
-        "catalyst-1200040-evidence",
         "script-deploy-aiken",
         "script-deploy-ci"
       ],

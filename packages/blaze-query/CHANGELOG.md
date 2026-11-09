@@ -42,8 +42,8 @@
 
 ### Minor Changes
 
-- ed30731: Add Catalyst M1 SDK and emulator work: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
-- bfe08b2: Add Catalyst M2 querying and script management utilities: query caching, event sources, query benchmarks, script deployment management, and transaction-builder support for explicit reference-script output ADA.
+- ed30731: Add SDK and emulator features: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
+- bfe08b2: Add querying and script management utilities: query caching, event sources, query benchmarks, script deployment management, and transaction-builder support for explicit reference-script output ADA.
 
 ### Patch Changes
 

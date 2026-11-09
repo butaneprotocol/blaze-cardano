@@ -37,7 +37,7 @@
 
 ### Minor Changes
 
-- bfe08b2: Add Catalyst M2 querying and script management utilities: query caching, event sources, query benchmarks, script deployment management, and transaction-builder support for explicit reference-script output ADA.
+- bfe08b2: Add querying and script management utilities: query caching, event sources, query benchmarks, script deployment management, and transaction-builder support for explicit reference-script output ADA.
 
 ### Patch Changes
 

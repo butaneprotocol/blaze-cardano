@@ -42,7 +42,7 @@
 
 ### Minor Changes
 
-- ed30731: Add Catalyst M1 SDK and emulator work: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
+- ed30731: Add SDK and emulator features: governance transaction APIs, provider routing, Maestro exports, emulator RPC/benchmarks, and governance script witness handling.
 
 ### Patch Changes
 
