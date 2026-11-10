@@ -9,13 +9,13 @@ transaction evaluation, and transaction submission while still passing a single
 provider into Blaze.
 
 ```ts
-import { Blockfrost, Kupmios, Maestro, RoutedProvider } from "@blaze-cardano/query";
+import { Blockfrost, Kupmios, RoutedProvider } from "@blaze-cardano/query";
 
 const provider = new RoutedProvider({
   defaultProvider: blockfrost,
   queryProvider: blockfrost,
   evaluationProvider: kupmios,
-  submissionProvider: maestro,
+  submissionProvider: kupmios,
 });
 ```
 
@@ -27,10 +27,10 @@ const provider = new RoutedProvider({
   defaultProvider: blockfrost,
   queryProvider: blockfrost,
   evaluationProvider: kupmios,
-  submissionProvider: maestro,
+  submissionProvider: kupmios,
   perOperation: {
     resolveScriptRef: blockfrost,
-    getUnspentOutputsWithAsset: maestro,
+    getUnspentOutputsWithAsset: blockfrost,
   },
 });
 ```

@@ -7,7 +7,6 @@ The central abstraction is `Provider`. Transaction builders use providers for pr
 Common provider choices:
 
 - `Blockfrost` for hosted REST access.
-- `Maestro` for Maestro-backed chain queries, evaluation, and submission.
 - `Kupmios` for Kupo plus Ogmios environments.
 - `RoutedProvider` when an application wants separate backends for reads, evaluation, submission, or specific query methods.
 
