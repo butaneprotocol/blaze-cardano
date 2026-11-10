@@ -1,0 +1,31 @@
+// Derived from cardano-js-sdk at 48019e49; modified for Blaze packaging.
+// @ts-nocheck -- pinned upstream source is covered by Blaze golden tests.
+import { NftMetadata } from '../NftMetadata';
+import { TokenMetadata } from './TokenMetadata';
+import type { AssetFingerprint, AssetId, AssetName, PolicyId, TransactionId } from '../../Cardano';
+
+export interface AssetMintOrBurn {
+  transactionId: TransactionId;
+  /** Positive = mint Negative = burn */
+  quantity: bigint;
+}
+
+export interface AssetInfo {
+  assetId: AssetId;
+  policyId: PolicyId;
+  name: AssetName;
+  fingerprint: AssetFingerprint;
+  /**
+   * `0n` if not loaded
+   *
+   * @deprecated Use `supply` instead
+   */
+  quantity: bigint;
+  /** `0n` if not loaded */
+  supply: bigint;
+  /** CIP-0035. `undefined` if not loaded, `null` if no metadata found */
+  tokenMetadata?: TokenMetadata | null;
+  /** CIP-0025. `undefined` if not loaded, `null` if no metadata found */
+  nftMetadata?: NftMetadata | null;
+  staleAt?: Date | null;
+}

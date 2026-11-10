@@ -1,0 +1,246 @@
+// Derived from cardano-js-sdk at 48019e49; modified for Blaze packaging.
+// @ts-nocheck -- pinned upstream source is covered by Blaze golden tests.
+import * as Crypto from '../../../crypto/index';
+import { AuxiliaryData } from './AuxiliaryData';
+import { Base64Blob, HexBlob, OpaqueString } from '../../../util/index';
+import { Certificate, PoolRegistrationCertificate } from './Certificate';
+import { Credential, RewardAccount } from '../Address';
+import { ExUnits, Update, ValidityInterval } from './ProtocolParameters';
+import { HydratedTxIn, TxIn, TxOut } from './Utxo';
+import { Lovelace, TokenMap } from './Value';
+import { NetworkId } from '../ChainId';
+import { PartialBlockHeader } from './Block';
+import { PlutusData } from './PlutusData';
+import { ProposalProcedure, VotingProcedures } from './Governance';
+import { Script } from './Script';
+
+/** transaction hash as hex string */
+export type TransactionId = OpaqueString<'TransactionId'> & Crypto.Hash32ByteBase16;
+
+/**
+ * @param {string} value transaction hash as hex string
+ * @throws InvalidStringError
+ */
+export const TransactionId = (value: string): TransactionId =>
+  Crypto.Hash32ByteBase16(value) as unknown as TransactionId;
+TransactionId.fromHexBlob = (value: HexBlob) => Crypto.Hash32ByteBase16.fromHexBlob<TransactionId>(value);
+
+export interface Withdrawal {
+  stakeAddress: RewardAccount;
+  quantity: Lovelace;
+}
+
+/**
+ * Half-open account balance range in lovelace: a balance b satisfies the interval when
+ * inclusiveLowerBound <= b < exclusiveUpperBound. At least one bound is always set; a bound
+ * of 0 is valid and distinct from an absent bound.
+ */
+export interface AccountBalanceInterval {
+  inclusiveLowerBound?: Lovelace;
+  exclusiveUpperBound?: Lovelace;
+}
+
+export interface AccountBalanceIntervalEntry {
+  credential: Credential;
+  interval: AccountBalanceInterval;
+}
+
+export type HydratedPoolRegistrationCertificate = PoolRegistrationCertificate & { deposit?: Lovelace };
+
+export type HydratedCertificate =
+  | Exclude<Certificate, PoolRegistrationCertificate>
+  | HydratedPoolRegistrationCertificate;
+
+export interface HydratedTxBody {
+  inputs: HydratedTxIn[];
+  collaterals?: HydratedTxIn[];
+  outputs: TxOut[];
+  fee: Lovelace;
+  validityInterval?: ValidityInterval;
+  withdrawals?: Withdrawal[];
+  certificates?: HydratedCertificate[];
+  mint?: TokenMap;
+  scriptIntegrityHash?: Crypto.Hash32ByteBase16;
+  requiredExtraSignatures?: Crypto.Ed25519KeyHashHex[];
+
+  /**
+   * Guard credentials that must authorize the transaction (Dijkstra body key 14, credential form).
+   * When present it takes precedence over requiredExtraSignatures, which then holds the key-hash
+   * subset of the guards as a read-only compatibility view.
+   */
+  guards?: Credential[];
+  networkId?: NetworkId;
+  update?: Update;
+  auxiliaryDataHash?: Crypto.Hash32ByteBase16;
+
+  /**
+   * The total collateral field lets users write transactions whose collateral is evident by just looking at the
+   * tx body instead of requiring information in the UTxO. The specification of total collateral is optional.
+   *
+   * It does not change how the collateral is computed but transactions whose collateral is different from the
+   * amount specified will be invalid.
+   */
+  totalCollateral?: Lovelace;
+
+  /**
+   * Return collateral allows us to specify an output with the remainder of our collateral input(s) in the event
+   * we over-collateralize our transaction. This allows us to avoid overpaying the collateral and also creates the
+   * possibility for native assets to be also present in the collateral, though they will not serve as a payment
+   * for the fee.
+   */
+  collateralReturn?: TxOut;
+
+  /**
+   * Reference inputs allows looking at an output without spending it. This facilitates access to information
+   * stored on the blockchain without the need of spending and recreating UTXOs.
+   */
+  referenceInputs?: HydratedTxIn[];
+
+  votingProcedures?: VotingProcedures;
+  proposalProcedures?: ProposalProcedure[];
+  treasuryValue?: Lovelace;
+  donation?: Lovelace;
+
+  /**
+   * Direct deposits (Dijkstra body key 25): coin deposited directly into reward accounts
+   * without a withdrawal-style witness. Non-empty when present.
+   */
+  directDeposits?: Withdrawal[];
+
+  /**
+   * Account balance intervals (Dijkstra body key 26): asserts that each credential's account
+   * balance lies in a half-open range at validation time. Non-empty when present.
+   */
+  accountBalanceIntervals?: AccountBalanceIntervalEntry[];
+}
+
+export interface TxBody extends Omit<HydratedTxBody, 'certificates' | 'inputs' | 'collaterals' | 'referenceInputs'> {
+  certificates?: Certificate[];
+  collaterals?: TxIn[];
+  inputs: TxIn[];
+  referenceInputs?: TxIn[];
+
+  /**
+   * Sub transactions (Dijkstra body key 23, CIP-0118 nested transactions): the ordered set of
+   * sub transactions carried by this top-level transaction, keyed by each sub transaction's own
+   * id with duplicates rejected. Non-empty when present and admitted only on a top-level body.
+   */
+  // eslint-disable-next-line no-use-before-define
+  subTransactions?: SubTransaction[];
+}
+
+export interface RequiredTopLevelGuardEntry {
+  credential: Credential;
+
+  /**
+   * Datum the enclosing transaction must supply the guard with, or null when the guard carries
+   * no datum (CBOR nil on the wire, used for key-hash and native-script guards).
+   */
+  datum: PlutusData | null;
+}
+
+/**
+ * Body of a Dijkstra sub transaction (CIP-0118 nested transactions). Reuses the top-level
+ * transaction body fields but has no fee, collateral or update fields -- the enclosing
+ * transaction pays the fee and posts collateral for the whole batch -- and adds
+ * requiredTopLevelGuards.
+ */
+export interface SubTransactionBody
+  extends Omit<TxBody, 'fee' | 'collaterals' | 'collateralReturn' | 'totalCollateral' | 'update' | 'subTransactions'> {
+  /**
+   * Guards the enclosing transaction must carry (Dijkstra sub body key 24), each with the
+   * datum it must be supplied with. Non-empty when present.
+   */
+  requiredTopLevelGuards?: RequiredTopLevelGuardEntry[];
+}
+
+/**
+ * A Dijkstra sub transaction (CIP-0118 nested transactions): a sub transaction body plus its
+ * witness set and optional auxiliary data. Unlike a top-level Tx there is no is_valid flag; the
+ * enclosing transaction's flag covers the whole batch.
+ */
+export interface SubTransaction {
+  body: SubTransactionBody;
+  // eslint-disable-next-line no-use-before-define
+  witness: Witness;
+  auxiliaryData?: AuxiliaryData;
+}
+
+export enum InputSource {
+  inputs = 'inputs',
+  collaterals = 'collaterals'
+}
+
+export enum RedeemerPurpose {
+  spend = 'spend',
+  mint = 'mint',
+  certificate = 'certificate',
+  withdrawal = 'withdrawal',
+  propose = 'propose',
+  vote = 'vote',
+  guarding = 'guarding'
+}
+
+export interface Redeemer {
+  index: number;
+  purpose: RedeemerPurpose;
+  data: PlutusData;
+  executionUnits: ExUnits;
+}
+
+export type Signatures = Map<Crypto.Ed25519PublicKeyHex, Crypto.Ed25519SignatureHex>;
+
+export type Signature = Crypto.Ed25519SignatureHex;
+export type ChainCode = HexBlob;
+export type AddressAttributes = Base64Blob;
+export type VerificationKey = Crypto.Ed25519PublicKeyHex;
+
+export interface BootstrapWitness {
+  signature: Signature;
+  chainCode?: ChainCode;
+  addressAttributes?: AddressAttributes;
+  key: VerificationKey;
+}
+
+export type Witness = {
+  redeemers?: Redeemer[];
+  signatures: Signatures;
+  scripts?: Script[];
+  bootstrap?: BootstrapWitness[];
+  datums?: PlutusData[];
+};
+
+export interface Tx<TBody extends TxBody = TxBody> {
+  id: TransactionId;
+  body: TBody;
+  witness: Witness;
+  auxiliaryData?: AuxiliaryData;
+  /**
+   * Phase-2 validation flag. Deprecated in the Dijkstra era: the SDK never sets false when
+   * authoring, but transactions decoded from chain data surface the on-chain value.
+   */
+  isValid?: boolean;
+}
+
+interface TxWithInputSource<TBody extends TxBody = TxBody> extends Omit<Tx<TBody>, 'isValid'> {
+  inputSource: InputSource;
+}
+
+// https://github.com/input-output-hk/cardano-js-sdk/pull/927#discussion_r1352081210
+export interface OnChainTx<TBody extends TxBody = TxBody>
+  extends Omit<TxWithInputSource<TBody>, 'witness' | 'auxiliaryData'> {
+  witness: Omit<Witness, 'scripts'>;
+  auxiliaryData?: Omit<AuxiliaryData, 'scripts'>;
+}
+
+export interface HydratedTx extends TxWithInputSource<HydratedTxBody> {
+  index: number;
+  blockHeader: PartialBlockHeader;
+  body: HydratedTxBody;
+  txSize: number;
+}
+
+export type TxBodyWithHash = {
+  hash: TransactionId;
+  body: TxBody;
+};

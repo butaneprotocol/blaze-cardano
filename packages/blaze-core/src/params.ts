@@ -1,4 +1,4 @@
-import type { Cardano } from "@cardano-sdk/core";
+import type { Cardano } from "./internal/cardano-sdk/core-compat";
 
 /**
  * Cardano ledger protocol parameters.

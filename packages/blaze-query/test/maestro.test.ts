@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   Address,
+  DatumHash,
   ExUnits,
   HexBlob,
   PlutusData,
@@ -249,7 +250,7 @@ describe("Maestro", () => {
       }),
     );
 
-    const datum = await maestro().resolveDatum("3".repeat(64));
+    const datum = await maestro().resolveDatum(DatumHash("3".repeat(64)));
 
     expect(datum.toCbor()).toBe("d87980");
   });

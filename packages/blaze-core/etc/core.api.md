@@ -5,15 +5,43 @@
 ```ts
 
 import * as bip39 from '@scure/bip39';
-import * as C from '@cardano-sdk/core';
-import { Cardano } from '@cardano-sdk/core';
-import * as Crypto from '@cardano-sdk/crypto';
-import { HexBlob } from '@cardano-sdk/util';
-import { OpaqueString } from '@cardano-sdk/util';
-import { Serialization } from '@cardano-sdk/core';
-import { typedHex } from '@cardano-sdk/util';
+import { CustomError } from 'ts-custom-error';
+import { Logger } from 'ts-log';
+import type { Tagged } from 'type-fest';
 import { wordlist } from '@scure/bip39/wordlists/english';
 
+// @public
+interface AccountBalanceInterval {
+    // (undocumented)
+    exclusiveUpperBound?: Lovelace;
+    // (undocumented)
+    inclusiveLowerBound?: Lovelace;
+}
+
+// @public
+class AccountBalanceInterval_2 {
+    // Warning: (ae-forgotten-export) The symbol "Cardano_4" needs to be exported by the entry point index.d.ts
+    constructor(inclusiveLowerBound?: Cardano_4.Lovelace, exclusiveUpperBound?: Cardano_4.Lovelace);
+    exclusiveUpperBound(): Cardano_4.Lovelace | undefined;
+    static fromCbor(cbor: HexBlob): AccountBalanceInterval_2;
+    static fromCore(interval: Cardano_4.AccountBalanceInterval): AccountBalanceInterval_2;
+    inclusiveLowerBound(): Cardano_4.Lovelace | undefined;
+    setExclusiveUpperBound(exclusiveUpperBound: Cardano_4.Lovelace | undefined): void;
+    setInclusiveLowerBound(inclusiveLowerBound?: Cardano_4.Lovelace): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.AccountBalanceInterval;
+}
+
+// @public (undocumented)
+interface AccountBalanceIntervalEntry {
+    // (undocumented)
+    credential: Credential_2;
+    // (undocumented)
+    interval: AccountBalanceInterval;
+}
+
+// Warning: (ae-forgotten-export) The symbol "C" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
 export const Address: typeof C.Cardano.Address;
 
@@ -22,6 +50,37 @@ export type Address = C.Cardano.Address;
 
 // @public (undocumented)
 function address(ns: NativeScript, networkId: NetworkId): Address;
+
+// @public
+class Address_2 {
+    constructor(props: AddressProps);
+    asBase(): BaseAddress | undefined;
+    asByron(): ByronAddress | undefined;
+    asEnterprise(): EnterpriseAddress | undefined;
+    asPointer(): PointerAddress | undefined;
+    asReward(): RewardAddress_2 | undefined;
+    static fromBase58(base58Address: string): Address_2;
+    static fromBech32(bech32: string): Address_2;
+    static fromBytes(hex: HexBlob): Address_2;
+    static fromString(address: string): Address_2 | null;
+    getNetworkId(): NetworkId_2;
+    getProps(): AddressProps;
+    getType(): AddressType_2;
+    static isValid(address: string): boolean;
+    static isValidBech32(bech32: string): boolean;
+    static isValidByron(base58: string): boolean;
+    toBase58(): PaymentAddress_2;
+    toBech32(): PaymentAddress_2 | RewardAccount_2;
+    toBytes(): HexBlob;
+}
+
+// Warning: (ae-forgotten-export) The symbol "Base64Blob" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+type AddressAttributes = Base64Blob;
+
+// @public (undocumented)
+const addressesShareAnyKey: (address1: PaymentAddress_2, address2: PaymentAddress_2) => boolean;
 
 // @public
 export const addressFromBech32: typeof C.Cardano.Address.fromBech32;
@@ -35,11 +94,56 @@ export const addressFromCredentials: (network: NetworkId, paymentCredential: Cre
 // @public
 export const addressFromValidator: (network: NetworkId, validator: Script) => Address;
 
+// @public
+type AddressHeader = {
+    type: AddressType_2;
+    networkId: NetworkId_2;
+};
+
+// @public
+const addressNetworkId: (address: RewardAccount_2 | PaymentAddress_2 | DRepID) => NetworkId_2;
+
+// @public
+type AddressProps = {
+    type: AddressType_2;
+    networkId?: NetworkId_2;
+    pointer?: Pointer;
+    paymentPart?: Credential_2;
+    delegationPart?: Credential_2;
+    byronAddressContent?: ByronAddressContent;
+};
+
 // @public (undocumented)
 export const AddressType: typeof C.Cardano.AddressType;
 
 // @public (undocumented)
 export type AddressType = C.Cardano.AddressType;
+
+// @public
+enum AddressType_2 {
+    // (undocumented)
+    BasePaymentKeyStakeKey = 0,
+    // (undocumented)
+    BasePaymentKeyStakeScript = 2,
+    // (undocumented)
+    BasePaymentScriptStakeKey = 1,
+    // (undocumented)
+    BasePaymentScriptStakeScript = 3,
+    // (undocumented)
+    Byron = 8,
+    // (undocumented)
+    EnterpriseKey = 6,
+    // (undocumented)
+    EnterpriseScript = 7,
+    // (undocumented)
+    PointerKey = 4,
+    // (undocumented)
+    PointerScript = 5,
+    // (undocumented)
+    RewardKey = 14,
+    // (undocumented)
+    RewardScript = 15
+}
 
 // @public (undocumented)
 function after(slot: Slot): NativeScript;
@@ -48,16 +152,62 @@ function after(slot: Slot): NativeScript;
 function allOf(...addresses: NativeScript[]): NativeScript;
 
 // @public (undocumented)
+const ALONZO_AUX_TAG = 259;
+
+// @public (undocumented)
+type AlwaysAbstain = {
+    __typename: 'AlwaysAbstain';
+};
+
+// @public (undocumented)
+type AlwaysNoConfidence = {
+    __typename: 'AlwaysNoConfidence';
+};
+
+// @public (undocumented)
 export const Anchor: typeof C.Serialization.Anchor;
 
 // @public (undocumented)
 export type Anchor = C.Serialization.Anchor;
 
 // @public (undocumented)
+type Anchor_2 = {
+    url: string;
+    dataHash: Crypto.Hash32ByteBase16;
+};
+
+// @public
+class Anchor_3 {
+    constructor(url: string, dataHash: Crypto.Hash32ByteBase16);
+    dataHash(): Crypto.Hash32ByteBase16;
+    static fromCbor(cbor: HexBlob): Anchor_3;
+    static fromCore(anchor: Cardano_4.Anchor): Anchor_3;
+    setDataHash(dataHash: Crypto.Hash32ByteBase16): void;
+    setUrl(url: string): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Anchor;
+    url(): string;
+}
+
+// @public (undocumented)
 export type AnchorCore = C.Cardano.Anchor;
 
 // @public (undocumented)
 function anyOf(...addresses: NativeScript[]): NativeScript;
+
+// @public
+interface APMetadataFields {
+    extended?: string;
+}
+
+// @public
+type AssetFingerprint = OpaqueString<'AssetFingerprint'>;
+
+// @public (undocumented)
+const AssetFingerprint: {
+    (value: string): AssetFingerprint;
+    fromParts(policyId: PolicyId_2, assetName: AssetName_2): AssetFingerprint;
+};
 
 // @public (undocumented)
 export const AssetId: {
@@ -71,22 +221,102 @@ export const AssetId: {
 export type AssetId = C.Cardano.AssetId;
 
 // @public (undocumented)
+type AssetId_2 = OpaqueString<'AssetId'>;
+
+// @public (undocumented)
+const AssetId_2: {
+    (value: string): AssetId_2;
+    getPolicyId(id: AssetId_2): PolicyId_2;
+    getAssetName(id: AssetId_2): AssetName_2;
+    fromParts(policyId: PolicyId_2, assetName: AssetName_2): AssetId_2;
+};
+
+// @public (undocumented)
 export const AssetName: {
     (value: string): C.Cardano.AssetName;
-    toUTF8(assetName: C.Cardano.AssetName, stripInvisibleCharacters?: boolean): string;
+    toUTF8(assetName: C.Cardano.AssetName, stripInvisibleCharacters?: boolean): any;
 };
 
 // @public (undocumented)
 export type AssetName = C.Cardano.AssetName;
 
+// @public
+type AssetName_2 = OpaqueString<'AssetName'>;
+
+// @public (undocumented)
+const AssetName_2: {
+    (value: string): AssetName_2;
+    toUTF8(assetName: AssetName_2, stripInvisibleCharacters?: boolean): any;
+};
+
 // @public (undocumented)
 function atLeastNOfK(n: number, ...addresses: NativeScript[]): NativeScript;
+
+// @public
+class AuthCommitteeHot {
+    constructor(committeeColdCred: Cardano_4.Credential, committeeHotCred: Cardano_4.Credential);
+    coldCredential(): Cardano_4.Credential;
+    static fromCbor(cbor: HexBlob): AuthCommitteeHot;
+    static fromCore(cert: Cardano_4.AuthorizeCommitteeHotCertificate): AuthCommitteeHot;
+    hotCredential(): Cardano_4.Credential;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.AuthorizeCommitteeHotCertificate;
+}
+
+// @public (undocumented)
+interface AuthorizeCommitteeHotCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.AuthorizeCommitteeHot;
+    // (undocumented)
+    coldCredential: Credential_2;
+    // (undocumented)
+    hotCredential: Credential_2;
+}
 
 // @public (undocumented)
 export const AuxiliaryData: typeof C.Serialization.AuxiliaryData;
 
 // @public (undocumented)
 export type AuxiliaryData = C.Serialization.AuxiliaryData;
+
+// @public (undocumented)
+interface AuxiliaryData_2 {
+    // (undocumented)
+    blob?: TxMetadata;
+    // (undocumented)
+    scripts?: Script_2[];
+}
+
+// @public
+class AuxiliaryData_3 {
+    static fromCbor(cbor: HexBlob): AuxiliaryData_3;
+    static fromCore(auxData: Cardano_4.AuxiliaryData): AuxiliaryData_3;
+    metadata(): GeneralTransactionMetadata | undefined;
+    nativeScripts(): Array<NativeScript_3> | undefined;
+    plutusV1Scripts(): Array<PlutusV1Script_2> | undefined;
+    plutusV2Scripts(): Array<PlutusV2Script_2> | undefined;
+    plutusV3Scripts(): Array<PlutusV3Script_2> | undefined;
+    plutusV4Scripts(): Array<PlutusV4Script> | undefined;
+    setMetadata(metadata: GeneralTransactionMetadata): void;
+    setNativeScripts(nativeScripts: Array<NativeScript_3>): void;
+    setPlutusV1Scripts(plutusV1Scripts: Array<PlutusV1Script_2>): void;
+    setPlutusV2Scripts(plutusV2Scripts: Array<PlutusV2Script_2>): void;
+    setPlutusV3Scripts(plutusV3Scripts: Array<PlutusV3Script_2>): void;
+    setPlutusV4Scripts(plutusV4Scripts: Array<PlutusV4Script>): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.AuxiliaryData;
+}
+
+// @public
+class BaseAddress {
+    static fromAddress(addr: Address_2): BaseAddress | undefined;
+    static fromCredentials(networkId: NetworkId_2, payment: Credential_2, stake: Credential_2): BaseAddress;
+    getPaymentCredential(): Credential_2;
+    getStakeCredential(): Credential_2;
+    static packParts(props: AddressProps): Buffer;
+    toAddress(): Address_2;
+    static unpackParts(type: number, data: Uint8Array): Address_2;
+}
 
 // @public (undocumented)
 function before(slot: Slot): NativeScript;
@@ -115,13 +345,479 @@ export function blake2b_224(data: HexBlob): Hash28ByteBase16;
 // @public
 export function blake2b_256(data: HexBlob): Hash32ByteBase16;
 
-export { Cardano }
+// @public (undocumented)
+interface Block extends BlockInfo {
+    // (undocumented)
+    body: OnChainTx[];
+}
+
+// @public
+type BlockId = OpaqueString<'BlockId'>;
+
+// @public (undocumented)
+const BlockId: (value: string) => BlockId;
+
+// @public
+interface BlockInfo {
+    fees?: Lovelace;
+    // (undocumented)
+    header: PartialBlockHeader;
+    issuerVk?: Crypto.Ed25519PublicKeyHex;
+    // (undocumented)
+    previousBlock?: BlockId;
+    size?: BlockSize;
+    // (undocumented)
+    totalOutput: Lovelace;
+    // (undocumented)
+    txCount: number;
+    // (undocumented)
+    vrf?: VrfVkBech32;
+}
+
+// Warning: (ae-forgotten-export) The symbol "OpaqueNumber" needs to be exported by the entry point index.d.ts
+//
+// @public
+type BlockNo = OpaqueNumber<'BlockNo'>;
+
+// @public (undocumented)
+const BlockNo: (value: number) => BlockNo;
+
+// @public
+type BlockSize = OpaqueNumber<'BlockSize'>;
+
+// @public (undocumented)
+const BlockSize: (value: number) => BlockSize;
+
+// @public (undocumented)
+interface BootstrapWitness {
+    // (undocumented)
+    addressAttributes?: AddressAttributes;
+    // (undocumented)
+    chainCode?: ChainCode;
+    // (undocumented)
+    key: VerificationKey;
+    // (undocumented)
+    signature: Signature;
+}
+
+// @public
+class BootstrapWitness_2 {
+    constructor(vkey: Crypto.Ed25519PublicKeyHex, signature: Crypto.Ed25519SignatureHex, chainCode: HexBlob, attributes: HexBlob);
+    attributes(): HexBlob;
+    chainCode(): HexBlob;
+    static fromCbor(cbor: HexBlob): BootstrapWitness_2;
+    static fromCore(core: Cardano_4.BootstrapWitness): BootstrapWitness_2;
+    setAttributes(attributes: HexBlob): void;
+    setChainCode(chainCode: HexBlob): void;
+    setSignature(signature: Crypto.Ed25519SignatureHex): void;
+    setVkey(vkey: Crypto.Ed25519PublicKeyHex): void;
+    signature(): Crypto.Ed25519SignatureHex;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.BootstrapWitness;
+    vkey(): Crypto.Ed25519PublicKeyHex;
+}
+
+// @public
+class ByronAddress {
+    static fromAddress(addr: Address_2): ByronAddress | undefined;
+    // Warning: (ae-forgotten-export) The symbol "Hash28ByteBase16_2" needs to be exported by the entry point index.d.ts
+    static fromCredentials(root: Hash28ByteBase16_2, attrs: ByronAttributes, type: ByronAddressType): ByronAddress;
+    getAttributes(): ByronAttributes;
+    getByronAddressType(): ByronAddressType;
+    getRoot(): Hash28ByteBase16_2;
+    static packParts(props: AddressProps): Uint8Array;
+    toAddress(): Address_2;
+    static unpackParts(type: number, data: Uint8Array): Address_2;
+}
+
+// @public
+type ByronAddressContent = {
+    root: Hash28ByteBase16_2;
+    attrs: ByronAttributes;
+    type: ByronAddressType;
+};
+
+// @public
+enum ByronAddressType {
+    // (undocumented)
+    PubKey = 0,
+    // (undocumented)
+    Redeem = 2,
+    // (undocumented)
+    Script = 1
+}
+
+// @public
+type ByronAttributes = {
+    derivationPath?: HexBlob;
+    magic?: number;
+};
+
+declare namespace Cardano {
+    export {
+        util,
+        NetworkId_2 as NetworkId,
+        NetworkMagic,
+        NetworkMagics,
+        ChainId_2 as ChainId,
+        ChainIds_2 as ChainIds,
+        StakePoolMetricsStake,
+        StakePoolMetricsSize,
+        StakePoolMetrics,
+        StakePoolStatus,
+        StakePoolEpochRewards,
+        StakePool,
+        PoolMetadataJson,
+        PoolMdVk,
+        Cip6MetadataFields,
+        APMetadataFields,
+        StakePoolMainMetadataFields,
+        StakePoolExtendedMetadataFields,
+        StakePoolMetadata,
+        PoolParameters_2 as PoolParameters,
+        RelayByAddress,
+        RelayByName,
+        RelayByNameMultihost,
+        Relay,
+        SerialNumber,
+        DeclaredPoolLocation,
+        ExtendedPoolStatus,
+        PrimaryContactPreference,
+        EmailAddress,
+        FacebookAccount,
+        GithubAccount,
+        RSSFeed,
+        TelegramAccount,
+        TwitterAccount,
+        YoutubeAccount,
+        DiscordAccount,
+        TwitchAccount,
+        PoolIconInPNGFileFormat64X64Px,
+        PoolLogoInPNGFileFormat,
+        PoolLogoInSVGFileFormat,
+        PoolPrimaryColor,
+        PoolSecondaryColor,
+        TheITNPoolOwnerPublicKey,
+        TheSecretKeyGeneratedWitness,
+        MeAboutInfo,
+        ServerAboutInfo,
+        CompanyAboutInfo,
+        CompanyName,
+        CompanyAddress,
+        CompanyCity,
+        CompanyCountry,
+        CompanyId,
+        CompanyVatId,
+        PoolContactData,
+        ThePoolsMediaAssets,
+        ITNVerification,
+        PoolCompanyInfo,
+        PoolAboutInfo,
+        ExtendedStakePoolMetadataFields,
+        ExtendedStakePoolMetadata,
+        PoolId_2 as PoolId,
+        PoolIdHex,
+        VrfVkHex,
+        DatumHash_2 as DatumHash,
+        TxIn,
+        HydratedTxIn,
+        TxOut,
+        Utxo,
+        Lovelace,
+        TokenMap_2 as TokenMap,
+        Value_2 as Value,
+        PositiveCoin,
+        DelegationsAndRewards,
+        Delegatee,
+        StakeCredentialStatus,
+        DRepDelegatee,
+        RewardAccountInfo,
+        Cip17Pool,
+        Cip17DelegationPortfolio,
+        DelegationMetadataLabel,
+        DelegationPortfolioMetadata,
+        portfolioMetadataFromCip17,
+        cip17FromMetadatum,
+        TransactionId_2 as TransactionId,
+        Withdrawal,
+        AccountBalanceInterval,
+        AccountBalanceIntervalEntry,
+        HydratedPoolRegistrationCertificate,
+        HydratedCertificate,
+        HydratedTxBody,
+        TxBody,
+        RequiredTopLevelGuardEntry,
+        SubTransactionBody,
+        SubTransaction,
+        InputSource,
+        RedeemerPurpose_2 as RedeemerPurpose,
+        Redeemer_2 as Redeemer,
+        Signatures,
+        Signature,
+        ChainCode,
+        AddressAttributes,
+        VerificationKey,
+        BootstrapWitness,
+        Witness,
+        Tx,
+        OnChainTx,
+        HydratedTx,
+        TxBodyWithHash,
+        CertificateType_2 as CertificateType,
+        NewStakeAddressCertificate,
+        VoteDelegationCertificate,
+        StakeVoteDelegationCertificate,
+        StakeRegistrationDelegationCertificate,
+        VoteRegistrationDelegationCertificate,
+        StakeVoteRegistrationDelegationCertificate,
+        AuthorizeCommitteeHotCertificate,
+        ResignCommitteeColdCertificate,
+        RegisterDelegateRepresentativeCertificate,
+        UnRegisterDelegateRepresentativeCertificate,
+        UpdateDelegateRepresentativeCertificate,
+        StakeAddressCertificate_2 as StakeAddressCertificate,
+        PoolRegistrationCertificate,
+        PoolRetirementCertificate,
+        StakeDelegationCertificate_2 as StakeDelegationCertificate,
+        MirCertificatePot,
+        MirCertificateKind,
+        MirCertificate,
+        GenesisKeyDelegationCertificate,
+        Certificate_2 as Certificate,
+        PostConwayStakeRegistrationCertificateTypes,
+        StakeRegistrationCertificateTypes_2 as StakeRegistrationCertificateTypes,
+        StakeDelegationCertificateTypes_2 as StakeDelegationCertificateTypes,
+        RegAndDeregCertificateTypes_2 as RegAndDeregCertificateTypes,
+        StakeCredentialCertificateTypes_2 as StakeCredentialCertificateTypes,
+        VoteDelegationCredentialCertificateTypes_2 as VoteDelegationCredentialCertificateTypes,
+        isCertType_2 as isCertType,
+        createStakeRegistrationCert,
+        createStakeDeregistrationCert,
+        createDelegationCert,
+        stakeKeyCertificates,
+        includesAnyCertificate,
+        CompactGenesis,
+        BlockSize,
+        BlockNo,
+        EpochNo_2 as EpochNo,
+        Slot_2 as Slot,
+        BlockId,
+        PartialBlockHeader,
+        Tip,
+        VrfVkBech32,
+        GenesisDelegate,
+        SlotLeader,
+        BlockInfo,
+        Block,
+        ExtendedBlockInfo,
+        AssetId_2 as AssetId,
+        AssetName_2 as AssetName,
+        PolicyId_2 as PolicyId,
+        AssetFingerprint,
+        MetadatumMap_2 as MetadatumMap,
+        Metadatum_2 as Metadatum,
+        TxMetadata,
+        AuxiliaryData_2 as AuxiliaryData,
+        computeAuxiliaryDataHash,
+        ScriptType,
+        NativeScriptKind,
+        RequireSignatureScript,
+        RequireAllOfScript,
+        RequireAnyOfScript,
+        RequireAtLeastScript,
+        RequireTimeBeforeScript,
+        RequireTimeAfterScript,
+        RequireGuardScript,
+        NativeScript_2 as NativeScript,
+        PlutusLanguageVersion_2 as PlutusLanguageVersion,
+        PlutusScript,
+        Script_2 as Script,
+        isNativeScript,
+        isPlutusScript,
+        ProtocolVersion,
+        CostModel_2 as CostModel,
+        CostModels_2 as CostModels,
+        Prices,
+        ExUnits_2 as ExUnits,
+        ValidityInterval,
+        TxFeePolicy,
+        SoftforkRule,
+        PoolVotingThresholds_2 as PoolVotingThresholds,
+        DelegateRepresentativeThresholds_2 as DelegateRepresentativeThresholds,
+        ProtocolParameters_2 as ProtocolParameters,
+        ConwayProtocolParameters,
+        ProtocolParametersUpdate,
+        ProtocolParametersUpdateConway,
+        GenesisDelegateKeyHash,
+        ProposedProtocolParameterUpdates,
+        Update,
+        PlutusListEncoding,
+        PlutusMapEncoding,
+        PlutusList_2 as PlutusList,
+        PlutusMap_2 as PlutusMap,
+        ConstrPlutusData_2 as ConstrPlutusData,
+        PlutusData_2 as PlutusData,
+        Fraction_2 as Fraction,
+        FractionUtils,
+        Anchor_2 as Anchor,
+        GovernanceActionType,
+        GovernanceActionId_2 as GovernanceActionId,
+        CommitteeMember_2 as CommitteeMember,
+        Committee_2 as Committee,
+        Constitution_2 as Constitution,
+        ParameterChangeAction_2 as ParameterChangeAction,
+        HardForkInitiationAction_2 as HardForkInitiationAction,
+        TreasuryWithdrawalsAction_2 as TreasuryWithdrawalsAction,
+        NoConfidence_2 as NoConfidence,
+        UpdateCommittee_2 as UpdateCommittee,
+        NewConstitution_2 as NewConstitution,
+        InfoAction_2 as InfoAction,
+        GovernanceAction_2 as GovernanceAction,
+        Vote_2 as Vote,
+        VotingProcedure_2 as VotingProcedure,
+        VoterType,
+        ConstitutionalCommitteeKeyHashVoter,
+        ConstitutionalCommitteeScriptHashVoter,
+        DrepKeyHashVoter,
+        DrepScriptHashVoter,
+        StakePoolKeyHashVoter,
+        Voter_2 as Voter,
+        VotingProcedureVote,
+        VotingProcedures_2 as VotingProcedures,
+        ProposalProcedure_2 as ProposalProcedure,
+        AlwaysAbstain,
+        AlwaysNoConfidence,
+        DelegateRepresentative_2 as DelegateRepresentative,
+        isDrepInfo,
+        isDRepCredential,
+        isDRepAlwaysAbstain,
+        isDRepAlwaysNoConfidence,
+        Cip1854ExtendedAccountPublicKey,
+        AddressType_2 as AddressType,
+        CredentialType_2 as CredentialType,
+        Credential_2 as Credential,
+        AddressHeader,
+        AddressProps,
+        Address_2 as Address,
+        isAddress,
+        BaseAddress,
+        ByronAttributes,
+        ByronAddressType,
+        ByronAddressContent,
+        ByronAddress,
+        DRepID,
+        EnterpriseAddress,
+        PaymentAddress_2 as PaymentAddress,
+        isRewardAccount_2 as isRewardAccount,
+        isAddressWithin,
+        inputsWithAddresses,
+        ResolveOptions,
+        ResolveInput,
+        InputResolver,
+        addressNetworkId,
+        PaymentCredential,
+        TxIndex,
+        CertIndex,
+        Pointer,
+        PointerAddress,
+        RewardAccount_2 as RewardAccount,
+        createRewardAccount,
+        RewardAddress_2 as RewardAddress
+    }
+}
+
+// @public
+enum CborAdditionalInfo {
+    // (undocumented)
+    Additional16BitData = 25,
+    // (undocumented)
+    Additional32BitData = 26,
+    // (undocumented)
+    Additional64BitData = 27,
+    // (undocumented)
+    Additional8BitData = 24,
+    // (undocumented)
+    AdditionalFalse = 20,
+    // (undocumented)
+    AdditionalNull = 22,
+    // (undocumented)
+    AdditionalTrue = 21,
+    // (undocumented)
+    IndefiniteLength = 31
+}
+
+// @public (undocumented)
+class CborContentException extends CustomError {
+    constructor(reason: string);
+}
+
+// @public
+class CborInitialByte {
+    // (undocumented)
+    static readonly AdditionalInformationMask = 31;
+    CborInitialByte(majorType: CborMajorType, additionalInfo: CborAdditionalInfo): void;
+    static from(initialByte: number): CborInitialByte;
+    getAdditionalInfo(): CborAdditionalInfo;
+    getInitialByte(): number;
+    getMajorType(): CborMajorType;
+    // (undocumented)
+    static readonly IndefiniteLengthBreakByte = 255;
+}
+
+// @public (undocumented)
+class CborInvalidOperationException extends CustomError {
+    constructor(reason: string);
+}
+
+// @public
+enum CborMajorType {
+    Array = 4,
+    ByteString = 2,
+    Map = 5,
+    NegativeInteger = 1,
+    Simple = 7,
+    Tag = 6,
+    UnsignedInteger = 0,
+    Utf8String = 3
+}
 
 // @public (undocumented)
 export const CborReader: typeof C.Serialization.CborReader;
 
 // @public (undocumented)
 export type CborReader = C.Serialization.CborReader;
+
+// @public
+class CborReader_2 {
+    constructor(data: HexBlob);
+    static ensureReadCapacityInArray(data: Uint8Array, bytesToRead: number): void;
+    getBytesRemaining(): number;
+    static mapSimpleValueDataToReaderState(value: CborAdditionalInfo): CborReaderState_2;
+    peekState(): CborReaderState_2;
+    peekTag(): CborTag;
+    readBoolean(): boolean;
+    readByteString(): Uint8Array;
+    readCborNegativeIntegerRepresentation(): bigint;
+    readDefiniteLengthByteString(): Uint8Array;
+    readDefiniteLengthTextString(): string;
+    readDouble(): number;
+    readEncodedValue(): Uint8Array;
+    readEndArray(): void;
+    readEndIndefiniteLengthByteString(): void;
+    readEndIndefiniteLengthTextString(): void;
+    readEndMap(): void;
+    readInt(): bigint;
+    readNull(): void;
+    readSimpleValue(): CborSimpleValue;
+    readStartArray(): number | null;
+    readStartIndefiniteLengthByteString(): void;
+    readStartIndefiniteLengthTextString(): void;
+    readStartMap(): number | null;
+    readTag(): CborTag;
+    readTextString(): string;
+    readUInt(): bigint;
+    skipValue(): void;
+}
 
 // @public (undocumented)
 export const CborReaderState: typeof C.Serialization.CborReaderState;
@@ -130,12 +826,82 @@ export const CborReaderState: typeof C.Serialization.CborReaderState;
 export type CborReaderState = C.Serialization.CborReaderState;
 
 // @public
+enum CborReaderState_2 {
+    Boolean = 19,
+    ByteString = 3,
+    DoublePrecisionFloat = 17,
+    EndArray = 10,
+    EndIndefiniteLengthByteString = 5,
+    EndIndefiniteLengthTextString = 8,
+    EndMap = 12,
+    Finished = 20,
+    HalfPrecisionFloat = 15,
+    NegativeInteger = 2,
+    Null = 18,
+    SimpleValue = 14,
+    SinglePrecisionFloat = 16,
+    StartArray = 9,
+    StartIndefiniteLengthByteString = 4,
+    StartIndefiniteLengthTextString = 7,
+    StartMap = 11,
+    Tag = 13,
+    TextString = 6,
+    Undefined = 0,
+    UnsignedInteger = 1
+}
+
+// @public
 export const CborSet: typeof C.Serialization.CborSet;
+
+// Warning: (ae-forgotten-export) The symbol "CborSerializable_2" needs to be exported by the entry point index.d.ts
+//
+// @public
+export type CborSet<A, B extends CborSerializable_2<A>> = C.Serialization.CborSet<A, B>;
 
 // Warning: (ae-forgotten-export) The symbol "CborSerializable" needs to be exported by the entry point index.d.ts
 //
 // @public
-export type CborSet<A, B extends CborSerializable<A>> = C.Serialization.CborSet<A, B>;
+class CborSet_2<C, T extends CborSerializable<C>> {
+    static fromCbor<C, S extends CborSerializable<C>>(cbor: HexBlob, fromCbor: (cbor: HexBlob) => S): CborSet_2<C, S>;
+    static fromCore<C, S extends CborSerializable<C>>(coreValues: C[], fromCore: (coreValue: C) => S): CborSet_2<C, S>;
+    setValues(values: T[]): void;
+    // (undocumented)
+    size(): number;
+    toCbor(): HexBlob;
+    // (undocumented)
+    toCore(): C[];
+    values(): readonly T[];
+}
+
+// @public
+enum CborSimpleValue {
+    False = 20,
+    Null = 22,
+    True = 21,
+    Undefined = 23
+}
+
+// @public
+enum CborTag {
+    Base16StringLaterEncoding = 23,
+    Base64 = 34,
+    Base64StringLaterEncoding = 22,
+    Base64Url = 33,
+    Base64UrlLaterEncoding = 21,
+    BigFloat = 5,
+    DateTimeString = 0,
+    DecimalFraction = 4,
+    EncodedCborDataItem = 24,
+    MimeMessage = 36,
+    NegativeBigNum = 3,
+    RationalNumber = 30,
+    Regex = 35,
+    SelfDescribeCbor = 55799,
+    Set = 258,
+    UnixTimeSeconds = 1,
+    UnsignedBigNum = 2,
+    Uri = 32
+}
 
 // @public (undocumented)
 export const CborWriter: typeof C.Serialization.CborWriter;
@@ -143,11 +909,85 @@ export const CborWriter: typeof C.Serialization.CborWriter;
 // @public (undocumented)
 export type CborWriter = C.Serialization.CborWriter;
 
+// @public
+class CborWriter_2 {
+    encode(): Uint8Array;
+    encodeAsHex(): HexBlob;
+    reset(): void;
+    writeBigInteger(value: bigint): CborWriter_2;
+    writeBoolean(value: boolean): CborWriter_2;
+    writeByteString(value: Uint8Array): CborWriter_2;
+    writeEncodedValue(value: Uint8Array): CborWriter_2;
+    writeEndArray(): CborWriter_2;
+    writeEndMap(): CborWriter_2;
+    writeFloat(value: number): CborWriter_2;
+    writeInt(value: number | bigint): CborWriter_2;
+    writeNull(): CborWriter_2;
+    writeStartArray(length?: number): CborWriter_2;
+    writeStartMap(length?: number): CborWriter_2;
+    writeTag(tag: CborTag | number): CborWriter_2;
+    writeTextString(value: string): CborWriter_2;
+    writeUndefined(): CborWriter_2;
+}
+
 // @public (undocumented)
 export const Certificate: typeof C.Serialization.Certificate;
 
 // @public (undocumented)
 export type Certificate = C.Serialization.Certificate;
+
+// @public (undocumented)
+type Certificate_2 = StakeAddressCertificate_2 | PoolRegistrationCertificate | PoolRetirementCertificate | StakeDelegationCertificate_2 | MirCertificate | GenesisKeyDelegationCertificate | NewStakeAddressCertificate | VoteDelegationCertificate | StakeVoteDelegationCertificate | StakeRegistrationDelegationCertificate | VoteRegistrationDelegationCertificate | StakeVoteRegistrationDelegationCertificate | AuthorizeCommitteeHotCertificate | ResignCommitteeColdCertificate | RegisterDelegateRepresentativeCertificate | UnRegisterDelegateRepresentativeCertificate | UpdateDelegateRepresentativeCertificate;
+
+// @public
+class Certificate_3 {
+    asAuthCommitteeHotCert(): AuthCommitteeHot | undefined;
+    asGenesisKeyDelegation(): GenesisKeyDelegation | undefined;
+    asMoveInstantaneousRewardsCert(): MoveInstantaneousReward | undefined;
+    asPoolRegistration(): PoolRegistration_2 | undefined;
+    asPoolRetirement(): PoolRetirement_2 | undefined;
+    asRegisterDelegateRepresentativeCert(): RegisterDelegateRepresentative_2 | undefined;
+    asRegistrationCert(): Registration | undefined;
+    asResignCommitteeColdCert(): ResignCommitteeCold | undefined;
+    asStakeDelegation(): StakeDelegation_2 | undefined;
+    asStakeDeregistration(): StakeDeregistration_2 | undefined;
+    asStakeRegistration(): StakeRegistration_2 | undefined;
+    asStakeRegistrationDelegationCert(): StakeRegistrationDelegation | undefined;
+    asStakeVoteDelegationCert(): StakeVoteDelegation | undefined;
+    asStakeVoteRegistrationDelegationCert(): StakeVoteRegistrationDelegation | undefined;
+    asUnregisterDelegateRepresentativeCert(): UnregisterDelegateRepresentative_2 | undefined;
+    asUnregistrationCert(): Unregistration | undefined;
+    asUpdateDelegateRepresentativeCert(): UpdateDelegateRepresentative_2 | undefined;
+    asVoteDelegationCert(): VoteDelegation_2 | undefined;
+    asVoteRegistrationDelegationCert(): VoteRegistrationDelegation | undefined;
+    static fromCbor(cbor: HexBlob): Certificate_3;
+    static fromCore(certificate: Cardano_4.Certificate): Certificate_3;
+    // Warning: (ae-forgotten-export) The symbol "CertificateKind" needs to be exported by the entry point index.d.ts
+    kind(): CertificateKind;
+    static newAuthCommitteeHotCert(authCommitteeHot: AuthCommitteeHot): Certificate_3;
+    static newGenesisKeyDelegation(genesisKeyDelegation: GenesisKeyDelegation): Certificate_3;
+    static newMoveInstantaneousRewardsCert(moveInstantaneousRewards: MoveInstantaneousReward): Certificate_3;
+    static newPoolRegistration(poolRegistration: PoolRegistration_2): Certificate_3;
+    static newPoolRetirement(poolRetirement: PoolRetirement_2): Certificate_3;
+    static newRegisterDelegateRepresentativeCert(drepRegistration: RegisterDelegateRepresentative_2): Certificate_3;
+    static newRegistrationCert(registration: Registration): Certificate_3;
+    static newResignCommitteeColdCert(resignCommitteeCold: ResignCommitteeCold): Certificate_3;
+    static newStakeDelegation(stakeDelegation: StakeDelegation_2): Certificate_3;
+    // @deprecated
+    static newStakeDeregistration(stakeDeregistration: StakeDeregistration_2): Certificate_3;
+    // @deprecated
+    static newStakeRegistration(stakeRegistration: StakeRegistration_2): Certificate_3;
+    static newStakeRegistrationDelegationCert(stakeRegistrationDelegation: StakeRegistrationDelegation): Certificate_3;
+    static newStakeVoteDelegationCert(stakeVoteDelegation: StakeVoteDelegation): Certificate_3;
+    static newStakeVoteRegistrationDelegationCert(stakeVoteRegistrationDelegation: StakeVoteRegistrationDelegation): Certificate_3;
+    static newUnregisterDelegateRepresentativeCert(drepUnregistration: UnregisterDelegateRepresentative_2): Certificate_3;
+    static newUnregistrationCert(unregistration: Unregistration): Certificate_3;
+    static newUpdateDelegateRepresentativeCert(updateDrep: UpdateDelegateRepresentative_2): Certificate_3;
+    static newVoteDelegationCert(voteDelegation: VoteDelegation_2): Certificate_3;
+    static newVoteRegistrationDelegationCert(voteRegistrationDelegation: VoteRegistrationDelegation): Certificate_3;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Certificate;
+}
 
 // @public (undocumented)
 export type CertificateCore = C.Cardano.Certificate;
@@ -158,8 +998,67 @@ export const CertificateType: typeof C.Cardano.CertificateType;
 // @public (undocumented)
 export type CertificateType = C.Cardano.CertificateType;
 
+// @public (undocumented)
+enum CertificateType_2 {
+    // (undocumented)
+    AuthorizeCommitteeHot = "AuthorizeCommitteeHotCertificate",
+    // (undocumented)
+    GenesisKeyDelegation = "GenesisKeyDelegationCertificate",
+    // (undocumented)
+    MIR = "MirCertificate",
+    // (undocumented)
+    PoolRegistration = "PoolRegistrationCertificate",
+    // (undocumented)
+    PoolRetirement = "PoolRetirementCertificate",
+    // (undocumented)
+    RegisterDelegateRepresentative = "RegisterDelegateRepresentativeCertificate",// deprecated in conway
+    // (undocumented)
+    Registration = "RegistrationCertificate",// deprecated in conway
+    // (undocumented)
+    ResignCommitteeCold = "ResignCommitteeColdCertificate",// Replaces StakeRegistration in post-conway era
+    // (undocumented)
+    StakeDelegation = "StakeDelegationCertificate",// Replaces StakeDeregistration in post-conway era
+    // @deprecated (undocumented)
+    StakeDeregistration = "StakeDeregistrationCertificate",
+    // @deprecated (undocumented)
+    StakeRegistration = "StakeRegistrationCertificate",
+    // (undocumented)
+    StakeRegistrationDelegation = "StakeRegistrationDelegateCertificate",// delegate or delegation??
+    // (undocumented)
+    StakeVoteDelegation = "StakeVoteDelegationCertificate",// same as above
+    // (undocumented)
+    StakeVoteRegistrationDelegation = "StakeVoteRegistrationDelegateCertificate",
+    // (undocumented)
+    UnregisterDelegateRepresentative = "UnregisterDelegateRepresentativeCertificate",
+    // (undocumented)
+    Unregistration = "UnRegistrationCertificate",
+    // (undocumented)
+    UpdateDelegateRepresentative = "UpdateDelegateRepresentativeCertificate",
+    // (undocumented)
+    VoteDelegation = "VoteDelegationCertificate",
+    // (undocumented)
+    VoteRegistrationDelegation = "VoteRegistrationDelegateCertificate"
+}
+
+// @public
+type CertIndex = OpaqueNumber<'CertIndex'>;
+
+// @public (undocumented)
+const CertIndex: (value: number) => CertIndex;
+
+// @public (undocumented)
+type ChainCode = HexBlob;
+
 // @public
 export type ChainId = C.Cardano.ChainId;
+
+// @public
+interface ChainId_2 {
+    // (undocumented)
+    networkId: NetworkId_2;
+    // (undocumented)
+    networkMagic: NetworkMagic;
+}
 
 // @public
 export const ChainIds: {
@@ -181,17 +1080,204 @@ export const ChainIds: {
     };
 };
 
+// @public
+const ChainIds_2: {
+    Mainnet: {
+        networkId: NetworkId_2;
+        networkMagic: NetworkMagics;
+    };
+    Preprod: {
+        networkId: NetworkId_2;
+        networkMagic: NetworkMagics;
+    };
+    Preview: {
+        networkId: NetworkId_2;
+        networkMagic: NetworkMagics;
+    };
+    Sanchonet: {
+        networkId: NetworkId_2;
+        networkMagic: NetworkMagics;
+    };
+};
+
+// @public (undocumented)
+interface Cip17DelegationPortfolio {
+    // (undocumented)
+    author?: string;
+    // (undocumented)
+    description?: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    pools: Cip17Pool[];
+}
+
+// @public (undocumented)
+const cip17FromMetadatum: (portfolio: Metadatum_2) => Cip17DelegationPortfolio;
+
+// @public (undocumented)
+interface Cip17Pool {
+    // (undocumented)
+    id: PoolIdHex;
+    // (undocumented)
+    name?: string;
+    // (undocumented)
+    ticker?: string;
+    // (undocumented)
+    weight: number;
+}
+
+// @public
+type Cip1854ExtendedAccountPublicKey = OpaqueString<'Cip1854PublicKey'>;
+
+// @public (undocumented)
+const Cip1854ExtendedAccountPublicKey: {
+    (value: string): Cip1854ExtendedAccountPublicKey;
+    fromBip32PublicKeyHex(value: Bip32PublicKeyHex): Cip1854ExtendedAccountPublicKey;
+    toBip32PublicKeyHex(value: Cip1854ExtendedAccountPublicKey): Bip32PublicKeyHex;
+};
+
+// @public
+interface Cip6MetadataFields {
+    extDataUrl?: string;
+    extSigUrl?: string;
+    extVkey?: PoolMdVk;
+}
+
 // @public (undocumented)
 export type Committee = C.Cardano.Committee;
 
 // @public (undocumented)
+type Committee_2 = {
+    members: Array<CommitteeMember_2>;
+    quorumThreshold: Fraction_2;
+};
+
+// @public
+class Committee_3 {
+    constructor(quorumThreshold: UnitInterval);
+    addMember(committeeColdCredential: Cardano_4.Credential, epoch: number): void;
+    static fromCbor(cbor: HexBlob): Committee_3;
+    static fromCore(coreCommittee: Cardano_4.Committee): Committee_3;
+    getMemberEpoch(committeeColdCredential: Cardano_4.Credential): number | undefined;
+    membersKeys(): Cardano_4.Credential[];
+    quorumThreshold(): UnitInterval;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Committee;
+}
+
+// @public (undocumented)
 export type CommitteeMember = C.Cardano.CommitteeMember;
+
+// @public (undocumented)
+type CommitteeMember_2 = {
+    coldCredential: Credential_2;
+    epoch: EpochNo_2;
+};
+
+// @public
+interface CompactGenesis {
+    // (undocumented)
+    activeSlotsCoefficient: number;
+    // (undocumented)
+    epochLength: number;
+    // (undocumented)
+    maxKesEvolutions: number;
+    // (undocumented)
+    maxLovelaceSupply: Lovelace;
+    // (undocumented)
+    networkId: NetworkId_2;
+    // (undocumented)
+    networkMagic: NetworkMagic;
+    // (undocumented)
+    securityParameter: number;
+    // Warning: (ae-forgotten-export) The symbol "Seconds" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    slotLength: Seconds;
+    // (undocumented)
+    slotsPerKesPeriod: number;
+    // (undocumented)
+    systemStart: Date;
+    // (undocumented)
+    updateQuorum: number;
+}
+
+// @public
+type CompanyAboutInfo = string;
+
+// @public
+type CompanyAddress = string;
+
+// @public
+type CompanyCity = string;
+
+// @public
+type CompanyCountry = string;
+
+// @public
+type CompanyId = string;
+
+// @public
+type CompanyName = string;
+
+// @public
+type CompanyVatId = string;
+
+// @public (undocumented)
+const computeAuxiliaryDataHash: (data: AuxiliaryData_2 | undefined) => Hash32ByteBase16_2 | undefined;
+
+// Warning: (ae-forgotten-export) The symbol "Cardano_2" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Address_3" needs to be exported by the entry point index.d.ts
+//
+// @public
+const computeImplicitCoin: (input: Pick<Cardano_2.ProtocolParameters, "stakeKeyDeposit" | "poolDeposit">, input2: Pick<Cardano_2.HydratedTxBody, "certificates" | "proposalProcedures" | "withdrawals">, rewardAccounts?: Address_3.RewardAccount[], dRepKeyHash?: Crypto.Ed25519KeyHashHex) => ImplicitCoin;
+
+// @public
+const computeMinUtxoValue: (coinsPerUtxoWord: bigint) => bigint;
 
 // @public (undocumented)
 export const Constitution: typeof C.Serialization.Constitution;
 
 // @public (undocumented)
 export type Constitution = C.Serialization.Constitution;
+
+// @public (undocumented)
+type Constitution_2 = {
+    anchor: Anchor_2;
+    scriptHash: Crypto.Hash28ByteBase16 | null;
+};
+
+// @public
+class Constitution_3 {
+    constructor(anchor: Anchor_3, scriptHash?: Hash28ByteBase16_2);
+    anchor(): Anchor_3;
+    static fromCbor(cbor: HexBlob): Constitution_3;
+    static fromCore(constitution: Cardano_4.Constitution): Constitution_3;
+    scriptHash(): Hash28ByteBase16_2 | undefined;
+    setAnchor(anchor: Anchor_3): void;
+    setScriptHash(scriptHash: Hash28ByteBase16_2 | undefined): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Constitution;
+}
+
+// @public (undocumented)
+type ConstitutionalCommitteeKeyHashVoter = {
+    __typename: VoterType.ccHotKeyHash;
+    credential: {
+        type: CredentialType_2.KeyHash;
+        hash: Credential_2['hash'];
+    };
+};
+
+// @public (undocumented)
+type ConstitutionalCommitteeScriptHashVoter = {
+    __typename: VoterType.ccHotScriptHash;
+    credential: {
+        type: CredentialType_2.ScriptHash;
+        hash: Credential_2['hash'];
+    };
+};
 
 // @public (undocumented)
 export type ConstitutionCore = C.Cardano.Constitution;
@@ -203,10 +1289,44 @@ export const ConstrPlutusData: typeof C.Serialization.ConstrPlutusData;
 export type ConstrPlutusData = C.Serialization.ConstrPlutusData;
 
 // @public (undocumented)
+type ConstrPlutusData_2 = {
+    cbor?: HexBlob;
+    constructor: bigint;
+    fields: PlutusList_2;
+};
+
+// @public
+class ConstrPlutusData_3 {
+    constructor(alternative: bigint, data: PlutusList_3);
+    equals(other: ConstrPlutusData_3): boolean;
+    static fromCbor(cbor: HexBlob): ConstrPlutusData_3;
+    getAlternative(): bigint;
+    getData(): PlutusList_3;
+    toCbor(): HexBlob;
+}
+
+// @public (undocumented)
+type ConwayProtocolParameters = Omit<ProtocolParameters_2, 'protocolVersion'>;
+
+// @public (undocumented)
 export const Costmdls: typeof C.Serialization.Costmdls;
 
 // @public (undocumented)
 export type Costmdls = C.Serialization.Costmdls;
+
+// @public
+class Costmdls_2 {
+    constructor(models?: Map<Cardano_4.PlutusLanguageVersion, CostModel_3>);
+    static fromCbor(cbor: HexBlob): Costmdls_2;
+    static fromCore(costModels: Cardano_4.CostModels): Costmdls_2;
+    get(key: Cardano_4.PlutusLanguageVersion): CostModel_3 | undefined;
+    insert(value: CostModel_3): void;
+    keys(): Array<Cardano_4.PlutusLanguageVersion>;
+    languageViewsEncoding(): HexBlob;
+    size(): number;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.CostModels;
+}
 
 // @public (undocumented)
 export const CostModel: typeof C.Serialization.CostModel;
@@ -214,14 +1334,72 @@ export const CostModel: typeof C.Serialization.CostModel;
 // @public (undocumented)
 export type CostModel = C.Serialization.CostModel;
 
+// @public
+type CostModel_2 = Array<number>;
+
+// @public
+class CostModel_3 {
+    constructor(language: PlutusLanguageVersion_2, costs: Array<number>);
+    costs(): Array<number>;
+    get(operation: number): number;
+    language(): PlutusLanguageVersion_2;
+    static newPlutusV1(costs: Array<number>): CostModel_3;
+    static newPlutusV2(costs: Array<number>): CostModel_3;
+    static newPlutusV3(costs: Array<number>): CostModel_3;
+    static newPlutusV4(costs: Array<number>): CostModel_3;
+    set(operation: number, cost: number): void;
+}
+
 // @public (undocumented)
 export type CostModels = C.Cardano.CostModels;
+
+// @public
+type CostModels_2 = Map<PlutusLanguageVersion_2, CostModel_2>;
+
+// @public
+const createDelegationCert: (rewardAccount: RewardAccount_2, poolId: PoolId_2) => Certificate_2;
+
+// Warning: (ae-forgotten-export) The symbol "Ed25519KeyHashHex_2" needs to be exported by the entry point index.d.ts
+//
+// @public
+const createRewardAccount: (stakeKeyHash: Ed25519KeyHashHex_2, networkId: NetworkId_2) => RewardAccount_2;
+
+// @public @deprecated
+const createStakeDeregistrationCert: (rewardAccount: RewardAccount_2, deposit?: Lovelace) => Certificate_2;
+
+// @public @deprecated
+const createStakeRegistrationCert: (rewardAccount: RewardAccount_2) => Certificate_2;
 
 // @public (undocumented)
 export const Credential: typeof C.Serialization.Credential;
 
 // @public (undocumented)
 export type Credential = C.Serialization.Credential;
+
+// @public
+type Credential_2 = {
+    type: CredentialType_2;
+    hash: Hash28ByteBase16_2;
+};
+
+// @public (undocumented)
+class Credential_3 {
+    // (undocumented)
+    static fromCbor(cbor: HexBlob): Credential_3;
+    // (undocumented)
+    static fromCore(credential: Cardano_3.Credential): Credential_3;
+    // (undocumented)
+    toCbor(): HexBlob;
+    // Warning: (ae-forgotten-export) The symbol "Cardano_3" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    toCore(): Cardano_3.Credential;
+    // (undocumented)
+    value(): {
+        type: CredentialType_2;
+        hash: Hash28ByteBase16_2;
+    };
+}
 
 // @public (undocumented)
 export type CredentialCore = C.Cardano.Credential;
@@ -232,11 +1410,33 @@ export const CredentialType: typeof C.Cardano.CredentialType;
 // @public (undocumented)
 export type CredentialType = C.Cardano.CredentialType;
 
+// @public
+enum CredentialType_2 {
+    // (undocumented)
+    KeyHash = 0,
+    // (undocumented)
+    ScriptHash = 1
+}
+
 // @public (undocumented)
 export const Datum: typeof C.Serialization.Datum;
 
 // @public (undocumented)
 export type Datum = PlutusData | DatumHash;
+
+// @public
+class Datum_2 {
+    constructor(dataHash?: Cardano_4.DatumHash, inlineData?: PlutusData_3);
+    asDataHash(): Cardano_4.DatumHash | undefined;
+    asInlineData(): PlutusData_3 | undefined;
+    static fromCbor(cbor: HexBlob): Datum_2;
+    static fromCore(datum: Cardano_4.DatumHash | Cardano_4.PlutusData): Datum_2;
+    kind(): DatumKind_2;
+    static newDataHash(dataHash: Cardano_4.DatumHash): Datum_2;
+    static newInlineData(inlineData: PlutusData_3): Datum_2;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.DatumHash | Cardano_4.PlutusData;
+}
 
 // @public (undocumented)
 export const DatumHash: {
@@ -247,23 +1447,181 @@ export const DatumHash: {
 // @public (undocumented)
 export type DatumHash = Crypto.Hash32ByteBase16;
 
+// @public
+type DatumHash_2 = Crypto.Hash32ByteBase16;
+
 // @public (undocumented)
 export const DatumKind: typeof C.Serialization.DatumKind;
+
+// @public
+enum DatumKind_2 {
+    DataHash = 0,
+    InlineData = 1
+}
+
+// @public
+type DeclaredPoolLocation = string;
+
+// @public (undocumented)
+interface Delegatee {
+    currentEpoch?: StakePool;
+    // (undocumented)
+    nextEpoch?: StakePool;
+    // (undocumented)
+    nextNextEpoch?: StakePool;
+}
 
 // @public (undocumented)
 export type DelegateRepresentative = C.Cardano.DelegateRepresentative;
 
 // @public (undocumented)
+type DelegateRepresentative_2 = Credential_2 | AlwaysAbstain | AlwaysNoConfidence;
+
+// @public (undocumented)
 export type DelegateRepresentativeThresholds = C.Cardano.DelegateRepresentativeThresholds;
+
+// @public (undocumented)
+interface DelegateRepresentativeThresholds_2 extends Omit<PoolVotingThresholds_2, 'securityRelevantParamVotingThreshold'> {
+    // (undocumented)
+    ppEconomicGroup: Fraction_2;
+    // (undocumented)
+    ppGovernanceGroup: Fraction_2;
+    // (undocumented)
+    ppNetworkGroup: Fraction_2;
+    // (undocumented)
+    ppTechnicalGroup: Fraction_2;
+    // (undocumented)
+    treasuryWithdrawal: Fraction_2;
+    // (undocumented)
+    updateConstitution: Fraction_2;
+}
+
+// @public (undocumented)
+const DelegationMetadataLabel = 6862n;
+
+// @public (undocumented)
+type DelegationPortfolioMetadata = Exclude<Cip17DelegationPortfolio, 'pools'> & {
+    pools: Pick<Cip17Pool, 'id' | 'weight'>[];
+};
+
+// @public (undocumented)
+interface DelegationsAndRewards {
+    // (undocumented)
+    delegate?: PoolId_2;
+    // (undocumented)
+    rewards: Lovelace;
+}
 
 // @public
 export function derivePublicKey(privateKey: Ed25519PrivateNormalKeyHex | Ed25519PrivateExtendedKeyHex): Ed25519PublicKeyHex;
+
+// @public
+interface DeserializationOptions {
+    strict?: boolean;
+}
+
+// @public (undocumented)
+const deserializeTx: (txBody: HexBlob | Buffer | Uint8Array | string) => Cardano_4.Tx<Cardano_4.TxBody>;
+
+// @public
+type DiscordAccount = string;
 
 // @public (undocumented)
 export const DRep: typeof C.Serialization.DRep;
 
 // @public (undocumented)
 export type DRep = C.Serialization.DRep;
+
+// @public
+class DRep_2 {
+    constructor(kind: DRepKind, credential?: Cardano_4.Credential);
+    static fromCbor(cbor: HexBlob): DRep_2;
+    static fromCore(deleg: Cardano_4.DelegateRepresentative): DRep_2;
+    kind(): DRepKind;
+    static newAlwaysAbstain(): DRep_2;
+    static newAlwaysNoConfidence(): DRep_2;
+    static newKeyHash(keyHash: Crypto.Ed25519KeyHashHex): DRep_2;
+    static newScriptHash(scriptHash: Crypto.Hash28ByteBase16): DRep_2;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.DelegateRepresentative;
+    toKeyHash(): Crypto.Ed25519KeyHashHex | undefined;
+    toScriptHash(): Crypto.Hash28ByteBase16 | undefined;
+}
+
+// @public (undocumented)
+type DRepDelegatee = {
+    delegateRepresentative: DRepInfo | AlwaysAbstain | AlwaysNoConfidence;
+};
+
+// @public
+type DRepID = OpaqueString<'DRepID'>;
+
+// @public (undocumented)
+const DRepID: {
+    (value: string): DRepID;
+    isValid(value: string): boolean;
+    cip105FromCredential(credential: Credential_2): DRepID;
+    cip129FromCredential(credential: Credential_2): DRepID;
+    toCredential(drepId: DRepID): Credential_2;
+    toCip105DRepID(drepId: DRepID): DRepID;
+    toCip129DRepID(drepId: DRepID): DRepID;
+    toAddress(drepId: DRepID): EnterpriseAddress | undefined;
+};
+
+// @public (undocumented)
+type DrepKeyHashVoter = {
+    __typename: VoterType.dRepKeyHash;
+    credential: {
+        type: CredentialType_2.KeyHash;
+        hash: Credential_2['hash'];
+    };
+};
+
+// @public
+enum DRepKind {
+    Abstain = 2,
+    KeyHash = 0,
+    NoConfidence = 3,
+    ScriptHash = 1
+}
+
+// @public (undocumented)
+type DrepScriptHashVoter = {
+    __typename: VoterType.dRepScriptHash;
+    credential: {
+        type: CredentialType_2.ScriptHash;
+        hash: Credential_2['hash'];
+    };
+};
+
+// @public
+class DrepVotingThresholds {
+    constructor(motionNoConfidence: UnitInterval, committeeNormal: UnitInterval, committeeNoConfidence: UnitInterval, updateConstitution: UnitInterval, hardForkInitiation: UnitInterval, ppNetworkGroup: UnitInterval, ppEconomicGroup: UnitInterval, ppTechnicalGroup: UnitInterval, ppGovernanceGroup: UnitInterval, treasuryWithdrawal: UnitInterval);
+    committeeNoConfidence(): UnitInterval;
+    committeeNormal(): UnitInterval;
+    static fromCbor(cbor: HexBlob): DrepVotingThresholds;
+    static fromCore(core: Cardano_4.DelegateRepresentativeThresholds): DrepVotingThresholds;
+    hardForkInitiation(): UnitInterval;
+    motionNoConfidence(): UnitInterval;
+    ppEconomicGroup(): UnitInterval;
+    ppGovernanceGroup(): UnitInterval;
+    ppNetworkGroup(): UnitInterval;
+    ppTechnicalGroup(): UnitInterval;
+    setCommitteeNoConfidence(threshold: UnitInterval): void;
+    setCommitteeNormal(threshold: UnitInterval): void;
+    setHardForkInitiation(threshold: UnitInterval): void;
+    setMotionNoConfidence(threshold: UnitInterval): void;
+    setPpEconomicGroup(threshold: UnitInterval): void;
+    setPpGovernanceGroup(threshold: UnitInterval): void;
+    setPpNetworkGroup(threshold: UnitInterval): void;
+    setPpTechnicalGroup(threshold: UnitInterval): void;
+    setTreasuryWithdrawal(threshold: UnitInterval): void;
+    setUpdateConstitution(threshold: UnitInterval): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.DelegateRepresentativeThresholds;
+    treasuryWithdrawal(): UnitInterval;
+    updateConstitution(): UnitInterval;
+}
 
 // @public (undocumented)
 export const Ed25519KeyHashHex: (value: string) => Crypto.Ed25519KeyHashHex;
@@ -317,6 +1675,19 @@ export const Ed25519SignatureHex: (value: string) => Crypto.Ed25519SignatureHex;
 export type Ed25519SignatureHex = Crypto.Ed25519SignatureHex;
 
 // @public
+type EmailAddress = string;
+
+// @public
+class EnterpriseAddress {
+    static fromAddress(addr: Address_2): EnterpriseAddress | undefined;
+    static fromCredentials(networkId: NetworkId_2, payment: Credential_2): EnterpriseAddress;
+    getPaymentCredential(): Credential_2;
+    static packParts(props: AddressProps): Buffer;
+    toAddress(): Address_2;
+    static unpackParts(type: number, data: Uint8Array): Address_2;
+}
+
+// @public
 export const entropyToMnemonic: typeof bip39.entropyToMnemonic;
 
 // @public (undocumented)
@@ -325,8 +1696,91 @@ export type EpochNo = C.Cardano.EpochNo;
 // @public (undocumented)
 export const EpochNo: (value: number) => C.Cardano.EpochNo;
 
+// @public
+type EpochNo_2 = OpaqueNumber<'EpochNo'>;
+
+// @public (undocumented)
+const EpochNo_2: (value: number) => EpochNo_2;
+
+// @public
+const estimateStakePoolAPY: (rewardsHistory: StakePoolEpochRewards[]) => Percent | null;
+
 // @public (undocumented)
 export type Evaluator = (tx: Transaction, additionalUtxos: TransactionUnspentOutput[], scriptSubstitutions?: Map<string, Script>) => Promise<Redeemers>;
+
+// @public (undocumented)
+interface ExtendedBlockInfo extends Required<Omit<BlockInfo, 'issuerVk' | 'previousBlock'>>, Pick<BlockInfo, 'previousBlock'> {
+    // (undocumented)
+    confirmations: number;
+    // (undocumented)
+    date: Date;
+    // (undocumented)
+    epoch: EpochNo_2;
+    // (undocumented)
+    epochSlot: number;
+    // (undocumented)
+    nextBlock?: BlockId;
+    slotLeader: SlotLeader;
+}
+
+// @public
+enum ExtendedPoolStatus {
+    // (undocumented)
+    Active = "active",
+    // (undocumented)
+    Experimental = "experimental",
+    // (undocumented)
+    Offline = "offline",
+    // (undocumented)
+    Private = "private",
+    // (undocumented)
+    Retired = "retired"
+}
+
+// @public
+interface ExtendedStakePoolMetadata {
+    // (undocumented)
+    [k: string]: unknown;
+    // (undocumented)
+    pool: ExtendedStakePoolMetadataFields;
+    // (undocumented)
+    serial?: SerialNumber;
+}
+
+// @public
+interface ExtendedStakePoolMetadataFields {
+    // (undocumented)
+    [k: string]: unknown;
+    // (undocumented)
+    about?: PoolAboutInfo;
+    // (undocumented)
+    company?: PoolCompanyInfo;
+    // (undocumented)
+    contact?: PoolContactData;
+    // (undocumented)
+    id?: PoolIdHex;
+    // (undocumented)
+    itn?: ITNVerification;
+    // (undocumented)
+    location?: DeclaredPoolLocation;
+    // (undocumented)
+    media_assets?: ThePoolsMediaAssets;
+    // (undocumented)
+    status?: ExtendedPoolStatus;
+}
+
+// @public
+class ExUnitPrices {
+    constructor(memPrices: UnitInterval, stepsPrices: UnitInterval);
+    static fromCbor(cbor: HexBlob): ExUnitPrices;
+    static fromCore(prices: Cardano_4.Prices): ExUnitPrices;
+    memPrice(): UnitInterval;
+    setMemPrice(memPrice: UnitInterval): void;
+    setStepsPrice(stepsPrice: UnitInterval): void;
+    stepsPrice(): UnitInterval;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Prices;
+}
 
 // @public (undocumented)
 export type ExUnits = C.Serialization.ExUnits;
@@ -335,13 +1789,100 @@ export type ExUnits = C.Serialization.ExUnits;
 export const ExUnits: typeof C.Serialization.ExUnits;
 
 // @public (undocumented)
+interface ExUnits_2 {
+    // (undocumented)
+    memory: number;
+    // (undocumented)
+    steps: number;
+}
+
+// @public
+class ExUnits_3 {
+    constructor(mem: bigint, steps: bigint);
+    add(other: ExUnits_3): ExUnits_3;
+    static fromCbor(cbor: HexBlob): ExUnits_3;
+    static fromCore(exUnits: Cardano_4.ExUnits): ExUnits_3;
+    mem(): bigint;
+    setMem(mem: bigint): void;
+    setSteps(steps: bigint): void;
+    steps(): bigint;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.ExUnits;
+}
+
+// @public
+type FacebookAccount = string;
+
+// @public (undocumented)
 export type Fraction = C.Cardano.Fraction;
+
+// @public (undocumented)
+interface Fraction_2 {
+    // (undocumented)
+    denominator: number;
+    // (undocumented)
+    numerator: number;
+}
+
+// @public (undocumented)
+const FractionUtils: {
+    toFraction(value: number | Fraction_2): Fraction_2;
+    toNumber(value: number | Fraction_2): number;
+};
 
 // @public
 export function fromHex(hexString: string): Uint8Array;
 
 // @public
+class GeneralTransactionMetadata {
+    constructor(metadata: Map<bigint, TransactionMetadatum>);
+    equals(other: GeneralTransactionMetadata): boolean;
+    static fromCbor(cbor: HexBlob): GeneralTransactionMetadata;
+    static fromCore(metadata: Cardano_4.TxMetadata): GeneralTransactionMetadata;
+    metadata(): Map<bigint, TransactionMetadatum> | undefined;
+    setMetadata(metadata: Map<bigint, TransactionMetadatum>): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.TxMetadata;
+}
+
+// @public
 export const generateMnemonic: typeof bip39.generateMnemonic;
+
+// @public
+type GenesisDelegate = OpaqueString<'GenesisDelegate'>;
+
+// @public (undocumented)
+const GenesisDelegate: (value: string) => GenesisDelegate;
+
+// @public (undocumented)
+type GenesisDelegateKeyHash = Crypto.Hash28ByteBase16;
+
+// @public @deprecated
+class GenesisKeyDelegation {
+    constructor(genesisHash: Crypto.Hash28ByteBase16, genesisDelegateHash: Crypto.Hash28ByteBase16, vrfKeyHash: Crypto.Hash32ByteBase16);
+    static fromCbor(cbor: HexBlob): GenesisKeyDelegation;
+    static fromCore(cert: Cardano_4.GenesisKeyDelegationCertificate): GenesisKeyDelegation;
+    genesisDelegateHash(): Crypto.Hash28ByteBase16;
+    genesisHash(): Crypto.Hash28ByteBase16;
+    setGenesisDelegateHash(genesisDelegateHash: Crypto.Hash28ByteBase16): void;
+    setGenesisHash(genesisHash: Crypto.Hash28ByteBase16): void;
+    setVrfKeyHash(vrfKeyHash: Crypto.Hash32ByteBase16): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.GenesisKeyDelegationCertificate;
+    vrfKeyHash(): Crypto.Hash32ByteBase16;
+}
+
+// @public @deprecated (undocumented)
+interface GenesisKeyDelegationCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.GenesisKeyDelegation;
+    // (undocumented)
+    genesisDelegateHash: Crypto.Hash28ByteBase16;
+    // (undocumented)
+    genesisHash: Crypto.Hash28ByteBase16;
+    // (undocumented)
+    vrfKeyHash: Crypto.Hash32ByteBase16;
+}
 
 // @public (undocumented)
 export const getBurnAddress: (network: NetworkId) => C.Cardano.Address;
@@ -349,8 +1890,14 @@ export const getBurnAddress: (network: NetworkId) => C.Cardano.Address;
 // @public
 export function getPaymentAddress(address: Address): PaymentAddress;
 
+// @public
+type GithubAccount = string;
+
 // @public (undocumented)
 export type GovernanceAction = C.Cardano.GovernanceAction;
+
+// @public (undocumented)
+type GovernanceAction_2 = ParameterChangeAction_2 | HardForkInitiationAction_2 | TreasuryWithdrawalsAction_2 | NoConfidence_2 | UpdateCommittee_2 | NewConstitution_2 | InfoAction_2;
 
 // @public (undocumented)
 export const GovernanceActionId: typeof C.Serialization.GovernanceActionId;
@@ -359,16 +1906,103 @@ export const GovernanceActionId: typeof C.Serialization.GovernanceActionId;
 export type GovernanceActionId = C.Serialization.GovernanceActionId;
 
 // @public (undocumented)
+type GovernanceActionId_2 = {
+    id: TransactionId_2;
+    actionIndex: number;
+};
+
+// @public
+class GovernanceActionId_3 {
+    constructor(id: Cardano_4.TransactionId, index: bigint);
+    equals(other: GovernanceActionId_3): boolean;
+    static fromCbor(cbor: HexBlob): GovernanceActionId_3;
+    static fromCore(coreGovernanceActionId: Cardano_4.GovernanceActionId): GovernanceActionId_3;
+    index(): bigint;
+    setIndex(index: bigint): void;
+    setTransactionId(id: Cardano_4.TransactionId): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.GovernanceActionId;
+    transactionId(): Cardano_4.TransactionId;
+}
+
+// @public (undocumented)
 export const GovernanceActionKind: typeof C.Serialization.GovernanceActionKind;
 
 // @public (undocumented)
 export type GovernanceActionKind = C.Serialization.GovernanceActionKind;
 
 // @public
+enum GovernanceActionKind_2 {
+    HardForkInitiation = 1,
+    Info = 6,
+    NewConstitution = 5,
+    NoConfidence = 3,
+    ParameterChange = 0,
+    TreasuryWithdrawals = 2,
+    UpdateCommittee = 4
+}
+
+// @public (undocumented)
+enum GovernanceActionType {
+    // (undocumented)
+    hard_fork_initiation_action = "hard_fork_initiation_action",
+    // (undocumented)
+    info_action = "info_action",
+    // (undocumented)
+    new_constitution = "new_constitution",
+    // (undocumented)
+    no_confidence = "no_confidence",
+    // (undocumented)
+    parameter_change_action = "parameter_change_action",
+    // (undocumented)
+    treasury_withdrawals_action = "treasury_withdrawals_action",
+    // (undocumented)
+    update_committee = "update_committee"
+}
+
+// @public
+class Guards {
+    credentials(): Cardano_3.Credential[] | undefined;
+    static fromCbor(cbor: HexBlob): Guards;
+    static fromCredentials(credentials: Cardano_3.Credential[]): Guards;
+    static fromKeyHashes(keyHashes: Crypto.Ed25519KeyHashHex[]): Guards;
+    keyHashes(): Crypto.Ed25519KeyHashHex[] | undefined;
+    kind(): GuardsKind;
+    size(): number;
+    toCbor(): HexBlob;
+}
+
+// @public
+enum GuardsKind {
+    // (undocumented)
+    Credentials = 1,
+    // (undocumented)
+    KeyHashes = 0
+}
+
+// @public
 export const hardCodedProtocolParams: ProtocolParameters;
 
 // @public (undocumented)
 export type HardForkInitiationAction = C.Cardano.HardForkInitiationAction;
+
+// @public (undocumented)
+type HardForkInitiationAction_2 = {
+    __typename: GovernanceActionType.hard_fork_initiation_action;
+    governanceActionId: GovernanceActionId_2 | null;
+    protocolVersion: Pick<ProtocolVersion, 'major' | 'minor'>;
+};
+
+// @public
+class HardForkInitiationAction_3 {
+    constructor(protocolVersion: ProtocolVersion_2, govActionId?: GovernanceActionId_3);
+    static fromCbor(cbor: HexBlob): HardForkInitiationAction_3;
+    static fromCore(hardForkInitiationAction: Cardano_4.HardForkInitiationAction): HardForkInitiationAction_3;
+    govActionId(): GovernanceActionId_3 | undefined;
+    protocolVersion(): ProtocolVersion_2;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.HardForkInitiationAction;
+}
 
 // @public (undocumented)
 export const Hash: typeof C.Serialization.Hash;
@@ -391,16 +2025,163 @@ export const Hash32ByteBase16: {
 // @public (undocumented)
 export type Hash32ByteBase16 = Crypto.Hash32ByteBase16;
 
+// @public (undocumented)
+class Hash_2<T extends string> {
+    constructor(value: T);
+    // (undocumented)
+    static fromCbor<T extends string>(cbor: HexBlob): Hash_2<T>;
+    // (undocumented)
+    static fromCore<T extends string>(hash: T): Hash_2<T>;
+    // (undocumented)
+    toCbor(): HexBlob;
+    // (undocumented)
+    toCore(): T;
+    // (undocumented)
+    value(): T;
+}
+
 // @public
 export function HashAsPubKeyHex(hash: Hash28ByteBase16): Ed25519PublicKeyHex;
 
-export { HexBlob }
+// @public (undocumented)
+export type HexBlob = OpaqueString<'HexBlob'>;
+
+// @public (undocumented)
+export const HexBlob: {
+    (target: string): HexBlob;
+    fromBytes(bytes: Uint8Array): HexBlob;
+    CHARS_PER_BYTE: number;
+    fromBase64(rawData: string): HexBlob;
+    toTypedBech32<T>(prefix: string, hexString: HexBlob): T;
+};
+
+// @public (undocumented)
+type HydratedCertificate = Exclude<Certificate_2, PoolRegistrationCertificate> | HydratedPoolRegistrationCertificate;
+
+// @public (undocumented)
+type HydratedPoolRegistrationCertificate = PoolRegistrationCertificate & {
+    deposit?: Lovelace;
+};
+
+// @public (undocumented)
+interface HydratedTx extends TxWithInputSource<HydratedTxBody> {
+    // (undocumented)
+    blockHeader: PartialBlockHeader;
+    // (undocumented)
+    body: HydratedTxBody;
+    // (undocumented)
+    index: number;
+    // (undocumented)
+    txSize: number;
+}
+
+// @public (undocumented)
+interface HydratedTxBody {
+    accountBalanceIntervals?: AccountBalanceIntervalEntry[];
+    // (undocumented)
+    auxiliaryDataHash?: Crypto.Hash32ByteBase16;
+    // (undocumented)
+    certificates?: HydratedCertificate[];
+    collateralReturn?: TxOut;
+    // (undocumented)
+    collaterals?: HydratedTxIn[];
+    directDeposits?: Withdrawal[];
+    // (undocumented)
+    donation?: Lovelace;
+    // (undocumented)
+    fee: Lovelace;
+    guards?: Credential_2[];
+    // (undocumented)
+    inputs: HydratedTxIn[];
+    // (undocumented)
+    mint?: TokenMap_2;
+    // (undocumented)
+    networkId?: NetworkId_2;
+    // (undocumented)
+    outputs: TxOut[];
+    // (undocumented)
+    proposalProcedures?: ProposalProcedure_2[];
+    referenceInputs?: HydratedTxIn[];
+    // (undocumented)
+    requiredExtraSignatures?: Crypto.Ed25519KeyHashHex[];
+    // (undocumented)
+    scriptIntegrityHash?: Crypto.Hash32ByteBase16;
+    totalCollateral?: Lovelace;
+    // (undocumented)
+    treasuryValue?: Lovelace;
+    // (undocumented)
+    update?: Update;
+    // (undocumented)
+    validityInterval?: ValidityInterval;
+    // (undocumented)
+    votingProcedures?: VotingProcedures_2;
+    // (undocumented)
+    withdrawals?: Withdrawal[];
+}
+
+// @public (undocumented)
+interface HydratedTxIn extends TxIn {
+    // (undocumented)
+    address: PaymentAddress_2;
+}
+
+// @public
+interface ImplicitCoin {
+    deposit?: Cardano_2.Lovelace;
+    input?: Cardano_2.Lovelace;
+    reclaimDeposit?: Cardano_2.Lovelace;
+    withdrawals?: Cardano_2.Lovelace;
+}
+
+// @public (undocumented)
+const includesAnyCertificate: (haystack: Certificate_2[], needle: readonly CertificateType_2[]) => boolean;
 
 // @public (undocumented)
 export type InfoAction = C.Cardano.InfoAction;
 
+// @public (undocumented)
+type InfoAction_2 = {
+    __typename: GovernanceActionType.info_action;
+};
+
+// @public
+class InfoAction_3 {
+    static fromCbor(cbor: HexBlob): InfoAction_3;
+    static fromCore(_: Cardano_4.InfoAction): InfoAction_3;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.InfoAction;
+}
+
 // @public
 export function initCrypto(): Promise<void>;
+
+// @public (undocumented)
+interface InputResolver {
+    // (undocumented)
+    resolveInput: ResolveInput;
+}
+
+// @public (undocumented)
+enum InputSource {
+    // (undocumented)
+    collaterals = "collaterals",
+    // (undocumented)
+    inputs = "inputs"
+}
+
+// @public
+const inputsWithAddresses: (tx: HydratedTx, ownAddresses: PaymentAddress_2[]) => HydratedTxIn[];
+
+// @public
+const isAddress: (input: string) => boolean;
+
+// @public
+const isAddressWithin: (addresses: PaymentAddress_2[]) => (input: {
+    address: PaymentAddress_2;
+}) => boolean;
+
+// @public (undocumented)
+const isAnyPlutusDataCollection: (plutusData: unknown) => plutusData is PlutusList_2 | PlutusMap_2 | ConstrPlutusData_2;
 
 // @public (undocumented)
 export const isCertType: <K extends keyof {
@@ -445,11 +2226,82 @@ export const isCertType: <K extends keyof {
     VoteRegistrationDelegateCertificate: C.Cardano.VoteRegistrationDelegationCertificate;
 }[K];
 
+// Warning: (ae-forgotten-export) The symbol "CertificateTypeMap" needs to be exported by the entry point index.d.ts
+//
+// @public
+const isCertType_2: <K extends keyof CertificateTypeMap>(certificate: Certificate_2, certificateTypes: readonly K[]) => certificate is CertificateTypeMap[K];
+
+// @public (undocumented)
+const isConstrPlutusData: (plutusData: unknown) => plutusData is ConstrPlutusData_2;
+
+// @public
+const isDatumHash: (datum: unknown) => datum is Cardano_4.DatumHash;
+
+// @public (undocumented)
+const isDRepAlwaysAbstain: (deleg: DelegateRepresentative_2 | DRepInfo) => deleg is AlwaysAbstain;
+
+// @public (undocumented)
+const isDRepAlwaysNoConfidence: (deleg: DelegateRepresentative_2 | DRepInfo) => deleg is AlwaysNoConfidence;
+
+// @public (undocumented)
+const isDRepCredential: (deleg: DelegateRepresentative_2 | DRepInfo) => deleg is Credential_2;
+
+// @public (undocumented)
+const isDrepInfo: (drep: DelegateRepresentative_2 | DRepInfo) => drep is DRepInfo;
+
+// @public
+const isNativeScript: (script: Script_2) => script is NativeScript_2;
+
+// @public (undocumented)
+const isPhase2ValidationErrTx: (input: Pick<OnChainTx, "inputSource">) => boolean;
+
+// @public (undocumented)
+const isPlutusBigInt: (plutusData: unknown) => plutusData is bigint;
+
+// @public (undocumented)
+const isPlutusBoundedBytes: (plutusData: unknown) => plutusData is Uint8Array;
+
+// @public (undocumented)
+const isPlutusList: (plutusData: unknown) => plutusData is PlutusList_2;
+
+// @public (undocumented)
+const isPlutusMap: (plutusData: unknown) => plutusData is PlutusMap_2;
+
+// @public
+const isPlutusScript: (script: Script_2) => script is PlutusScript;
+
 // @public (undocumented)
 export const isRewardAccount: (bech: PaymentAddress | RewardAccount) => bech is RewardAccount;
 
 // @public (undocumented)
+const isRewardAccount_2: (address: string) => boolean;
+
+// @public (undocumented)
+const isScriptAddress: (address: PaymentAddress_2) => boolean;
+
+// @public
+interface ITNVerification {
+    // (undocumented)
+    [k: string]: unknown;
+    // (undocumented)
+    owner?: TheITNPoolOwnerPublicKey;
+    // (undocumented)
+    witness?: TheSecretKeyGeneratedWitness;
+}
+
+// @public (undocumented)
 function justAddress(address: string, networkId: NetworkId): NativeScript;
+
+// @public (undocumented)
+class LossOfPrecisionException extends CustomError {
+    constructor(reason: string);
+}
+
+// @public (undocumented)
+type Lovelace = bigint;
+
+// @public
+type MeAboutInfo = string;
 
 // @public (undocumented)
 export const Metadata: typeof C.Serialization.GeneralTransactionMetadata;
@@ -464,16 +2316,43 @@ export const Metadatum: typeof C.Serialization.TransactionMetadatum;
 export type Metadatum = C.Serialization.TransactionMetadatum;
 
 // @public (undocumented)
+type Metadatum_2 = bigint | MetadatumMap_2 | string | Uint8Array | Metadatum_2[];
+
+// @public (undocumented)
 export const MetadatumList: typeof C.Serialization.MetadatumList;
 
 // @public (undocumented)
 export type MetadatumList = C.Serialization.MetadatumList;
+
+// @public
+class MetadatumList_2 {
+    add(elem: TransactionMetadatum): void;
+    equals(other: MetadatumList_2): boolean;
+    static fromCbor(cbor: HexBlob): MetadatumList_2;
+    get(index: number): TransactionMetadatum;
+    getLength(): number;
+    toCbor(): HexBlob;
+}
 
 // @public (undocumented)
 export const MetadatumMap: typeof C.Serialization.MetadatumMap;
 
 // @public (undocumented)
 export type MetadatumMap = C.Serialization.MetadatumMap;
+
+// @public (undocumented)
+type MetadatumMap_2 = Map<Metadatum_2, Metadatum_2>;
+
+// @public
+class MetadatumMap_3 {
+    equals(other: MetadatumMap_3): boolean;
+    static fromCbor(cbor: HexBlob): MetadatumMap_3;
+    get(key: TransactionMetadatum): TransactionMetadatum | undefined;
+    getKeys(): MetadatumList_2;
+    getLength(): number;
+    insert(key: TransactionMetadatum, value: TransactionMetadatum): void;
+    toCbor(): HexBlob;
+}
 
 // @public (undocumented)
 export interface MinFeeReferenceScripts {
@@ -485,14 +2364,139 @@ export interface MinFeeReferenceScripts {
     range: number;
 }
 
+// @public @deprecated (undocumented)
+interface MirCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.MIR;
+    // (undocumented)
+    kind: MirCertificateKind;
+    // (undocumented)
+    pot: MirCertificatePot;
+    // (undocumented)
+    quantity: Lovelace;
+    // (undocumented)
+    stakeCredential?: Credential_2;
+}
+
+// @public (undocumented)
+enum MirCertificateKind {
+    // (undocumented)
+    ToOtherPot = "toOtherPot",
+    // (undocumented)
+    ToStakeCreds = "ToStakeCreds"
+}
+
+// @public (undocumented)
+enum MirCertificatePot {
+    // (undocumented)
+    Reserves = "reserve",
+    // (undocumented)
+    Treasury = "treasury"
+}
+
 // @public
 export const mnemonicToEntropy: typeof bip39.mnemonicToEntropy;
+
+// @public @deprecated
+class MoveInstantaneousReward {
+    asToOtherPot(): MoveInstantaneousRewardToOtherPot | undefined;
+    asToStakeCreds(): MoveInstantaneousRewardToStakeCreds | undefined;
+    static fromCbor(cbor: HexBlob): MoveInstantaneousReward;
+    static fromCore(cert: Cardano_4.MirCertificate): MoveInstantaneousReward;
+    kind(): Cardano_4.MirCertificateKind;
+    static newToOtherPot(mirCert: MoveInstantaneousRewardToOtherPot): MoveInstantaneousReward;
+    static newToStakeCreds(mirCert: MoveInstantaneousRewardToStakeCreds): MoveInstantaneousReward;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.MirCertificate;
+}
+
+// @public
+class MoveInstantaneousRewardToOtherPot {
+    constructor(pot: Cardano_4.MirCertificatePot, amount: Cardano_4.Lovelace);
+    static fromCbor(cbor: HexBlob): MoveInstantaneousRewardToOtherPot;
+    static fromCore(cert: Cardano_4.MirCertificate): MoveInstantaneousRewardToOtherPot;
+    getAmount(): Cardano_4.Lovelace;
+    pot(): Cardano_4.MirCertificatePot;
+    setAmount(amount: Cardano_4.Lovelace): void;
+    setPot(pot: Cardano_4.MirCertificatePot): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.MirCertificate;
+}
+
+// @public
+class MoveInstantaneousRewardToStakeCreds {
+    constructor(pot: Cardano_4.MirCertificatePot, credentials: Map<Cardano_4.Credential, bigint>);
+    static fromCbor(cbor: HexBlob): MoveInstantaneousRewardToStakeCreds;
+    static fromCore(cert: Cardano_4.MirCertificate): MoveInstantaneousRewardToStakeCreds;
+    getStakeCreds(): Map<Cardano_4.Credential, bigint> | undefined;
+    pot(): Cardano_4.MirCertificatePot;
+    setPot(pot: Cardano_4.MirCertificatePot): void;
+    setStakeCreds(credentials: Map<Cardano_4.Credential, bigint>): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.MirCertificate;
+}
+
+// @public
+class MultiHostName {
+    constructor(dnsName: string);
+    dnsName(): string;
+    static fromCbor(cbor: HexBlob): MultiHostName;
+    static fromCore(relay: Cardano_4.RelayByNameMultihost): MultiHostName;
+    setDnsName(dnsName: string): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.RelayByNameMultihost;
+}
 
 // @public (undocumented)
 export const NativeScript: typeof C.Serialization.NativeScript;
 
 // @public (undocumented)
 export type NativeScript = C.Serialization.NativeScript;
+
+// @public
+type NativeScript_2 = RequireAllOfScript | RequireSignatureScript | RequireAnyOfScript | RequireAtLeastScript | RequireTimeBeforeScript | RequireTimeAfterScript | RequireGuardScript;
+
+// @public
+class NativeScript_3 {
+    asRequireGuard(): RequireGuard | undefined;
+    asScriptAll(): ScriptAll_2 | undefined;
+    asScriptAny(): ScriptAny_2 | undefined;
+    asScriptNOfK(): ScriptNOfK_2 | undefined;
+    asScriptPubkey(): ScriptPubkey_2 | undefined;
+    asTimelockExpiry(): TimelockExpiry_2 | undefined;
+    asTimelockStart(): TimelockStart_2 | undefined;
+    static fromCbor(cbor: HexBlob): NativeScript_3;
+    static fromCore(script: Cardano_4.NativeScript): NativeScript_3;
+    hash(): Crypto.Hash28ByteBase16;
+    kind(): NativeScriptKind;
+    static newRequireGuard(requireGuard: RequireGuard): NativeScript_3;
+    static newScriptAll(scriptAll: ScriptAll_2): NativeScript_3;
+    static newScriptAny(scriptAny: ScriptAny_2): NativeScript_3;
+    static newScriptNOfK(scriptNOfK: ScriptNOfK_2): NativeScript_3;
+    static newScriptPubkey(scriptPubkey: ScriptPubkey_2): NativeScript_3;
+    static newTimelockExpiry(timelockExpiry: TimelockExpiry_2): NativeScript_3;
+    static newTimelockStart(timelockStart: TimelockStart_2): NativeScript_3;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.NativeScript;
+}
+
+// @public
+enum NativeScriptKind {
+    // (undocumented)
+    RequireAllOf = 1,
+    // (undocumented)
+    RequireAnyOf = 2,
+    // (undocumented)
+    RequireGuard = 6,
+    // (undocumented)
+    RequireNOf = 3,
+    // (undocumented)
+    RequireSignature = 0,
+    // (undocumented)
+    RequireTimeAfter = 4,
+    // (undocumented)
+    RequireTimeBefore = 5
+}
 
 declare namespace NativeScripts {
     export {
@@ -512,22 +2516,145 @@ export const NetworkId: typeof C.Cardano.NetworkId;
 // @public (undocumented)
 export type NetworkId = C.Cardano.ChainId["networkId"];
 
+// @public
+enum NetworkId_2 {
+    // (undocumented)
+    Mainnet = 1,
+    // (undocumented)
+    Testnet = 0
+}
+
+// @public
+type NetworkMagic = number;
+
+// @public
+enum NetworkMagics {
+    // (undocumented)
+    Mainnet = 764824073,
+    // (undocumented)
+    Preprod = 1,
+    // (undocumented)
+    Preview = 2,
+    // (undocumented)
+    Sanchonet = 4
+}
+
 // @public (undocumented)
 export type NewConstitution = C.Cardano.NewConstitution;
 
 // @public (undocumented)
+type NewConstitution_2 = {
+    __typename: GovernanceActionType.new_constitution;
+    governanceActionId: GovernanceActionId_2 | null;
+    constitution: Constitution_2;
+};
+
+// @public
+class NewConstitution_3 {
+    constructor(constitution: Constitution_3, govActionId?: GovernanceActionId_3);
+    constitution(): Constitution_3;
+    static fromCbor(cbor: HexBlob): NewConstitution_3;
+    static fromCore(newConstitution: Cardano_4.NewConstitution): NewConstitution_3;
+    govActionId(): GovernanceActionId_3 | undefined;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.NewConstitution;
+}
+
+// @public (undocumented)
+interface NewStakeAddressCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.Registration | CertificateType_2.Unregistration;
+    // (undocumented)
+    deposit: Lovelace;
+    // (undocumented)
+    stakeCredential: Credential_2;
+}
+
+// @public (undocumented)
 export type NoConfidence = C.Cardano.NoConfidence;
 
-export { OpaqueString }
+// @public (undocumented)
+type NoConfidence_2 = {
+    __typename: GovernanceActionType.no_confidence;
+    governanceActionId: GovernanceActionId_2 | null;
+};
+
+// @public
+class NoConfidence_3 {
+    constructor(govActionId?: GovernanceActionId_3);
+    static fromCbor(cbor: HexBlob): NoConfidence_3;
+    static fromCore(noConfidence: Cardano_4.NoConfidence): NoConfidence_3;
+    govActionId(): GovernanceActionId_3 | undefined;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.NoConfidence;
+}
+
+// Warning: (ae-forgotten-export) The symbol "TxWithInputSource" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+interface OnChainTx<TBody extends TxBody = TxBody> extends Omit<TxWithInputSource<TBody>, 'witness' | 'auxiliaryData'> {
+    // (undocumented)
+    auxiliaryData?: Omit<AuxiliaryData_2, 'scripts'>;
+    // (undocumented)
+    witness: Omit<Witness, 'scripts'>;
+}
+
+// @public (undocumented)
+export type OpaqueString<T extends PropertyKey> = Tagged<string, T>;
 
 // @public (undocumented)
 export type ParameterChangeAction = C.Cardano.ParameterChangeAction;
+
+// @public (undocumented)
+type ParameterChangeAction_2 = {
+    __typename: GovernanceActionType.parameter_change_action;
+    governanceActionId: GovernanceActionId_2 | null;
+    protocolParamUpdate: ProtocolParametersUpdateConway;
+    policyHash: Crypto.Hash28ByteBase16 | null;
+};
+
+// @public
+class ParameterChangeAction_3 {
+    constructor(protocolParamUpdate: ProtocolParamUpdate, govActionId?: GovernanceActionId_3, policyHash?: Hash28ByteBase16_2);
+    static fromCbor(cbor: HexBlob): ParameterChangeAction_3;
+    static fromCore(parameterChangeAction: Cardano_4.ParameterChangeAction): ParameterChangeAction_3;
+    govActionId(): GovernanceActionId_3 | undefined;
+    // (undocumented)
+    policyHash(): Hash28ByteBase16_2 | undefined;
+    protocolParamUpdate(): ProtocolParamUpdate;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.ParameterChangeAction;
+}
+
+// @public (undocumented)
+interface PartialBlockHeader {
+    // (undocumented)
+    blockNo: BlockNo;
+    hash: BlockId;
+    // (undocumented)
+    slot: Slot_2;
+}
 
 // @public (undocumented)
 export const PaymentAddress: (value: string) => C.Cardano.PaymentAddress;
 
 // @public (undocumented)
 export type PaymentAddress = C.Cardano.PaymentAddress;
+
+// @public
+type PaymentAddress_2 = OpaqueString<'PaymentAddress'>;
+
+// @public
+const PaymentAddress_2: (value: string) => PaymentAddress_2;
+
+// @public
+type PaymentCredential = OpaqueString<'PaymentCredential'>;
+
+// @public (undocumented)
+const PaymentCredential: {
+    (value: string): PaymentCredential;
+    fromCredential(credential: Credential_2): PaymentCredential;
+};
 
 // @public (undocumented)
 export const PlutusData: typeof C.Serialization.PlutusData;
@@ -536,16 +2663,57 @@ export const PlutusData: typeof C.Serialization.PlutusData;
 export type PlutusData = C.Serialization.PlutusData;
 
 // @public (undocumented)
+type PlutusData_2 = bigint | Uint8Array | PlutusList_2 | PlutusMap_2 | ConstrPlutusData_2;
+
+// @public
+class PlutusData_3 {
+    asBoundedBytes(): Uint8Array | undefined;
+    asConstrPlutusData(): ConstrPlutusData_3 | undefined;
+    asInteger(): bigint | undefined;
+    asList(): PlutusList_3 | undefined;
+    asMap(): PlutusMap_3 | undefined;
+    equals(other: PlutusData_3): boolean;
+    static fromCbor(cbor: HexBlob): PlutusData_3;
+    static fromCore(data: Cardano_4.PlutusData): PlutusData_3;
+    getKind(): PlutusDataKind_2;
+    hash(): Crypto.Hash32ByteBase16;
+    static newBytes(bytes: Uint8Array): PlutusData_3;
+    static newConstrPlutusData(constrPlutusData: ConstrPlutusData_3): PlutusData_3;
+    static newInteger(integer: bigint): PlutusData_3;
+    static newList(list: PlutusList_3): PlutusData_3;
+    static newMap(map: PlutusMap_3): PlutusData_3;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.PlutusData;
+}
+
+// @public (undocumented)
 export const PlutusDataKind: typeof C.Serialization.PlutusDataKind;
 
 // @public (undocumented)
 export type PlutusDataKind = C.Serialization.PlutusDataKind;
+
+// @public
+enum PlutusDataKind_2 {
+    Bytes = 4,
+    ConstrPlutusData = 0,
+    Integer = 3,
+    List = 2,
+    Map = 1
+}
 
 // @public (undocumented)
 export const PlutusLanguageVersion: typeof C.Cardano.PlutusLanguageVersion;
 
 // @public (undocumented)
 export type PlutusLanguageVersion = C.Cardano.PlutusLanguageVersion;
+
+// @public
+enum PlutusLanguageVersion_2 {
+    V1 = 0,
+    V2 = 1,
+    V3 = 2,
+    V4 = 3
+}
 
 // @public (undocumented)
 export const PlutusList: typeof C.Serialization.PlutusList;
@@ -554,10 +2722,71 @@ export const PlutusList: typeof C.Serialization.PlutusList;
 export type PlutusList = C.Serialization.PlutusList;
 
 // @public (undocumented)
+type PlutusList_2 = {
+    cbor?: HexBlob;
+    encoding?: PlutusListEncoding;
+    items: PlutusData_2[];
+};
+
+// @public
+class PlutusList_3 {
+    add(elem: PlutusData_3): void;
+    equals(other: PlutusList_3): boolean;
+    static fromCbor(cbor: HexBlob): PlutusList_3;
+    get(index: number): PlutusData_3;
+    getLength(): number;
+    toCbor(): HexBlob;
+}
+
+// @public (undocumented)
+enum PlutusListEncoding {
+    // (undocumented)
+    FixedLength = 0,
+    // (undocumented)
+    IndefiniteLength = 159
+}
+
+// @public (undocumented)
 export const PlutusMap: typeof C.Serialization.PlutusMap;
 
 // @public (undocumented)
 export type PlutusMap = C.Serialization.PlutusMap;
+
+// @public (undocumented)
+type PlutusMap_2 = {
+    cbor?: HexBlob;
+    encoding?: PlutusMapEncoding;
+    data: Map<PlutusData_2, PlutusData_2>;
+};
+
+// @public
+class PlutusMap_3 {
+    equals(other: PlutusMap_3): boolean;
+    static fromCbor(cbor: HexBlob): PlutusMap_3;
+    get(key: PlutusData_3): PlutusData_3 | undefined;
+    getKeys(): PlutusList_3;
+    getLength(): number;
+    insert(key: PlutusData_3, value: PlutusData_3): void;
+    toCbor(): HexBlob;
+}
+
+// @public (undocumented)
+enum PlutusMapEncoding {
+    // (undocumented)
+    FixedLength = 0,
+    // (undocumented)
+    IndefiniteLength = 191
+}
+
+// @public
+interface PlutusScript {
+    // (undocumented)
+    __type: ScriptType.Plutus;
+    // (undocumented)
+    bytes: HexBlob;
+    // (undocumented)
+    version: PlutusLanguageVersion_2;
+}
 
 // @public (undocumented)
 export const PlutusV1Script: typeof C.Serialization.PlutusV1Script;
@@ -565,17 +2794,83 @@ export const PlutusV1Script: typeof C.Serialization.PlutusV1Script;
 // @public (undocumented)
 export type PlutusV1Script = C.Serialization.PlutusV1Script;
 
+// @public
+class PlutusV1Script_2 {
+    constructor(compiledByteCode: HexBlob);
+    static fromCbor(cbor: HexBlob): PlutusV1Script_2;
+    static fromCore(plutusScript: Cardano_4.PlutusScript): PlutusV1Script_2;
+    hash(): Crypto.Hash28ByteBase16;
+    rawBytes(): HexBlob;
+    setRawBytes(bytes: HexBlob): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.PlutusScript;
+}
+
 // @public (undocumented)
 export const PlutusV2Script: typeof C.Serialization.PlutusV2Script;
 
 // @public (undocumented)
 export type PlutusV2Script = C.Serialization.PlutusV2Script;
 
+// @public
+class PlutusV2Script_2 {
+    constructor(compiledByteCode: HexBlob);
+    static fromCbor(cbor: HexBlob): PlutusV2Script_2;
+    static fromCore(plutusScript: Cardano_4.PlutusScript): PlutusV2Script_2;
+    hash(): Crypto.Hash28ByteBase16;
+    rawBytes(): HexBlob;
+    setRawBytes(bytes: HexBlob): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.PlutusScript;
+}
+
 // @public (undocumented)
 export const PlutusV3Script: typeof C.Serialization.PlutusV3Script;
 
 // @public (undocumented)
 export type PlutusV3Script = C.Serialization.PlutusV3Script;
+
+// @public
+class PlutusV3Script_2 {
+    constructor(compiledByteCode: HexBlob);
+    static fromCbor(cbor: HexBlob): PlutusV3Script_2;
+    static fromCore(plutusScript: Cardano_4.PlutusScript): PlutusV3Script_2;
+    hash(): Crypto.Hash28ByteBase16;
+    rawBytes(): HexBlob;
+    setRawBytes(bytes: HexBlob): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.PlutusScript;
+}
+
+// @public
+class PlutusV4Script {
+    constructor(compiledByteCode: HexBlob);
+    static fromCbor(cbor: HexBlob): PlutusV4Script;
+    static fromCore(plutusScript: Cardano_4.PlutusScript): PlutusV4Script;
+    hash(): Crypto.Hash28ByteBase16;
+    rawBytes(): HexBlob;
+    setRawBytes(bytes: HexBlob): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.PlutusScript;
+}
+
+// @public
+type Pointer = {
+    slot: bigint;
+    txIndex: TxIndex;
+    certIndex: CertIndex;
+};
+
+// @public
+class PointerAddress {
+    static fromAddress(addr: Address_2): PointerAddress | undefined;
+    static fromCredentials(networkId: NetworkId_2, payment: Credential_2, pointer: Pointer): PointerAddress;
+    getPaymentCredential(): Credential_2;
+    getStakePointer(): Pointer;
+    static packParts(props: AddressProps): Buffer;
+    toAddress(): Address_2;
+    static unpackParts(type: number, data: Uint8Array): Address_2;
+}
 
 // @public (undocumented)
 export const PolicyId: (value: string) => C.Cardano.PolicyId;
@@ -584,7 +2879,72 @@ export const PolicyId: (value: string) => C.Cardano.PolicyId;
 export type PolicyId = C.Cardano.PolicyId;
 
 // @public
+type PolicyId_2 = OpaqueString<'PolicyId'>;
+
+// @public (undocumented)
+const PolicyId_2: (value: string) => PolicyId_2;
+
+// @public
 export function PolicyIdToHash(policy: PolicyId): Hash28ByteBase16;
+
+// @public
+interface PoolAboutInfo {
+    // (undocumented)
+    [k: string]: unknown;
+    // (undocumented)
+    company?: CompanyAboutInfo;
+    // (undocumented)
+    me?: MeAboutInfo;
+    // (undocumented)
+    server?: ServerAboutInfo;
+}
+
+// @public
+interface PoolCompanyInfo {
+    // (undocumented)
+    [k: string]: unknown;
+    // (undocumented)
+    addr?: CompanyAddress;
+    // (undocumented)
+    city?: CompanyCity;
+    // (undocumented)
+    company_id?: CompanyId;
+    // (undocumented)
+    country?: CompanyCountry;
+    // (undocumented)
+    name?: CompanyName;
+    // (undocumented)
+    vat_id?: CompanyVatId;
+}
+
+// @public
+interface PoolContactData {
+    // (undocumented)
+    [k: string]: unknown;
+    // (undocumented)
+    discord?: DiscordAccount;
+    // (undocumented)
+    email?: EmailAddress;
+    // (undocumented)
+    facebook?: FacebookAccount;
+    // (undocumented)
+    feed?: RSSFeed;
+    // (undocumented)
+    github?: GithubAccount;
+    // (undocumented)
+    primary?: PrimaryContactPreference;
+    // (undocumented)
+    telegram?: TelegramAccount;
+    // (undocumented)
+    twitch?: TwitchAccount;
+    // (undocumented)
+    twitter?: TwitterAccount;
+    // (undocumented)
+    youtube?: YoutubeAccount;
+}
+
+// @public
+type PoolIconInPNGFileFormat64X64Px = string;
 
 // @public (undocumented)
 export const PoolId: {
@@ -596,8 +2956,112 @@ export const PoolId: {
 // @public (undocumented)
 export type PoolId = OpaqueString<"PoolId">;
 
+// @public
+type PoolId_2 = OpaqueString<'PoolId'>;
+
+// @public (undocumented)
+const PoolId_2: {
+    (value: string): PoolId_2;
+    fromKeyHash(value: Crypto.Ed25519KeyHashHex): PoolId_2;
+    toKeyHash(poolId: PoolId_2): Crypto.Ed25519KeyHashHex;
+};
+
+// @public
+type PoolIdHex = OpaqueString<'PoolIdHex'>;
+
+// @public (undocumented)
+const PoolIdHex: (value: string) => PoolIdHex;
+
+// @public
+type PoolLogoInPNGFileFormat = string;
+
+// @public
+type PoolLogoInSVGFileFormat = string;
+
+// @public
+type PoolMdVk = OpaqueString<'PoolMdVk'>;
+
+// @public (undocumented)
+const PoolMdVk: (target: string) => PoolMdVk;
+
+// @public
+class PoolMetadata {
+    constructor(url: string, poolMetadataHash: Crypto.Hash32ByteBase16);
+    static fromCbor(cbor: HexBlob): PoolMetadata;
+    static fromCore(metadata: Cardano_4.PoolMetadataJson): PoolMetadata;
+    poolMetadataHash(): Crypto.Hash32ByteBase16;
+    setPoolMetadataHash(poolMetadataHash: Crypto.Hash32ByteBase16): void;
+    setUrl(url: string): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.PoolMetadataJson;
+    url(): string;
+}
+
+// @public (undocumented)
+interface PoolMetadataJson {
+    // Warning: (ae-forgotten-export) The symbol "Hash32ByteBase16_2" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    hash: Hash32ByteBase16_2;
+    // (undocumented)
+    url: string;
+}
+
 // @public (undocumented)
 export type PoolParameters = C.Cardano.PoolParameters;
+
+// @public (undocumented)
+interface PoolParameters_2 {
+    cost: Lovelace;
+    // (undocumented)
+    id: PoolId_2;
+    margin: Fraction_2;
+    metadata?: StakePoolMetadata;
+    metadataJson?: PoolMetadataJson;
+    // (undocumented)
+    owners: RewardAccount_2[];
+    pledge: Lovelace;
+    relays: Relay[];
+    // (undocumented)
+    rewardAccount: RewardAccount_2;
+    // (undocumented)
+    vrf: VrfVkHex;
+}
+
+// @public
+class PoolParams {
+    // Warning: (ae-forgotten-export) The symbol "PoolOwners" needs to be exported by the entry point index.d.ts
+    constructor(operator: Crypto.Ed25519KeyHashHex, vrfKeyHash: Cardano_4.VrfVkHex, pledge: Cardano_4.Lovelace, cost: Cardano_4.Lovelace, margin: UnitInterval, rewardAccount: Cardano_4.RewardAddress, poolOwners: PoolOwners, relays: Array<Relay_2>, poolMetadata?: PoolMetadata);
+    cost(): Cardano_4.Lovelace;
+    static fromCbor(cbor: HexBlob): PoolParams;
+    static fromCore(params: Cardano_4.PoolParameters): PoolParams;
+    static fromFlattenedCbor(reader: CborReader_2): PoolParams;
+    margin(): UnitInterval;
+    operator(): Crypto.Ed25519KeyHashHex;
+    pledge(): Cardano_4.Lovelace;
+    poolMetadata(): PoolMetadata | undefined;
+    poolOwners(): PoolOwners;
+    relays(): Array<Relay_2>;
+    rewardAccount(): Cardano_4.RewardAddress;
+    setCost(cost: Cardano_4.Lovelace): void;
+    setMargin(margin: UnitInterval): void;
+    setOperator(operator: Crypto.Ed25519KeyHashHex): void;
+    setPledge(pledge: Cardano_4.Lovelace): void;
+    setPoolMetadata(poolMetadata: PoolMetadata): void;
+    setPoolOwners(poolOwners: PoolOwners): void;
+    setRelays(relays: Array<Relay_2>): void;
+    setRewardAccount(rewardAccount: Cardano_4.RewardAddress): void;
+    setVrfKeyHash(vrfKeyHash: Cardano_4.VrfVkHex): void;
+    // (undocumented)
+    static readonly subgroupCount = 9;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.PoolParameters;
+    toFlattenedCbor(writer: CborWriter_2): HexBlob;
+    vrfKeyHash(): Cardano_4.VrfVkHex;
+}
+
+// @public
+type PoolPrimaryColor = string;
 
 // @public (undocumented)
 export const PoolRegistration: typeof C.Serialization.PoolRegistration;
@@ -605,14 +3069,100 @@ export const PoolRegistration: typeof C.Serialization.PoolRegistration;
 // @public (undocumented)
 export type PoolRegistration = C.Serialization.PoolRegistration;
 
+// @public
+class PoolRegistration_2 {
+    constructor(params: PoolParams);
+    static fromCbor(cbor: HexBlob): PoolRegistration_2;
+    static fromCore(cert: Cardano_4.PoolRegistrationCertificate): PoolRegistration_2;
+    poolParameters(): PoolParams;
+    setPoolParameters(parameters: PoolParams): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.PoolRegistrationCertificate;
+}
+
+// @public (undocumented)
+interface PoolRegistrationCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.PoolRegistration;
+    // (undocumented)
+    poolParameters: PoolParameters_2;
+}
+
 // @public (undocumented)
 export const PoolRetirement: typeof C.Serialization.PoolRetirement;
 
 // @public (undocumented)
 export type PoolRetirement = C.Serialization.PoolRetirement;
 
+// @public
+class PoolRetirement_2 {
+    constructor(poolKeyHash: Crypto.Ed25519KeyHashHex, epoch: Cardano_4.EpochNo);
+    epoch(): Cardano_4.EpochNo;
+    static fromCbor(cbor: HexBlob): PoolRetirement_2;
+    static fromCore(cert: Cardano_4.PoolRetirementCertificate): PoolRetirement_2;
+    poolKeyHash(): Crypto.Ed25519KeyHashHex;
+    setEpoch(epoch: Cardano_4.EpochNo): void;
+    setPoolKeyHash(poolKeyHash: Crypto.Ed25519KeyHashHex): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.PoolRetirementCertificate;
+}
+
+// @public (undocumented)
+interface PoolRetirementCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.PoolRetirement;
+    // (undocumented)
+    epoch: EpochNo_2;
+    // (undocumented)
+    poolId: PoolId_2;
+}
+
+// @public
+type PoolSecondaryColor = string;
+
 // @public (undocumented)
 export type PoolVotingThresholds = C.Cardano.PoolVotingThresholds;
+
+// @public (undocumented)
+interface PoolVotingThresholds_2 {
+    // (undocumented)
+    committeeNoConfidence: Fraction_2;
+    // (undocumented)
+    committeeNormal: Fraction_2;
+    // (undocumented)
+    hardForkInitiation: Fraction_2;
+    // (undocumented)
+    motionNoConfidence: Fraction_2;
+    // (undocumented)
+    securityRelevantParamVotingThreshold: Fraction_2;
+}
+
+// @public
+class PoolVotingThresholds_3 {
+    constructor(motionNoConfidence: UnitInterval, committeeNormal: UnitInterval, committeeNoConfidence: UnitInterval, hardForkInitiation: UnitInterval, securityRelevantParam: UnitInterval);
+    committeeNoConfidence(): UnitInterval;
+    committeeNormal(): UnitInterval;
+    static fromCbor(cbor: HexBlob): PoolVotingThresholds_3;
+    static fromCore(core: Cardano_4.PoolVotingThresholds): PoolVotingThresholds_3;
+    hardForkInitiation(): UnitInterval;
+    motionNoConfidence(): UnitInterval;
+    securityRelevantParam(): UnitInterval;
+    setCommitteeNoConfidence(threshold: UnitInterval): void;
+    setCommitteeNormal(threshold: UnitInterval): void;
+    setHardForkInitiation(threshold: UnitInterval): void;
+    setMotionNoConfidence(threshold: UnitInterval): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.PoolVotingThresholds;
+}
+
+// @public (undocumented)
+const portfolioMetadataFromCip17: (cip17: Cip17DelegationPortfolio) => DelegationPortfolioMetadata;
+
+// @public (undocumented)
+type PositiveCoin<T extends bigint> = bigint extends T ? never : `${T}` extends `-${string}` | `${string}.${string}` ? never : T;
+
+// @public (undocumented)
+const PostConwayStakeRegistrationCertificateTypes: readonly [CertificateType_2.Registration, CertificateType_2.VoteRegistrationDelegation, CertificateType_2.StakeRegistrationDelegation, CertificateType_2.StakeVoteRegistrationDelegation];
 
 // @public (undocumented)
 export type Prettier = PlutusData | string | number | boolean | null;
@@ -621,10 +3171,71 @@ export type Prettier = PlutusData | string | number | boolean | null;
 export function prettify(data: Prettier, indent?: string): string;
 
 // @public (undocumented)
+interface Prices {
+    // (undocumented)
+    memory: number;
+    // (undocumented)
+    steps: number;
+}
+
+// @public
+type PrimaryContactPreference = string;
+
+// @public (undocumented)
 export const ProposalProcedure: typeof C.Serialization.ProposalProcedure;
 
 // @public (undocumented)
 export type ProposalProcedure = C.Serialization.ProposalProcedure;
+
+// @public (undocumented)
+type ProposalProcedure_2 = {
+    deposit: Lovelace;
+    rewardAccount: RewardAccount_2;
+    governanceAction: GovernanceAction_2;
+    anchor: Anchor_2;
+};
+
+// @public
+class ProposalProcedure_3 {
+    anchor(): Anchor_3;
+    deposit(): Cardano_4.Lovelace;
+    static fromCbor(cbor: HexBlob): ProposalProcedure_3;
+    static fromCore(proposalProcedure: Cardano_4.ProposalProcedure): ProposalProcedure_3;
+    getHardForkInitiationAction(): HardForkInitiationAction_3 | undefined;
+    getInfoAction(): InfoAction_3 | undefined;
+    getNewConstitution(): NewConstitution_3 | undefined;
+    getNoConfidence(): NoConfidence_3 | undefined;
+    getParameterChangeAction(): ParameterChangeAction_3 | undefined;
+    getTreasuryWithdrawalsAction(): TreasuryWithdrawalsAction_3 | undefined;
+    getUpdateCommittee(): UpdateCommittee_3 | undefined;
+    kind(): GovernanceActionKind_2;
+    static newHardForkInitiationAction(deposit: Cardano_4.Lovelace, rewardAccount: Cardano_4.RewardAccount, anchor: Anchor_3, hardForkInitiationAction: HardForkInitiationAction_3): ProposalProcedure_3;
+    static newInfoAction(deposit: Cardano_4.Lovelace, rewardAccount: Cardano_4.RewardAccount, anchor: Anchor_3, infoAction: InfoAction_3): ProposalProcedure_3;
+    static newNewConstitution(deposit: Cardano_4.Lovelace, rewardAccount: Cardano_4.RewardAccount, anchor: Anchor_3, newConstitution: NewConstitution_3): ProposalProcedure_3;
+    static newNoConfidence(deposit: Cardano_4.Lovelace, rewardAccount: Cardano_4.RewardAccount, anchor: Anchor_3, noConfidence: NoConfidence_3): ProposalProcedure_3;
+    static newParameterChangeAction(deposit: Cardano_4.Lovelace, rewardAccount: Cardano_4.RewardAccount, anchor: Anchor_3, parameterChangeAction: ParameterChangeAction_3): ProposalProcedure_3;
+    static newTreasuryWithdrawalsAction(deposit: Cardano_4.Lovelace, rewardAccount: Cardano_4.RewardAccount, anchor: Anchor_3, treasuryWithdrawalsAction: TreasuryWithdrawalsAction_3): ProposalProcedure_3;
+    static newUpdateCommittee(deposit: Cardano_4.Lovelace, rewardAccount: Cardano_4.RewardAccount, anchor: Anchor_3, updateCommittee: UpdateCommittee_3): ProposalProcedure_3;
+    rewardAccount(): Cardano_4.RewardAccount;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.ProposalProcedure;
+}
+
+// @public (undocumented)
+type ProposedProtocolParameterUpdates = Map<GenesisDelegateKeyHash, ProtocolParametersUpdate>;
+
+// @public
+class ProposedProtocolParameterUpdates_2 {
+    constructor(proposedUpdates: Map<Cardano_4.GenesisDelegateKeyHash, ProtocolParamUpdate>);
+    static fromCbor(cbor: HexBlob): ProposedProtocolParameterUpdates_2;
+    static fromCore(updates: Cardano_4.ProposedProtocolParameterUpdates): ProposedProtocolParameterUpdates_2;
+    get(key: Cardano_4.GenesisDelegateKeyHash): ProtocolParamUpdate | undefined;
+    insert(key: Cardano_4.GenesisDelegateKeyHash, value: ProtocolParamUpdate): void;
+    keys(): Array<Cardano_4.GenesisDelegateKeyHash>;
+    size(): number;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.ProposedProtocolParameterUpdates;
+}
 
 // @public
 export interface ProtocolParameters {
@@ -663,11 +3274,164 @@ export interface ProtocolParameters {
     treasuryExpansion: string;
 }
 
+// Warning: (ae-forgotten-export) The symbol "BabbageProtocolParameters" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "NewProtocolParamsInConway" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "NewProtocolParamsInDijkstra" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+type ProtocolParameters_2 = BabbageProtocolParameters & Partial<NewProtocolParamsInConway> & Partial<NewProtocolParamsInDijkstra>;
+
+// Warning: (ae-forgotten-export) The symbol "AlonzoProtocolParams" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+type ProtocolParametersUpdate = Partial<ProtocolParameters_2 & Pick<AlonzoProtocolParams, 'extraEntropy' | 'decentralizationParameter'>>;
+
+// @public (undocumented)
+type ProtocolParametersUpdateConway = Partial<ConwayProtocolParameters>;
+
+// @public
+class ProtocolParamUpdate {
+    adaPerUtxoByte(): Cardano_4.Lovelace | undefined;
+    collateralPercentage(): number | undefined;
+    committeeTermLimit(): number | undefined;
+    costModels(): Costmdls_2 | undefined;
+    d(): UnitInterval | undefined;
+    drepDeposit(): number | undefined;
+    drepInactivityPeriod(): number | undefined;
+    drepVotingThresholds(): DrepVotingThresholds | undefined;
+    executionCosts(): ExUnitPrices | undefined;
+    expansionRate(): UnitInterval | undefined;
+    extraEntropy(): HexBlob | undefined;
+    static fromCbor(cbor: HexBlob): ProtocolParamUpdate;
+    static fromCore<T extends Cardano_4.ProtocolParametersUpdateConway = Cardano_4.ProtocolParametersUpdate>(parametersUpdate: T): ProtocolParamUpdate;
+    governanceActionDeposit(): number | undefined;
+    governanceActionValidityPeriod(): number | undefined;
+    keyDeposit(): Cardano_4.Lovelace | undefined;
+    maxBlockBodySize(): number | undefined;
+    maxBlockExUnits(): ExUnits_3 | undefined;
+    maxBlockHeaderSize(): number | undefined;
+    maxCollateralInputs(): number | undefined;
+    maxEpoch(): number | undefined;
+    maxRefScriptSizePerBlock(): number | undefined;
+    maxRefScriptSizePerTx(): number | undefined;
+    maxTxExUnits(): ExUnits_3 | undefined;
+    maxTxSize(): number | undefined;
+    maxValueSize(): number | undefined;
+    minCommitteeSize(): number | undefined;
+    minFeeA(): Cardano_4.Lovelace | undefined;
+    minFeeB(): Cardano_4.Lovelace | undefined;
+    // (undocumented)
+    minFeeRefScriptCostPerByte(): UnitInterval | undefined;
+    minPoolCost(): Cardano_4.Lovelace | undefined;
+    nOpt(): number | undefined;
+    poolDeposit(): Cardano_4.Lovelace | undefined;
+    poolPledgeInfluence(): UnitInterval | undefined;
+    poolVotingThresholds(): PoolVotingThresholds_3 | undefined;
+    protocolVersion(): ProtocolVersion_2 | undefined;
+    refScriptCostMultiplier(): UnitInterval | undefined;
+    refScriptCostStride(): number | undefined;
+    setAdaPerUtxoByte(adaPerUtxoByte: Cardano_4.Lovelace): void;
+    setCollateralPercentage(collateralPercentage: number): void;
+    setCommitteeTermLimit(committeeTermLimit: number): void;
+    setCostModels(costModels: Costmdls_2): void;
+    setD(d: UnitInterval): void;
+    setDrepDeposit(drepDeposit: number): void;
+    setDrepInactivityPeriod(drepInactivityPeriod: number): void;
+    setDrepVotingThresholds(drepVotingThresholds: DrepVotingThresholds): void;
+    setExecutionCosts(executionCosts: ExUnitPrices): void;
+    setExpansionRate(expansionRate: UnitInterval): void;
+    setExtraEntropy(extraEntropy: HexBlob): void;
+    setGovernanceActionDeposit(governanceActionDeposit: number): void;
+    setGovernanceActionValidityPeriod(governanceActionValidityPeriod: number): void;
+    setKeyDeposit(keyDeposit: Cardano_4.Lovelace): void;
+    setMaxBlockBodySize(maxBlockBodySize: number): void;
+    setMaxBlockExUnits(maxBlockExUnits: ExUnits_3): void;
+    setMaxBlockHeaderSize(maxBlockHeaderSize: number): void;
+    setMaxCollateralInputs(maxCollateralInputs: number): void;
+    setMaxEpoch(maxEpoch: number): void;
+    setMaxRefScriptSizePerBlock(maxRefScriptSizePerBlock: number): void;
+    setMaxRefScriptSizePerTx(maxRefScriptSizePerTx: number): void;
+    setMaxTxExUnits(maxTxExUnits: ExUnits_3): void;
+    setMaxTxSize(maxTxSize: number): void;
+    setMaxValueSize(maxValueSize: number): void;
+    setMinCommitteeSize(minCommitteeSize: number): void;
+    setMinFeeA(minFeeA: Cardano_4.Lovelace): void;
+    setMinFeeB(minFeeB: Cardano_4.Lovelace): void;
+    setMinPoolCost(minPoolCost: Cardano_4.Lovelace): void;
+    setNOpt(nOpt: number): void;
+    setPoolDeposit(poolDeposit: Cardano_4.Lovelace): void;
+    setPoolPledgeInfluence(poolPledgeInfluence: UnitInterval): void;
+    setPoolVotingThresholds(pooVotingThresholds: PoolVotingThresholds_3): void;
+    setProtocolVersion(protocolVersion: ProtocolVersion_2): void;
+    setRefScriptCostMultiplier(refScriptCostMultiplier: UnitInterval): void;
+    setRefScriptCostStride(refScriptCostStride: number): void;
+    setTreasuryGrowthRate(treasuryGrowthRate: UnitInterval): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.ProtocolParametersUpdate;
+    treasuryGrowthRate(): UnitInterval | undefined;
+}
+
+// @public (undocumented)
+interface ProtocolVersion {
+    // (undocumented)
+    major: number;
+    // (undocumented)
+    minor: number;
+    // (undocumented)
+    patch?: number;
+}
+
+// @public
+class ProtocolVersion_2 {
+    constructor(major: number, minor: number);
+    static fromCbor(cbor: HexBlob): ProtocolVersion_2;
+    static fromCore(version: Cardano_4.ProtocolVersion): ProtocolVersion_2;
+    major(): number;
+    minor(): number;
+    setMajor(major: number): void;
+    setMinor(minor: number): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.ProtocolVersion;
+}
+
+// @public
+const readCredentialType: (reader: CborReader_2) => CredentialType_2;
+
 // @public (undocumented)
 export const Redeemer: typeof C.Serialization.Redeemer;
 
 // @public (undocumented)
 export type Redeemer = C.Serialization.Redeemer;
+
+// @public (undocumented)
+interface Redeemer_2 {
+    // (undocumented)
+    data: PlutusData_2;
+    // (undocumented)
+    executionUnits: ExUnits_2;
+    // (undocumented)
+    index: number;
+    // (undocumented)
+    purpose: RedeemerPurpose_2;
+}
+
+// @public
+class Redeemer_3 {
+    constructor(tag: RedeemerTag_2, index: bigint, data: PlutusData_3, exUnits: ExUnits_3);
+    data(): PlutusData_3;
+    exUnits(): ExUnits_3;
+    static fromCbor(cbor: HexBlob): Redeemer_3;
+    static fromCore(redeemer: Cardano_4.Redeemer): Redeemer_3;
+    hash(): Crypto.Hash32ByteBase16;
+    index(): bigint;
+    setData(data: PlutusData_3): void;
+    setExUnits(exUnits: ExUnits_3): void;
+    setIndex(index: bigint): void;
+    setTag(tag: RedeemerTag_2): void;
+    tag(): RedeemerTag_2;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Redeemer;
+}
 
 // @public (undocumented)
 export const RedeemerPurpose: typeof C.Cardano.RedeemerPurpose;
@@ -676,10 +3440,42 @@ export const RedeemerPurpose: typeof C.Cardano.RedeemerPurpose;
 export type RedeemerPurpose = C.Cardano.RedeemerPurpose;
 
 // @public (undocumented)
+enum RedeemerPurpose_2 {
+    // (undocumented)
+    certificate = "certificate",
+    // (undocumented)
+    guarding = "guarding",
+    // (undocumented)
+    mint = "mint",
+    // (undocumented)
+    propose = "propose",
+    // (undocumented)
+    spend = "spend",
+    // (undocumented)
+    vote = "vote",
+    // (undocumented)
+    withdrawal = "withdrawal"
+}
+
+// @public (undocumented)
 export const Redeemers: typeof C.Serialization.Redeemers;
 
 // @public (undocumented)
 export type Redeemers = C.Serialization.Redeemers;
+
+// @public (undocumented)
+class Redeemers_2 {
+    static fromCbor(cbor: HexBlob): Redeemers_2;
+    static fromCore(redeemers: Cardano_3.Redeemer[]): Redeemers_2;
+    // (undocumented)
+    setValues(redeemers: Redeemer_3[]): void;
+    // (undocumented)
+    size(): number;
+    toCbor(): HexBlob;
+    toCore(): Cardano_3.Redeemer[];
+    // (undocumented)
+    values(): readonly Redeemer_3[];
+}
 
 // @public (undocumented)
 export const RedeemerTag: typeof C.Serialization.RedeemerTag;
@@ -687,14 +3483,234 @@ export const RedeemerTag: typeof C.Serialization.RedeemerTag;
 // @public (undocumented)
 export type RedeemerTag = C.Serialization.RedeemerTag;
 
+// @public
+enum RedeemerTag_2 {
+    Cert = 2,
+    Guarding = 6,
+    Mint = 1,
+    // (undocumented)
+    Proposing = 5,
+    Reward = 3,
+    Spend = 0,
+    // (undocumented)
+    Voting = 4
+}
+
 // @public (undocumented)
 export const RegAndDeregCertificateTypes: readonly [C.Cardano.CertificateType.StakeRegistration, C.Cardano.CertificateType.Registration, C.Cardano.CertificateType.VoteRegistrationDelegation, C.Cardano.CertificateType.StakeRegistrationDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation, C.Cardano.CertificateType.Unregistration, C.Cardano.CertificateType.StakeDeregistration];
+
+// @public (undocumented)
+const RegAndDeregCertificateTypes_2: readonly [CertificateType_2.StakeRegistration, CertificateType_2.Registration, CertificateType_2.VoteRegistrationDelegation, CertificateType_2.StakeRegistrationDelegation, CertificateType_2.StakeVoteRegistrationDelegation, CertificateType_2.Unregistration, CertificateType_2.StakeDeregistration];
+
+// @public (undocumented)
+type RegAndDeregCertificateTypes_2 = typeof RegAndDeregCertificateTypes_2[number];
 
 // @public (undocumented)
 export const RegisterDelegateRepresentative: typeof C.Serialization.RegisterDelegateRepresentative;
 
 // @public (undocumented)
 export type RegisterDelegateRepresentative = C.Serialization.RegisterDelegateRepresentative;
+
+// @public
+class RegisterDelegateRepresentative_2 {
+    constructor(drepCredential: Cardano_4.Credential, deposit: Cardano_4.Lovelace, anchor?: Anchor_3);
+    anchor(): Anchor_3 | undefined;
+    credential(): Cardano_4.Credential;
+    deposit(): Cardano_4.Lovelace;
+    static fromCbor(cbor: HexBlob): RegisterDelegateRepresentative_2;
+    static fromCore(cert: Cardano_4.RegisterDelegateRepresentativeCertificate): RegisterDelegateRepresentative_2;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.RegisterDelegateRepresentativeCertificate;
+}
+
+// @public (undocumented)
+interface RegisterDelegateRepresentativeCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.RegisterDelegateRepresentative;
+    // (undocumented)
+    anchor: Anchor_2 | null;
+    // (undocumented)
+    deposit: Lovelace;
+    // (undocumented)
+    dRepCredential: Credential_2;
+}
+
+// @public
+class Registration {
+    constructor(credential: Cardano_4.Credential, deposit: Cardano_4.Lovelace);
+    deposit(): Cardano_4.Lovelace;
+    static fromCbor(cbor: HexBlob): Registration;
+    static fromCore(cert: Cardano_4.NewStakeAddressCertificate): Registration;
+    setDeposit(deposit: Cardano_4.Lovelace): void;
+    setStakeCredential(credential: Cardano_4.Credential): void;
+    stakeCredential(): Cardano_4.Credential;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.NewStakeAddressCertificate;
+}
+
+// @public (undocumented)
+type Relay = RelayByAddress | RelayByName | RelayByNameMultihost;
+
+// @public
+class Relay_2 {
+    asMultiHostName(): MultiHostName | undefined;
+    asSingleHostAddr(): SingleHostAddr | undefined;
+    asSingleHostName(): SingleHostName | undefined;
+    static fromCbor(cbor: HexBlob): Relay_2;
+    static fromCore(coreRelay: Cardano_4.Relay): Relay_2;
+    kind(): RelayKind;
+    static newMultiHostName(multiHostName: MultiHostName): Relay_2;
+    static newSingleHostAddr(singleHostaddr: SingleHostAddr): Relay_2;
+    static newSingleHostName(singleHostName: SingleHostName): Relay_2;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Relay;
+}
+
+// @public (undocumented)
+interface RelayByAddress {
+    // (undocumented)
+    __typename: 'RelayByAddress';
+    // (undocumented)
+    ipv4?: string;
+    // (undocumented)
+    ipv6?: string;
+    // (undocumented)
+    port?: number;
+}
+
+// @public (undocumented)
+interface RelayByName {
+    // (undocumented)
+    __typename: 'RelayByName';
+    // (undocumented)
+    hostname: string;
+    // (undocumented)
+    port?: number;
+}
+
+// @public (undocumented)
+interface RelayByNameMultihost {
+    // (undocumented)
+    __typename: 'RelayByNameMultihost';
+    // (undocumented)
+    dnsName: string;
+}
+
+// @public
+enum RelayKind {
+    // (undocumented)
+    MultiHostDnsName = 2,
+    // (undocumented)
+    SingleHostAddress = 0,
+    // (undocumented)
+    SingleHostDnsName = 1
+}
+
+// @public
+interface RequireAllOfScript {
+    __type: ScriptType.Native;
+    kind: NativeScriptKind.RequireAllOf;
+    scripts: NativeScript_2[];
+}
+
+// @public
+interface RequireAnyOfScript {
+    __type: ScriptType.Native;
+    kind: NativeScriptKind.RequireAnyOf;
+    scripts: NativeScript_2[];
+}
+
+// @public
+interface RequireAtLeastScript {
+    __type: ScriptType.Native;
+    kind: NativeScriptKind.RequireNOf;
+    required: number;
+    scripts: NativeScript_2[];
+}
+
+// @public (undocumented)
+const REQUIRED_FIELDS_COUNT = 2;
+
+// @public (undocumented)
+interface RequiredTopLevelGuardEntry {
+    // (undocumented)
+    credential: Credential_2;
+    datum: PlutusData_2 | null;
+}
+
+// @public
+class RequireGuard {
+    constructor(credential: Credential_3);
+    credential(): Credential_3;
+    static fromCbor(cbor: HexBlob): RequireGuard;
+    static fromCore(script: Cardano_4.RequireGuardScript): RequireGuard;
+    setCredential(credential: Credential_3): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.RequireGuardScript;
+}
+
+// @public
+interface RequireGuardScript {
+    __type: ScriptType.Native;
+    credential: Credential_2;
+    kind: NativeScriptKind.RequireGuard;
+}
+
+// @public
+interface RequireSignatureScript {
+    __type: ScriptType.Native;
+    keyHash: Crypto.Ed25519KeyHashHex;
+    kind: NativeScriptKind.RequireSignature;
+}
+
+// @public
+interface RequireTimeAfterScript {
+    __type: ScriptType.Native;
+    kind: NativeScriptKind.RequireTimeAfter;
+    slot: Slot_2;
+}
+
+// @public
+interface RequireTimeBeforeScript {
+    __type: ScriptType.Native;
+    kind: NativeScriptKind.RequireTimeBefore;
+    slot: Slot_2;
+}
+
+// @public
+class ResignCommitteeCold {
+    constructor(committeeColdCred: Cardano_4.Credential, anchor?: Anchor_3);
+    anchor(): Anchor_3 | undefined;
+    coldCredential(): Cardano_4.Credential;
+    static fromCbor(cbor: HexBlob): ResignCommitteeCold;
+    static fromCore(cert: Cardano_4.ResignCommitteeColdCertificate): ResignCommitteeCold;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.ResignCommitteeColdCertificate;
+}
+
+// @public (undocumented)
+interface ResignCommitteeColdCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.ResignCommitteeCold;
+    // (undocumented)
+    anchor: Anchor_2 | null;
+    // (undocumented)
+    coldCredential: Credential_2;
+}
+
+// @public (undocumented)
+type ResolveInput = (txIn: TxIn, options?: ResolveOptions) => Promise<TxOut | null>;
+
+// @public
+const resolveInputValue: (input: HydratedTxIn, transactions: HydratedTx[]) => Value_2 | undefined;
+
+// @public (undocumented)
+type ResolveOptions = {
+    hints: {
+        transactions?: Tx[];
+        utxos?: Utxo[];
+    };
+};
 
 // @public (undocumented)
 export const RewardAccount: {
@@ -707,11 +3723,51 @@ export const RewardAccount: {
 // @public (undocumented)
 export type RewardAccount = OpaqueString<"RewardAccount">;
 
+// @public
+type RewardAccount_2 = OpaqueString<'RewardAccount'>;
+
+// @public (undocumented)
+const RewardAccount_2: {
+    (value: string): RewardAccount_2;
+    toHash(rewardAccount: RewardAccount_2): Hash28ByteBase16_2;
+    fromCredential(credential: Credential_2, networkId: NetworkId_2): RewardAccount_2;
+    toNetworkId(rewardAccount: RewardAccount_2): NetworkId_2;
+};
+
+// @public (undocumented)
+interface RewardAccountInfo {
+    // (undocumented)
+    address: RewardAccount_2;
+    // (undocumented)
+    credentialStatus: StakeCredentialStatus;
+    // (undocumented)
+    delegatee?: Delegatee;
+    // (undocumented)
+    deposit?: Lovelace;
+    // (undocumented)
+    dRepDelegatee?: DRepDelegatee;
+    // (undocumented)
+    rewardBalance: Lovelace;
+}
+
 // @public (undocumented)
 export const RewardAddress: typeof C.Cardano.RewardAddress;
 
 // @public (undocumented)
 export type RewardAddress = C.Cardano.RewardAddress;
+
+// @public
+class RewardAddress_2 {
+    static fromAddress(addr: Address_2): RewardAddress_2 | undefined;
+    static fromCredentials(networkId: NetworkId_2, payment: Credential_2): RewardAddress_2;
+    getPaymentCredential(): Credential_2;
+    static packParts(props: AddressProps): Buffer;
+    toAddress(): Address_2;
+    static unpackParts(type: number, data: Uint8Array): Address_2;
+}
+
+// @public
+type RSSFeed = string;
 
 // @public (undocumented)
 export const Script: typeof C.Serialization.Script;
@@ -719,17 +3775,63 @@ export const Script: typeof C.Serialization.Script;
 // @public (undocumented)
 export type Script = C.Serialization.Script;
 
+// @public
+type Script_2 = NativeScript_2 | PlutusScript;
+
+// @public
+class Script_3 {
+    asNative(): NativeScript_3 | undefined;
+    asPlutusV1(): PlutusV1Script_2 | undefined;
+    asPlutusV2(): PlutusV2Script_2 | undefined;
+    asPlutusV3(): PlutusV3Script_2 | undefined;
+    asPlutusV4(): PlutusV4Script | undefined;
+    static fromCbor(cbor: HexBlob): Script_3;
+    static fromCore(coreScript: Cardano_4.Script): Script_3;
+    hash(): Crypto.Hash28ByteBase16;
+    // Warning: (ae-forgotten-export) The symbol "ScriptLanguage" needs to be exported by the entry point index.d.ts
+    language(): ScriptLanguage;
+    static newNativeScript(nativeScript: NativeScript_3): Script_3;
+    static newPlutusV1Script(plutusV1Script: PlutusV1Script_2): Script_3;
+    static newPlutusV2Script(plutusV2Script: PlutusV2Script_2): Script_3;
+    static newPlutusV3Script(plutusV3Script: PlutusV3Script_2): Script_3;
+    static newPlutusV4Script(plutusV4Script: PlutusV4Script): Script_3;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Script;
+}
+
 // @public (undocumented)
 export const ScriptAll: typeof C.Serialization.ScriptAll;
 
 // @public (undocumented)
 export type ScriptAll = C.Serialization.ScriptAll;
 
+// @public
+class ScriptAll_2 {
+    constructor(nativeScripts: Array<NativeScript_3>);
+    static fromCbor(cbor: HexBlob): ScriptAll_2;
+    static fromCore(script: Cardano_4.RequireAllOfScript): ScriptAll_2;
+    nativeScripts(): Array<NativeScript_3>;
+    setNativeScripts(nativeScripts: Array<NativeScript_3>): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.RequireAllOfScript;
+}
+
 // @public (undocumented)
 export const ScriptAny: typeof C.Serialization.ScriptAny;
 
 // @public (undocumented)
 export type ScriptAny = C.Serialization.ScriptAny;
+
+// @public
+class ScriptAny_2 {
+    constructor(nativeScripts: Array<NativeScript_3>);
+    static fromCbor(cbor: HexBlob): ScriptAny_2;
+    static fromCore(script: Cardano_4.RequireAnyOfScript): ScriptAny_2;
+    nativeScripts(): Array<NativeScript_3>;
+    setNativeScripts(nativeScripts: Array<NativeScript_3>): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.RequireAnyOfScript;
+}
 
 // @public (undocumented)
 export type ScriptHash = Crypto.Hash28ByteBase16;
@@ -740,16 +3842,182 @@ export const ScriptNOfK: typeof C.Serialization.ScriptNOfK;
 // @public (undocumented)
 export type ScriptNOfK = C.Serialization.ScriptNOfK;
 
+// @public
+class ScriptNOfK_2 {
+    constructor(nativeScripts: Array<NativeScript_3>, required: number);
+    static fromCbor(cbor: HexBlob): ScriptNOfK_2;
+    static fromCore(script: Cardano_4.RequireAtLeastScript): ScriptNOfK_2;
+    nativeScripts(): Array<NativeScript_3>;
+    required(): number;
+    setNativeScripts(nativeScripts: Array<NativeScript_3>): void;
+    setRequired(required: number): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.RequireAtLeastScript;
+}
+
 // @public (undocumented)
 export const ScriptPubkey: typeof C.Serialization.ScriptPubkey;
 
 // @public (undocumented)
 export type ScriptPubkey = C.Serialization.ScriptPubkey;
 
+// @public
+class ScriptPubkey_2 {
+    constructor(keyHash: Crypto.Ed25519KeyHashHex);
+    static fromCbor(cbor: HexBlob): ScriptPubkey_2;
+    static fromCore(script: Cardano_4.RequireSignatureScript): ScriptPubkey_2;
+    keyHash(): Crypto.Ed25519KeyHashHex;
+    setKeyHash(keyHash: Crypto.Ed25519KeyHashHex): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.RequireSignatureScript;
+}
+
+// @public
+enum ScriptType {
+    // (undocumented)
+    Native = "native",
+    // (undocumented)
+    Plutus = "plutus"
+}
+
 // @public (undocumented)
 export type SelectionPhase = "wide" | "deep" | "final";
 
-export { Serialization }
+declare namespace Serialization {
+    export {
+        TxCBOR_2 as TxCBOR,
+        TxBodyCBOR,
+        Transaction_2 as Transaction,
+        deserializeTx,
+        SubTransaction_2 as SubTransaction,
+        Script_3 as Script,
+        NativeScript_3 as NativeScript,
+        RequireGuard,
+        ScriptAll_2 as ScriptAll,
+        ScriptAny_2 as ScriptAny,
+        ScriptNOfK_2 as ScriptNOfK,
+        ScriptPubkey_2 as ScriptPubkey,
+        TimelockExpiry_2 as TimelockExpiry,
+        TimelockStart_2 as TimelockStart,
+        PlutusV1Script_2 as PlutusV1Script,
+        PlutusV2Script_2 as PlutusV2Script,
+        PlutusV3Script_2 as PlutusV3Script,
+        PlutusV4Script,
+        DeserializationOptions,
+        UnitInterval,
+        ExUnits_3 as ExUnits,
+        ProtocolVersion_2 as ProtocolVersion,
+        isDatumHash,
+        DatumKind_2 as DatumKind,
+        Datum_2 as Datum,
+        Anchor_3 as Anchor,
+        GovernanceActionId_3 as GovernanceActionId,
+        CborSet_2 as CborSet,
+        Hash_2 as Hash,
+        readCredentialType,
+        Credential_3 as Credential,
+        ConstrPlutusData_3 as ConstrPlutusData,
+        PlutusData_3 as PlutusData,
+        PlutusDataKind_2 as PlutusDataKind,
+        PlutusList_3 as PlutusList,
+        PlutusMap_3 as PlutusMap,
+        CborAdditionalInfo,
+        CborInitialByte,
+        CborMajorType,
+        CborReader_2 as CborReader,
+        CborReaderState_2 as CborReaderState,
+        CborSimpleValue,
+        CborTag,
+        CborWriter_2 as CborWriter,
+        CborInvalidOperationException,
+        CborContentException,
+        LossOfPrecisionException,
+        Certificate_3 as Certificate,
+        GenesisKeyDelegation,
+        PoolRegistration_2 as PoolRegistration,
+        PoolRetirement_2 as PoolRetirement,
+        StakeDelegation_2 as StakeDelegation,
+        StakeDeregistration_2 as StakeDeregistration,
+        StakeRegistration_2 as StakeRegistration,
+        PoolMetadata,
+        PoolParams,
+        MultiHostName,
+        SingleHostName,
+        RelayKind,
+        Relay_2 as Relay,
+        SingleHostAddr,
+        MoveInstantaneousReward,
+        MoveInstantaneousRewardToStakeCreds,
+        MoveInstantaneousRewardToOtherPot,
+        DRepKind,
+        DRep_2 as DRep,
+        Registration,
+        Unregistration,
+        VoteDelegation_2 as VoteDelegation,
+        StakeVoteDelegation,
+        StakeRegistrationDelegation,
+        VoteRegistrationDelegation,
+        StakeVoteRegistrationDelegation,
+        AuthCommitteeHot,
+        ResignCommitteeCold,
+        RegisterDelegateRepresentative_2 as RegisterDelegateRepresentative,
+        UnregisterDelegateRepresentative_2 as UnregisterDelegateRepresentative,
+        UpdateDelegateRepresentative_2 as UpdateDelegateRepresentative,
+        Costmdls_2 as Costmdls,
+        CostModel_3 as CostModel,
+        ProposedProtocolParameterUpdates_2 as ProposedProtocolParameterUpdates,
+        ProtocolParamUpdate,
+        Update_2 as Update,
+        ExUnitPrices,
+        DrepVotingThresholds,
+        PoolVotingThresholds_3 as PoolVotingThresholds,
+        TransactionBody_2 as TransactionBody,
+        TransactionInput_2 as TransactionInput,
+        REQUIRED_FIELDS_COUNT,
+        TransactionOutput_2 as TransactionOutput,
+        Value_3 as Value,
+        VoterKind_2 as VoterKind,
+        Voter_3 as Voter,
+        VotingProcedure_3 as VotingProcedure,
+        VotingProcedures_3 as VotingProcedures,
+        Committee_3 as Committee,
+        Constitution_3 as Constitution,
+        HardForkInitiationAction_3 as HardForkInitiationAction,
+        InfoAction_3 as InfoAction,
+        NewConstitution_3 as NewConstitution,
+        NoConfidence_3 as NoConfidence,
+        ParameterChangeAction_3 as ParameterChangeAction,
+        TreasuryWithdrawalsAction_3 as TreasuryWithdrawalsAction,
+        UpdateCommittee_3 as UpdateCommittee,
+        ProposalProcedure_3 as ProposalProcedure,
+        GovernanceActionKind_2 as GovernanceActionKind,
+        GuardsKind,
+        Guards,
+        AccountBalanceInterval_2 as AccountBalanceInterval,
+        SubTransactionBody_2 as SubTransactionBody,
+        RedeemerTag_2 as RedeemerTag,
+        Redeemer_3 as Redeemer,
+        Redeemers_2 as Redeemers,
+        BootstrapWitness_2 as BootstrapWitness,
+        TransactionWitnessSet_2 as TransactionWitnessSet,
+        VkeyWitness_2 as VkeyWitness,
+        MetadatumList_2 as MetadatumList,
+        MetadatumMap_3 as MetadatumMap,
+        TransactionMetadatum,
+        TransactionMetadatumKind_2 as TransactionMetadatumKind,
+        GeneralTransactionMetadata,
+        SHELLEY_ERA_FIELDS_COUNT,
+        ALONZO_AUX_TAG,
+        AuxiliaryData_3 as AuxiliaryData,
+        TransactionUnspentOutput_2 as TransactionUnspentOutput
+    }
+}
+
+// @public
+type SerialNumber = number;
+
+// @public
+type ServerAboutInfo = string;
 
 // @public
 export const setInConwayEra: (value: boolean) => boolean;
@@ -760,14 +4028,57 @@ export function sha2_256(data: HexBlob): Hash32ByteBase16;
 // @public
 export function sha3_256(data: HexBlob): Hash32ByteBase16;
 
+// @public (undocumented)
+const SHELLEY_ERA_FIELDS_COUNT = 2;
+
+// @public (undocumented)
+type Signature = Crypto.Ed25519SignatureHex;
+
+// @public (undocumented)
+type Signatures = Map<Crypto.Ed25519PublicKeyHex, Crypto.Ed25519SignatureHex>;
+
 // @public
 export function signMessage(message: HexBlob, privateKey: Ed25519PrivateNormalKeyHex | Ed25519PrivateExtendedKeyHex): Ed25519SignatureHex;
+
+// @public
+class SingleHostAddr {
+    constructor(port?: number, ipv4?: string, ipv6?: string);
+    static fromCbor(cbor: HexBlob): SingleHostAddr;
+    static fromCore(relay: Cardano_4.RelayByAddress): SingleHostAddr;
+    ipv4(): string | undefined;
+    ipv6(): string | undefined;
+    port(): number | undefined;
+    setIpv4(ipV4: string | undefined): void;
+    setIpv6(ipV6: string | undefined): void;
+    setPort(port: number | undefined): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.RelayByAddress;
+}
+
+// @public
+class SingleHostName {
+    constructor(dnsName: string, port?: number | undefined);
+    dnsName(): string;
+    static fromCbor(cbor: HexBlob): SingleHostName;
+    static fromCore(relay: Cardano_4.RelayByName): SingleHostName;
+    port(): number | undefined;
+    setDnsName(dnsName: string): void;
+    setPort(port: number | undefined): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.RelayByName;
+}
 
 // @public (undocumented)
 export const Slot: (value: number) => C.Cardano.Slot;
 
 // @public (undocumented)
 export type Slot = C.Cardano.Slot;
+
+// @public
+type Slot_2 = OpaqueNumber<'Slot'>;
+
+// @public (undocumented)
+const Slot_2: (value: number) => Slot_2;
 
 // @public (undocumented)
 export const SLOT_CONFIG_NETWORK: {
@@ -801,10 +4112,49 @@ export interface SlotConfig {
 }
 
 // @public (undocumented)
+type SlotLeader = PoolId_2 | GenesisDelegate;
+
+// @public (undocumented)
+const SlotLeader: (value: string) => SlotLeader;
+
+// @public (undocumented)
+interface SoftforkRule {
+    // (undocumented)
+    decrementThreshold: string;
+    // (undocumented)
+    initThreshold: string;
+    // (undocumented)
+    minThreshold: string;
+}
+
+// @public (undocumented)
 export type StakeAddressCertificate = C.Cardano.StakeAddressCertificate;
+
+// @public @deprecated (undocumented)
+interface StakeAddressCertificate_2 {
+    // (undocumented)
+    __typename: CertificateType_2.StakeRegistration | CertificateType_2.StakeDeregistration;
+    // (undocumented)
+    stakeCredential: Credential_2;
+}
 
 // @public (undocumented)
 export const StakeCredentialCertificateTypes: readonly [C.Cardano.CertificateType.StakeRegistration, C.Cardano.CertificateType.Registration, C.Cardano.CertificateType.VoteRegistrationDelegation, C.Cardano.CertificateType.StakeRegistrationDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation, C.Cardano.CertificateType.Unregistration, C.Cardano.CertificateType.StakeDeregistration, C.Cardano.CertificateType.StakeDelegation, C.Cardano.CertificateType.StakeVoteDelegation, C.Cardano.CertificateType.StakeRegistrationDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation, C.Cardano.CertificateType.VoteDelegation];
+
+// @public (undocumented)
+const StakeCredentialCertificateTypes_2: readonly [CertificateType_2.StakeRegistration, CertificateType_2.Registration, CertificateType_2.VoteRegistrationDelegation, CertificateType_2.StakeRegistrationDelegation, CertificateType_2.StakeVoteRegistrationDelegation, CertificateType_2.Unregistration, CertificateType_2.StakeDeregistration, CertificateType_2.StakeDelegation, CertificateType_2.StakeVoteDelegation, CertificateType_2.StakeRegistrationDelegation, CertificateType_2.StakeVoteRegistrationDelegation, CertificateType_2.VoteDelegation];
+
+// @public (undocumented)
+enum StakeCredentialStatus {
+    // (undocumented)
+    Registered = "REGISTERED",
+    // (undocumented)
+    Registering = "REGISTERING",
+    // (undocumented)
+    Unregistered = "UNREGISTERED",
+    // (undocumented)
+    Unregistering = "UNREGISTERING"
+}
 
 // @public (undocumented)
 export const StakeDelegation: typeof C.Serialization.StakeDelegation;
@@ -812,11 +4162,40 @@ export const StakeDelegation: typeof C.Serialization.StakeDelegation;
 // @public (undocumented)
 export type StakeDelegation = C.Serialization.StakeDelegation;
 
+// @public
+class StakeDelegation_2 {
+    constructor(credential: Cardano_4.Credential, poolKeyHash: Crypto.Ed25519KeyHashHex);
+    static fromCbor(cbor: HexBlob): StakeDelegation_2;
+    static fromCore(cert: Cardano_4.StakeDelegationCertificate): StakeDelegation_2;
+    poolKeyHash(): Crypto.Ed25519KeyHashHex;
+    setPoolKeyHash(poolKeyHash: Crypto.Ed25519KeyHashHex): void;
+    setStakeCredential(credential: Cardano_4.Credential): void;
+    stakeCredential(): Cardano_4.Credential;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.StakeDelegationCertificate;
+}
+
 // @public (undocumented)
 export type StakeDelegationCertificate = C.Cardano.StakeDelegationCertificate;
 
 // @public (undocumented)
+interface StakeDelegationCertificate_2 {
+    // (undocumented)
+    __typename: CertificateType_2.StakeDelegation;
+    // (undocumented)
+    poolId: PoolId_2;
+    // (undocumented)
+    stakeCredential: Credential_2;
+}
+
+// @public (undocumented)
 export const StakeDelegationCertificateTypes: readonly [C.Cardano.CertificateType.StakeDelegation, C.Cardano.CertificateType.StakeVoteDelegation, C.Cardano.CertificateType.StakeRegistrationDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation];
+
+// @public (undocumented)
+const StakeDelegationCertificateTypes_2: readonly [CertificateType_2.StakeDelegation, CertificateType_2.StakeVoteDelegation, CertificateType_2.StakeRegistrationDelegation, CertificateType_2.StakeVoteRegistrationDelegation];
+
+// @public (undocumented)
+type StakeDelegationCertificateTypes_2 = typeof StakeDelegationCertificateTypes_2[number];
 
 // @public (undocumented)
 export const StakeDeregistration: typeof C.Serialization.StakeDeregistration;
@@ -824,20 +4203,330 @@ export const StakeDeregistration: typeof C.Serialization.StakeDeregistration;
 // @public (undocumented)
 export type StakeDeregistration = C.Serialization.StakeDeregistration;
 
+// @public @deprecated
+class StakeDeregistration_2 {
+    constructor(credential: Cardano_4.Credential);
+    static fromCbor(cbor: HexBlob): StakeDeregistration_2;
+    static fromCore(cert: Cardano_4.StakeAddressCertificate): StakeDeregistration_2;
+    setStakeCredential(credential: Cardano_4.Credential): void;
+    stakeCredential(): Cardano_4.Credential;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.StakeAddressCertificate;
+}
+
+// @public
+const stakeKeyCertificates: (certificates?: Certificate_2[]) => (StakeAddressCertificate_2 | NewStakeAddressCertificate | StakeRegistrationDelegationCertificate | VoteRegistrationDelegationCertificate | StakeVoteRegistrationDelegationCertificate)[];
+
+// @public
+interface StakePool extends PoolParameters_2 {
+    hexId: PoolIdHex;
+    metrics?: StakePoolMetrics;
+    rewardHistory?: StakePoolEpochRewards[];
+    status: StakePoolStatus;
+}
+
+// @public
+class StakePoolEpochRewards {
+    activeStake: Lovelace;
+    // @deprecated
+    epoch?: EpochNo_2;
+    epochLength: number;
+    epochNo: EpochNo_2;
+    leaderRewards: Lovelace;
+    memberActiveStake: Lovelace;
+    memberRewards: Lovelace;
+    // @deprecated
+    memberROI?: Percent;
+    pledge: Lovelace;
+    rewards: Lovelace;
+}
+
+// @public (undocumented)
+interface StakePoolExtendedMetadataFields {
+    ext?: ExtendedStakePoolMetadata | null | undefined;
+}
+
+// @public (undocumented)
+type StakePoolKeyHashVoter = {
+    __typename: VoterType.stakePoolKeyHash;
+    credential: {
+        type: CredentialType_2.KeyHash;
+        hash: Credential_2['hash'];
+    };
+};
+
+// @public (undocumented)
+interface StakePoolMainMetadataFields {
+    description: string;
+    homepage: string;
+    name: string;
+    ticker: string;
+}
+
+// @public (undocumented)
+type StakePoolMetadata = Cip6MetadataFields & APMetadataFields & StakePoolMainMetadataFields & StakePoolExtendedMetadataFields;
+
+// @public
+interface StakePoolMetrics {
+    // @deprecated
+    apy?: Percent;
+    blocksCreated: number;
+    delegators: number;
+    lastRos: Percent;
+    livePledge: Lovelace;
+    ros: Percent;
+    saturation: Percent;
+    size: StakePoolMetricsSize;
+    stake: StakePoolMetricsStake;
+}
+
+// @public
+interface StakePoolMetricsSize {
+    active: Percent;
+    // Warning: (ae-forgotten-export) The symbol "Percent" needs to be exported by the entry point index.d.ts
+    live: Percent;
+}
+
+// @public
+interface StakePoolMetricsStake {
+    active: Lovelace;
+    live: Lovelace;
+}
+
+// @public
+enum StakePoolStatus {
+    // (undocumented)
+    Activating = "activating",
+    // (undocumented)
+    Active = "active",
+    // (undocumented)
+    Retired = "retired",
+    // (undocumented)
+    Retiring = "retiring"
+}
+
 // @public (undocumented)
 export const StakeRegistration: typeof C.Serialization.StakeRegistration;
 
 // @public (undocumented)
 export type StakeRegistration = C.Serialization.StakeRegistration;
 
+// @public @deprecated
+class StakeRegistration_2 {
+    constructor(credential: Cardano_4.Credential);
+    static fromCbor(cbor: HexBlob): StakeRegistration_2;
+    static fromCore(cert: Cardano_4.StakeAddressCertificate): StakeRegistration_2;
+    setStakeCredential(credential: Cardano_4.Credential): void;
+    stakeCredential(): Cardano_4.Credential;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.StakeAddressCertificate;
+}
+
 // @public (undocumented)
 export const StakeRegistrationCertificateTypes: readonly [C.Cardano.CertificateType.StakeRegistration, C.Cardano.CertificateType.Registration, C.Cardano.CertificateType.VoteRegistrationDelegation, C.Cardano.CertificateType.StakeRegistrationDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation];
+
+// @public (undocumented)
+const StakeRegistrationCertificateTypes_2: readonly [CertificateType_2.StakeRegistration, CertificateType_2.Registration, CertificateType_2.VoteRegistrationDelegation, CertificateType_2.StakeRegistrationDelegation, CertificateType_2.StakeVoteRegistrationDelegation];
+
+// @public (undocumented)
+type StakeRegistrationCertificateTypes_2 = typeof StakeRegistrationCertificateTypes_2[number];
+
+// @public
+class StakeRegistrationDelegation {
+    constructor(stakeCredential: Cardano_4.Credential, deposit: Cardano_4.Lovelace, poolKeyHash: Crypto.Ed25519KeyHashHex);
+    deposit(): Cardano_4.Lovelace;
+    static fromCbor(cbor: HexBlob): StakeRegistrationDelegation;
+    static fromCore(deleg: Cardano_4.StakeRegistrationDelegationCertificate): StakeRegistrationDelegation;
+    poolKeyHash(): Crypto.Ed25519KeyHashHex;
+    stakeCredential(): Cardano_4.Credential;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.StakeRegistrationDelegationCertificate;
+}
+
+// @public (undocumented)
+interface StakeRegistrationDelegationCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.StakeRegistrationDelegation;
+    // (undocumented)
+    deposit: Lovelace;
+    // (undocumented)
+    poolId: PoolId_2;
+    // (undocumented)
+    stakeCredential: Credential_2;
+}
+
+// @public
+class StakeVoteDelegation {
+    constructor(stakeCredential: Cardano_4.Credential, drep: DRep_2, poolKeyHash: Crypto.Ed25519KeyHashHex);
+    drep(): DRep_2;
+    static fromCbor(cbor: HexBlob): StakeVoteDelegation;
+    static fromCore(deleg: Cardano_4.StakeVoteDelegationCertificate): StakeVoteDelegation;
+    poolKeyHash(): Crypto.Ed25519KeyHashHex;
+    stakeCredential(): Cardano_4.Credential;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.StakeVoteDelegationCertificate;
+}
+
+// @public (undocumented)
+interface StakeVoteDelegationCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.StakeVoteDelegation;
+    // (undocumented)
+    dRep: DelegateRepresentative_2;
+    // (undocumented)
+    poolId: PoolId_2;
+    // (undocumented)
+    stakeCredential: Credential_2;
+}
+
+// @public
+class StakeVoteRegistrationDelegation {
+    constructor(stakeCredential: Cardano_4.Credential, deposit: Cardano_4.Lovelace, dRep: DRep_2, poolKeyHash: Crypto.Ed25519KeyHashHex);
+    deposit(): Cardano_4.Lovelace;
+    dRep(): DRep_2;
+    static fromCbor(cbor: HexBlob): StakeVoteRegistrationDelegation;
+    static fromCore(deleg: Cardano_4.StakeVoteRegistrationDelegationCertificate): StakeVoteRegistrationDelegation;
+    poolKeyHash(): Crypto.Ed25519KeyHashHex;
+    stakeCredential(): Cardano_4.Credential;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.StakeVoteRegistrationDelegationCertificate;
+}
+
+// @public (undocumented)
+interface StakeVoteRegistrationDelegationCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.StakeVoteRegistrationDelegation;
+    // (undocumented)
+    deposit: Lovelace;
+    // (undocumented)
+    dRep: DelegateRepresentative_2;
+    // (undocumented)
+    poolId: PoolId_2;
+    // (undocumented)
+    stakeCredential: Credential_2;
+}
+
+// @public
+interface SubTransaction {
+    // (undocumented)
+    auxiliaryData?: AuxiliaryData_2;
+    // (undocumented)
+    body: SubTransactionBody;
+    // (undocumented)
+    witness: Witness;
+}
+
+// @public
+class SubTransaction_2 {
+    constructor(body: SubTransactionBody_2, witnessSet: TransactionWitnessSet_2, auxiliaryData?: AuxiliaryData_3);
+    auxiliaryData(): AuxiliaryData_3 | undefined;
+    body(): SubTransactionBody_2;
+    clone(): SubTransaction_2;
+    static fromCbor(cbor: HexBlob, options?: DeserializationOptions): SubTransaction_2;
+    static fromCore(subTx: Cardano_4.SubTransaction): SubTransaction_2;
+    getId(): Cardano_4.TransactionId;
+    setAuxiliaryData(auxiliaryData?: AuxiliaryData_3): void;
+    setBody(body: SubTransactionBody_2): void;
+    setWitnessSet(witnessSet: TransactionWitnessSet_2): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.SubTransaction;
+    witnessSet(): TransactionWitnessSet_2;
+}
+
+// @public
+interface SubTransactionBody extends Omit<TxBody, 'fee' | 'collaterals' | 'collateralReturn' | 'totalCollateral' | 'update' | 'subTransactions'> {
+    requiredTopLevelGuards?: RequiredTopLevelGuardEntry[];
+}
+
+// @public
+class SubTransactionBody_2 {
+    // Warning: (ae-forgotten-export) The symbol "TransactionInputSet_3" needs to be exported by the entry point index.d.ts
+    constructor(inputs: TransactionInputSet_3, outputs: Array<TransactionOutput_2>);
+    accountBalanceIntervals(): Map<Credential_3, AccountBalanceInterval_2> | undefined;
+    auxiliaryDataHash(): Crypto.Hash32ByteBase16 | undefined;
+    certs(): CborSet_2<Cardano_4.Certificate, Certificate_3> | undefined;
+    currentTreasuryValue(): Cardano_4.Lovelace | undefined;
+    directDeposits(): Map<Cardano_4.RewardAccount, Cardano_4.Lovelace> | undefined;
+    donation(): Cardano_4.Lovelace | undefined;
+    static fromCbor(cbor: HexBlob, options?: DeserializationOptions): SubTransactionBody_2;
+    static fromCore(coreSubTransactionBody: Cardano_4.SubTransactionBody): SubTransactionBody_2;
+    guards(): Guards | undefined;
+    inputs(): TransactionInputSet_3;
+    mint(): Cardano_4.TokenMap | undefined;
+    networkId(): Cardano_4.NetworkId | undefined;
+    outputs(): Array<TransactionOutput_2>;
+    proposalProcedures(): CborSet_2<Cardano_4.ProposalProcedure, ProposalProcedure_3> | undefined;
+    referenceInputs(): TransactionInputSet_3 | undefined;
+    requiredTopLevelGuards(): Map<Credential_3, PlutusData_3 | null> | undefined;
+    scriptDataHash(): Crypto.Hash32ByteBase16 | undefined;
+    setAccountBalanceIntervals(accountBalanceIntervals: Map<Credential_3, AccountBalanceInterval_2>): void;
+    setAuxiliaryDataHash(auxiliaryDataHash: Crypto.Hash32ByteBase16): void;
+    setCerts(certs: CborSet_2<ReturnType<Certificate_3['toCore']>, Certificate_3>): void;
+    setCurrentTreasuryValue(currentTreasuryValue: Cardano_4.Lovelace): void;
+    setDirectDeposits(directDeposits: Map<Cardano_4.RewardAccount, Cardano_4.Lovelace>): void;
+    setDonation(donation: Cardano_4.Lovelace): void;
+    setGuards(guards: Guards): void;
+    setInputs(inputs: TransactionInputSet_3): void;
+    setMint(mint: Cardano_4.TokenMap): void;
+    setNetworkId(networkId: Cardano_4.NetworkId): void;
+    setOutputs(outputs: Array<TransactionOutput_2>): void;
+    setProposalProcedures(proposalProcedure: CborSet_2<ReturnType<ProposalProcedure_3['toCore']>, ProposalProcedure_3>): void;
+    setReferenceInputs(referenceInputs: TransactionInputSet_3): void;
+    setRequiredTopLevelGuards(requiredTopLevelGuards: Map<Credential_3, PlutusData_3 | null>): void;
+    setScriptDataHash(scriptDataHash: Crypto.Hash32ByteBase16): void;
+    setTtl(ttl: Cardano_4.Slot): void;
+    setValidityStartInterval(validityStartInterval: Cardano_4.Slot): void;
+    setVotingProcedures(votingProcedures: VotingProcedures_3): void;
+    setWithdrawals(withdrawals: Map<Cardano_4.RewardAccount, Cardano_4.Lovelace>): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.SubTransactionBody;
+    ttl(): Cardano_4.Slot | undefined;
+    validityStartInterval(): Cardano_4.Slot | undefined;
+    votingProcedures(): VotingProcedures_3 | undefined;
+    withdrawals(): Map<Cardano_4.RewardAccount, Cardano_4.Lovelace> | undefined;
+}
+
+// @public
+type TelegramAccount = string;
+
+// @public
+type TheITNPoolOwnerPublicKey = string;
+
+// @public
+interface ThePoolsMediaAssets {
+    // (undocumented)
+    [k: string]: unknown;
+    // (undocumented)
+    color_bg?: PoolSecondaryColor;
+    // (undocumented)
+    color_fg?: PoolPrimaryColor;
+    // (undocumented)
+    icon_png_64x64?: PoolIconInPNGFileFormat64X64Px;
+    // (undocumented)
+    logo_png?: PoolLogoInPNGFileFormat;
+    // (undocumented)
+    logo_svg?: PoolLogoInSVGFileFormat;
+}
+
+// @public
+type TheSecretKeyGeneratedWitness = string;
 
 // @public (undocumented)
 export const TimelockExpiry: typeof C.Serialization.TimelockExpiry;
 
 // @public (undocumented)
 export type TimelockExpiry = C.Serialization.TimelockExpiry;
+
+// @public
+class TimelockExpiry_2 {
+    constructor(slot: Cardano_4.Slot);
+    static fromCbor(cbor: HexBlob): TimelockExpiry_2;
+    static fromCore(script: Cardano_4.RequireTimeBeforeScript): TimelockExpiry_2;
+    setSlot(slot: Cardano_4.Slot): void;
+    slot(): Cardano_4.Slot;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.RequireTimeBeforeScript;
+}
 
 // @public (undocumented)
 export const TimelockStart: typeof C.Serialization.TimelockStart;
@@ -846,10 +4535,27 @@ export const TimelockStart: typeof C.Serialization.TimelockStart;
 export type TimelockStart = C.Serialization.TimelockStart;
 
 // @public
+class TimelockStart_2 {
+    constructor(slot: Cardano_4.Slot);
+    static fromCbor(cbor: HexBlob): TimelockStart_2;
+    static fromCore(script: Cardano_4.RequireTimeAfterScript): TimelockStart_2;
+    setSlot(slot: Cardano_4.Slot): void;
+    slot(): Cardano_4.Slot;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.RequireTimeAfterScript;
+}
+
+// @public (undocumented)
+type Tip = PartialBlockHeader;
+
+// @public
 export function toHex(byteArray: Uint8Array): string;
 
 // @public (undocumented)
 export type TokenMap = C.Cardano.TokenMap;
+
+// @public
+type TokenMap_2 = Map<AssetId_2, bigint>;
 
 // @public (undocumented)
 export const Transaction: typeof C.Serialization.Transaction;
@@ -857,11 +4563,92 @@ export const Transaction: typeof C.Serialization.Transaction;
 // @public (undocumented)
 export type Transaction = C.Serialization.Transaction;
 
+// @public
+class Transaction_2 {
+    constructor(body: TransactionBody_2, witnessSet: TransactionWitnessSet_2, auxiliaryData?: AuxiliaryData_3);
+    auxiliaryData(): AuxiliaryData_3 | undefined;
+    body(): TransactionBody_2;
+    clone(): Transaction_2;
+    static fromCbor(cbor: TxCBOR_2, options?: DeserializationOptions): Transaction_2;
+    static fromCore(tx: Cardano_4.Tx): Transaction_2;
+    getId(): Cardano_4.TransactionId;
+    isValid(): boolean;
+    setAuxiliaryData(auxiliaryData: AuxiliaryData_3 | undefined): void;
+    setBody(body: TransactionBody_2): void;
+    setWitnessSet(witnessSet: TransactionWitnessSet_2): void;
+    toCbor(): TxCBOR_2;
+    toCore(): Cardano_4.Tx;
+    witnessSet(): TransactionWitnessSet_2;
+}
+
 // @public (undocumented)
 export const TransactionBody: typeof C.Serialization.TransactionBody;
 
 // @public (undocumented)
 export type TransactionBody = C.Serialization.TransactionBody;
+
+// @public
+class TransactionBody_2 {
+    // Warning: (ae-forgotten-export) The symbol "TransactionInputSet_2" needs to be exported by the entry point index.d.ts
+    constructor(inputs: TransactionInputSet_2, outputs: Array<TransactionOutput_2>, fee: Cardano_4.Lovelace, ttl?: Cardano_4.Slot);
+    accountBalanceIntervals(): Map<Credential_3, AccountBalanceInterval_2> | undefined;
+    auxiliaryDataHash(): Crypto.Hash32ByteBase16 | undefined;
+    certs(): CborSet_2<Cardano_4.Certificate, Certificate_3> | undefined;
+    collateral(): TransactionInputSet_2 | undefined;
+    collateralReturn(): TransactionOutput_2 | undefined;
+    currentTreasuryValue(): Cardano_4.Lovelace | undefined;
+    directDeposits(): Map<Cardano_4.RewardAccount, Cardano_4.Lovelace> | undefined;
+    donation(): Cardano_4.Lovelace | undefined;
+    fee(): Cardano_4.Lovelace;
+    static fromCbor(cbor: HexBlob, options?: DeserializationOptions): TransactionBody_2;
+    static fromCore(coreTransactionBody: Cardano_4.TxBody): TransactionBody_2;
+    guards(): Guards | undefined;
+    hasBabbageOutput(): boolean;
+    hash(): TransactionId_2;
+    hasTaggedSets(): boolean;
+    inputs(): TransactionInputSet_2;
+    mint(): Cardano_4.TokenMap | undefined;
+    networkId(): Cardano_4.NetworkId | undefined;
+    outputs(): Array<TransactionOutput_2>;
+    proposalProcedures(): CborSet_2<Cardano_4.ProposalProcedure, ProposalProcedure_3> | undefined;
+    referenceInputs(): TransactionInputSet_2 | undefined;
+    requiredSigners(): CborSet_2<Crypto.Ed25519KeyHashHex, Hash_2<Crypto.Ed25519KeyHashHex>> | undefined;
+    scriptDataHash(): Crypto.Hash32ByteBase16 | undefined;
+    setAccountBalanceIntervals(accountBalanceIntervals: Map<Credential_3, AccountBalanceInterval_2>): void;
+    setAuxiliaryDataHash(auxiliaryDataHash: Crypto.Hash32ByteBase16): void;
+    setCerts(certs: CborSet_2<ReturnType<Certificate_3['toCore']>, Certificate_3>): void;
+    setCollateral(collateral: TransactionInputSet_2): void;
+    setCollateralReturn(collateralReturn: TransactionOutput_2): void;
+    setCurrentTreasuryValue(currentTreasuryValue: Cardano_4.Lovelace): void;
+    setDirectDeposits(directDeposits: Map<Cardano_4.RewardAccount, Cardano_4.Lovelace>): void;
+    setDonation(donation: Cardano_4.Lovelace): void;
+    setFee(fee: Cardano_4.Lovelace): void;
+    setGuards(guards: Guards): void;
+    setInputs(inputs: TransactionInputSet_2): void;
+    setMint(mint: Cardano_4.TokenMap): void;
+    setNetworkId(networkId: Cardano_4.NetworkId): void;
+    setOutputs(outputs: Array<TransactionOutput_2>): void;
+    setProposalProcedures(proposalProcedure: CborSet_2<ReturnType<ProposalProcedure_3['toCore']>, ProposalProcedure_3>): void;
+    setReferenceInputs(referenceInputs: TransactionInputSet_2): void;
+    setRequiredSigners(requiredSigners: CborSet_2<Crypto.Ed25519KeyHashHex, Hash_2<Crypto.Ed25519KeyHashHex>>): void;
+    setScriptDataHash(scriptDataHash: Crypto.Hash32ByteBase16): void;
+    setSubTransactions(subTransactions: CborSet_2<ReturnType<SubTransaction_2['toCore']>, SubTransaction_2>): void;
+    setTotalCollateral(totalCollateral: Cardano_4.Lovelace): void;
+    setTtl(ttl: Cardano_4.Slot): void;
+    setUpdate(update: Update_2): void;
+    setValidityStartInterval(validityStartInterval: Cardano_4.Slot): void;
+    setVotingProcedures(votingProcedures: VotingProcedures_3): void;
+    setWithdrawals(withdrawals: Map<Cardano_4.RewardAccount, Cardano_4.Lovelace>): void;
+    subTransactions(): CborSet_2<ReturnType<SubTransaction_2['toCore']>, SubTransaction_2> | undefined;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.TxBody;
+    totalCollateral(): Cardano_4.Lovelace | undefined;
+    ttl(): Cardano_4.Slot | undefined;
+    update(): Update_2 | undefined;
+    validityStartInterval(): Cardano_4.Slot | undefined;
+    votingProcedures(): VotingProcedures_3 | undefined;
+    withdrawals(): Map<Cardano_4.RewardAccount, Cardano_4.Lovelace> | undefined;
+}
 
 // @public (undocumented)
 export const TransactionId: {
@@ -872,14 +4659,56 @@ export const TransactionId: {
 // @public (undocumented)
 export type TransactionId = C.Cardano.TransactionId;
 
+// @public
+type TransactionId_2 = OpaqueString<'TransactionId'> & Crypto.Hash32ByteBase16;
+
+// @public (undocumented)
+const TransactionId_2: {
+    (value: string): TransactionId_2;
+    fromHexBlob(value: HexBlob): TransactionId_2;
+};
+
 // @public (undocumented)
 export const TransactionInput: typeof C.Serialization.TransactionInput;
 
 // @public (undocumented)
 export type TransactionInput = C.Serialization.TransactionInput;
 
+// @public
+class TransactionInput_2 {
+    constructor(id: Cardano_4.TransactionId, index: bigint);
+    static fromCbor(cbor: HexBlob): TransactionInput_2;
+    static fromCore(coreTransactionInput: Cardano_4.TxIn): TransactionInput_2;
+    index(): bigint;
+    setIndex(index: bigint): void;
+    setTransactionId(id: Cardano_4.TransactionId): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.TxIn;
+    transactionId(): Cardano_4.TransactionId;
+}
+
 // @public (undocumented)
 export type TransactionInputSet = C.Serialization.CborSet<ReturnType<TransactionInput["toCore"]>, TransactionInput>;
+
+// @public
+class TransactionMetadatum {
+    asBytes(): Uint8Array | undefined;
+    asInteger(): bigint | undefined;
+    asList(): MetadatumList_2 | undefined;
+    asMap(): MetadatumMap_3 | undefined;
+    asText(): string | undefined;
+    equals(other: TransactionMetadatum): boolean;
+    static fromCbor(cbor: HexBlob): TransactionMetadatum;
+    static fromCore(metadatum: Cardano_4.Metadatum): TransactionMetadatum;
+    getKind(): TransactionMetadatumKind_2;
+    static newBytes(bytes: Uint8Array): TransactionMetadatum;
+    static newInteger(integer: bigint): TransactionMetadatum;
+    static newList(list: MetadatumList_2): TransactionMetadatum;
+    static newMap(map: MetadatumMap_3): TransactionMetadatum;
+    static newText(text: string): TransactionMetadatum;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Metadatum;
+}
 
 // @public (undocumented)
 export const TransactionMetadatumKind: typeof C.Serialization.TransactionMetadatumKind;
@@ -887,17 +4716,55 @@ export const TransactionMetadatumKind: typeof C.Serialization.TransactionMetadat
 // @public (undocumented)
 export type TransactionMetadatumKind = C.Serialization.TransactionMetadatumKind;
 
+// @public
+enum TransactionMetadatumKind_2 {
+    Bytes = 3,
+    Integer = 2,
+    List = 1,
+    Map = 0,
+    Text = 4
+}
+
 // @public (undocumented)
 export const TransactionOutput: typeof C.Serialization.TransactionOutput;
 
 // @public (undocumented)
 export type TransactionOutput = C.Serialization.TransactionOutput;
 
+// @public
+class TransactionOutput_2 {
+    constructor(address: Cardano_4.Address, amount: Value_3);
+    address(): Cardano_4.Address;
+    amount(): Value_3;
+    datum(): Datum_2 | undefined;
+    static fromCbor(cbor: HexBlob, options?: DeserializationOptions): TransactionOutput_2;
+    static fromCore(coreTransactionOutput: Cardano_4.TxOut): TransactionOutput_2;
+    isBabbageOutput(): boolean;
+    scriptRef(): Script_3 | undefined;
+    setDatum(data: Datum_2): void;
+    setScriptRef(script: Script_3): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.TxOut;
+}
+
 // @public (undocumented)
 export const TransactionUnspentOutput: typeof C.Serialization.TransactionUnspentOutput;
 
 // @public (undocumented)
 export type TransactionUnspentOutput = C.Serialization.TransactionUnspentOutput;
+
+// @public
+class TransactionUnspentOutput_2 {
+    constructor(input: TransactionInput_2, output: TransactionOutput_2);
+    static fromCbor(cbor: HexBlob): TransactionUnspentOutput_2;
+    static fromCore(core: [Cardano_4.TxIn, Cardano_4.TxOut]): TransactionUnspentOutput_2;
+    input(): TransactionInput_2;
+    output(): TransactionOutput_2;
+    setInput(input: TransactionInput_2): void;
+    setOutput(output: TransactionOutput_2): void;
+    toCbor(): HexBlob;
+    toCore(): [Cardano_4.TxIn, Cardano_4.TxOut];
+}
 
 // @public (undocumented)
 export type TransactionWitnessPlutusData = Set<PlutusData>;
@@ -908,8 +4775,106 @@ export const TransactionWitnessSet: typeof C.Serialization.TransactionWitnessSet
 // @public (undocumented)
 export type TransactionWitnessSet = C.Serialization.TransactionWitnessSet;
 
+// @public
+class TransactionWitnessSet_2 {
+    bootstraps(): CborSet_2<Cardano_4.BootstrapWitness, BootstrapWitness_2> | undefined;
+    static fromCbor(cbor: HexBlob, options?: DeserializationOptions): TransactionWitnessSet_2;
+    static fromCore(coreWitness: Cardano_4.Witness): TransactionWitnessSet_2;
+    nativeScripts(): CborSet_2<Cardano_4.NativeScript, NativeScript_3> | undefined;
+    plutusData(): CborSet_2<Cardano_4.PlutusData, PlutusData_3> | undefined;
+    plutusV1Scripts(): CborSet_2<Cardano_4.PlutusScript, PlutusV1Script_2> | undefined;
+    plutusV2Scripts(): CborSet_2<Cardano_4.PlutusScript, PlutusV2Script_2> | undefined;
+    plutusV3Scripts(): CborSet_2<Cardano_4.PlutusScript, PlutusV3Script_2> | undefined;
+    redeemers(): Redeemers_2 | undefined;
+    setBootstraps(bootstraps: CborSet_2<ReturnType<BootstrapWitness_2['toCore']>, BootstrapWitness_2>): void;
+    setNativeScripts(nativeScripts: CborSet_2<ReturnType<NativeScript_3['toCore']>, NativeScript_3>): void;
+    setPlutusData(plutusData: CborSet_2<ReturnType<PlutusData_3['toCore']>, PlutusData_3>): void;
+    setPlutusV1Scripts(plutusV1Scripts: CborSet_2<ReturnType<PlutusV1Script_2['toCore']>, PlutusV1Script_2>): void;
+    setPlutusV2Scripts(plutusV2Scripts: CborSet_2<ReturnType<PlutusV2Script_2['toCore']>, PlutusV2Script_2>): void;
+    setPlutusV3Scripts(plutusV3Scripts: CborSet_2<ReturnType<PlutusV3Script_2['toCore']>, PlutusV3Script_2>): void;
+    setRedeemers(redeemers: Redeemers_2): void;
+    setVkeys(vkeys: CborSet_2<ReturnType<VkeyWitness_2['toCore']>, VkeyWitness_2>): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Witness;
+    // Warning: (ae-forgotten-export) The symbol "Ed25519PublicKeyHex_2" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "Ed25519SignatureHex_2" needs to be exported by the entry point index.d.ts
+    vkeys(): CborSet_2<[Ed25519PublicKeyHex_2, Ed25519SignatureHex_2], VkeyWitness_2> | undefined;
+}
+
 // @public (undocumented)
 export type TreasuryWithdrawalsAction = C.Cardano.TreasuryWithdrawalsAction;
+
+// @public (undocumented)
+type TreasuryWithdrawalsAction_2 = {
+    __typename: GovernanceActionType.treasury_withdrawals_action;
+    withdrawals: Set<{
+        rewardAccount: RewardAccount_2;
+        coin: Lovelace;
+    }>;
+    policyHash: Crypto.Hash28ByteBase16 | null;
+};
+
+// @public
+class TreasuryWithdrawalsAction_3 {
+    constructor(withdrawals: Map<Cardano_4.RewardAccount, Cardano_4.Lovelace>, policyHash?: Hash28ByteBase16_2);
+    static fromCbor(cbor: HexBlob): TreasuryWithdrawalsAction_3;
+    static fromCore(treasuryWithdrawalsAction: Cardano_4.TreasuryWithdrawalsAction): TreasuryWithdrawalsAction_3;
+    // (undocumented)
+    policyHash(): Hash28ByteBase16_2 | undefined;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.TreasuryWithdrawalsAction;
+    withdrawals(): Map<Cardano_4.RewardAccount, Cardano_4.Lovelace>;
+}
+
+// @public (undocumented)
+const tryConvertPlutusMapToUtf8Record: (map: PlutusMap_2, logger: Logger) => Partial<Record<string, string | PlutusData_2>>;
+
+// @public
+type TwitchAccount = string;
+
+// @public
+type TwitterAccount = string;
+
+// @public (undocumented)
+interface Tx<TBody extends TxBody = TxBody> {
+    // (undocumented)
+    auxiliaryData?: AuxiliaryData_2;
+    // (undocumented)
+    body: TBody;
+    // (undocumented)
+    id: TransactionId_2;
+    isValid?: boolean;
+    // (undocumented)
+    witness: Witness;
+}
+
+// @public (undocumented)
+interface TxBody extends Omit<HydratedTxBody, 'certificates' | 'inputs' | 'collaterals' | 'referenceInputs'> {
+    // (undocumented)
+    certificates?: Certificate_2[];
+    // (undocumented)
+    collaterals?: TxIn[];
+    // (undocumented)
+    inputs: TxIn[];
+    // (undocumented)
+    referenceInputs?: TxIn[];
+    subTransactions?: SubTransaction[];
+}
+
+// @public
+type TxBodyCBOR = OpaqueString<'TxBodyCbor'> & HexBlob;
+
+// @public (undocumented)
+const TxBodyCBOR: {
+    (tx: string): TxBodyCBOR;
+    fromTxCBOR(txCbor: TxCBOR_2): TxBodyCBOR;
+};
+
+// @public (undocumented)
+type TxBodyWithHash = {
+    hash: TransactionId_2;
+    body: TxBody;
+};
 
 // @public (undocumented)
 export const TxCBOR: {
@@ -921,7 +4886,69 @@ export const TxCBOR: {
 // @public (undocumented)
 export type TxCBOR = C.Serialization.TxCBOR;
 
-export { typedHex }
+// @public
+type TxCBOR_2 = OpaqueString<'TxCbor'> & HexBlob;
+
+// @public (undocumented)
+const TxCBOR_2: {
+    (tx: string): TxCBOR_2;
+    serialize(tx: Cardano_4.Tx): TxCBOR_2;
+    deserialize(tx: TxCBOR_2): Cardano_4.Tx;
+};
+
+// @public (undocumented)
+interface TxFeePolicy {
+    // (undocumented)
+    coefficient: string;
+    // (undocumented)
+    constant: number;
+}
+
+// @public (undocumented)
+interface TxIn {
+    // (undocumented)
+    index: number;
+    // (undocumented)
+    txId: TransactionId_2;
+}
+
+// @public
+type TxIndex = OpaqueNumber<'TxIndex'>;
+
+// @public (undocumented)
+const TxIndex: (value: number) => TxIndex;
+
+// @public (undocumented)
+type TxMetadata = Map<bigint, Metadatum_2>;
+
+// @public (undocumented)
+interface TxOut {
+    // (undocumented)
+    address: PaymentAddress_2;
+    datum?: PlutusData_2;
+    datumHash?: DatumHash_2;
+    scriptReference?: Script_2;
+    // (undocumented)
+    value: Value_2;
+}
+
+// @public (undocumented)
+export const typedHex: <T>(value: string, length?: number) => T;
+
+// @public
+class UnitInterval {
+    constructor(numerator: bigint, denominator: bigint);
+    denominator(): bigint;
+    static fromCbor(cbor: HexBlob): UnitInterval;
+    static fromCore(fraction: Cardano_4.Fraction): UnitInterval;
+    static fromFloat(number: number | undefined): UnitInterval | undefined;
+    numerator(): bigint;
+    setDenominator(denominator: bigint): void;
+    setNumerator(numerator: bigint): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Fraction;
+    toFloat(): number;
+}
 
 // @public (undocumented)
 export const UnregisterDelegateRepresentative: typeof C.Serialization.UnregisterDelegateRepresentative;
@@ -929,14 +4956,134 @@ export const UnregisterDelegateRepresentative: typeof C.Serialization.Unregister
 // @public (undocumented)
 export type UnregisterDelegateRepresentative = C.Serialization.UnregisterDelegateRepresentative;
 
+// @public
+class UnregisterDelegateRepresentative_2 {
+    constructor(drepCredential: Cardano_4.Credential, deposit: Cardano_4.Lovelace);
+    credential(): Cardano_4.Credential;
+    deposit(): Cardano_4.Lovelace;
+    static fromCbor(cbor: HexBlob): UnregisterDelegateRepresentative_2;
+    static fromCore(cert: Cardano_4.UnRegisterDelegateRepresentativeCertificate): UnregisterDelegateRepresentative_2;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.UnRegisterDelegateRepresentativeCertificate;
+}
+
+// @public (undocumented)
+interface UnRegisterDelegateRepresentativeCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.UnregisterDelegateRepresentative;
+    // (undocumented)
+    deposit: Lovelace;
+    // (undocumented)
+    dRepCredential: Credential_2;
+}
+
+// @public
+class Unregistration {
+    constructor(credential: Cardano_4.Credential, deposit: Cardano_4.Lovelace);
+    deposit(): Cardano_4.Lovelace;
+    static fromCbor(cbor: HexBlob): Unregistration;
+    static fromCore(cert: Cardano_4.NewStakeAddressCertificate): Unregistration;
+    setDeposit(deposit: Cardano_4.Lovelace): void;
+    setStakeCredential(credential: Cardano_4.Credential): void;
+    stakeCredential(): Cardano_4.Credential;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.NewStakeAddressCertificate;
+}
+
+// @public (undocumented)
+type Update = {
+    epoch: EpochNo_2;
+    proposedProtocolParameterUpdates: ProposedProtocolParameterUpdates;
+};
+
+// @public
+class Update_2 {
+    constructor(updates: ProposedProtocolParameterUpdates_2, epoch: Cardano_4.EpochNo);
+    epoch(): Cardano_4.EpochNo;
+    static fromCbor(cbor: HexBlob): Update_2;
+    static fromCore(update: Cardano_4.Update): Update_2;
+    proposedProtocolParameterUpdates(): ProposedProtocolParameterUpdates_2;
+    setEpoch(epoch: Cardano_4.EpochNo): void;
+    setProposedProtocolParameterUpdates(updates: ProposedProtocolParameterUpdates_2): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Update;
+}
+
 // @public (undocumented)
 export type UpdateCommittee = C.Cardano.UpdateCommittee;
+
+// @public (undocumented)
+type UpdateCommittee_2 = {
+    __typename: GovernanceActionType.update_committee;
+    governanceActionId: GovernanceActionId_2 | null;
+    membersToBeRemoved: Set<Credential_2>;
+    membersToBeAdded: Set<CommitteeMember_2>;
+    newQuorumThreshold: Fraction_2;
+};
+
+// @public
+class UpdateCommittee_3 {
+    // Warning: (ae-forgotten-export) The symbol "CredentialSet" needs to be exported by the entry point index.d.ts
+    constructor(membersToBeRemoved: CredentialSet, membersToBeAdded: [Cardano_4.Credential, number][], newQuorum: UnitInterval, govActionId?: GovernanceActionId_3);
+    static fromCbor(cbor: HexBlob): UpdateCommittee_3;
+    static fromCore(updateCommittee: Cardano_4.UpdateCommittee): UpdateCommittee_3;
+    govActionId(): GovernanceActionId_3 | undefined;
+    membersToBeAdded(): [Cardano_4.Credential, number][];
+    membersToBeRemoved(): Cardano_4.Credential[];
+    newQuorum(): UnitInterval;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.UpdateCommittee;
+}
 
 // @public (undocumented)
 export const UpdateDelegateRepresentative: typeof C.Serialization.UpdateDelegateRepresentative;
 
 // @public (undocumented)
 export type UpdateDelegateRepresentative = C.Serialization.UpdateDelegateRepresentative;
+
+// @public
+class UpdateDelegateRepresentative_2 {
+    constructor(drepCredential: Cardano_4.Credential, anchor?: Anchor_3);
+    anchor(): Anchor_3 | undefined;
+    credential(): Cardano_4.Credential;
+    static fromCbor(cbor: HexBlob): UpdateDelegateRepresentative_2;
+    static fromCore(cert: Cardano_4.UpdateDelegateRepresentativeCertificate): UpdateDelegateRepresentative_2;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.UpdateDelegateRepresentativeCertificate;
+}
+
+// @public (undocumented)
+interface UpdateDelegateRepresentativeCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.UpdateDelegateRepresentative;
+    // (undocumented)
+    anchor: Anchor_2 | null;
+    // (undocumented)
+    dRepCredential: Credential_2;
+}
+
+declare namespace util {
+    export {
+        computeMinUtxoValue,
+        ImplicitCoin,
+        computeImplicitCoin,
+        estimateStakePoolAPY,
+        resolveInputValue,
+        isPhase2ValidationErrTx,
+        addressesShareAnyKey,
+        isPlutusBoundedBytes,
+        isAnyPlutusDataCollection,
+        isPlutusList,
+        isPlutusMap,
+        isConstrPlutusData,
+        isPlutusBigInt,
+        tryConvertPlutusMapToUtf8Record,
+        isScriptAddress
+    }
+}
+
+// @public (undocumented)
+type Utxo = [HydratedTxIn, TxOut];
 
 // @public (undocumented)
 export class UTxOSelectionError extends Error {
@@ -954,16 +5101,61 @@ export class UTxOSelectionError extends Error {
 }
 
 // @public (undocumented)
+interface ValidityInterval {
+    // (undocumented)
+    invalidBefore?: Slot_2;
+    // (undocumented)
+    invalidHereafter?: Slot_2;
+}
+
+// @public (undocumented)
 export const Value: typeof C.Serialization.Value;
 
 // @public (undocumented)
 export type Value = C.Serialization.Value;
+
+// @public
+interface Value_2 {
+    // (undocumented)
+    assets?: TokenMap_2;
+    // (undocumented)
+    coins: Lovelace;
+}
+
+// @public
+class Value_3 {
+    constructor(coin: Cardano_4.Lovelace, multiasset?: Cardano_4.TokenMap);
+    coin(): Cardano_4.Lovelace;
+    static fromCbor(cbor: HexBlob): Value_3;
+    static fromCore(coreValue: Cardano_4.Value): Value_3;
+    multiasset(): Cardano_4.TokenMap | undefined;
+    setCoin(coin: Cardano_4.Lovelace): void;
+    setMultiasset(multiasset: Cardano_4.TokenMap): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.Value;
+}
+
+// @public (undocumented)
+type VerificationKey = Crypto.Ed25519PublicKeyHex;
 
 // @public (undocumented)
 export const VkeyWitness: typeof C.Serialization.VkeyWitness;
 
 // @public (undocumented)
 export type VkeyWitness = C.Serialization.VkeyWitness;
+
+// @public
+class VkeyWitness_2 {
+    constructor(vkey: Crypto.Ed25519PublicKeyHex, signature: Crypto.Ed25519SignatureHex);
+    static fromCbor(cbor: HexBlob): VkeyWitness_2;
+    static fromCore(signatureEntry: [Crypto.Ed25519PublicKeyHex, Crypto.Ed25519SignatureHex]): VkeyWitness_2;
+    setSignature(signature: Crypto.Ed25519SignatureHex): void;
+    setVkey(vkey: Crypto.Ed25519PublicKeyHex): void;
+    signature(): Crypto.Ed25519SignatureHex;
+    toCbor(): HexBlob;
+    toCore(): [Crypto.Ed25519PublicKeyHex, Crypto.Ed25519SignatureHex];
+    vkey(): Crypto.Ed25519PublicKeyHex;
+}
 
 // @public (undocumented)
 export const Vote: typeof C.Cardano.Vote;
@@ -972,13 +5164,47 @@ export const Vote: typeof C.Cardano.Vote;
 export type Vote = C.Cardano.Vote;
 
 // @public (undocumented)
+enum Vote_2 {
+    // (undocumented)
+    abstain = 2,
+    // (undocumented)
+    no = 0,
+    // (undocumented)
+    yes = 1
+}
+
+// @public (undocumented)
 export const VoteDelegation: typeof C.Serialization.VoteDelegation;
 
 // @public (undocumented)
 export type VoteDelegation = C.Serialization.VoteDelegation;
 
+// @public
+class VoteDelegation_2 {
+    constructor(stakeCredential: Cardano_4.Credential, dRep: DRep_2);
+    dRep(): DRep_2;
+    static fromCbor(cbor: HexBlob): VoteDelegation_2;
+    static fromCore(deleg: Cardano_4.VoteDelegationCertificate): VoteDelegation_2;
+    stakeCredential(): Cardano_4.Credential;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.VoteDelegationCertificate;
+}
+
+// @public (undocumented)
+interface VoteDelegationCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.VoteDelegation;
+    // (undocumented)
+    dRep: DelegateRepresentative_2;
+    // (undocumented)
+    stakeCredential: Credential_2;
+}
+
 // @public (undocumented)
 export const VoteDelegationCredentialCertificateTypes: readonly [C.Cardano.CertificateType.VoteDelegation, C.Cardano.CertificateType.VoteRegistrationDelegation, C.Cardano.CertificateType.StakeVoteDelegation, C.Cardano.CertificateType.StakeVoteRegistrationDelegation];
+
+// @public (undocumented)
+const VoteDelegationCredentialCertificateTypes_2: readonly [CertificateType_2.VoteDelegation, CertificateType_2.VoteRegistrationDelegation, CertificateType_2.StakeVoteDelegation, CertificateType_2.StakeVoteRegistrationDelegation];
 
 // @public (undocumented)
 export const Voter: typeof C.Serialization.Voter;
@@ -987,10 +5213,77 @@ export const Voter: typeof C.Serialization.Voter;
 export type Voter = C.Serialization.Voter;
 
 // @public (undocumented)
+type Voter_2 = ConstitutionalCommitteeKeyHashVoter | ConstitutionalCommitteeScriptHashVoter | DrepKeyHashVoter | DrepScriptHashVoter | StakePoolKeyHashVoter;
+
+// @public
+class Voter_3 {
+    constructor(kind: VoterKind_2, credential: Cardano_4.Credential);
+    equals(other: Voter_3): boolean;
+    static fromCbor(cbor: HexBlob): Voter_3;
+    static fromCore(coreVoter: Cardano_4.Voter): Voter_3;
+    kind(): VoterKind_2;
+    static newConstitutionalCommitteeHotKey(credential: Cardano_4.Credential): Voter_3;
+    static newDrep(credential: Cardano_4.Credential): Voter_3;
+    static newStakingPool(keyHash: Ed25519KeyHashHex_2): Voter_3;
+    toCbor(): HexBlob;
+    toConstitutionalCommitteeHotCred(): Cardano_4.Credential | undefined;
+    toCore(): Cardano_4.Voter;
+    toDrepCred(): Cardano_4.Credential | undefined;
+    toStakingPoolKeyHash(): Ed25519KeyHashHex_2 | undefined;
+}
+
+// @public (undocumented)
 export type VoterCore = C.Cardano.Voter;
+
+// @public
+class VoteRegistrationDelegation {
+    constructor(stakeCredential: Cardano_4.Credential, deposit: Cardano_4.Lovelace, dRep: DRep_2);
+    deposit(): Cardano_4.Lovelace;
+    dRep(): DRep_2;
+    static fromCbor(cbor: HexBlob): VoteRegistrationDelegation;
+    static fromCore(deleg: Cardano_4.VoteRegistrationDelegationCertificate): VoteRegistrationDelegation;
+    stakeCredential(): Cardano_4.Credential;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.VoteRegistrationDelegationCertificate;
+}
+
+// @public (undocumented)
+interface VoteRegistrationDelegationCertificate {
+    // (undocumented)
+    __typename: CertificateType_2.VoteRegistrationDelegation;
+    // (undocumented)
+    deposit: Lovelace;
+    // (undocumented)
+    dRep: DelegateRepresentative_2;
+    // (undocumented)
+    stakeCredential: Credential_2;
+}
 
 // @public (undocumented)
 export const VoterKind: typeof C.Serialization.VoterKind;
+
+// @public
+enum VoterKind_2 {
+    ConstitutionalCommitteeKeyHash = 0,
+    ConstitutionalCommitteeScriptHash = 1,
+    DrepKeyHash = 2,
+    DRepScriptHash = 3,
+    StakePoolKeyHash = 4
+}
+
+// @public (undocumented)
+enum VoterType {
+    // (undocumented)
+    ccHotKeyHash = "ccHotKeyHash",
+    // (undocumented)
+    ccHotScriptHash = "ccHotScriptHash",
+    // (undocumented)
+    dRepKeyHash = "dRepKeyHash",
+    // (undocumented)
+    dRepScriptHash = "dRepScriptHash",
+    // (undocumented)
+    stakePoolKeyHash = "stakePoolKeyHash"
+}
 
 // @public (undocumented)
 export const VotingProcedure: typeof C.Serialization.VotingProcedure;
@@ -999,12 +5292,96 @@ export const VotingProcedure: typeof C.Serialization.VotingProcedure;
 export type VotingProcedure = C.Serialization.VotingProcedure;
 
 // @public (undocumented)
+type VotingProcedure_2 = {
+    vote: Vote_2;
+    anchor: Anchor_2 | null;
+};
+
+// @public
+class VotingProcedure_3 {
+    constructor(vote: Cardano_4.Vote, anchor?: Anchor_3);
+    anchor(): Anchor_3 | undefined;
+    static fromCbor(cbor: HexBlob): VotingProcedure_3;
+    static fromCore(votingProcedure: Cardano_4.VotingProcedure): VotingProcedure_3;
+    setAnchor(anchor: Anchor_3 | undefined): void;
+    setVote(vote: Cardano_4.Vote): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.VotingProcedure;
+    vote(): Cardano_4.Vote;
+}
+
+// @public (undocumented)
 export const VotingProcedures: typeof C.Serialization.VotingProcedures;
 
 // @public (undocumented)
 export type VotingProcedures = C.Serialization.VotingProcedures;
 
+// @public (undocumented)
+type VotingProcedures_2 = Array<{
+    voter: Voter_2;
+    votes: VotingProcedureVote[];
+}>;
+
+// @public
+class VotingProcedures_3 {
+    static fromCbor(cbor: HexBlob): VotingProcedures_3;
+    static fromCore(votingProcedures: Cardano_4.VotingProcedures): VotingProcedures_3;
+    get(voter: Voter_3, governanceActionId: GovernanceActionId_3): VotingProcedure_3 | undefined;
+    getGovernanceActionIdsByVoter(voter: Voter_3): Array<GovernanceActionId_3>;
+    getVoters(): Array<Voter_3>;
+    insert(voter: Voter_3, actionId: GovernanceActionId_3, votingProcedure: VotingProcedure_3): void;
+    toCbor(): HexBlob;
+    toCore(): Cardano_4.VotingProcedures;
+}
+
+// @public (undocumented)
+type VotingProcedureVote = {
+    actionId: GovernanceActionId_2;
+    votingProcedure: VotingProcedure_2;
+};
+
+// @public
+type VrfVkBech32 = OpaqueString<'VrfVkBech32'>;
+
+// @public (undocumented)
+const VrfVkBech32: {
+    (value: string): VrfVkBech32;
+    fromHex(value: string): VrfVkBech32;
+};
+
+// @public
+type VrfVkHex = OpaqueString<'VrfVkHex'>;
+
+// @public (undocumented)
+const VrfVkHex: (target: string) => VrfVkHex;
+
+// @public (undocumented)
+interface Withdrawal {
+    // (undocumented)
+    quantity: Lovelace;
+    // (undocumented)
+    stakeAddress: RewardAccount_2;
+}
+
+// @public (undocumented)
+type Witness = {
+    redeemers?: Redeemer_2[];
+    signatures: Signatures;
+    scripts?: Script_2[];
+    bootstrap?: BootstrapWitness[];
+    datums?: PlutusData_2[];
+};
+
 export { wordlist }
+
+// @public
+type YoutubeAccount = string;
+
+// Warnings were encountered during analysis:
+//
+// src/internal/cardano-sdk/core/Cardano/types/Cip1854ExtendedAccountPublicKey.ts:13:96 - (ae-forgotten-export) The symbol "Bip32PublicKeyHex" needs to be exported by the entry point index.d.ts
+// src/internal/cardano-sdk/core/Cardano/types/DelegationsAndRewards.ts:30:31 - (ae-forgotten-export) The symbol "DRepInfo" needs to be exported by the entry point index.d.ts
+// src/internal/cardano-sdk/core/Cardano/types/Governance.ts:12:3 - (ae-forgotten-export) The symbol "Crypto" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
